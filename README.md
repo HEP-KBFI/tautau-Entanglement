@@ -19,6 +19,8 @@ cmsenv
 
 git clone https://github.com/HEP-KBFI/tautau-Entanglement TauAnalysis/Entanglement
 
+git remote set-url origin git+ssh://git@github.com/HEP-KBFI/tautau-Entanglement
+
 cd TauAnalysis/Entanglement
 
 scram b -j 8
