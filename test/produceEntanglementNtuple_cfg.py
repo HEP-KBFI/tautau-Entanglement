@@ -12,8 +12,8 @@ process.load('Configuration.StandardSequences.Reconstruction_cff')
 process.load('Configuration.StandardSequences.FrontierConditions_GlobalTag_cff')
 
 process.maxEvents = cms.untracked.PSet(
-    ##input = cms.untracked.int32(-1)
-    input = cms.untracked.int32(1000)
+    input = cms.untracked.int32(-1)
+    ##input = cms.untracked.int32(10000)
 )
 
 process.source = cms.Source("PoolSource",
@@ -57,35 +57,35 @@ process.analysisSequence = cms.Sequence()
 
 #--------------------------------------------------------------------------------
 # CV: generator-level tau decay mode selection
-process.load("PhysicsTools.JetMCAlgos.TauGenJets_cfi")
-process.tauGenJets.GenParticles = cms.InputTag('prunedGenParticles')
-process.analysisSequence += process.tauGenJets
-
-process.load("PhysicsTools.JetMCAlgos.TauGenJetsDecayModeSelectorAllHadrons_cfi")
-process.tauGenJetsSelectorAllHadrons.select = cms.vstring(
-    'oneProng0Pi0', 
-    #'oneProng1Pi0', 
-    #'oneProng2Pi0', 
-    #'oneProngOther',
-    #'threeProng0Pi0', 
-    #'threeProng1Pi0', 
-    #'threeProngOther', 
-    #'rare'
-)
-process.analysisSequence += process.tauGenJetsSelectorAllHadrons
-
-process.selectedGenHadTaus = cms.EDFilter("GenJetSelector",
-    src = cms.InputTag('tauGenJetsSelectorAllHadrons'),
-    cut = cms.string('pt > 20. & abs(eta) < 2.3'),
-    filter = cms.bool(False)
-)
-process.analysisSequence += process.selectedGenHadTaus
-
-process.selectedGenHadTauFilter = cms.EDFilter("CandViewCountFilter",
-    src = cms.InputTag('selectedGenHadTaus'),
-    minNumber = cms.uint32(2)
-)
-process.analysisSequence += process.selectedGenHadTauFilter
+##process.load("PhysicsTools.JetMCAlgos.TauGenJets_cfi")
+##process.tauGenJets.GenParticles = cms.InputTag('prunedGenParticles')
+##process.analysisSequence += process.tauGenJets
+##
+##process.load("PhysicsTools.JetMCAlgos.TauGenJetsDecayModeSelectorAllHadrons_cfi")
+##process.tauGenJetsSelectorAllHadrons.select = cms.vstring(
+##    'oneProng0Pi0', 
+##    #'oneProng1Pi0', 
+##    #'oneProng2Pi0', 
+##    #'oneProngOther',
+##    #'threeProng0Pi0', 
+##    #'threeProng1Pi0', 
+##    #'threeProngOther', 
+##    #'rare'
+##)
+##process.analysisSequence += process.tauGenJetsSelectorAllHadrons
+##
+##process.selectedGenHadTaus = cms.EDFilter("GenJetSelector",
+##    src = cms.InputTag('tauGenJetsSelectorAllHadrons'),
+##    cut = cms.string('pt > 20. & abs(eta) < 2.3'),
+##    filter = cms.bool(False)
+##)
+##process.analysisSequence += process.selectedGenHadTaus
+##
+##process.selectedGenHadTauFilter = cms.EDFilter("CandViewCountFilter",
+##    src = cms.InputTag('selectedGenHadTaus'),
+##    minNumber = cms.uint32(2)
+##)
+##process.analysisSequence += process.selectedGenHadTauFilter
 #--------------------------------------------------------------------------------
 
 process.dumpGenParticles = cms.EDAnalyzer("ParticleListDrawer",
@@ -103,8 +103,8 @@ process.ntupleProducer = cms.EDAnalyzer("EntanglementNtupleProducer",
     src = cms.InputTag('prunedGenParticles'),
     hAxis = cms.string(hAxis),
     srcEvtWeights = cms.VInputTag('genWeight'),
-    ##verbosity = cms.untracked.int32(-1)
-    verbosity = cms.untracked.int32(1)
+    verbosity = cms.untracked.int32(-1)
+    ##verbosity = cms.untracked.int32(1)
 )
 process.analysisSequence += process.ntupleProducer
 
