@@ -192,18 +192,18 @@ int main(int argc, char* argv[])
 
 //--- parse command-line arguments
   if ( argc < 2 ) {
-    std::cout << "Usage: " << argv[0] << " [parameters.py]" << std::endl;
+    std::cout << "Usage: " << argv[0] << " [parameters.py]\n";
     return EXIT_FAILURE;
   }
 
-  std::cout << "<analyzeEntanglementNtuple>:" << std::endl;
+  std::cout << "<analyzeEntanglementNtuple>:\n";
 
 //--- keep track of time it takes the macro to execute
   TBenchmark clock;
   clock.Start("analyzeEntanglementNtuple");
 
 //--- read python configuration parameters
-  std::cout << "Reading config file " << argv[1] << std::endl;
+  std::cout << "Reading config file " << argv[1] << "\n";
   if ( !edm::readPSetsFrom(argv[1])->existsAs<edm::ParameterSet>("process") )
     throw cmsException("analyzeEntanglementNtuple", __LINE__) << "No ParameterSet 'process' found in config file !!";
 
@@ -212,24 +212,32 @@ int main(int argc, char* argv[])
   edm::ParameterSet cfg_input = cfg.getParameterSet("fwliteInput");
   int maxEvents_beforeCuts = cfg_input.getParameter<int>("maxEvents_beforeCuts");
   int maxEvents_afterCuts = cfg_input.getParameter<int>("maxEvents_afterCuts");
-  std::cout << " maxEvents: beforeCuts = " << maxEvents_beforeCuts << ", afterCuts = " << maxEvents_afterCuts << std::endl;
+  std::cout << " maxEvents: beforeCuts = " << maxEvents_beforeCuts << ", afterCuts = " << maxEvents_afterCuts << "\n";
 
   edm::ParameterSet cfg_analyze = cfg.getParameterSet("analyzeEntanglementNtuple");
   std::string treeName = cfg_analyze.getParameter<std::string>("treeName");
-  std::cout << " treeName = " << treeName << std::endl;
+  std::cout << " treeName = " << treeName << "\n";
   float minVisTauPt = cfg_analyze.getParameter<double>("minVisTauPt");
-  std::cout << " minVisTauPt = " << minVisTauPt << std::endl;
+  std::cout << " minVisTauPt = " << minVisTauPt << "\n";
   float maxAbsVisTauEta = cfg_analyze.getParameter<double>("maxAbsVisTauEta");
-  std::cout << " maxAbsVisTauEta = " << maxAbsVisTauEta << std::endl;
+  std::cout << " maxAbsVisTauEta = " << maxAbsVisTauEta << "\n";
+  int maxNumChargedKaons = cfg_analyze.getParameter<int>("maxNumChargedKaons");
+  std::cout << " maxNumChargedKaons = " << maxNumChargedKaons << "\n";
+  int maxNumNeutralKaons = cfg_analyze.getParameter<int>("maxNumNeutralKaons");
+  std::cout << " maxNumNeutralKaons = " << maxNumNeutralKaons << "\n";
+  int maxNumPhotons = cfg_analyze.getParameter<int>("maxNumPhotons");
+  std::cout << " maxNumPhotons = " << maxNumPhotons << "\n";
+  float maxSumPhotonEn = cfg_analyze.getParameter<double>("maxSumPhotonEn");
+  std::cout << " maxSumPhotonEn = " << maxSumPhotonEn << "\n";
   std::string branchName_evtWeight = cfg_analyze.getParameter<std::string>("branchName_evtWeight");
-  std::cout << " branchName_evtWeight = " << branchName_evtWeight << std::endl;
+  std::cout << " branchName_evtWeight = " << branchName_evtWeight << "\n";
   //bool isDEBUG = cfg_analyze.getParameter<bool>("isDEBUG");
 
   fwlite::InputSource inputFiles(cfg);
   unsigned reportEvery = inputFiles.reportAfter();
 
   fwlite::OutputFiles outputFile(cfg);
-  fwlite::TFileService fs = fwlite::TFileService(outputFile.file().data());
+  fwlite::TFileService fs = fwlite::TFileService(outputFile.file().c_str());
 
   std::vector<std::string> inputFileNames = inputFiles.files();
   size_t numInputFiles = inputFileNames.size();
@@ -243,21 +251,21 @@ int main(int argc, char* argv[])
   EntanglementDataset mlfitData; 
 
   int analyzedEntries = 0;
-  float analyzedEntries_weighted = 0.;
+  double analyzedEntries_weighted = 0.;
   int selectedEntries = 0;
-  float selectedEntries_weighted = 0.;
+  double selectedEntries_weighted = 0.;
   int processedInputFiles = 0;
   bool STOP = false;
   for ( size_t idxInputFile = 0; idxInputFile < numInputFiles && !STOP; ++idxInputFile )
   {
     const std::string & inputFileName = inputFileNames.at(idxInputFile);
     std::cout << "Opening #" << idxInputFile << " file " << inputFileName << '\n';
-    TFile* inputFile = TFile::Open(inputFileName.data());
+    TFile* inputFile = TFile::Open(inputFileName.c_str());
     if ( !inputFile )
       throw cmsException("analyzeEntanglementNtuple", __LINE__) 
         << "The file " << inputFileName << " failed to open !!";
    
-    TTree* inputTree = dynamic_cast<TTree*>(inputFile->Get(treeName.data()));
+    TTree* inputTree = dynamic_cast<TTree*>(inputFile->Get(treeName.c_str()));
     if ( !inputTree )
       throw cmsException("analyzeEntanglementNtuple", __LINE__) 
         << "The file " << inputFileName << " does not contain a TTree named '" << treeName << "' !!";
@@ -272,6 +280,12 @@ int main(int argc, char* argv[])
     Float_t visTauPlus_pt, visTauPlus_eta;
     inputTree->SetBranchAddress("visTauPlus_pt", &visTauPlus_pt);
     inputTree->SetBranchAddress("visTauPlus_eta", &visTauPlus_eta);
+    Int_t tauPlus_nChargedKaons, tauPlus_nNeutralKaons, tauPlus_nPhotons;
+    Float_t tauPlus_sumPhotonEn;
+    inputTree->SetBranchAddress("tauPlus_nChargedKaons", &tauPlus_nChargedKaons);
+    inputTree->SetBranchAddress("tauPlus_nNeutralKaons", &tauPlus_nNeutralKaons);
+    inputTree->SetBranchAddress("tauPlus_nPhotons", &tauPlus_nPhotons);
+    inputTree->SetBranchAddress("tauPlus_sumPhotonEn", &tauPlus_sumPhotonEn);
 
     Float_t hMinus_r, hMinus_n, hMinus_k;
     inputTree->SetBranchAddress("hMinus_r", &hMinus_r);
@@ -280,6 +294,12 @@ int main(int argc, char* argv[])
     Float_t visTauMinus_pt, visTauMinus_eta;
     inputTree->SetBranchAddress("visTauMinus_pt", &visTauMinus_pt);
     inputTree->SetBranchAddress("visTauMinus_eta", &visTauMinus_eta);
+    Int_t tauMinus_nChargedKaons, tauMinus_nNeutralKaons, tauMinus_nPhotons;
+    Float_t tauMinus_sumPhotonEn;
+    inputTree->SetBranchAddress("tauMinus_nChargedKaons", &tauMinus_nChargedKaons);
+    inputTree->SetBranchAddress("tauMinus_nNeutralKaons", &tauMinus_nNeutralKaons);
+    inputTree->SetBranchAddress("tauMinus_nPhotons", &tauMinus_nPhotons);
+    inputTree->SetBranchAddress("tauMinus_sumPhotonEn", &tauMinus_sumPhotonEn);
 
     Float_t evtWeight = 1.;
     if ( branchName_evtWeight != "" )
@@ -296,11 +316,19 @@ int main(int argc, char* argv[])
       analyzedEntries_weighted += evtWeight;
       if ( (analyzedEntries % reportEvery) == 0 )
       {
-        std::cout << "processing Entry " << analyzedEntries << std::endl;
+        std::cout << "processing Entry " << analyzedEntries << "\n";
       }
 
       if ( !(visTauPlus_pt  > minVisTauPt && std::fabs(visTauPlus_eta)  < maxAbsVisTauEta) ) continue;
+      if ( maxNumChargedKaons != -1  && tauPlus_nChargedKaons  > maxNumChargedKaons ) continue;
+      if ( maxNumNeutralKaons != -1  && tauPlus_nNeutralKaons  > maxNumNeutralKaons ) continue;
+      if ( maxNumPhotons      != -1  && tauPlus_nPhotons       > maxNumPhotons      ) continue;
+      if ( maxSumPhotonEn     >=  0. && tauPlus_sumPhotonEn    > maxSumPhotonEn     ) continue;
       if ( !(visTauMinus_pt > minVisTauPt && std::fabs(visTauMinus_eta) < maxAbsVisTauEta) ) continue;
+      if ( maxNumChargedKaons != -1  && tauMinus_nChargedKaons > maxNumChargedKaons ) continue;
+      if ( maxNumNeutralKaons != -1  && tauMinus_nNeutralKaons > maxNumNeutralKaons ) continue;
+      if ( maxNumPhotons      != -1  && tauMinus_nPhotons      > maxNumPhotons      ) continue;
+      if ( maxSumPhotonEn     >=  0. && tauMinus_sumPhotonEn   > maxSumPhotonEn     ) continue;
 
       // CV: compute matrix C according to Eq. (25)
       //     in the paper arXiv:2211.10513
@@ -340,9 +368,9 @@ int main(int argc, char* argv[])
 
   std::cout << "Standard Model expectation (given by Eq. (69) in arXiv:2208:11723):\n";
   TMatrixD C_exp(3, 3);
-  C[0][0] = +1.;
-  C[1][1] = +1.;
-  C[2][2] = -1.;
+  C_exp[0][0] = +1.;
+  C_exp[1][1] = +1.;
+  C_exp[2][2] = -1.;
   C_exp.Print();
 
   // define parameters for maximum-likelihood (ML) fit
