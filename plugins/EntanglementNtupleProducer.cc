@@ -111,34 +111,59 @@ namespace
     }
     return chargedHadrons;
   }
+  
+  std::vector<const reco::GenParticle*>
+  getParticles_of_type(const std::vector<const reco::GenParticle*>& decayProducts, const std::vector<int>& selPdgIds)
+  {
+    std::vector<const reco::GenParticle*> selDecayProducts;
+    for ( const reco::GenParticle* decayProduct : decayProducts )
+    {
+      int absPdgId = std::abs(decayProduct->pdgId());
+      bool isSelPdgId = false;
+      for ( int selPdgId : selPdgIds )
+      {
+        if ( absPdgId == selPdgId )
+        {
+          isSelPdgId = true;
+          break;
+        }
+      }
+      if ( isSelPdgId )
+      {
+        selDecayProducts.push_back(decayProduct);
+      }
+    }
+    return selDecayProducts;
+  }
 
   std::vector<const reco::GenParticle*>
   getNeutralPions(const std::vector<const reco::GenParticle*>& decayProducts)
   {
-    std::vector<const reco::GenParticle*> neutralPions;
-    for ( const reco::GenParticle* decayProduct : decayProducts )
-    {
-      if ( decayProduct->pdgId() == 111 )
-      {
-        neutralPions.push_back(decayProduct);
-      }
-    }
-    return neutralPions;
+    return getParticles_of_type(decayProducts, { 111 });
   }
 
   std::vector<const reco::GenParticle*>
   getNeutrinos(const std::vector<const reco::GenParticle*>& decayProducts)
   {
-    std::vector<const reco::GenParticle*> neutrinos;
-    for ( const reco::GenParticle* decayProduct : decayProducts )
-    {
-      int absPdgId = std::abs(decayProduct->pdgId());
-      if ( absPdgId == 12 || absPdgId == 14 || absPdgId == 16 )
-      {
-        neutrinos.push_back(decayProduct);
-      }
-    }
-    return neutrinos;
+    return getParticles_of_type(decayProducts, { 12, 14, 16 });
+  }
+
+  std::vector<const reco::GenParticle*>
+  getChargedKaons(const std::vector<const reco::GenParticle*>& decayProducts)
+  {
+    return getParticles_of_type(decayProducts, { 321 });
+  }
+
+  std::vector<const reco::GenParticle*>
+  getNeutralKaons(const std::vector<const reco::GenParticle*>& decayProducts)
+  {
+    return getParticles_of_type(decayProducts, { 130, 310, 311 });
+  }
+
+  std::vector<const reco::GenParticle*>
+  getPhotons(const std::vector<const reco::GenParticle*>& decayProducts)
+  {
+    return getParticles_of_type(decayProducts, { 22 });
   }
 
   void
@@ -412,9 +437,12 @@ void EntanglementNtupleProducer::analyze(const edm::Event& evt, const edm::Event
   reco::Candidate::LorentzVector tauMinusP4_ttrf = getP4_rf(tauMinusP4, boost_ttrf);
   if ( verbosity_ >= 1 )
   {
+    printLorentzVector("taupairP4", taupairP4);
     reco::Candidate::LorentzVector taupairP4_ttrf = getP4_rf(taupairP4, boost_ttrf);
     printLorentzVector("taupairP4_ttrf", taupairP4_ttrf);
+    printLorentzVector("tauPlusP4", tauPlusP4);
     printLorentzVector("tauPlusP4_ttrf", tauPlusP4_ttrf);
+    printLorentzVector("tauMinusP4", tauMinusP4);
     printLorentzVector("tauMinusP4_ttrf", tauMinusP4_ttrf);
   }
 
@@ -493,6 +521,11 @@ void EntanglementNtupleProducer::analyze(const edm::Event& evt, const edm::Event
   std::vector<const reco::GenParticle*> tauPlus_pi0 = getNeutralPions(tauPlus_daughters);
   std::vector<const reco::GenParticle*> tauPlus_nu = getNeutrinos(tauPlus_daughters);
   int tauPlus_decaymode = getDecayMode(tauPlus_ch, tauPlus_pi0, tauPlus_nu);
+  int tauPlus_nChargedKaons = getChargedKaons(tauPlus_daughters).size();
+  int tauPlus_nNeutralKaons = getNeutralKaons(tauPlus_daughters).size();
+  std::vector<const reco::GenParticle*> tauPlus_y = getPhotons(tauPlus_daughters);
+  int tauPlus_nPhotons = tauPlus_y.size();
+  double tauPlus_sumPhotonEn = compVisP4(tauPlus_y).energy();
   reco::Candidate::LorentzVector visTauPlusP4_ttrf = getP4_rf(visTauPlusP4, boost_ttrf);
   double zPlus = visTauPlusP4_ttrf.energy()/tauPlusP4_ttrf.energy();
   if ( verbosity_ >= 1 )
@@ -516,6 +549,11 @@ void EntanglementNtupleProducer::analyze(const edm::Event& evt, const edm::Event
   std::vector<const reco::GenParticle*> tauMinus_pi0 = getNeutralPions(tauMinus_daughters);
   std::vector<const reco::GenParticle*> tauMinus_nu = getNeutrinos(tauMinus_daughters);
   int tauMinus_decaymode = getDecayMode(tauMinus_ch, tauMinus_pi0, tauMinus_nu);
+  int tauMinus_nChargedKaons = getChargedKaons(tauMinus_daughters).size();
+  int tauMinus_nNeutralKaons = getNeutralKaons(tauMinus_daughters).size();
+  std::vector<const reco::GenParticle*> tauMinus_y = getPhotons(tauMinus_daughters);
+  int tauMinus_nPhotons = tauMinus_y.size();
+  double tauMinus_sumPhotonEn = compVisP4(tauMinus_y).energy();
   reco::Candidate::LorentzVector visTauMinusP4_ttrf = getP4_rf(visTauMinusP4, boost_ttrf);
   double zMinus = visTauMinusP4_ttrf.energy()/tauMinusP4_ttrf.energy();
   if ( verbosity_ >= 1 )
@@ -584,16 +622,25 @@ void EntanglementNtupleProducer::analyze(const edm::Event& evt, const edm::Event
       printLorentzVector("tauMinusP4", tauMinusP4, false);
       printLorentzVector("visTauMinusP4", visTauMinusP4, false);
       printVector("hMinus", hMinus);
+      std::cout << "C_rr = " << hPlus.x()*hMinus.x() << "\n";
+      std::cout << "C_nn = " << hPlus.y()*hMinus.y() << "\n";
+      std::cout << "C_kk = " << hPlus.z()*hMinus.z() << "\n";
       double mTauTau = (tauPlusP4 + tauMinusP4).mass();
       double mVis = (visTauPlusP4 + visTauMinusP4).mass();
       std::cout << "mTauTau = " << mTauTau << ", mVis = " << mVis << "\n";
       std::cout << "cosTheta = " << cosTheta << "\n";
     }
-    branches->fillBranches(evt, hPlus, tauPlusP4, visTauPlusP4, zPlus, hMinus, tauMinusP4, visTauMinusP4, zMinus, cosTheta, evtWeight);
+    branches->fillBranches(evt,
+      hPlus, tauPlusP4, tauPlus_nChargedKaons, tauPlus_nNeutralKaons, tauPlus_nPhotons, tauPlus_sumPhotonEn, visTauPlusP4, zPlus, 
+      hMinus, tauMinusP4, tauMinus_nChargedKaons, tauMinus_nNeutralKaons, tauMinus_nPhotons, tauMinus_sumPhotonEn, visTauMinusP4, zMinus, 
+      cosTheta, evtWeight);
 
     branches_had_had_.tauPlus_decaymode_ = tauPlus_decaymode;
     branches_had_had_.tauMinus_decaymode_ = tauMinus_decaymode;
-    branches_had_had_.fillBranches(evt, hPlus, tauPlusP4, visTauPlusP4, zPlus, hMinus, tauMinusP4, visTauMinusP4, zMinus, cosTheta, evtWeight);
+    branches_had_had_.fillBranches(evt,
+      hPlus, tauPlusP4, tauPlus_nChargedKaons, tauPlus_nNeutralKaons, tauPlus_nPhotons, tauPlus_sumPhotonEn, visTauPlusP4, zPlus, 
+      hMinus, tauMinusP4, tauMinus_nChargedKaons, tauMinus_nNeutralKaons, tauMinus_nPhotons, tauMinus_sumPhotonEn, visTauMinusP4, zMinus, 
+      cosTheta, evtWeight);
   }
 }
 

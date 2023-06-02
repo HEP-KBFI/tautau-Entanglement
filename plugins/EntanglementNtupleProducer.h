@@ -55,6 +55,10 @@ class EntanglementNtupleProducer : public edm::EDAnalyzer
       , tauPlus_phi_(0.)
       , tauPlus_mass_(0.)
       , tauPlus_decaymode_(tauPlus_decaymode)
+      , tauPlus_nChargedKaons_(0)
+      , tauPlus_nNeutralKaons_(0)
+      , tauPlus_nPhotons_(0)
+      , tauPlus_sumPhotonEn_(0.)
       , visTauPlus_pt_(0.)
       , visTauPlus_eta_(0.)
       , visTauPlus_phi_(0.)
@@ -68,6 +72,10 @@ class EntanglementNtupleProducer : public edm::EDAnalyzer
       , tauMinus_phi_(0.)
       , tauMinus_mass_(0.)
       , tauMinus_decaymode_(tauMinus_decaymode)
+      , tauMinus_nChargedKaons_(0)
+      , tauMinus_nNeutralKaons_(0)
+      , tauMinus_nPhotons_(0)
+      , tauMinus_sumPhotonEn_(0.)
       , visTauMinus_pt_(0.)
       , visTauMinus_eta_(0.)
       , visTauMinus_phi_(0.)
@@ -98,6 +106,10 @@ class EntanglementNtupleProducer : public edm::EDAnalyzer
       ntuple->Branch("tauPlus_phi", &tauPlus_phi_, "tauPlus_phi/F");
       ntuple->Branch("tauPlus_mass", &tauPlus_mass_, "tauPlus_mass/F");
       ntuple->Branch("tauPlus_decaymode", &tauPlus_decaymode_, "tauPlus_decaymode/I");
+      ntuple->Branch("tauPlus_nChargedKaons", &tauPlus_nChargedKaons_, "tauPlus_nChargedKaons/I");
+      ntuple->Branch("tauPlus_nNeutralKaons", &tauPlus_nNeutralKaons_, "tauPlus_nNeutralKaons/I");
+      ntuple->Branch("tauPlus_nPhotons", &tauPlus_nPhotons_, "tauPlus_nPhotons/I");
+      ntuple->Branch("tauPlus_sumPhotonEn", &tauPlus_sumPhotonEn_, "tauPlus_sumPhotonEn/F");
       ntuple->Branch("visTauPlus_pt", &visTauPlus_pt_, "visTauPlus_pt/F");
       ntuple->Branch("visTauPlus_eta", &visTauPlus_eta_, "visTauPlus_eta/F");
       ntuple->Branch("visTauPlus_phi", &visTauPlus_phi_, "visTauPlus_phi/F");
@@ -112,6 +124,10 @@ class EntanglementNtupleProducer : public edm::EDAnalyzer
       ntuple->Branch("tauMinus_phi", &tauMinus_phi_, "tauMinus_phi/F");
       ntuple->Branch("tauMinus_mass", &tauMinus_mass_, "tauMinus_mass/F");
       ntuple->Branch("tauMinus_decaymode", &tauMinus_decaymode_, "tauMinus_decaymode/I");
+      ntuple->Branch("tauMinus_nChargedKaons", &tauMinus_nChargedKaons_, "tauminus_nChargedKaons/I");
+      ntuple->Branch("tauMinus_nNeutralKaons", &tauMinus_nNeutralKaons_, "tauMinus_nNeutralKaons/I");
+      ntuple->Branch("tauMinus_nPhotons", &tauMinus_nPhotons_, "tauMinus_nPhotons/I");
+      ntuple->Branch("tauMinus_sumPhotonEn", &tauMinus_sumPhotonEn_, "tauMinus_sumPhotonEn/F");
       ntuple->Branch("visTauMinus_pt", &visTauMinus_pt_, "visTauMinus_pt/F");
       ntuple->Branch("visTauMinus_eta", &visTauMinus_eta_, "visTauMinus_eta/F");
       ntuple->Branch("visTauMinus_phi", &visTauMinus_phi_, "visTauMinus_phi/F");
@@ -129,10 +145,12 @@ class EntanglementNtupleProducer : public edm::EDAnalyzer
     fillBranches(const edm::Event & event,
                  const reco::Candidate::Vector& hPlus,
                  const reco::Candidate::LorentzVector& tauPlusP4,
+                 Int_t tauPlus_nChargedKaons, Int_t tauPlus_nNeutralKaons, Int_t tauPlus_nPhotons, double tauPlus_sumPhotonEn,
                  const reco::Candidate::LorentzVector& visTauPlusP4,
                  double zPlus,
                  const reco::Candidate::Vector& hMinus,
                  const reco::Candidate::LorentzVector& tauMinusP4,
+                 Int_t tauMinus_nChargedKaons, Int_t tauMinus_nNeutralKaons, Int_t tauMinus_nPhotons, double tauMinus_sumPhotonEn,
                  const reco::Candidate::LorentzVector& visTauMinusP4,
                  double zMinus,
                  double cosTheta,
@@ -151,6 +169,10 @@ class EntanglementNtupleProducer : public edm::EDAnalyzer
       tauPlus_eta_ = tauPlusP4.eta();
       tauPlus_phi_ = tauPlusP4.phi();
       tauPlus_mass_ = tauPlusP4.mass();
+      tauPlus_nChargedKaons_ = tauPlus_nChargedKaons;
+      tauPlus_nNeutralKaons_ = tauPlus_nNeutralKaons;
+      tauPlus_nPhotons_ = tauPlus_nPhotons;
+      tauPlus_sumPhotonEn_ = tauPlus_sumPhotonEn;
       visTauPlus_pt_ = visTauPlusP4.pt();
       visTauPlus_eta_ = visTauPlusP4.eta();
       visTauPlus_phi_ = visTauPlusP4.phi();
@@ -164,6 +186,10 @@ class EntanglementNtupleProducer : public edm::EDAnalyzer
       tauMinus_eta_ = tauMinusP4.eta();
       tauMinus_phi_ = tauMinusP4.phi();
       tauMinus_mass_ = tauMinusP4.mass();
+      tauMinus_nChargedKaons_ = tauMinus_nChargedKaons;
+      tauMinus_nNeutralKaons_ = tauMinus_nNeutralKaons;
+      tauMinus_nPhotons_ = tauMinus_nPhotons;
+      tauMinus_sumPhotonEn_ = tauMinus_sumPhotonEn;
       visTauMinus_pt_ = visTauMinusP4.pt();
       visTauMinus_eta_ = visTauMinusP4.eta();
       visTauMinus_phi_ = visTauMinusP4.phi();
@@ -181,43 +207,51 @@ class EntanglementNtupleProducer : public edm::EDAnalyzer
     
     TTree* ntuple_;
 
-    UInt_t run_;               // run number
-    UInt_t lumi_;              // luminosity-section number
-    ULong64_t event_;          // event number    
+    UInt_t run_;                   // run number
+    UInt_t lumi_;                  // luminosity-section number
+    ULong64_t event_;              // event number    
 
-    Float_t hPlus_r_;          // r component (in helicity frame) of polarimetric vector of tau+
-    Float_t hPlus_n_;          // n component (in helicity frame) of polarimetric vector of tau+
-    Float_t hPlus_k_;          // k component (in helicity frame) of polarimetric vector of tau+
-    Float_t tauPlus_pt_;       // transverse momentum (in laboratory frame) of tau+
-    Float_t tauPlus_eta_;      // pseudo-rapidity (in laboratory frame) of tau+
-    Float_t tauPlus_phi_;      // azimuthal angle (in laboratory frame) of tau+
-    Float_t tauPlus_mass_;     // mass component of tau+ four-vector
-    Int_t tauPlus_decaymode_;  // tau+ decay mode
-    Float_t visTauPlus_pt_;    // transverse momentum (in laboratory frame) of visible decay products of tau+
-    Float_t visTauPlus_eta_;   // pseudo-rapidity (in laboratory frame) of visible decay products of tau+
-    Float_t visTauPlus_phi_;   // azimuthal angle (in laboratory frame) of visible decay products of tau+
-    Float_t visTauPlus_mass_;  // mass of visible decay products of tau+
-    Float_t zPlus_;            // fraction of tau+ energy (in tau-pair restframe) carried by visible decay products of tau+
+    Float_t hPlus_r_;              // r component (in helicity frame) of polarimetric vector of tau+
+    Float_t hPlus_n_;              // n component (in helicity frame) of polarimetric vector of tau+
+    Float_t hPlus_k_;              // k component (in helicity frame) of polarimetric vector of tau+
+    Float_t tauPlus_pt_;           // transverse momentum (in laboratory frame) of tau+
+    Float_t tauPlus_eta_;          // pseudo-rapidity (in laboratory frame) of tau+
+    Float_t tauPlus_phi_;          // azimuthal angle (in laboratory frame) of tau+
+    Float_t tauPlus_mass_;         // mass component of tau+ four-vector
+    Int_t tauPlus_decaymode_;      // tau+ decay mode
+    Int_t tauPlus_nChargedKaons_;  // number of charged Kaons produced in decay of tau-
+    Int_t tauPlus_nNeutralKaons_;  // number of neutral Kaons produced in decay of tau-
+    Int_t tauPlus_nPhotons_;       // number of photons radiated from tau- or tau- decay products
+    Float_t tauPlus_sumPhotonEn_;  // energy sum of photons radiated from tau- or tau- decay products
+    Float_t visTauPlus_pt_;        // transverse momentum (in laboratory frame) of visible decay products of tau+
+    Float_t visTauPlus_eta_;       // pseudo-rapidity (in laboratory frame) of visible decay products of tau+
+    Float_t visTauPlus_phi_;       // azimuthal angle (in laboratory frame) of visible decay products of tau+
+    Float_t visTauPlus_mass_;      // mass of visible decay products of tau+
+    Float_t zPlus_;                // fraction of tau+ energy (in tau-pair restframe) carried by visible decay products of tau+
 
-    Float_t hMinus_r_;         // r component (in helicity frame) of polarimetric vector of tau-
-    Float_t hMinus_n_;         // n component (in helicity frame) of polarimetric vector of tau-
-    Float_t hMinus_k_;         // k component (in helicity frame) of polarimetric vector of tau-
-    Float_t tauMinus_pt_;      // transverse momentum (in laboratory frame) of tau-
-    Float_t tauMinus_eta_;     // pseudo-rapidity (in laboratory frame) of tau-
-    Float_t tauMinus_phi_;     // azimuthal angle (in laboratory frame) of tau-
-    Float_t tauMinus_mass_;    // mass component of tau- four-vector
-    Int_t tauMinus_decaymode_; // tau- decay mode
-    Float_t visTauMinus_pt_;   // transverse momentum (in laboratory frame) of visible decay products of tau-
-    Float_t visTauMinus_eta_;  // pseudo-rapidity (in laboratory frame) of visible decay products of tau-
-    Float_t visTauMinus_phi_;  // azimuthal angle (in laboratory frame) of visible decay products of tau-
-    Float_t visTauMinus_mass_; // mass of visible decay products of tau-
-    Float_t zMinus_;           // fraction of tau- energy (in tau-pair restframe) carried by visible decay products of tau-
+    Float_t hMinus_r_;             // r component (in helicity frame) of polarimetric vector of tau-
+    Float_t hMinus_n_;             // n component (in helicity frame) of polarimetric vector of tau-
+    Float_t hMinus_k_;             // k component (in helicity frame) of polarimetric vector of tau-
+    Float_t tauMinus_pt_;          // transverse momentum (in laboratory frame) of tau-
+    Float_t tauMinus_eta_;         // pseudo-rapidity (in laboratory frame) of tau-
+    Float_t tauMinus_phi_;         // azimuthal angle (in laboratory frame) of tau-
+    Float_t tauMinus_mass_;        // mass component of tau- four-vector
+    Int_t tauMinus_decaymode_;     // tau- decay mode
+    Int_t tauMinus_nChargedKaons_; // number of charged Kaons produced in decay of tau-
+    Int_t tauMinus_nNeutralKaons_; // number of neutral Kaons produced in decay of tau-
+    Int_t tauMinus_nPhotons_;      // number of photons radiated from tau- or tau- decay products
+    Float_t tauMinus_sumPhotonEn_; // energy sum of photons radiated from tau- or tau- decay products
+    Float_t visTauMinus_pt_;       // transverse momentum (in laboratory frame) of visible decay products of tau-
+    Float_t visTauMinus_eta_;      // pseudo-rapidity (in laboratory frame) of visible decay products of tau-
+    Float_t visTauMinus_phi_;      // azimuthal angle (in laboratory frame) of visible decay products of tau-
+    Float_t visTauMinus_mass_;     // mass of visible decay products of tau-
+    Float_t zMinus_;               // fraction of tau- energy (in tau-pair restframe) carried by visible decay products of tau-
 
-    Float_t mTauTau_;          // mass of tau pair
-    Float_t mVis_;             // mass of visible decay products of tau pair
-    Float_t cosTheta_;         // polar angle of tau- in tau-pair restframe
+    Float_t mTauTau_;              // mass of tau pair
+    Float_t mVis_;                 // mass of visible decay products of tau pair
+    Float_t cosTheta_;             // polar angle of tau- in tau-pair restframe
 
-    Float_t evtWeight_;        // event weight of Monte Carlo generator
+    Float_t evtWeight_;            // event weight of Monte Carlo generator
   };
 
   TTree* ntuple_piPlus_piMinus_;
