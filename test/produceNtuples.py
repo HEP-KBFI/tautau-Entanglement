@@ -62,7 +62,7 @@ def build_cfgFile(cfgFile_original, cfgFile_modified,
   sedCommand += ' %s > %s' % (cfgFile_original, cfgFile_modified)
   run_command(sedCommand)
  
-jobOptions = {} # key = process
+jobOptions = {} # key = process, hAxis, jobId
 for sampleName, sample in samples.items():
   print("processing sample = '%s'" % sampleName)
   process = sample['process']
@@ -77,9 +77,6 @@ for sampleName, sample in samples.items():
       idxFirstFile = jobId*numInputFiles/numJobs
       idxLastFile = (jobId + 1)*numInputFiles/numJobs - 1
       inputFileNames_job = inputFileNames[idxFirstFile:idxLastFile + 1]
-      job_key = '%s_%s_%i' % (process, hAxis, jobId)
-      if not job_key in jobOptions.keys():
-        jobOptions[job_key] = []        
       cfgFileName_modified = os.path.join(configDir, "produceEntanglementNtuple_%s_%sAxis_%i_cfg.py" % \
         (sampleName, hAxis, jobId))
       outputFileName = "entanglementNtuple_%s_%sAxis_%i.root" % \
@@ -90,6 +87,7 @@ for sampleName, sample in samples.items():
         hAxis, 
         outputFileName)
       logFileName = cfgFileName_modified.replace("_cfg.py", ".log")
+      job_key = '%s_%s_%i' % (process, hAxis, jobId)
       jobOptions[job_key] = {
         'inputFileNames' : inputFileNames_job,
         'cfgFileName'    : cfgFileName_modified,
