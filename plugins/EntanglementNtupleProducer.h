@@ -54,11 +54,12 @@ class EntanglementNtupleProducer : public edm::EDAnalyzer
       , tauPlus_eta_(0.)
       , tauPlus_phi_(0.)
       , tauPlus_mass_(0.)
+      , tauPlus_decaymode_(tauPlus_decaymode)
       , visTauPlus_pt_(0.)
       , visTauPlus_eta_(0.)
       , visTauPlus_phi_(0.)
       , visTauPlus_mass_(0.)
-      , tauPlus_decaymode_(tauPlus_decaymode)
+      , zPlus_(0.)
       , hMinus_r_(0.)
       , hMinus_n_(0.)
       , hMinus_k_(0.)
@@ -66,11 +67,12 @@ class EntanglementNtupleProducer : public edm::EDAnalyzer
       , tauMinus_eta_(0.)
       , tauMinus_phi_(0.)
       , tauMinus_mass_(0.)
+      , tauMinus_decaymode_(tauMinus_decaymode)
       , visTauMinus_pt_(0.)
       , visTauMinus_eta_(0.)
       , visTauMinus_phi_(0.)
       , visTauMinus_mass_(0.)
-      , tauMinus_decaymode_(tauMinus_decaymode)
+      , zMinus_(0.)
       , mTauTau_(0.)
       , mVis_(0.)
       , cosTheta_(0.)
@@ -95,11 +97,12 @@ class EntanglementNtupleProducer : public edm::EDAnalyzer
       ntuple->Branch("tauPlus_eta", &tauPlus_eta_, "tauPlus_eta/F");
       ntuple->Branch("tauPlus_phi", &tauPlus_phi_, "tauPlus_phi/F");
       ntuple->Branch("tauPlus_mass", &tauPlus_mass_, "tauPlus_mass/F");
+      ntuple->Branch("tauPlus_decaymode", &tauPlus_decaymode_, "tauPlus_decaymode/I");
       ntuple->Branch("visTauPlus_pt", &visTauPlus_pt_, "visTauPlus_pt/F");
       ntuple->Branch("visTauPlus_eta", &visTauPlus_eta_, "visTauPlus_eta/F");
       ntuple->Branch("visTauPlus_phi", &visTauPlus_phi_, "visTauPlus_phi/F");
       ntuple->Branch("visTauPlus_mass", &visTauPlus_mass_, "visTauPlus_mass/F");
-      ntuple->Branch("tauPlus_decaymode", &tauPlus_decaymode_, "tauPlus_decaymode/I");
+      ntuple->Branch("zPlus", &zPlus_, "zPlus/F");
 
       ntuple->Branch("hMinus_r", &hMinus_r_, "hMinus_r/F");
       ntuple->Branch("hMinus_n", &hMinus_n_, "hMinus_n/F");
@@ -108,11 +111,12 @@ class EntanglementNtupleProducer : public edm::EDAnalyzer
       ntuple->Branch("tauMinus_eta", &tauMinus_eta_, "tauMinus_eta/F");
       ntuple->Branch("tauMinus_phi", &tauMinus_phi_, "tauMinus_phi/F");
       ntuple->Branch("tauMinus_mass", &tauMinus_mass_, "tauMinus_mass/F");
+      ntuple->Branch("tauMinus_decaymode", &tauMinus_decaymode_, "tauMinus_decaymode/I");
       ntuple->Branch("visTauMinus_pt", &visTauMinus_pt_, "visTauMinus_pt/F");
       ntuple->Branch("visTauMinus_eta", &visTauMinus_eta_, "visTauMinus_eta/F");
       ntuple->Branch("visTauMinus_phi", &visTauMinus_phi_, "visTauMinus_phi/F");
       ntuple->Branch("visTauMinus_mass", &visTauMinus_mass_, "visTauMinus_mass/F");
-      ntuple->Branch("tauMinus_decaymode", &tauMinus_decaymode_, "tauMinus_decaymode/I");
+      ntuple->Branch("zMinus", &zMinus_, "zMinus/F");
 
       ntuple->Branch("mTauTau", &mTauTau_, "mTauTau/F");
       ntuple->Branch("mVis", &mVis_, "mVis/F");
@@ -123,12 +127,14 @@ class EntanglementNtupleProducer : public edm::EDAnalyzer
 
     void
     fillBranches(const edm::Event & event,
+                 const reco::Candidate::Vector& hPlus,
                  const reco::Candidate::LorentzVector& tauPlusP4,
                  const reco::Candidate::LorentzVector& visTauPlusP4,
-                 const reco::Candidate::Vector& hPlus,
+                 double zPlus,
+                 const reco::Candidate::Vector& hMinus,
                  const reco::Candidate::LorentzVector& tauMinusP4,
                  const reco::Candidate::LorentzVector& visTauMinusP4,
-                 const reco::Candidate::Vector& hMinus,
+                 double zMinus,
                  double cosTheta,
                  double evtWeight)
     {
@@ -149,6 +155,7 @@ class EntanglementNtupleProducer : public edm::EDAnalyzer
       visTauPlus_eta_ = visTauPlusP4.eta();
       visTauPlus_phi_ = visTauPlusP4.phi();
       visTauPlus_mass_ = visTauPlusP4.mass();
+      zPlus_ = zPlus;
 
       hMinus_r_ = hMinus.x();
       hMinus_n_ = hMinus.y();
@@ -161,6 +168,7 @@ class EntanglementNtupleProducer : public edm::EDAnalyzer
       visTauMinus_eta_ = visTauMinusP4.eta();
       visTauMinus_phi_ = visTauMinusP4.phi();
       visTauMinus_mass_ = visTauMinusP4.mass();
+      zMinus_ = zMinus;
 
       mTauTau_ = (tauPlusP4 + tauMinusP4).mass();
       mVis_ = (visTauPlusP4 + visTauMinusP4).mass();
@@ -172,9 +180,11 @@ class EntanglementNtupleProducer : public edm::EDAnalyzer
     }
     
     TTree* ntuple_;
+
     UInt_t run_;               // run number
     UInt_t lumi_;              // luminosity-section number
-    ULong64_t event_;          // event number
+    ULong64_t event_;          // event number    
+
     Float_t hPlus_r_;          // r component (in helicity frame) of polarimetric vector of tau+
     Float_t hPlus_n_;          // n component (in helicity frame) of polarimetric vector of tau+
     Float_t hPlus_k_;          // k component (in helicity frame) of polarimetric vector of tau+
@@ -182,11 +192,13 @@ class EntanglementNtupleProducer : public edm::EDAnalyzer
     Float_t tauPlus_eta_;      // pseudo-rapidity (in laboratory frame) of tau+
     Float_t tauPlus_phi_;      // azimuthal angle (in laboratory frame) of tau+
     Float_t tauPlus_mass_;     // mass component of tau+ four-vector
+    Int_t tauPlus_decaymode_;  // tau+ decay mode
     Float_t visTauPlus_pt_;    // transverse momentum (in laboratory frame) of visible decay products of tau+
     Float_t visTauPlus_eta_;   // pseudo-rapidity (in laboratory frame) of visible decay products of tau+
     Float_t visTauPlus_phi_;   // azimuthal angle (in laboratory frame) of visible decay products of tau+
     Float_t visTauPlus_mass_;  // mass of visible decay products of tau+
-    Int_t tauPlus_decaymode_;  // tau+ decay mode
+    Float_t zPlus_;            // fraction of tau+ energy (in tau-pair restframe) carried by visible decay products of tau+
+
     Float_t hMinus_r_;         // r component (in helicity frame) of polarimetric vector of tau-
     Float_t hMinus_n_;         // n component (in helicity frame) of polarimetric vector of tau-
     Float_t hMinus_k_;         // k component (in helicity frame) of polarimetric vector of tau-
@@ -194,14 +206,17 @@ class EntanglementNtupleProducer : public edm::EDAnalyzer
     Float_t tauMinus_eta_;     // pseudo-rapidity (in laboratory frame) of tau-
     Float_t tauMinus_phi_;     // azimuthal angle (in laboratory frame) of tau-
     Float_t tauMinus_mass_;    // mass component of tau- four-vector
+    Int_t tauMinus_decaymode_; // tau- decay mode
     Float_t visTauMinus_pt_;   // transverse momentum (in laboratory frame) of visible decay products of tau-
     Float_t visTauMinus_eta_;  // pseudo-rapidity (in laboratory frame) of visible decay products of tau-
     Float_t visTauMinus_phi_;  // azimuthal angle (in laboratory frame) of visible decay products of tau-
     Float_t visTauMinus_mass_; // mass of visible decay products of tau-
-    Int_t tauMinus_decaymode_; // tau- decay mode
+    Float_t zMinus_;           // fraction of tau- energy (in tau-pair restframe) carried by visible decay products of tau-
+
     Float_t mTauTau_;          // mass of tau pair
     Float_t mVis_;             // mass of visible decay products of tau pair
     Float_t cosTheta_;         // polar angle of tau- in tau-pair restframe
+
     Float_t evtWeight_;        // event weight of Monte Carlo generator
   };
 

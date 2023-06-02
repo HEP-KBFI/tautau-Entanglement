@@ -18,6 +18,8 @@
 const double mProton = 0.938272;
 const double mTau = 1.77686;
 
+const double gamma_va = 1.;
+
 EntanglementNtupleProducer::EntanglementNtupleProducer(const edm::ParameterSet& cfg)
   : moduleLabel_(cfg.getParameter<std::string>("@module_label"))
   , hAxis_(-1)
@@ -297,9 +299,9 @@ namespace
     reco::Candidate::LorentzVector chP4 = ch->p4();
 
     reco::Candidate::LorentzVector Q = getP4_ttrf_hf_trf(chP4, boost_ttrf, r, n, k, boost_trf);
+    const double f1 = 0.1284;
     double omega = (square(mTau) - chP4.mass2())*square(mTau);
-
-    reco::Candidate::Vector h = (cube(mTau)/omega)*Q.Vect();
+    reco::Candidate::Vector h = -(2.*gamma_va*square(f1)*cube(mTau)/omega)*Q.Vect();
     return h.unit();
   }
 
@@ -338,7 +340,9 @@ namespace
 
     reco::Candidate::LorentzVector q = q1 - q2;
     double omega = 2.*(q.Dot(N))*(q.Dot(P)) - q.mass2()*(N.Dot(P));
-    reco::Candidate::Vector h = (1./omega)*(2.*(q.Dot(N))*q.Vect() - q.mass2()*N.Vect());
+    // CV: term 2.*|f2|^2 appears in expression for h as well as in expression for omega
+    //     and drops out
+    reco::Candidate::Vector h = -(gamma_va*mTau/omega)*(2.*(q.Dot(N))*q.Vect() - q.mass2()*N.Vect());
     return h.unit();
   }
 
@@ -489,12 +493,15 @@ void EntanglementNtupleProducer::analyze(const edm::Event& evt, const edm::Event
   std::vector<const reco::GenParticle*> tauPlus_pi0 = getNeutralPions(tauPlus_daughters);
   std::vector<const reco::GenParticle*> tauPlus_nu = getNeutrinos(tauPlus_daughters);
   int tauPlus_decaymode = getDecayMode(tauPlus_ch, tauPlus_pi0, tauPlus_nu);
+  reco::Candidate::LorentzVector visTauPlusP4_ttrf = getP4_rf(visTauPlusP4, boost_ttrf);
+  double zPlus = visTauPlusP4_ttrf.energy()/tauPlusP4_ttrf.energy();
   if ( verbosity_ >= 1 )
   {
     std::cout << "#tauPlus_ch = " << tauPlus_ch.size() << "\n";
     std::cout << "#tauPlus_pi0 = " << tauPlus_pi0.size() << "\n";
     std::cout << "#tauPlus_nu = " << tauPlus_nu.size() << "\n";
     std::cout << "tauPlus_decaymode = " << tauPlus_decaymode << "\n";
+    std::cout << "zPlus = " << zPlus << "\n";
   }
 
   std::vector<const reco::GenParticle*> tauMinus_daughters;
@@ -509,12 +516,15 @@ void EntanglementNtupleProducer::analyze(const edm::Event& evt, const edm::Event
   std::vector<const reco::GenParticle*> tauMinus_pi0 = getNeutralPions(tauMinus_daughters);
   std::vector<const reco::GenParticle*> tauMinus_nu = getNeutrinos(tauMinus_daughters);
   int tauMinus_decaymode = getDecayMode(tauMinus_ch, tauMinus_pi0, tauMinus_nu);
+  reco::Candidate::LorentzVector visTauMinusP4_ttrf = getP4_rf(visTauMinusP4, boost_ttrf);
+  double zMinus = visTauMinusP4_ttrf.energy()/tauMinusP4_ttrf.energy();
   if ( verbosity_ >= 1 )
   {
     std::cout << "#tauMinus_ch = " << tauMinus_ch.size() << "\n";
     std::cout << "#tauMinus_pi0 = " << tauMinus_pi0.size() << "\n";
     std::cout << "#tauMinus_nu = " << tauMinus_nu.size() << "\n";
     std::cout << "tauMinus_decaymode = " << tauMinus_decaymode << "\n";
+    std::cout << "zMinus = " << zMinus << "\n";
   }
   
   reco::Candidate::Vector hPlus;
@@ -528,12 +538,16 @@ void EntanglementNtupleProducer::analyze(const edm::Event& evt, const edm::Event
       printLorentzVector("tauPlusP4_tprf", tauPlusP4_tprf);
       reco::Candidate::LorentzVector chPlusP4_tprf = getP4_ttrf_hf_trf(tauPlus_ch[0]->p4(), boost_ttrf, r, n, k, boost_tprf);
       printLorentzVector("chPlusP4_tprf", chPlusP4_tprf);
+      std::cout << "tauPlusP4*chPlusP4: laboratory frame = " << tauPlusP4.Dot(tauPlus_ch[0]->p4()) << "," 
+                << " tau+ restframe = " <<  tauPlusP4_tprf.Dot(chPlusP4_tprf) << "\n";
       reco::Candidate::LorentzVector nubarP4_tprf = getP4_ttrf_hf_trf(tauPlus_nu[0]->p4(), boost_ttrf, r, n, k, boost_tprf);
       printLorentzVector("nubarP4_tprf", nubarP4_tprf);
       reco::Candidate::LorentzVector tauMinusP4_tmrf = getP4_ttrf_hf_trf(tauMinusP4, boost_ttrf, r, n, k, boost_tmrf);
       printLorentzVector("tauMinusP4_tmrf", tauMinusP4_tmrf);
       reco::Candidate::LorentzVector chMinusP4_tmrf = getP4_ttrf_hf_trf(tauMinus_ch[0]->p4(), boost_ttrf, r, n, k, boost_tmrf);
       printLorentzVector("chMinusP4_tmrf", chMinusP4_tmrf);
+      std::cout << "tauMinusP4*chMinusP4: laboratory frame = " << tauMinusP4.Dot(tauMinus_ch[0]->p4()) << "," 
+                << " tau- restframe = " <<  tauMinusP4_tmrf.Dot(chMinusP4_tmrf) << "\n";
       reco::Candidate::LorentzVector nuP4_tmrf = getP4_ttrf_hf_trf(tauMinus_nu[0]->p4(), boost_ttrf, r, n, k, boost_tmrf);
       printLorentzVector("nuP4_tmrf", nuP4_tmrf);
     }
@@ -575,11 +589,11 @@ void EntanglementNtupleProducer::analyze(const edm::Event& evt, const edm::Event
       std::cout << "mTauTau = " << mTauTau << ", mVis = " << mVis << "\n";
       std::cout << "cosTheta = " << cosTheta << "\n";
     }
-    branches->fillBranches(evt, tauPlusP4, visTauPlusP4, hPlus, tauMinusP4, visTauMinusP4, hMinus, cosTheta, evtWeight);
+    branches->fillBranches(evt, hPlus, tauPlusP4, visTauPlusP4, zPlus, hMinus, tauMinusP4, visTauMinusP4, zMinus, cosTheta, evtWeight);
 
     branches_had_had_.tauPlus_decaymode_ = tauPlus_decaymode;
     branches_had_had_.tauMinus_decaymode_ = tauMinus_decaymode;
-    branches_had_had_.fillBranches(evt, tauPlusP4, visTauPlusP4, hPlus, tauMinusP4, visTauMinusP4, hMinus, cosTheta, evtWeight);
+    branches_had_had_.fillBranches(evt, hPlus, tauPlusP4, visTauPlusP4, zPlus, hMinus, tauMinusP4, visTauMinusP4, zMinus, cosTheta, evtWeight);
   }
 }
 
