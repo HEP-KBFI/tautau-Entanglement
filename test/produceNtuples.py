@@ -48,9 +48,9 @@ def build_cfgFile(cfgFile_original, cfgFile_modified,
                   inputFileNames, process,
                   hAxis,
                   outputFileName):
-  print("Building configFile = '%s'" % cfgFileName_modified)
+  print("Building configFile = '%s'" % cfgFile_modified)
 
-  rmCommand   = 'rm -f %s' % cfgFileName_modified
+  rmCommand   = 'rm -f %s' % cfgFile_modified
   run_command(rmCommand)
  
   sedCommand  = 'sed'
@@ -100,6 +100,7 @@ jobOptions_Makefile = []
 for job_key, job in jobOptions.items():
   commands = []
   commands.append('rm -f %s' % job['outputFileName'])
+  commands.append('rm -f %s' % job['logFileName'])
   commands.append('cmsRun %s >& %s' % (job['cfgFileName'], job['logFileName']))
   commands.append('cp %s %s' % (job['outputFileName'], os.path.join(outputDir, job['outputFileName'])))
   commands.append('rm -f %s' % job['outputFileName'])
