@@ -5,7 +5,8 @@ process = cms.PSet()
 process.fwliteInput = cms.PSet(
     fileNames = cms.vstring(),
     maxEvents_beforeCuts = cms.int32(-1),
-    maxEvents_afterCuts = cms.int32(10000),
+    ##maxEvents_afterCuts = cms.int32(10000),
+    maxEvents_afterCuts = cms.int32(-1),
     outputEvery = cms.uint32(10000)
 )
 
@@ -16,10 +17,14 @@ process.fwliteOutput = cms.PSet(
 process.analyzeEntanglementNtuple = cms.PSet(
     treeName = cms.string('ntupleProducer/piPlus_piMinus'),
 
-    minVisTauPt = cms.double(20.),
-    maxAbsVisTauEta = cms.double(2.3),
-    ##minVisTauPt = cms.double(0.),
-    ##maxAbsVisTauEta = cms.double(1.e+3),
+    ##minVisTauPt = cms.double(20.),
+    ##maxAbsVisTauEta = cms.double(2.3),
+    minVisTauPt = cms.double(0.),
+    maxAbsVisTauEta = cms.double(1.e+3),
+    maxNumChargedKaons = cms.int32(0),
+    maxNumNeutralKaons = cms.int32(0),
+    maxNumPhotons = cms.int32(-1),
+    maxSumPhotonEn = cms.double(0.5),
 
     branchName_evtWeight = cms.string('evtWeight'),
 
@@ -47,10 +52,8 @@ if inputFilePath:
     print("Searching for input files in path = '%s'" % inputFilePath)
     inputFileNames = getInputFileNames(inputFilePath, inputFile_regex)
     print("Found %i input files." % len(inputFileNames))
-    process.source.fileNames = cms.untracked.vstring(inputFileNames)
 else:
     print("Processing %i input files: %s" % (len(inputFileNames), inputFileNames))
-    process.source.fileNames = cms.untracked.vstring(inputFileNames)
 #--------------------------------------------------------------------------------
 
 process.fwliteInput.fileNames = cms.vstring(inputFileNames)

@@ -29,9 +29,9 @@ def build_cfgFile(cfgFile_original, cfgFile_modified,
                   inputFileNames, process,
                   hAxis,
                   outputFileName):
-  print("Building configFile = '%s'" % cfgFileName_modified)
+  print("Building configFile = '%s'" % cfgFile_modified)
 
-  rmCommand   = 'rm -f %s' % cfgFileName_modified
+  rmCommand   = 'rm -f %s' % cfgFile_modified
   run_command(rmCommand)
  
   sedCommand  = 'sed'
@@ -50,50 +50,51 @@ for sample in samples:
     print("processing sample = '%s', hAxis = '%s'" % (sample, hAxis))
     print(" inputFilePath = '%s'" % inputFilePath)
     inputFile_regex = r"entanglementNtuple_%s_%sAxis_[0-9]+.root" % (sample, hAxis)
-    inputFileNames = getInputFileNames(inputFilePath)
+    inputFileNames = getInputFileNames(inputFilePath, inputFile_regex)
     numInputFiles = len(inputFileNames)
     print("Found %i input files." % numInputFiles)
     cfgFileName_analysis_modified = os.path.join(configDir, "analyzeEntanglementNtuple_%s_%sAxis_cfg.py" % \
       (sample, hAxis))
-    outputFileName_analysis = "analyzeEntanglementNtuple_%s_%s.root" % \
+    outputFileName_analysis = "analyzeEntanglementNtuple_%s_%sAxis.root" % \
       (sample, hAxis)
     build_cfgFile(
       "analyzeEntanglementNtuple_cfg.py", cfgFileName_analysis_modified, 
-      inputFileNames_job, sample,
+      inputFileNames, sample,
       hAxis, 
-      outputFileName)
+      outputFileName_analysis)
     logFileName_analysis = cfgFileName_analysis_modified.replace("_cfg.py", ".log")
     job_key_analysis = '%s_%s_analysis' % (sample, hAxis)
     jobOptions_analysis[job_key_analysis] = {
-      'inputFileNames' : inputFileNames_job,
-      'cfgFileName'    : cfgFileName_modified,
+      'inputFileNames' : inputFileNames,
+      'cfgFileName'    : cfgFileName_analysis_modified,
       'outputFilePath' : outputDir,
       'outputFileName' : outputFileName_analysis,
       'logFileName'    : logFileName_analysis,
     }
     cfgFileName_ctrlPlots_modified = os.path.join(configDir, "makeControlPlots_%s_%sAxis_cfg.py" % \
       (sample, hAxis))
-    outputFileName_ctrlPlots = "makeControlPlots_%s_%s.root" % \
+    outputFileName_ctrlPlots = "makeControlPlots_%s_%sAxis.root" % \
       (sample, hAxis)
     build_cfgFile(
       "makeControlPlots_cfg.py", cfgFileName_ctrlPlots_modified, 
-      inputFileNames_job, sample,
+      inputFileNames, sample,
       hAxis, 
-      outputFileName)
-    logFileName_analysis = cfgFileName_ctrlPlots_modified.replace("_cfg.py", ".log")
+      outputFileName_ctrlPlots)
+    logFileName_ctrlPlots = cfgFileName_ctrlPlots_modified.replace("_cfg.py", ".log")
     job_key_ctrlPlots = '%s_%s_ctrlPlots' % (sample, hAxis)
     jobOptions_ctrlPlots[job_key_ctrlPlots] = {
-      'inputFileNames' : inputFileNames_job,
-      'cfgFileName'    : cfgFileName_modified,
+      'inputFileNames' : inputFileNames,
+      'cfgFileName'    : cfgFileName_ctrlPlots_modified,
       'outputFilePath' : outputDir,
-      'outputFileName' : outputFileName_analysis,
-      'logFileName'    : logFileName_analysis,
+      'outputFileName' : outputFileName_ctrlPlots,
+      'logFileName'    : logFileName_ctrlPlots,
     }
 
 jobOptions_Makefile = []
 for job_key, job in jobOptions_analysis.items():
   commands = []
   commands.append('rm -f %s' % job['outputFileName'])
+  commands.append('rm -f %s' % job['logFileName'])
   commands.append('analyzeEntanglementNtuple %s >& %s' % (job['cfgFileName'], job['logFileName']))
   commands.append('cp %s %s' % (job['outputFileName'], os.path.join(outputDir, job['outputFileName'])))
   commands.append('rm -f %s' % job['outputFileName'])
@@ -106,6 +107,7 @@ for job_key, job in jobOptions_analysis.items():
 for job_key, job in jobOptions_ctrlPlots.items():
   commands = []
   commands.append('rm -f %s' % job['outputFileName'])
+  commands.append('rm -f %s' % job['logFileName'])
   commands.append('makeControlPlots %s >& %s' % (job['cfgFileName'], job['logFileName']))
   commands.append('cp %s %s' % (job['outputFileName'], os.path.join(outputDir, job['outputFileName'])))
   commands.append('rm -f %s' % job['outputFileName'])
