@@ -26,17 +26,32 @@ process.analyzeEntanglementNtuple = cms.PSet(
     isDEBUG = cms.bool(False)
 )
 
-from TauAnalysis.Entanglement.tools.jobTools import getInputFileNames
-
+inputFilePath = '/scratch/persistent/veelken/Entanglement/ntuples/2023Jun01/'
+inputFileNames = None
 processName = "ggH_htt"
 hAxis = "higgs"
-
-inputFilePath = '/scratch/persistent/veelken/Entanglement/ntuples/2023Jun01/'
-inputFile_regex = r"entanglementNtuple_%s_%sAxis_[0-9]+.root" % (processName, hAxis)
-inputFileNames = getInputFileNames(inputFilePath, inputFile_regex)
-print("Found %i input files." % len(inputFileNames))
-
 outputFileName = 'analyzeEntanglementNtuple_%s_%s.root' % (processName, hAxis)
+
+##inputFilePath = None
+##inputFileNames = $inputFileNames
+##processName = "$processName"
+##hAxis = "$hAxis"
+##outputFileName = "$outputFileName"
+
+inputFile_regex = r"entanglementNtuple_%s_%sAxis_[0-9]+.root" % (processName, hAxis)
+
+#--------------------------------------------------------------------------------
+# set input files
+if inputFilePath:
+    from TauAnalysis.Entanglement.tools.jobTools import getInputFileNames
+    print("Searching for input files in path = '%s'" % inputFilePath)
+    inputFileNames = getInputFileNames(inputFilePath, inputFile_regex)
+    print("Found %i input files." % len(inputFileNames))
+    process.source.fileNames = cms.untracked.vstring(inputFileNames)
+else:
+    print("Processing %i input files: %s" % (len(inputFileNames), inputFileNames))
+    process.source.fileNames = cms.untracked.vstring(inputFileNames)
+#--------------------------------------------------------------------------------
 
 process.fwliteInput.fileNames = cms.vstring(inputFileNames)
 process.fwliteOutput.fileName = cms.string(outputFileName)
