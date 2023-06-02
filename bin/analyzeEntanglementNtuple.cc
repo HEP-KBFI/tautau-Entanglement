@@ -164,12 +164,16 @@ void mlfit_fcn(int& npar, double* gin, double& f, double* par, int iflag)
   {
     const EntanglementData& entry = mlfitData->at(idxEntry);
 
+    // CV: Equation for probability p of tau pair to be in given spin state
+    //     taken from Eq. (2.6) of the paper Comput.Phys.Commun. 64 (1990) 275.
+    //     The signs for the terms Bp_X and C_XX, in which the tau+ enters, are flipped, 
+    //     because helicity frame defined with respect to tau- (and not tau+) direction in EntanglementNtupleProducer.cc code.
     double p = 1. 
-      + Bp_r*entry.get_hPlus_r()  + Bp_n*entry.get_hPlus_n()  + Bp_k*entry.get_hPlus_k()
-      - Bm_r*entry.get_hMinus_r() - Bm_n*entry.get_hMinus_n() - Bm_k*entry.get_hMinus_k()
-      - C_rr*entry.get_hPlus_r()*entry.get_hMinus_r() + C_rn*entry.get_hPlus_r()*entry.get_hMinus_n() + C_rk*entry.get_hPlus_r()*entry.get_hMinus_k()
-      - C_nr*entry.get_hPlus_n()*entry.get_hMinus_r() + C_nn*entry.get_hPlus_n()*entry.get_hMinus_n() + C_nk*entry.get_hPlus_n()*entry.get_hMinus_k()
-      - C_kr*entry.get_hPlus_k()*entry.get_hMinus_r() + C_kn*entry.get_hPlus_k()*entry.get_hMinus_n() + C_kk*entry.get_hPlus_k()*entry.get_hMinus_k();
+      + (Bp_r*entry.get_hPlus_r() + Bp_n*entry.get_hPlus_n()  + Bp_k*entry.get_hPlus_k())
+      - (Bm_r*entry.get_hMinus_r() + Bm_n*entry.get_hMinus_n() + Bm_k*entry.get_hMinus_k())
+      - (C_rr*entry.get_hPlus_r()*entry.get_hMinus_r() + C_rn*entry.get_hPlus_r()*entry.get_hMinus_n() + C_rk*entry.get_hPlus_r()*entry.get_hMinus_k())
+      - (C_nr*entry.get_hPlus_n()*entry.get_hMinus_r() + C_nn*entry.get_hPlus_n()*entry.get_hMinus_n() + C_nk*entry.get_hPlus_n()*entry.get_hMinus_k())
+      - (C_kr*entry.get_hPlus_k()*entry.get_hMinus_r() + C_kn*entry.get_hPlus_k()*entry.get_hMinus_n() + C_kk*entry.get_hPlus_k()*entry.get_hMinus_k());
 
     logL -= 2.*entry.get_evtWeight()*log(p);
     //logL -= 2.*log(p);
@@ -331,8 +335,15 @@ int main(int argc, char* argv[])
   std::cout << " analyzedEntries = " << analyzedEntries << " (weighted = " << analyzedEntries_weighted << ")\n";
   std::cout << " selectedEntries = " << selectedEntries << " (weighted = " << selectedEntries_weighted << ")\n";
 
-  std::cout << "Matrix C:\n";
+  std::cout << "Matrix C (measured using Eq. (25) in arXiv:2211.10513):\n";
   C.Print();
+
+  std::cout << "Standard Model expectation (given by Eq. (69) in arXiv:2208:11723):\n";
+  TMatrixD C_exp(3, 3);
+  C[0][0] = +1.;
+  C[1][1] = +1.;
+  C[2][2] = -1.;
+  C_exp.Print();
 
   // define parameters for maximum-likelihood (ML) fit
   std::map<size_t, std::string> parNames;
@@ -395,11 +406,6 @@ int main(int argc, char* argv[])
     mlfit.GetParameter(idxPar, parValue, parError);
     std::cout << parNames[idxPar] << " = " << parValue << " +/- " << parError << "\n";
   }
-
-  // CV: expected result
-  //       C_rr = C_nn = +1
-  //       C_kk = -1
-  //       all other coefficients of the matrix C are zero
 
   mlfit.mnhess();
   std::cout << "Hesse matrix:\n";
