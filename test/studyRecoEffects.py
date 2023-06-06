@@ -108,12 +108,12 @@ for sample in samples:
     numInputFiles = len(inputFileNames)
     print("Found %i input files." % numInputFiles)
     for recoEffect_key, recoEffect_value in recoEffects.items():  
-      cfgFileName_analysis_modified = os.path.join(configDir, "analyzeEntanglementNtuple_%s_%sAxis_%s_cfg.py" % \
+      cfgFileName_analysis_modified = os.path.join(configDir, "analyzeEntanglementNtuple2_%s_%sAxis_%s_cfg.py" % \
         (sample, hAxis, recoEffect_key))
-      outputFileName_analysis = "analyzeEntanglementNtuple_%s_%sAxis_%s.root" % \
+      outputFileName_analysis = "analyzeEntanglementNtuple2_%s_%sAxis_%s.root" % \
         (sample, hAxis, recoEffect_key)
       build_cfgFile(
-        "analyzeEntanglementNtuple_cfg.py", cfgFileName_analysis_modified, 
+        "analyzeEntanglementNtuple2_cfg.py", cfgFileName_analysis_modified, 
         inputFileNames, sample,
         hAxis,
         recoEffect_value,
@@ -152,7 +152,7 @@ for job_key, job in jobOptions_analysis.items():
   commands = []
   commands.append('rm -f %s' % job['outputFileName'])
   commands.append('rm -f %s' % job['logFileName'])
-  commands.append('analyzeEntanglementNtuple %s >& %s' % (job['cfgFileName'], job['logFileName']))
+  commands.append('analyzeEntanglementNtuple2 %s >& %s' % (job['cfgFileName'], job['logFileName']))
   commands.append('cp %s %s' % (job['outputFileName'], os.path.join(outputDir, job['outputFileName'])))
   commands.append('rm -f %s' % job['outputFileName'])
   jobOptions_Makefile.append({
