@@ -28,7 +28,7 @@ process.analyzeEntanglementNtuple2 = cms.PSet(
 
     par_gen = cms.vdouble(),
 
-    scanLikelihood = cms.bool(True),
+    scanLikelihood = cms.bool(False),
 
     isDEBUG = cms.bool(False)
 )
