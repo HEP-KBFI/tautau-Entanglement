@@ -26,6 +26,8 @@ process.analyzeEntanglementNtuple2 = cms.PSet(
 
     branchName_evtWeight = cms.string('evtWeight'),
 
+    scanLikelihood = cms.bool(False),
+
     isDEBUG = cms.bool(False)
 )
 
@@ -36,7 +38,7 @@ hAxis = "higgs"
 outputFileName = 'analyzeEntanglementNtuple_%s_%s.root' % (processName, hAxis)
 
 treeName = 'ntupleProducer/piPlus_piMinus'
-minVisTauPt = 10.
+minVisTauPt = 20.
 maxAbsVisTauEta = 2.3
 #minVisTauPt = 0.
 #maxAbsVisTauEta = 1.e+3

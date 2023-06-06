@@ -29,6 +29,8 @@
 #include <vector>                                                                               // std::vector
 #include <cmath>                                                                                // std::fabs
 
+const size_t npar = 15;
+
 class EntanglementData
 {
  public:
@@ -107,7 +109,27 @@ class EntanglementDataset : public TObject
   EntanglementDataset(float minVisTauPt, float maxAbsVisTauEta)
     : minVisTauPt_(minVisTauPt)
     , maxAbsVisTauEta_(maxAbsVisTauEta)
-  {}
+    , par_gen_(15)
+  {
+    // CV: values used to generate Monte Carlo sample (SM gg->H, H->tautau)
+    par_gen_[0]  =  0.;
+    par_gen_[1]  =  0.;
+    par_gen_[2]  =  0.;
+
+    par_gen_[3]  =  0.;
+    par_gen_[4]  =  0.;
+    par_gen_[5]  =  0.;
+
+    par_gen_[6]  = +1.;
+    par_gen_[7]  =  0.;
+    par_gen_[8]  =  0.;
+    par_gen_[9]  =  0.;
+    par_gen_[10] = +1.;
+    par_gen_[11] =  0.;
+    par_gen_[12] =  0.;
+    par_gen_[13] =  0.;
+    par_gen_[14] = -1.;
+  }
   ~EntanglementDataset()
   {}
 
@@ -158,12 +180,20 @@ class EntanglementDataset : public TObject
     return selected_data_[idx];
   }
 
+  double
+  get_par_gen(size_t idx) const
+  {
+    return par_gen_[idx];
+  }
+
  private:
    float minVisTauPt_;
    float maxAbsVisTauEta_;
 
    std::vector<EntanglementData> data_;
    std::vector<EntanglementData> selected_data_;
+
+   std::vector<double> par_gen_;
 };
 
 static EntanglementDataset* gEntanglementDataset = nullptr;
@@ -211,32 +241,23 @@ mlfit_fcn(const double* par)
   const EntanglementDataset* mlfitData = gEntanglementDataset;
   assert(mlfitData);
 
-  size_t numEntries = mlfitData->size();
+  //size_t numEntries = mlfitData->size();
   size_t numEntries_selected = mlfitData->selected_size();
 
-  double numerator = 0.;
+  double par_gen[npar];
+  for ( size_t idxPar = 0; idxPar < npar; ++idxPar )
+  {
+    par_gen[idxPar] = mlfitData->get_par_gen(idxPar);
+  }
+
+  double norm = 0.;
   for ( size_t idxEntry = 0; idxEntry < numEntries_selected; ++idxEntry )
   {
     const EntanglementData& entry = mlfitData->selected_at(idxEntry);
-    numerator += entry.get_evtWeight()*get_p(par, entry);
-    //numerator += get_p(par, entry);
-  }
 
-  double denominator = 0.;
-  for ( size_t idxEntry = 0; idxEntry < numEntries; ++idxEntry )
-  {
-    const EntanglementData& entry = mlfitData->at(idxEntry);
-    denominator += entry.get_evtWeight()*get_p(par, entry);
-    //denominator += get_p(par, entry);
+    norm += entry.get_evtWeight()*get_p(par, entry)/get_p(par_gen, entry);
+    //norm += get_p(par, entry)/get_p(par_gen, entry);
   }
-
-  double eff = 0.;
-  if      ( std::fabs(denominator) >  0.          ) eff = (numerator/denominator);
-  else if ( numerator              >= denominator ) eff = 1.;
-  else                                              eff = 0.;
-  if ( eff < 1./numEntries ) eff = 1./numEntries;
-  if ( eff > 1.            ) eff = 1.;
-  //std::cout << "eff = " << eff << "\n";
 
   double logL = 0.;
   for ( size_t idxEntry = 0; idxEntry < numEntries_selected; ++idxEntry )
@@ -245,9 +266,8 @@ mlfit_fcn(const double* par)
 
     double p = get_p(par, entry);
 
-    logL -= 2.*entry.get_evtWeight()*log(p/eff);
-    //logL -= 2.*entry.get_evtWeight()*log(p);
-    //logL -= 2.*log(p/eff);
+    logL -= 2.*entry.get_evtWeight()*log(p/norm);
+    //logL -= 2.*log(p/norm);
   }
 
   return logL;
@@ -263,8 +283,8 @@ scan_mlfit_fixed(const std::vector<double>& parValues,
   assert(xMax > xMin && numPoints >= 2);
   double dx = (xMax - xMin)/(numPoints - 1);
 
-  double par[15];
-  for ( size_t idxPar = 0; idxPar < 15; ++idxPar )
+  double par[npar];
+  for ( size_t idxPar = 0; idxPar < npar; ++idxPar )
   {
     par[idxPar] = parValues[idxPar];
   }
@@ -292,7 +312,7 @@ scan_mlfit_profiled(ROOT::Math::Minimizer* mlfit,
   assert(xMax > xMin && numPoints >= 2);
   double dx = (xMax - xMin)/(numPoints - 1);
 
-  for ( size_t idxPar = 0; idxPar < 15; ++idxPar )
+  for ( size_t idxPar = 0; idxPar < npar; ++idxPar )
   {
     mlfit->SetVariableValue(idxPar, parValues[idxPar]);
   }
@@ -459,6 +479,10 @@ int main(int argc, char* argv[])
   std::cout << " maxSumPhotonEn = " << maxSumPhotonEn << "\n";
   std::string branchName_evtWeight = cfg_analyze.getParameter<std::string>("branchName_evtWeight");
   std::cout << " branchName_evtWeight = " << branchName_evtWeight << "\n";
+  
+  bool scanLikelihood = cfg_analyze.getParameter<bool>("scanLikelihood");
+  std::cout << " scanLikelihood = " << scanLikelihood << "\n";
+  
   //bool isDEBUG = cfg_analyze.getParameter<bool>("isDEBUG");
 
   fwlite::InputSource inputFiles(cfg);
@@ -628,15 +652,15 @@ int main(int argc, char* argv[])
 
   // initialize Minuit
   ROOT::Math::Minimizer* mlfit = new ROOT::Minuit2::Minuit2Minimizer();
-  for ( size_t idxPar = 0; idxPar < 15; ++idxPar )
+  for ( size_t idxPar = 0; idxPar < npar; ++idxPar )
   {
     double par0 = 0.;
     if ( idxPar >= 6 && idxPar <= 14 )
     {
       size_t idxRow = (idxPar - 6) / 3;
       size_t idxCol = (idxPar - 6) % 3;
-      //par0 = C[idxRow][idxCol];
-      par0 = C_exp[idxRow][idxCol];
+      par0 = C[idxRow][idxCol];
+      //par0 = C_exp[idxRow][idxCol];
     }
     mlfit->SetLimitedVariable(idxPar, parNames[idxPar].c_str(), par0, 0.1, -2., +2.);
   }
@@ -646,7 +670,7 @@ int main(int argc, char* argv[])
   mlfit->SetPrintLevel(-1);
 
   // set function pointer
-  ROOT::Math::Functor f(&mlfit_fcn, 15);
+  ROOT::Math::Functor f(&mlfit_fcn, npar);
   mlfit->SetFunction(f);
 
   gEntanglementDataset = &mlfitData;
@@ -657,9 +681,9 @@ int main(int argc, char* argv[])
   std::cout << "Fit Results:\n";
   mlfit->PrintResults();
 
-  std::vector<double> parValues(15);
-  std::vector<double> parErrors(15);
-  for ( size_t idxPar = 0; idxPar < 15; ++idxPar )
+  std::vector<double> parValues(npar);
+  std::vector<double> parErrors(npar);
+  for ( size_t idxPar = 0; idxPar < npar; ++idxPar )
   {
     const double* X = mlfit->X();
     parValues[idxPar] = X[idxPar];
@@ -667,25 +691,28 @@ int main(int argc, char* argv[])
     std::cout << parNames[idxPar] << " = " << parValues[idxPar] << " +/- " << parErrors[idxPar] << "\n";
   }
 
-  double mlfitMin = mlfit->MinValue();
-  std::vector<size_t> parsToScan = { 6, 10, 14 };
-  for ( size_t i = 0; i < parsToScan.size(); ++i )
+  if ( scanLikelihood )
   {
-    size_t parToScan = parsToScan[i];
-    std::cout << "Scanning likelihood as function of parameter " << parNames[parToScan] << "...\n";
-    double xMin = parValues[parToScan] - std::max(0.01, 5.*parErrors[parToScan]);
-    double xMax = parValues[parToScan] + std::max(0.01, 5.*parErrors[parToScan]);
-    TGraph* mlfitScan_fixed = scan_mlfit_fixed(parValues, parToScan, parNames[parToScan], 100, xMin, xMax, mlfitMin);
-    TGraph* mlfitScan_profiled = scan_mlfit_profiled(mlfit, parValues, parToScan, parNames[parToScan], 100, xMin, xMax, mlfitMin);
-    std::string outputFileName = (const char*)TString(outputFile.file().c_str()).ReplaceAll(".root", Form("_mlfitScan_%s.png", parNames[parToScan].c_str()));
-    showGraphs(1150, 950,
-               mlfitScan_fixed,    "Fixed",
-               mlfitScan_profiled, "Profiled",
-               0.040, 0.50, 0.78, 0.22, 0.14, 
-	       xMin, xMax, parNames[parToScan], 1.2,
-               false, 0., 2.5e+1, "-2 log(L)", 1.4,
-               outputFileName);
-    std::cout << " Done.\n";
+    double mlfitMin = mlfit->MinValue();
+    std::vector<size_t> parsToScan = { 6, 10, 14 };
+    for ( size_t i = 0; i < parsToScan.size(); ++i )
+    {
+      size_t parToScan = parsToScan[i];
+      std::cout << "Scanning likelihood as function of parameter " << parNames[parToScan] << "...\n";
+      double xMin = parValues[parToScan] - std::max(0.01, 5.*parErrors[parToScan]);
+      double xMax = parValues[parToScan] + std::max(0.01, 5.*parErrors[parToScan]);
+      TGraph* mlfitScan_fixed = scan_mlfit_fixed(parValues, parToScan, parNames[parToScan], 100, xMin, xMax, mlfitMin);
+      TGraph* mlfitScan_profiled = scan_mlfit_profiled(mlfit, parValues, parToScan, parNames[parToScan], 100, xMin, xMax, mlfitMin);
+      std::string outputFileName = (const char*)TString(outputFile.file().c_str()).ReplaceAll(".root", Form("_mlfitScan_%s.png", parNames[parToScan].c_str()));
+      showGraphs(1150, 950,
+                 mlfitScan_fixed,    "Fixed",
+                 mlfitScan_profiled, "Profiled",
+                 0.040, 0.50, 0.78, 0.22, 0.14, 
+	         xMin, xMax, parNames[parToScan], 1.2,
+                 false, 0., 2.5e+1, "-2 log(L)", 1.4,
+                 outputFileName);
+      std::cout << " Done.\n";
+    }
   }
 
   delete mlfit;
