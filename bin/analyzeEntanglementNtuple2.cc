@@ -106,10 +106,8 @@ class EntanglementData
 class EntanglementDataset : public TObject
 {
  public:
-  EntanglementDataset(float minVisTauPt, float maxAbsVisTauEta)
-    : minVisTauPt_(minVisTauPt)
-    , maxAbsVisTauEta_(maxAbsVisTauEta)
-    , par_gen_(15)
+  EntanglementDataset()
+    : par_gen_(15)
   {
     // CV: values used to generate Monte Carlo sample (SM gg->H, H->tautau)
     par_gen_[0]  =  0.;
@@ -134,24 +132,15 @@ class EntanglementDataset : public TObject
   {}
 
   void
-  push_back(float visTauPlusPt, float visTauPlusEta,
-            float hPlus_r, float hPlus_n, float hPlus_k, 
-            float visTauMinusPt, float visTauMinusEta,
+  push_back(float hPlus_r, float hPlus_n, float hPlus_k, 
             float hMinus_r, float hMinus_n, float hMinus_k,
             float evtWeight = 1.)
   {
-    float absVisTauPlusEta = std::fabs(visTauPlusEta);
-    float absVisTauMinusEta = std::fabs(visTauMinusEta);
     EntanglementData entry = EntanglementData(
       hPlus_r, hPlus_n, hPlus_k, 
       hMinus_r, hMinus_n, hMinus_k, 
       evtWeight);
     data_.push_back(entry);
-    if ( visTauPlusPt  > minVisTauPt_ && absVisTauPlusEta  < maxAbsVisTauEta_ &&
-         visTauMinusPt > minVisTauPt_ && absVisTauMinusEta < maxAbsVisTauEta_ ) 
-    {
-      selected_data_.push_back(entry);
-    }
   }
 
   inline
@@ -160,24 +149,12 @@ class EntanglementDataset : public TObject
   {
     return data_.size();
   }
+
   inline
   const EntanglementData&
   at(size_t idx) const
   {
     return data_[idx];
-  }
-
-  inline
-  size_t
-  selected_size() const
-  {
-    return selected_data_.size();
-  }
-  inline
-  const EntanglementData&
-  selected_at(size_t idx) const
-  {
-    return selected_data_[idx];
   }
 
   double
@@ -187,11 +164,7 @@ class EntanglementDataset : public TObject
   }
 
  private:
-   float minVisTauPt_;
-   float maxAbsVisTauEta_;
-
    std::vector<EntanglementData> data_;
-   std::vector<EntanglementData> selected_data_;
 
    std::vector<double> par_gen_;
 };
@@ -241,8 +214,7 @@ mlfit_fcn(const double* par)
   const EntanglementDataset* mlfitData = gEntanglementDataset;
   assert(mlfitData);
 
-  //size_t numEntries = mlfitData->size();
-  size_t numEntries_selected = mlfitData->selected_size();
+  size_t numEntries = mlfitData->size();
 
   double par_gen[npar];
   for ( size_t idxPar = 0; idxPar < npar; ++idxPar )
@@ -251,18 +223,18 @@ mlfit_fcn(const double* par)
   }
 
   double norm = 0.;
-  for ( size_t idxEntry = 0; idxEntry < numEntries_selected; ++idxEntry )
+  for ( size_t idxEntry = 0; idxEntry < numEntries; ++idxEntry )
   {
-    const EntanglementData& entry = mlfitData->selected_at(idxEntry);
+    const EntanglementData& entry = mlfitData->at(idxEntry);
 
     norm += entry.get_evtWeight()*get_p(par, entry)/get_p(par_gen, entry);
     //norm += get_p(par, entry)/get_p(par_gen, entry);
   }
 
   double logL = 0.;
-  for ( size_t idxEntry = 0; idxEntry < numEntries_selected; ++idxEntry )
+  for ( size_t idxEntry = 0; idxEntry < numEntries; ++idxEntry )
   {
-    const EntanglementData& entry = mlfitData->selected_at(idxEntry);
+    const EntanglementData& entry = mlfitData->at(idxEntry);
 
     double p = get_p(par, entry);
 
@@ -500,7 +472,7 @@ int main(int argc, char* argv[])
 
   TMatrixD C(3, 3);
 
-  EntanglementDataset mlfitData(minVisTauPt, maxAbsVisTauEta); 
+  EntanglementDataset mlfitData; 
 
   int analyzedEntries = 0;
   double analyzedEntries_weighted = 0.;
@@ -571,41 +543,34 @@ int main(int argc, char* argv[])
         std::cout << "processing Entry " << analyzedEntries << "\n";
       }
 
+      if ( !(visTauPlus_pt  > minVisTauPt && std::fabs(visTauPlus_eta)  < maxAbsVisTauEta) ) continue;
       if ( maxNumChargedKaons != -1  && tauPlus_nChargedKaons  > maxNumChargedKaons ) continue;
       if ( maxNumNeutralKaons != -1  && tauPlus_nNeutralKaons  > maxNumNeutralKaons ) continue;
       if ( maxNumPhotons      != -1  && tauPlus_nPhotons       > maxNumPhotons      ) continue;
       if ( maxSumPhotonEn     >=  0. && tauPlus_sumPhotonEn    > maxSumPhotonEn     ) continue;
+      if ( !(visTauMinus_pt > minVisTauPt && std::fabs(visTauMinus_eta) < maxAbsVisTauEta) ) continue;
       if ( maxNumChargedKaons != -1  && tauMinus_nChargedKaons > maxNumChargedKaons ) continue;
       if ( maxNumNeutralKaons != -1  && tauMinus_nNeutralKaons > maxNumNeutralKaons ) continue;
       if ( maxNumPhotons      != -1  && tauMinus_nPhotons      > maxNumPhotons      ) continue;
       if ( maxSumPhotonEn     >=  0. && tauMinus_sumPhotonEn   > maxSumPhotonEn     ) continue;
 
-      mlfitData.push_back(
-        visTauPlus_pt, visTauPlus_eta,
-        hPlus_r, hPlus_n, hPlus_k,
-        visTauMinus_pt, visTauMinus_eta,
-        hMinus_r, hMinus_n, hMinus_k,
-        evtWeight);
+      // CV: compute matrix C according to Eq. (25)
+      //     in the paper arXiv:2211.10513
+      double c = -9.*evtWeight;
+      C[0][0] += c*hPlus_r*hMinus_r;
+      C[0][1] += c*hPlus_r*hMinus_n;
+      C[0][2] += c*hPlus_r*hMinus_k;
+      C[1][0] += c*hPlus_n*hMinus_r;
+      C[1][1] += c*hPlus_n*hMinus_n;
+      C[1][2] += c*hPlus_n*hMinus_k;
+      C[2][0] += c*hPlus_k*hMinus_r;
+      C[2][1] += c*hPlus_k*hMinus_n;
+      C[2][2] += c*hPlus_k*hMinus_k;
 
-      if ( visTauPlus_pt  > minVisTauPt && std::fabs(visTauPlus_eta)  < maxAbsVisTauEta &&
-           visTauMinus_pt > minVisTauPt && std::fabs(visTauMinus_eta) < maxAbsVisTauEta )
-      {
-        // CV: compute matrix C according to Eq. (25)
-        //     in the paper arXiv:2211.10513
-        double c = -9.*evtWeight;
-        C[0][0] += c*hPlus_r*hMinus_r;
-        C[0][1] += c*hPlus_r*hMinus_n;
-        C[0][2] += c*hPlus_r*hMinus_k;
-        C[1][0] += c*hPlus_n*hMinus_r;
-        C[1][1] += c*hPlus_n*hMinus_n;
-        C[1][2] += c*hPlus_n*hMinus_k;
-        C[2][0] += c*hPlus_k*hMinus_r;
-        C[2][1] += c*hPlus_k*hMinus_n;
-        C[2][2] += c*hPlus_k*hMinus_k;
+      mlfitData.push_back(hPlus_r, hPlus_n, hPlus_k, hMinus_r, hMinus_n, hMinus_k, evtWeight);
 
-        ++selectedEntries;
-        selectedEntries_weighted += evtWeight;
-      } 
+      ++selectedEntries;
+      selectedEntries_weighted += evtWeight;
 
       if ( maxEvents_beforeCuts != -1 && analyzedEntries >= maxEvents_beforeCuts ) STOP = true;
       if ( maxEvents_afterCuts  != -1 && selectedEntries >= maxEvents_afterCuts  ) STOP = true;
