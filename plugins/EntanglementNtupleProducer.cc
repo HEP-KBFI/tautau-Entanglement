@@ -535,6 +535,7 @@ void EntanglementNtupleProducer::analyze(const edm::Event& evt, const edm::Event
     std::cout << "#tauPlus_nu = " << tauPlus_nu.size() << "\n";
     std::cout << "tauPlus_decaymode = " << tauPlus_decaymode << "\n";
     std::cout << "zPlus = " << zPlus << "\n";
+    if ( tauPlus_nNeutralKaons >= 1 ) std::cout << "CHECK !!\n";
   }
 
   std::vector<const reco::GenParticle*> tauMinus_daughters;
@@ -563,6 +564,7 @@ void EntanglementNtupleProducer::analyze(const edm::Event& evt, const edm::Event
     std::cout << "#tauMinus_nu = " << tauMinus_nu.size() << "\n";
     std::cout << "tauMinus_decaymode = " << tauMinus_decaymode << "\n";
     std::cout << "zMinus = " << zMinus << "\n";
+    if ( tauMinus_nNeutralKaons >= 1 ) std::cout << "CHECK !!\n";
   }
   
   reco::Candidate::Vector hPlus;
