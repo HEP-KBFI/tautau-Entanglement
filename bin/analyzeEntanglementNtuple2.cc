@@ -31,6 +31,8 @@
 
 const size_t npar = 15;
 
+typedef std::vector<double> vdouble;
+
 class EntanglementData
 {
  public:
@@ -106,28 +108,9 @@ class EntanglementData
 class EntanglementDataset : public TObject
 {
  public:
-  EntanglementDataset()
-    : par_gen_(15)
-  {
-    // CV: values used to generate Monte Carlo sample (SM gg->H, H->tautau)
-    par_gen_[0]  =  0.;
-    par_gen_[1]  =  0.;
-    par_gen_[2]  =  0.;
-
-    par_gen_[3]  =  0.;
-    par_gen_[4]  =  0.;
-    par_gen_[5]  =  0.;
-
-    par_gen_[6]  = +1.;
-    par_gen_[7]  =  0.;
-    par_gen_[8]  =  0.;
-    par_gen_[9]  =  0.;
-    par_gen_[10] = +1.;
-    par_gen_[11] =  0.;
-    par_gen_[12] =  0.;
-    par_gen_[13] =  0.;
-    par_gen_[14] = -1.;
-  }
+  EntanglementDataset(const std::vector<double>& par_gen)
+    : par_gen_(par_gen)
+  {}
   ~EntanglementDataset()
   {}
 
@@ -452,6 +435,10 @@ int main(int argc, char* argv[])
   std::string branchName_evtWeight = cfg_analyze.getParameter<std::string>("branchName_evtWeight");
   std::cout << " branchName_evtWeight = " << branchName_evtWeight << "\n";
   
+  std::vector<double> par_gen = cfg_analyze.getParameter<vdouble>("par_gen");
+  if ( par_gen.size() != npar )
+    throw cmsException("analyzeEntanglementNtuple2", __LINE__) << "Invalid Configuration parameter 'par_gen' !!";
+
   bool scanLikelihood = cfg_analyze.getParameter<bool>("scanLikelihood");
   std::cout << " scanLikelihood = " << scanLikelihood << "\n";
   
@@ -472,7 +459,7 @@ int main(int argc, char* argv[])
 
   TMatrixD C(3, 3);
 
-  EntanglementDataset mlfitData; 
+  EntanglementDataset mlfitData(par_gen); 
 
   int analyzedEntries = 0;
   double analyzedEntries_weighted = 0.;
@@ -672,7 +659,7 @@ int main(int argc, char* argv[])
       showGraphs(1150, 950,
                  mlfitScan_fixed,    "Fixed",
                  mlfitScan_profiled, "Profiled",
-                 0.040, 0.50, 0.78, 0.22, 0.14, 
+                 0.040, 0.48, 0.78, 0.22, 0.14, 
 	         xMin, xMax, parNames[parToScan], 1.2,
                  false, 0., 2.5e+1, "-2 log(L)", 1.4,
                  outputFileName);

@@ -26,7 +26,9 @@ process.analyzeEntanglementNtuple2 = cms.PSet(
 
     branchName_evtWeight = cms.string('evtWeight'),
 
-    scanLikelihood = cms.bool(False),
+    par_gen = cms.vdouble(),
+
+    scanLikelihood = cms.bool(True),
 
     isDEBUG = cms.bool(False)
 )
@@ -35,6 +37,7 @@ inputFilePath = '/scratch/persistent/veelken/Entanglement/ntuples/2023Jun02/'
 inputFileNames = None
 processName = "ggH_htt_pythia8"
 hAxis = "higgs"
+par_gen = [ 0., 0., 0., 0., 0., 0., +1., 0., 0., 0., +1., 0., 0., 0., -1. ]
 outputFileName = 'analyzeEntanglementNtuple_%s_%s.root' % (processName, hAxis)
 
 treeName = 'ntupleProducer/piPlus_piMinus'
@@ -51,6 +54,7 @@ maxSumPhotonEn = 5.
 ##inputFileNames = $inputFileNames
 ##processName = "$processName"
 ##hAxis = "$hAxis"
+##par_gen = $par_gen
 ##outputFileName = "$outputFileName"
 
 ##treeName = "$treeName"
@@ -85,3 +89,4 @@ process.analyzeEntanglementNtuple2.maxNumChargedKaons = maxNumChargedKaons
 process.analyzeEntanglementNtuple2.maxNumNeutralKaons = maxNumNeutralKaons
 process.analyzeEntanglementNtuple2.maxNumPhotons = maxNumPhotons
 process.analyzeEntanglementNtuple2.maxSumPhotonEn = maxSumPhotonEn
+process.analyzeEntanglementNtuple2.par_gen = par_gen
