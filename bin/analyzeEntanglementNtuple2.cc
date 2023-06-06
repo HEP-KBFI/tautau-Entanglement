@@ -13,6 +13,7 @@
 #include <TError.h>                                                                             // gErrorAbortLevel, kError
 #include <TTree.h>                                                                              // TTree
 #include <TMatrixD.h>                                                                           // TMatrixD
+#include <TVectorD.h>                                                                           // TVectorD
 #include <TObject.h>                                                                            // TObject
 #include <Minuit2/Minuit2Minimizer.h>                                                           // ROOT::Minuit2::Minuit2Minimizer
 #include <Math/Functor.h>                                                                       // ROOT::Math::Functor
@@ -454,10 +455,20 @@ int main(int argc, char* argv[])
   size_t numInputFiles = inputFileNames.size();
   std::cout << "Loaded " << numInputFiles << " file(s).\n";
 
-  TDirectory* dir = fs.getBareDirectory();
-  dir->cd();
-
-  TMatrixD C(3, 3);
+  TVectorD Bp(3);
+  TVectorD BpErr(3);
+  TVectorD Bm(3);
+  TVectorD BmErr(3);
+  TMatrixD C(3,3);
+  TMatrixD CErr(3,3);
+  
+  TTree* fitResult = fs.make<TTree>("fitResult", "fitResult");
+  fitResult->Branch("Bp",    "TVectorD", &Bp);
+  fitResult->Branch("BpErr", "TVectorD", &BpErr);
+  fitResult->Branch("Bm",    "TVectorD", &Bm);
+  fitResult->Branch("BmErr", "TVectorD", &BmErr);
+  fitResult->Branch("C",     "TMatrixD", &C);
+  fitResult->Branch("CErr",  "TMatrixD", &CErr);
 
   EntanglementDataset mlfitData(par_gen); 
 
@@ -578,7 +589,7 @@ int main(int argc, char* argv[])
   C.Print();
 
   std::cout << "Standard Model expectation (given by Eq. (69) in arXiv:2208:11723):\n";
-  TMatrixD C_exp(3, 3);
+  TMatrixD C_exp(3,3);
   C_exp[0][0] = +1.;
   C_exp[1][1] = +1.;
   C_exp[2][2] = -1.;
@@ -640,8 +651,32 @@ int main(int argc, char* argv[])
     const double* X = mlfit->X();
     parValues[idxPar] = X[idxPar];
     parErrors[idxPar] = sqrt(mlfit->CovMatrix(idxPar, idxPar));
-    std::cout << parNames[idxPar] << " = " << parValues[idxPar] << " +/- " << parErrors[idxPar] << "\n";
+    std::cout << parNames[idxPar] << " = " << parValues[idxPar] << " +/- " << parErrors[idxPar] << "\n";  
   }
+
+  for ( size_t idxPar = 0; idxPar < npar; ++idxPar )
+  {
+    if ( idxPar <= 2 )
+    {
+      size_t idx = idxPar;
+      Bp[idx] = parValues[idxPar];
+      BpErr[idx] = parErrors[idxPar];
+    }
+    else if ( idxPar <= 5 )
+    {
+      size_t idx = idxPar - 3;
+      Bm[idx] = parValues[idxPar];
+      BmErr[idx] = parErrors[idxPar];
+    }
+    else if ( idxPar <= 14 )
+    {	
+      size_t idxRow = (idxPar - 6) / 3;
+      size_t idxCol = (idxPar - 6) % 3;
+      C[idxRow][idxCol] = parValues[idxPar];
+      CErr[idxRow][idxCol] = parErrors[idxPar];
+    } else assert(0);
+  }
+  fitResult->Fill();
 
   if ( scanLikelihood )
   {
