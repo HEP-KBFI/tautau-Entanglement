@@ -174,6 +174,8 @@ void mlfit_fcn(int& npar, double* gin, double& f, double* par, int iflag)
       - (C_rr*entry.get_hPlus_r()*entry.get_hMinus_r() + C_rn*entry.get_hPlus_r()*entry.get_hMinus_n() + C_rk*entry.get_hPlus_r()*entry.get_hMinus_k())
       - (C_nr*entry.get_hPlus_n()*entry.get_hMinus_r() + C_nn*entry.get_hPlus_n()*entry.get_hMinus_n() + C_nk*entry.get_hPlus_n()*entry.get_hMinus_k())
       - (C_kr*entry.get_hPlus_k()*entry.get_hMinus_r() + C_kn*entry.get_hPlus_k()*entry.get_hMinus_n() + C_kk*entry.get_hPlus_k()*entry.get_hMinus_k());
+    const double epsilon = 1.e-12;
+    if ( p < epsilon ) p = epsilon;
 
     logL -= 2.*entry.get_evtWeight()*log(p);
     //logL -= 2.*log(p);
