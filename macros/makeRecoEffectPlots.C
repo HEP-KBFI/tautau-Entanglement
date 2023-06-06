@@ -6,7 +6,6 @@
 #include <TGraph.h>
 #include <TLegend.h>
 #include <TMath.h>
-#include <TPaveText.h>
 #include <TROOT.h>
 #include <TString.h>
 #include <TSystem.h>
@@ -20,7 +19,8 @@
 #include <math.h>
 #include <limits>
 
-TFile* openFile(const std::string& inputFilePath, const std::string& inputFileName)
+TFile*
+openFile(const std::string& inputFilePath, const std::string& inputFileName)
 {
   std::string inputFileName_full = inputFilePath;
   if ( inputFileName_full.find_last_of("/") != (inputFileName_full.size() - 1) ) inputFileName_full.append("/");
@@ -33,7 +33,8 @@ TFile* openFile(const std::string& inputFilePath, const std::string& inputFileNa
   return inputFile;
 }
 
-double compIntegral(const TH1* histogram, bool includeUnderflowBin = false, bool includeOverflowBin = false)
+double
+compIntegral(const TH1* histogram, bool includeUnderflowBin = false, bool includeOverflowBin = false)
 {
   int firstBin = 1;
   if ( includeUnderflowBin ) firstBin -= 1;
@@ -46,7 +47,8 @@ double compIntegral(const TH1* histogram, bool includeUnderflowBin = false, bool
   return integral;
 }
 
-TH1* loadHistogram(TFile* inputFile, const std::string& histogramName)
+TH1*
+loadHistogram(TFile* inputFile, const std::string& histogramName)
 {
   TH1* histogram = dynamic_cast<TH1*>(inputFile->Get(histogramName.data()));
   if ( !histogram ) {
@@ -57,28 +59,27 @@ TH1* loadHistogram(TFile* inputFile, const std::string& histogramName)
   return histogram;
 }
 
-void showHistograms(double canvasSizeX, double canvasSizeY,
-                    TH1* histogram1, const std::string& legendEntry1,
-                    TH1* histogram2, const std::string& legendEntry2,
-                    TH1* histogram3, const std::string& legendEntry3,
-                    TH1* histogram4, const std::string& legendEntry4,
-                    TH1* histogram5, const std::string& legendEntry5,
-                    TH1* histogram6, const std::string& legendEntry6,
-                    int colors[], int lineStyles[], 
-                    double legendTextSize, double legendPosX, double legendPosY, double legendSizeX, double legendSizeY, 
-                    double xMin, double xMax, const std::string& xAxisTitle, double xAxisOffset,
-                    bool useLogScale, double yMin, double yMax, const std::string& yAxisTitle, double yAxisOffset,
-                    const std::string& outputFileName)
+void
+showHistograms(double canvasSizeX, double canvasSizeY,
+               TH1* histogram1, const std::string& legendEntry1,
+               TH1* histogram2, const std::string& legendEntry2,
+               TH1* histogram3, const std::string& legendEntry3,
+               TH1* histogram4, const std::string& legendEntry4,
+               TH1* histogram5, const std::string& legendEntry5,
+               TH1* histogram6, const std::string& legendEntry6,
+               int colors[], int lineStyles[], 
+               double legendTextSize, double legendPosX, double legendPosY, double legendSizeX, double legendSizeY, 
+               double xMin, double xMax, const std::string& xAxisTitle, double xAxisOffset,
+               bool useLogScale, double yMin, double yMax, const std::string& yAxisTitle, double yAxisOffset,
+               const std::string& outputFileName)
 {
   TCanvas* canvas = new TCanvas("canvas", "canvas", canvasSizeX, canvasSizeY);
   canvas->SetFillColor(10);
   canvas->SetBorderSize(2);
-  
   canvas->SetTopMargin(0.05);
   canvas->SetLeftMargin(0.14);
   canvas->SetBottomMargin(0.14);
   canvas->SetRightMargin(0.05);
-
   canvas->SetLogy(useLogScale);
   
   canvas->SetGridx(1);
@@ -177,7 +178,8 @@ void showHistograms(double canvasSizeX, double canvasSizeY,
   delete canvas;  
 }
 
-void makeRecoEffectPlots()
+void
+makeRecoEffectPlots()
 {
 //--- stop ROOT from keeping references to all histograms
   TH1::AddDirectory(false);
