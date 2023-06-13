@@ -214,6 +214,12 @@ int main(int argc, char* argv[])
   TH1* histogram_mVis            = bookHistogram1d(fs, "mVis",            40,  0., 200.);
   TH1* histogram_cosTheta        = bookHistogram1d(fs, "cosTheta",        40, -1.,  +1.);
 
+  TH1* histogram_Bp_r            = bookHistogram1d(fs, "Bp_r",            40, -1.,  +1.);
+  TH1* histogram_Bp_n            = bookHistogram1d(fs, "Bp_n",            40, -1.,  +1.);
+  TH1* histogram_Bp_k            = bookHistogram1d(fs, "Bp_k",            40, -1.,  +1.);
+  TH1* histogram_Bm_r            = bookHistogram1d(fs, "Bm_r",            40, -1.,  +1.);
+  TH1* histogram_Bm_n            = bookHistogram1d(fs, "Bm_n",            40, -1.,  +1.);
+  TH1* histogram_Bm_k            = bookHistogram1d(fs, "Bm_k",            40, -1.,  +1.);
   TH1* histogram_C_rr            = bookHistogram1d(fs, "C_rr",            72, -9.,  +9.);
   TH1* histogram_C_nn            = bookHistogram1d(fs, "C_nn",            72, -9.,  +9.);
   TH1* histogram_C_kk            = bookHistogram1d(fs, "C_kk",            72, -9.,  +9.);
@@ -330,6 +336,15 @@ int main(int argc, char* argv[])
       histogram_mVis->Fill(mVis, evtWeight);
       histogram_cosTheta->Fill(cosTheta, evtWeight);
 
+      histogram_Bp_r->Fill(hPlus_r, evtWeight);
+      histogram_Bp_n->Fill(hPlus_n, evtWeight);
+      histogram_Bp_k->Fill(hPlus_k, evtWeight);
+
+      std::cout << "hMinus_r = " << hMinus_r << std::endl;
+      histogram_Bm_r->Fill(hMinus_r, evtWeight);
+      histogram_Bm_n->Fill(hMinus_n, evtWeight);
+      histogram_Bm_k->Fill(hMinus_k, evtWeight);
+
       double c = -9.;
       histogram_C_rr->Fill(c*hPlus_r*hMinus_r, evtWeight);
       histogram_C_nn->Fill(c*hPlus_n*hMinus_n, evtWeight);
@@ -369,6 +384,14 @@ int main(int argc, char* argv[])
   showHistogram1d(histogram_mTauTau,         "m_{#tau#tau} [GeV]",       1.2, true, 1.e-3, 1.e0, "Events", 1.3, avEvtWeight, true,  outputFile.file());
   showHistogram1d(histogram_mVis,            "m_{vis} [GeV]",            1.2, true, 1.e-3, 1.e0, "Events", 1.3, avEvtWeight, true,  outputFile.file());
   showHistogram1d(histogram_cosTheta,        "cos(#theta)",              1.2, true, 1.e-3, 1.e0, "Events", 1.3, avEvtWeight, false, outputFile.file());
+
+  showHistogram1d(histogram_Bp_r,            "Bp_r",                     1.2, true, 1.e-3, 1.e0, "Events", 1.3, avEvtWeight, true,  outputFile.file());
+  showHistogram1d(histogram_Bp_n,            "Bp_n",                     1.2, true, 1.e-3, 1.e0, "Events", 1.3, avEvtWeight, true,  outputFile.file());
+  showHistogram1d(histogram_Bp_k,            "Bp_k",                     1.2, true, 1.e-3, 1.e0, "Events", 1.3, avEvtWeight, true,  outputFile.file());
+
+  showHistogram1d(histogram_Bm_r,            "Bm_r",                     1.2, true, 1.e-3, 1.e0, "Events", 1.3, avEvtWeight, true,  outputFile.file());
+  showHistogram1d(histogram_Bm_n,            "Bm_n",                     1.2, true, 1.e-3, 1.e0, "Events", 1.3, avEvtWeight, true,  outputFile.file());
+  showHistogram1d(histogram_Bm_k,            "Bm_k",                     1.2, true, 1.e-3, 1.e0, "Events", 1.3, avEvtWeight, true,  outputFile.file());
 
   showHistogram1d(histogram_C_rr,            "C_rr",                     1.2, true, 1.e-3, 1.e0, "Events", 1.3, avEvtWeight, true,  outputFile.file());
   showHistogram1d(histogram_C_nn,            "C_nn",                     1.2, true, 1.e-3, 1.e0, "Events", 1.3, avEvtWeight, true,  outputFile.file());
