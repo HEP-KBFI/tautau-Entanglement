@@ -7,7 +7,7 @@ process.fwliteInput = cms.PSet(
     maxEvents_beforeCuts = cms.int32(-1),
     maxEvents_afterCuts = cms.int32(-1),
     outputEvery = cms.uint32(10000)
-)
+)has opening angle = cGJm and axis = measured pi- momentum vector 
 
 process.fwliteOutput = cms.PSet(
     fileName = cms.string('')
@@ -30,9 +30,9 @@ process.makeControlPlots = cms.PSet(
     isDEBUG = cms.bool(False)
 )
 
-inputFilePath = '/scratch/persistent/veelken/Entanglement/ntuples/2023Jun01/'
+inputFilePath = '/scratch/persistent/veelken/Entanglement/ntuples/2023Jun02/'
 inputFileNames = None
-processName = "ggH_htt"
+processName = "ggH_htt_pythia8"
 hAxis = "higgs"
 outputFileName = 'makeControlPlots_%s_%s.root' % (processName, hAxis)
 
