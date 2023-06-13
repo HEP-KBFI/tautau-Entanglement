@@ -12,21 +12,21 @@ process.load('Configuration.StandardSequences.Reconstruction_cff')
 process.load('Configuration.StandardSequences.FrontierConditions_GlobalTag_cff')
 
 process.maxEvents = cms.untracked.PSet(
-    input = cms.untracked.int32(-1)
-    #input = cms.untracked.int32(100000)
+    #input = cms.untracked.int32(-1)
+    input = cms.untracked.int32(10000)
 )
 
 process.source = cms.Source("PoolSource",
     fileNames = cms.untracked.vstring(),
-    #eventsToProcess = cms.untracked.VEventRange(
-    #    '1:97:96087'
-    #) 
+    eventsToProcess = cms.untracked.VEventRange(
+        '1:97:96091'
+    )
 )
 
 inputFilePath = '/store/mc/RunIISummer20UL18MiniAODv2/GluGluHToTauTau_M125_TuneCP5_13TeV-powheg-pythia8/MINIAODSIM/106X_upgrade2018_realistic_v16_L1v1-v3/100000/'
 inputFileNames = None
-processName = "qqH_htt"
-hAxis = "higgs"
+processName = "qqH_htt_pythia8"
+hAxis = "beam"
 outputFileName = "entanglementNtuple_%s_DEBUG.root" % processName
 
 ##inputFilePath = None
@@ -103,8 +103,8 @@ process.ntupleProducer = cms.EDAnalyzer("EntanglementNtupleProducer",
     src = cms.InputTag('prunedGenParticles'),
     hAxis = cms.string(hAxis),
     srcEvtWeights = cms.VInputTag('genWeight'),
-    verbosity = cms.untracked.int32(-1)
-    #verbosity = cms.untracked.int32(1)
+    #verbosity = cms.untracked.int32(-1)
+    verbosity = cms.untracked.int32(1)
 )
 process.analysisSequence += process.ntupleProducer
 
