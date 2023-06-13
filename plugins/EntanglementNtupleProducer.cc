@@ -1,15 +1,16 @@
 #include "TauAnalysis/Entanglement/plugins/EntanglementNtupleProducer.h"
 
-#include "FWCore/Utilities/interface/Exception.h"
 #include "FWCore/ServiceRegistry/interface/Service.h"
 #include "CommonTools/UtilAlgos/interface/TFileService.h"
 
 #include "DataFormats/Common/interface/Handle.h"
 
-#include "DataFormats/Candidate/interface/Candidate.h" // reco::Candidate::LorentzVector, reco::Candidate::Vector
-#include "DataFormats/TauReco/interface/PFTau.h"       // reco::PFTau::hadronicDecayMode
+#include "DataFormats/Candidate/interface/Candidate.h"       // reco::Candidate::LorentzVector, reco::Candidate::Vector
+#include "DataFormats/TauReco/interface/PFTau.h"             // reco::PFTau::hadronicDecayMode
 
-#include <Math/Boost.h>                                // Boost
+#include "TauAnalysis/Entanglement/interface/cmsException.h" // cmsException
+
+#include <Math/Boost.h>                                      // Boost
 
 #include <iostream>
 #include <iomanip>
@@ -41,7 +42,7 @@ EntanglementNtupleProducer::EntanglementNtupleProducer(const edm::ParameterSet& 
   std::string hAxis = cfg.getParameter<std::string>("hAxis");
   if      ( hAxis == "beam"  ) hAxis_ = kBeam;
   else if ( hAxis == "higgs" ) hAxis_ = kHiggs;
-  else throw cms::Exception("EntanglementNtupleProducer") 
+  else throw cmsException("EntanglementNtupleProducer", __LINE__)
     << "Invalid Configuration parameter 'hAxis' = " << hAxis << " !!\n";
 
   srcWeights_ = cfg.getParameter<vInputTag>("srcEvtWeights");
@@ -387,7 +388,7 @@ namespace
 
     assert(tau_ch.size() == 3 && tau_pi0.size() == 0 && tau_nu.size() == 1);
 
-    throw cms::Exception("EntanglementNtupleProducer") 
+    throw cmsException("EntanglementNtupleProducer", __LINE__)
       << "Function 'getPolarimetricVec_ThreeProng0PiZero' not implemented yet !!\n";
   }
 }
@@ -446,7 +447,7 @@ void EntanglementNtupleProducer::analyze(const edm::Event& evt, const edm::Event
     printLorentzVector("tauMinusP4_ttrf", tauMinusP4_ttrf);
   }
 
-  auto k = tauMinusP4_ttrf.Vect().unit();
+  reco::Candidate::Vector k = tauMinusP4_ttrf.Vect().unit();
   if ( verbosity_ >= 1 )
   {
     printVector("k", k);
@@ -455,10 +456,10 @@ void EntanglementNtupleProducer::analyze(const edm::Event& evt, const edm::Event
   reco::Candidate::Vector h;
   if ( hAxis_ == kBeam )
   {
-    double beamE = 7.e+3;
-    double beamPx = 0.;
-    double beamPy = 0.;
-    double beamPz = std::sqrt(square(beamE) - square(mProton));
+    const double beamE = 7.e+3;
+    const double beamPx = 0.;
+    const double beamPy = 0.;
+    const double beamPz = std::sqrt(square(beamE) - square(mProton));
     reco::Candidate::LorentzVector beamP4(beamPx, beamPy, beamPz, beamE);
     reco::Candidate::LorentzVector beamP4_ttrf = getP4_rf(beamP4, boost_ttrf);
     h = beamP4_ttrf.Vect().unit();
@@ -485,13 +486,13 @@ void EntanglementNtupleProducer::analyze(const edm::Event& evt, const edm::Event
   double cosTheta = k.Dot(h);
   assert(cosTheta >= -1. && cosTheta <= +1.);
   double sinTheta = std::sqrt(1. - cosTheta*cosTheta);
-  auto r = (h - k*cosTheta)*(1./sinTheta);
+  reco::Candidate::Vector r = (h - k*cosTheta)*(1./sinTheta);
   if ( verbosity_ >= 1 )
   {
     printVector("r", r);
   }
 
-  auto n = k.Cross(r);
+  reco::Candidate::Vector n = k.Cross(r);
   if ( verbosity_ >= 1 )
   {
     printVector("n", n);
@@ -515,6 +516,7 @@ void EntanglementNtupleProducer::analyze(const edm::Event& evt, const edm::Event
   {
     std::cout << "tau+ decay products:" << "\n";
     printGenParticles(tauPlus_daughters, false);
+    printGenParticles(tauPlus_daughters, true);
   }
   reco::Candidate::LorentzVector visTauPlusP4 = compVisP4(tauPlus_daughters);
   std::vector<const reco::GenParticle*> tauPlus_ch = getChargedHadrons(tauPlus_daughters);
@@ -534,6 +536,8 @@ void EntanglementNtupleProducer::analyze(const edm::Event& evt, const edm::Event
     std::cout << "#tauPlus_pi0 = " << tauPlus_pi0.size() << "\n";
     std::cout << "#tauPlus_nu = " << tauPlus_nu.size() << "\n";
     std::cout << "tauPlus_decaymode = " << tauPlus_decaymode << "\n";
+    printLorentzVector("visTauPlusP4_ttrf", visTauPlusP4_ttrf);
+    printLorentzVector("tauPlusP4_ttrf", tauPlusP4_ttrf);
     std::cout << "zPlus = " << zPlus << "\n";
     if ( tauPlus_nNeutralKaons >= 1 ) std::cout << "CHECK !!\n";
   }
@@ -544,6 +548,7 @@ void EntanglementNtupleProducer::analyze(const edm::Event& evt, const edm::Event
   {
     std::cout << "tau- decay products:" << "\n";
     printGenParticles(tauMinus_daughters, false);
+    printGenParticles(tauMinus_daughters, true);
   }
   reco::Candidate::LorentzVector visTauMinusP4 = compVisP4(tauMinus_daughters);
   std::vector<const reco::GenParticle*> tauMinus_ch = getChargedHadrons(tauMinus_daughters);
@@ -563,6 +568,8 @@ void EntanglementNtupleProducer::analyze(const edm::Event& evt, const edm::Event
     std::cout << "#tauMinus_pi0 = " << tauMinus_pi0.size() << "\n";
     std::cout << "#tauMinus_nu = " << tauMinus_nu.size() << "\n";
     std::cout << "tauMinus_decaymode = " << tauMinus_decaymode << "\n";
+    printLorentzVector("visTauMinusP4_ttrf", visTauMinusP4_ttrf);
+    printLorentzVector("tauMinusP4_ttrf", tauMinusP4_ttrf);
     std::cout << "zMinus = " << zMinus << "\n";
     if ( tauMinus_nNeutralKaons >= 1 ) std::cout << "CHECK !!\n";
   }
@@ -619,13 +626,23 @@ void EntanglementNtupleProducer::analyze(const edm::Event& evt, const edm::Event
     if ( verbosity_ >= 1 )
     {
       printLorentzVector("tauPlusP4", tauPlusP4, false);
+      printLorentzVector("tauPlusP4", tauPlusP4, true);
       printLorentzVector("visTauPlusP4", visTauPlusP4, false);
+      printLorentzVector("visTauPlusP4", visTauPlusP4, true);
       printVector("hPlus", hPlus);
       printLorentzVector("tauMinusP4", tauMinusP4, false);
+      printLorentzVector("tauMinusP4", tauMinusP4, true);
       printLorentzVector("visTauMinusP4", visTauMinusP4, false);
+      printLorentzVector("visTauMinusP4", visTauMinusP4, true);
       printVector("hMinus", hMinus);
       std::cout << "C_rr = " << hPlus.x()*hMinus.x() << "\n";
+      std::cout << "C_rn = " << hPlus.x()*hMinus.y() << "\n";
+      std::cout << "C_rk = " << hPlus.x()*hMinus.z() << "\n";
+      std::cout << "C_nr = " << hPlus.y()*hMinus.x() << "\n";
       std::cout << "C_nn = " << hPlus.y()*hMinus.y() << "\n";
+      std::cout << "C_nk = " << hPlus.y()*hMinus.z() << "\n";
+      std::cout << "C_kr = " << hPlus.z()*hMinus.x() << "\n";
+      std::cout << "C_kn = " << hPlus.z()*hMinus.y() << "\n";
       std::cout << "C_kk = " << hPlus.z()*hMinus.z() << "\n";
       double mTauTau = (tauPlusP4 + tauMinusP4).mass();
       double mVis = (visTauPlusP4 + visTauMinusP4).mass();
