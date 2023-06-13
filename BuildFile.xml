@@ -1,6 +1,7 @@
-<use   name="FWCore/ParameterSet"/>
-<use   name="FWCore/Utilities"/>
-<use   name="root"/>
+<use name="FWCore/ParameterSet"/>
+<use name="FWCore/Utilities"/>
+<use name="root"/>
+<use name="rooteg"/>
 <export>
-  <lib   name="1"/>
+  <lib name="1"/>
 </export>

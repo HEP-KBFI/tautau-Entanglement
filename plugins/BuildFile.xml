@@ -12,6 +12,7 @@
   <use name="FWCore/ServiceRegistry"/>
   <use name="FWCore/Utilities"/>
   <use name="SimDataFormats/GeneratorProducts"/>
+  <use name="TauAnalysis/Entanglement"/>
   <use name="root"/>
   <use name="rootmath"/>
 </library>
