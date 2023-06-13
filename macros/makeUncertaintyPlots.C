@@ -284,7 +284,7 @@ makeUncertaintyPlots()
              colors, markerStyles, lineStyles, 
              0.040, 0.76, 0.72, 0.16, 0.21, 
              -5., 45., "p_{T} Threshold [GeV]", 1.2, 
-             false, 0.8, 1.5, "C", 1.4, 
+             false, -1.2, +2.8, "C", 1.4, 
              outputFileName_C);
 
   TGraph* graph_C_rr_fitError = new TGraph(5);
