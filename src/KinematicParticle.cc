@@ -1,23 +1,12 @@
 #include "TauAnalysis/Entanglement/interface/KinematicParticle.h"
 
+#include "TauAnalysis/Entanglement/interface/auxFunctions.h" // square()
 #include "TauAnalysis/Entanglement/interface/cmsException.h" // cmsException
+#include "TauAnalysis/Entanglement/interface/constants.h"    // Bfield; xr, yr, zr
 
-#include <cstdlib>                                           // std::getenv
-
-double square(double x)
-{
-  return x*x;
-}
+#include <cstdlib>                                           // std::getenv()
 
 TDatabasePDG* KinematicParticle::pdg_ = nullptr;
-
-// define B field (assumed to be in z direction)
-const double Bfield = 4.; // [T]
-
-// define reference point for track parametrization to coincide with nominal interaction point (0,0,0)
-const double xr     = 0.; // [cm]
-const double yr     = 0.; // [cm]
-const double zr     = 0.; // [cm]
 
 KinematicParticle::KinematicParticle(int pdgId)
   : pdgId_(pdgId)

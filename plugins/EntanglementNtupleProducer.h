@@ -1,20 +1,26 @@
 #ifndef TauAnalysis_Entanglement_EntanglementNtupleProducer_h
 #define TauAnalysis_Entanglement_EntanglementNtupleProducer_h
 
-#include "FWCore/Framework/interface/EDAnalyzer.h"
-#include "FWCore/Framework/interface/Event.h"
-#include "FWCore/Framework/interface/EventSetup.h"
-#include "FWCore/ParameterSet/interface/ParameterSet.h"
-#include "FWCore/Utilities/interface/InputTag.h"
+#include "FWCore/Framework/interface/EDAnalyzer.h"                         // edm::EDAnalyzer
+#include "FWCore/Framework/interface/Event.h"                              // edm::Event
+#include "FWCore/Framework/interface/EventSetup.h"                         // edm::EventSetup
+#include "FWCore/ParameterSet/interface/ParameterSet.h"                    // edm::ParameterSet
+#include "FWCore/Utilities/interface/InputTag.h"                           // edm::InputTag
 
-#include "DataFormats/HepMCCandidate/interface/GenParticle.h"    // reco::GenParticle
-#include "DataFormats/HepMCCandidate/interface/GenParticleFwd.h" // reco::GenParticleCollection
+#include "DataFormats/HepMCCandidate/interface/GenParticle.h"              // reco::GenParticle
+#include "DataFormats/HepMCCandidate/interface/GenParticleFwd.h"           // reco::GenParticleCollection
 
-#include <TTree.h>   // TTree
-#include <Rtypes.h>  // Float_t, Int_t
+#include "TauAnalysis/Entanglement/interface/KinematicFit.h"               // KinematicFitOneProng0Pi0
+#include "TauAnalysis/Entanglement/interface/Smearing.h"                   // Smearing
+#include "TauAnalysis/Entanglement/interface/SpinAnalyzerOneProng0Pi0.h"   // SpinAnalyzerOneProng0Pi0
+#include "TauAnalysis/Entanglement/interface/SpinAnalyzerOneProng1Pi0.h"   // SpinAnalyzerOneProng1Pi0
+#include "TauAnalysis/Entanglement/interface/SpinAnalyzerThreeProng0Pi0.h" // SpinAnalyzerThreeProng0Pi0
 
-#include <vector>    // std::vector
-#include <string>    // std::string
+#include <TTree.h>                                                         // TTree
+#include <Rtypes.h>                                                        // Float_t, Int_t
+
+#include <vector>                                                          // std::vector
+#include <string>                                                          // std::string
 
 class EntanglementNtupleProducer : public edm::EDAnalyzer 
 {
@@ -32,8 +38,16 @@ class EntanglementNtupleProducer : public edm::EDAnalyzer
   edm::InputTag src_;
   edm::EDGetTokenT<reco::GenParticleCollection> token_;
 
-  enum { kBeam, kHiggs };
-  int hAxis_;
+  enum { kGen, kRec };
+  int mode_;
+
+  Smearing smearing_;
+
+  KinematicFit kineFit_;
+
+  SpinAnalyzerOneProng0Pi0 spinAnalyzerOneProng0Pi0_;
+  SpinAnalyzerOneProng1Pi0 spinAnalyzerOneProng1Pi0_;
+  SpinAnalyzerThreeProng0Pi0 spinAnalyzerThreeProng0Pi0_;
 
   typedef std::vector<edm::InputTag> vInputTag;
   vInputTag srcWeights_;
@@ -272,4 +286,4 @@ class EntanglementNtupleProducer : public edm::EDAnalyzer
   int verbosity_;
 };
 
-#endif   
+#endif // TauAnalysis_Entanglement_EntanglementNtupleProducer_h
