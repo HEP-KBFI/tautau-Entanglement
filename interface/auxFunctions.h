@@ -1,7 +1,7 @@
 #ifndef TauAnalysis_Entanglement_auxFunctions_h
 #define TauAnalysis_Entanglement_auxFunctions_h
 
-#include "DataFormats/Candidate/interface/Candidate.h" // Candidate::LorentzVector, Candidate::Vector
+#include "DataFormats/Candidate/interface/Candidate.h" // Candidate::LorentzVector, Candidate::Point, Candidate::Vector
 
 #include <Math/Boost.h>                                // Boost
 
@@ -36,5 +36,9 @@ void
 printVector(const std::string& label,
             const reco::Candidate::Vector& p3,
             bool cartesian = true);
+
+void
+printPoint(const std::string& label,
+           const reco::Candidate::Point& p);
 
 #endif // TauAnalysis_Entanglement_auxFunctions_h

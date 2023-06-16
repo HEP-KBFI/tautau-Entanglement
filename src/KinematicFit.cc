@@ -12,6 +12,8 @@
 
 KinematicFit::KinematicFit(const edm::ParameterSet& cfg)
   : resolutions_(nullptr)
+  , verbosity_(cfg.getUntrackedParameter<int>("verbosity"))
+  , cartesian_(cfg.getUntrackedParameter<bool>("cartesian"))
 {
   edm::ParameterSet cfg_resolutions = cfg.getParameterSet("resolutions");
   resolutions_ = new Resolutions(cfg_resolutions);
@@ -58,7 +60,7 @@ namespace
   double
   get_epsilon(int mu, int nu, int rho, int sigma)
   {
-    std::cout << "<get_epsilon>:\n";
+    //std::cout << "<get_epsilon>:\n";
     // CV: formula for computation of four-dimensional Levi-Civita symbol taken from
     //       https://en.wikipedia.org/wiki/Levi-Civita_symbol
     //    (Section "Definition" -> "Generalization to n dimensions")
@@ -75,8 +77,8 @@ namespace
         epsilon *= sgn(a[j] - a[i]); 
       }
     }
-    std::cout << " mu = " << mu << ", nu = " << nu << ", rho = " << rho << ", sigma = " << sigma << ":" 
-              << " epsilon = " << epsilon << "\n";
+    //std::cout << " mu = " << mu << ", nu = " << nu << ", rho = " << rho << ", sigma = " << sigma << ":" 
+    //          << " epsilon = " << epsilon << "\n";
     return epsilon;
   }
 
@@ -92,12 +94,26 @@ namespace
     double tipPerp = std::fabs(e_perp.Dot(flightlength));
     return tipPerp;
   }
+
+  reco::Candidate::LorentzVector
+  fixTauMass(const reco::Candidate::LorentzVector& tauP4)
+  {
+    double tauPx = tauP4.px();
+    double tauPy = tauP4.py();
+    double tauPz = tauP4.pz();
+    double tauE  = std::sqrt(tauPx*tauPx + tauPy*tauPy + tauPz*tauPz + mTau*mTau);
+    reco::Candidate::LorentzVector tauP4_fixed(tauPx, tauPy, tauPz, tauE);
+    return tauP4_fixed;
+  }
 }
 
 void
 KinematicFit::findStartPosition(const KinematicEvent& evt)
 {
-  std::cout << "<KinematicFit::findStartPosition>:" << std::endl;
+  if ( verbosity_ >= 1 )
+  {
+    std::cout << "<KinematicFit::findStartPosition>:" << std::endl;
+  }
 
   const reco::Candidate::LorentzVector& visTauPlusP4  = evt.get_visTauPlusP4();
   const reco::Candidate::LorentzVector& visTauMinusP4 = evt.get_visTauMinusP4();
@@ -139,11 +155,14 @@ KinematicFit::findStartPosition(const KinematicEvent& evt)
   TVectorD v = M.Invert()*lambda;
 
   double a = v(0);
-  std::cout << "a = " << a << "\n";
   double b = v(1);
-  std::cout << "b = " << b << "\n";
   double c = v(2);
-  std::cout << "c = " << c << "\n";
+  if ( verbosity_ >= 1 )
+  {
+    std::cout << "a = " << a << "\n";
+    std::cout << "b = " << b << "\n";
+    std::cout << "c = " << c << "\n";
+  }
 
   double a2 = square(a);
   double b2 = square(b);
@@ -181,16 +200,26 @@ KinematicFit::findStartPosition(const KinematicEvent& evt)
     }
   }
   reco::Candidate::LorentzVector qP4(qPx, qPy, qPz, qE);
-  double q2 = square(qP4.mass());
+  // CV: compute q2 "by hand" instead of calling qP4.mass() function,
+  //     as the four-vector qP4 may be space-like, i.e. have negative "mass"
+  double q2 = qE*qE - (qPx*qPx + qPy*qPy + qPz*qPz);
+  if ( verbosity_ >= 1 )
+  {
+    printLorentzVector("qP4", qP4, cartesian_);
+    std::cout << "q2 = " << q2 << "\n";
+  }
 
   double d2 = (-0.25/q2)*((1. + a2)*mH2 + 0.5*(b2 + c2)*(mVisTauPlus2 + mVisTauMinus2) - 4.*mTau2 + 2.*(a*c*y - a*b*x - b*c*z));
-  std::cout << "d2 = " << d2 << "\n";
+  if ( verbosity_ >= 1 )
+  {
+    std::cout << "d2 = " << d2 << "\n";
+  }
 
   std::vector<double> d;
   if ( d2 > 0. )
   {
-    d.push_back(+sqrt(d2));
-    d.push_back(-sqrt(d2));
+    d.push_back(+std::sqrt(d2));
+    d.push_back(-std::sqrt(d2));
   }
   else
   {
@@ -206,19 +235,46 @@ KinematicFit::findStartPosition(const KinematicEvent& evt)
     tauMinusP4 = 0.5*(1. + a)*higgsP4 - 0.5*b*visTauPlusP4 + 0.5*c*visTauMinusP4 - d[idx]*qP4;
     double tipPerp = get_tipPerp(tauPlusP4, visTauPlusP4, evt.get_pv(), evt.get_tipPCATauPlus())
                     + get_tipPerp(tauMinusP4, visTauMinusP4, evt.get_pv(), evt.get_tipPCATauMinus());
-    std::cout << "solution #" << idx << ": tipPerp = " << tipPerp << "\n";
-    printLorentzVector(" tauPlusP4", tauPlusP4);
-    printLorentzVector(" tauMinusP4", tauMinusP4);
+    if ( verbosity_ >= 1 )
+    {
+      std::cout << "solution #" << idx << ": tipPerp = " << tipPerp << "\n";
+      printLorentzVector("tauPlusP4", tauPlusP4, cartesian_);
+      if ( cartesian_ )
+      {
+        std::cout << " mass = " << tauPlusP4.mass() << "\n";
+      }
+      printLorentzVector("tauMinusP4", tauMinusP4, cartesian_);
+      {
+        std::cout << " mass = " << tauMinusP4.mass() << "\n";
+      }
+    }
     if ( idx == 0 || tipPerp < min_tipPerp )
     {
-      tauPlusP4_ = tauPlusP4;
-      tauMinusP4_ = tauMinusP4;
+      // CV: the reconstruction of the tau+ and tau- four-vectors using Eq. (C3)
+      //     of the paper arXiv:2211.10513 yields mass values that a few GeV off,
+      //     presumably due to rounding errors.
+      //     Adjust the energy component of the tau+ and tau- four-vectors 
+      //     such that their mass values match the correct (PDG) value,
+      //     while keeping the Px, Py, Pz momentum components fixed
+      tauPlusP4_ = fixTauMass(tauPlusP4);
+      tauMinusP4_ = fixTauMass(tauMinusP4);
       min_tipPerp = tipPerp; 
     }
   }
-  std::cout << "best solution:\n";
-  printLorentzVector(" tauPlusP4", tauPlusP4_);
-  printLorentzVector(" tauMinusP4", tauMinusP4_);
+  if ( verbosity_ >= 1 )
+  {
+    std::cout << "best solution:\n";
+    printLorentzVector("tauPlusP4", tauPlusP4_, cartesian_);
+    if ( cartesian_ )
+    {
+      std::cout << " mass = " << tauPlusP4_.mass() << "\n";
+    }
+    printLorentzVector("tauMinusP4", tauMinusP4_, cartesian_);
+    if ( cartesian_ )
+    {
+      std::cout << " mass = " << tauMinusP4_.mass() << "\n";
+    }
+  }
 
-  assert(0);
+  //assert(0);
 }

@@ -96,4 +96,9 @@ class KinematicParticle
   bool params7_isValid_ = false;
 };
 
+void
+printKinematicParticle(const std::string& label,
+                       const KinematicParticle& particle,
+                       bool cartesian = true);
+
 #endif // TauAnalysis_Entanglement_KinematicParticle_h

@@ -22,6 +22,7 @@ class SpinAnalyzer
   int hAxis_;
 
   int verbosity_;
+  bool cartesian_;
 };
 
 #endif // TauAnalysis_Entanglement_SpinAnalyzer_h

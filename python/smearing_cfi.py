@@ -1,13 +1,13 @@
 import FWCore.ParameterSet.Config as cms
 
 smearing = cms.PSet(
-    recoilSmearPx = cms.bool(False),
-    recoilSmearPy = cms.bool(False),
-    recoilSmearPz = cms.bool(False),
-    recoilSmearE  = cms.bool(False),
-    pvSmearXY     = cms.bool(False),
-    pvSmearZ      = cms.bool(False),
-    svSmearPerp   = cms.bool(False),
-    svSmearParl   = cms.bool(False),
-    tipSmearPerp  = cms.bool(False)
+    applySmearing_recoilPx = cms.bool(False),
+    applySmearing_recoilPy = cms.bool(False),
+    applySmearing_recoilPz = cms.bool(False),
+    applySmearing_recoilE  = cms.bool(False),
+    applySmearing_pvXY     = cms.bool(False),
+    applySmearing_pvZ      = cms.bool(False),
+    applySmearing_svPerp   = cms.bool(False),
+    applySmearing_svParl   = cms.bool(False),
+    applySmearing_tipPerp  = cms.bool(False)
 )

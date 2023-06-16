@@ -12,21 +12,27 @@ process.load('Configuration.StandardSequences.Reconstruction_cff')
 process.load('Configuration.StandardSequences.FrontierConditions_GlobalTag_cff')
 
 process.maxEvents = cms.untracked.PSet(
-    #input = cms.untracked.int32(-1)
-    input = cms.untracked.int32(10000)
+    input = cms.untracked.int32(-1)
+    #input = cms.untracked.int32(10000)
 )
 
 process.source = cms.Source("PoolSource",
-    fileNames = cms.untracked.vstring(),
-    eventsToProcess = cms.untracked.VEventRange(
-        '1:97:96091'
-    )
+    fileNames = cms.untracked.vstring(
+        'file:/store/mc/RunIISummer20UL18MiniAODv2/GluGluHToTauTau_M125_TuneCP5_13TeV-powheg-pythia8/MINIAODSIM/106X_upgrade2018_realistic_v16_L1v1-v3/100000/4FC3731A-E9C4-DD47-B222-83083ECF5684.root' 
+    ),
+    #eventsToProcess = cms.untracked.VEventRange(
+    # tau+ tau- -> pi- nu pi+ nu event for synchronization with Luca
+    #    '1:97:96091' 
+    # tau+ -> pi+ pi0 nu event in which Px of neutrino is 3 GeV off when running in 'rec' mode
+    #    '1:97:96038'
+    #)
 )
 
 inputFilePath = '/store/mc/RunIISummer20UL18MiniAODv2/GluGluHToTauTau_M125_TuneCP5_13TeV-powheg-pythia8/MINIAODSIM/106X_upgrade2018_realistic_v16_L1v1-v3/100000/'
 inputFileNames = None
 processName = "qqH_htt_pythia8"
-mode = "gen"
+#mode = "gen"
+mode = "rec"
 hAxis = "beam"
 outputFileName = "entanglementNtuple_%s_DEBUG.root" % processName
 
@@ -109,9 +115,11 @@ process.ntupleProducer = cms.EDAnalyzer("EntanglementNtupleProducer",
     hAxis = cms.string(hAxis),
     resolutions = resolutions,
     smearing = smearing,
+    applySmearing = cms.bool(False),
     srcEvtWeights = cms.VInputTag('genWeight'),
-    #verbosity = cms.untracked.int32(-1)
-    verbosity = cms.untracked.int32(1)
+    verbosity = cms.untracked.int32(-1),
+    #verbosity = cms.untracked.int32(1),
+    cartesian = cms.untracked.bool(True)
 )
 process.analysisSequence += process.ntupleProducer
 

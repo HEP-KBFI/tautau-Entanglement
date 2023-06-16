@@ -5,6 +5,7 @@
 
 SpinAnalyzer::SpinAnalyzer(const edm::ParameterSet& cfg)
   : verbosity_(cfg.getUntrackedParameter<int>("verbosity"))
+  , cartesian_(cfg.getUntrackedParameter<bool>("cartesian"))
 {
   std::string hAxis = cfg.getParameter<std::string>("hAxis");
   if      ( hAxis == "beam"  ) hAxis_ = kBeam;

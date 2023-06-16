@@ -14,15 +14,15 @@ Smearing::Smearing(const edm::ParameterSet& cfg)
   : resolutions_(nullptr)
 {
   edm::ParameterSet cfg_smearing = cfg.getParameterSet("smearing");
-  recoilSmearPx_ = cfg.getParameter<bool>("recoilSmearPx");
-  recoilSmearPy_ = cfg.getParameter<bool>("recoilSmearPy");
-  recoilSmearPz_ = cfg.getParameter<bool>("recoilSmearPz");
-  recoilSmearE_  = cfg.getParameter<bool>("recoilSmearE");
-  pvSmearXY_     = cfg.getParameter<bool>("pvSmearXY");
-  pvSmearZ_      = cfg.getParameter<bool>("pvSmearZ");
-  svSmearPerp_   = cfg.getParameter<bool>("svSmearPerp");
-  svSmearParl_   = cfg.getParameter<bool>("svSmearParl");
-  tipSmearPerp_  = cfg.getParameter<bool>("tipSmearPerp");
+  applySmearing_recoilPx_ = cfg_smearing.getParameter<bool>("applySmearing_recoilPx");
+  applySmearing_recoilPy_ = cfg_smearing.getParameter<bool>("applySmearing_recoilPy");
+  applySmearing_recoilPz_ = cfg_smearing.getParameter<bool>("applySmearing_recoilPz");
+  applySmearing_recoilE_  = cfg_smearing.getParameter<bool>("applySmearing_recoilE");
+  applySmearing_pvXY_     = cfg_smearing.getParameter<bool>("applySmearing_pvXY");
+  applySmearing_pvZ_      = cfg_smearing.getParameter<bool>("applySmearing_pvZ");
+  applySmearing_svPerp_   = cfg_smearing.getParameter<bool>("applySmearing_svPerp");
+  applySmearing_svParl_   = cfg_smearing.getParameter<bool>("applySmearing_svParl");
+  applySmearing_tipPerp_  = cfg_smearing.getParameter<bool>("applySmearing_tipPerp");
 
   edm::ParameterSet cfg_resolutions = cfg.getParameterSet("resolutions");
   resolutions_   = new Resolutions(cfg_resolutions);
@@ -39,16 +39,41 @@ Smearing::operator()(const KinematicEvent& evt)
   KinematicEvent smeared_evt(evt);
 
   const reco::Candidate::Point& pv = evt.get_pv();
-  double smeared_pvX = pv.x() + rnd_.Gaus(0., resolutions_->get_pvResolutionXY());
-  double smeared_pvY = pv.y() + rnd_.Gaus(0., resolutions_->get_pvResolutionXY());
-  double smeared_pvZ = pv.z() + rnd_.Gaus(0., resolutions_->get_pvResolutionZ());
+  double smeared_pvX = pv.x();
+  double smeared_pvY = pv.y();
+  double smeared_pvZ = pv.z();
+  if ( applySmearing_pvXY_ )
+  {
+    smeared_pvX += rnd_.Gaus(0., resolutions_->get_pvResolutionXY());
+    smeared_pvY += rnd_.Gaus(0., resolutions_->get_pvResolutionXY());
+  }
+  if ( applySmearing_pvZ_ )
+  {
+    smeared_pvZ += rnd_.Gaus(0., resolutions_->get_pvResolutionZ());
+  }
   smeared_evt.pv_ = reco::Candidate::Point(smeared_pvX, smeared_pvY, smeared_pvZ);
 
   const reco::Candidate::LorentzVector& recoilP4 = evt.get_recoilP4();
-  double smeared_recoilPx = recoilP4.px()     + rnd_.Gaus(0., resolutions_->get_recoilResolutionPx());
-  double smeared_recoilPy = recoilP4.py()     + rnd_.Gaus(0., resolutions_->get_recoilResolutionPy());
-  double smeared_recoilPz = recoilP4.pz()     + rnd_.Gaus(0., resolutions_->get_recoilResolutionPz());
-  double smeared_recoilE  = recoilP4.energy() + rnd_.Gaus(0., resolutions_->get_recoilResolutionE());
+  double smeared_recoilPx = recoilP4.px();
+  double smeared_recoilPy = recoilP4.py();
+  double smeared_recoilPz = recoilP4.pz();
+  double smeared_recoilE  = recoilP4.energy();
+  if ( applySmearing_recoilPx_ )
+  {
+    smeared_recoilPx += rnd_.Gaus(0., resolutions_->get_recoilResolutionPx());
+  }
+  if ( applySmearing_recoilPy_ )
+  {
+    smeared_recoilPy += rnd_.Gaus(0., resolutions_->get_recoilResolutionPy());
+  }
+  if ( applySmearing_recoilPz_ )
+  {
+    smeared_recoilPz += rnd_.Gaus(0., resolutions_->get_recoilResolutionPz());
+  }
+  if ( applySmearing_recoilE_ )
+  {
+    smeared_recoilE  += rnd_.Gaus(0., resolutions_->get_recoilResolutionE());
+  }
   smeared_evt.recoilP4_ = reco::Candidate::LorentzVector(smeared_recoilPx, smeared_recoilPy, smeared_recoilPz, smeared_recoilE);
 
   smeared_evt.tauPlusP4_ = reco::Candidate::LorentzVector(0., 0., 0., 0.);
@@ -62,13 +87,6 @@ Smearing::operator()(const KinematicEvent& evt)
   smeared_evt.tipPCATauPlus_ = smear_tipPCA(daughtersTauPlus, evt.get_tipPCATauPlus());
   if ( evt.get_svTauPlus_isValid() )
   {
-    //const reco::Candidate::Point& svTauPlus = evt.get_svTauPlus();
-    //double Px = svTauPlus.x() - pv.x();
-    //double Py = svTauPlus.y() - pv.y();
-    //double Pz = svTauPlus.z() - pv.z();
-    //double E  = std::sqrt(square(Px) + square(Py) + square(Pz) + square(mChargedPion));
-    //reco::Candidate::LorentzVector p4(Px, Py, Pz, E);
-    //smeared_evt.svTauPlus_ = smear_sv(p4, svTauPlus);
     smeared_evt.svTauPlus_ = smear_sv(evt.get_visTauPlusP4(), evt.get_svTauPlus());
   }
 
@@ -83,13 +101,6 @@ Smearing::operator()(const KinematicEvent& evt)
   smeared_evt.tipPCATauMinus_ = smear_tipPCA(daughtersTauMinus, evt.get_tipPCATauMinus());
   if ( evt.get_svTauMinus_isValid() )
   {
-    //const reco::Candidate::Point& svTauMinus = evt.get_svTauMinus();
-    //double Px = svTauMinus.x() - pv.x();
-    //double Py = svTauMinus.y() - pv.y();
-    //double Pz = svTauMinus.z() - pv.z();
-    //double E  = std::sqrt(square(Px) + square(Py) + square(Pz) + square(mChargedPion));
-    //reco::Candidate::LorentzVector p4(Px, Py, Pz, E);
-    //smeared_evt.svTauMinus_ = smear_sv(p4, svTauMinus);
     smeared_evt.svTauMinus_ = smear_sv(evt.get_visTauMinusP4(), evt.get_svTauMinus());
   }
 
@@ -104,12 +115,24 @@ Smearing::smear_daughter(const KinematicParticle& daughter)
   double dr = rnd_.Gaus(0., resolutions_->get_svResolutionPerp());
   double dn = rnd_.Gaus(0., resolutions_->get_svResolutionPerp());
   double dk = rnd_.Gaus(0., resolutions_->get_svResolutionParl());
-  const reco::Candidate::Point& vertex = daughter.get_vertex();
-  double smeared_vertexX = vertex.x() + dr*r.x() + dn*n.x() + dk*k.x();
-  double smeared_vertexY = vertex.y() + dr*r.y() + dn*n.y() + dk*k.y();
-  double smeared_vertexZ = vertex.z() + dr*r.z() + dn*n.z() + dk*k.z();
+  const reco::Candidate::Point& sv = daughter.get_vertex();
+  double smeared_svX = sv.x();
+  double smeared_svY = sv.y();
+  double smeared_svZ = sv.z();
+  if ( applySmearing_svPerp_ )
+  {
+    smeared_svX += dr*r.x() + dn*n.x();
+    smeared_svY += dr*r.y() + dn*n.y();
+    smeared_svZ += dr*r.z() + dn*n.z();
+  }
+  if ( applySmearing_svParl_ )
+  {
+    smeared_svX += dk*k.x();
+    smeared_svY += dk*k.y();
+    smeared_svZ += dk*k.z();
+  }
   KinematicParticle smeared_daughter(daughter);
-  smeared_daughter.vertex_ = reco::Candidate::Point(smeared_vertexX, smeared_vertexY, smeared_vertexZ);
+  smeared_daughter.vertex_ = reco::Candidate::Point(smeared_svX, smeared_svY, smeared_svZ);
   return smeared_daughter;
 }
 
@@ -145,9 +168,15 @@ Smearing::smear_tipPCA(const std::vector<KinematicParticle>& daughters, const re
   get_localCoordinateSystem(leadTrack->get_p4(), nullptr, nullptr, kBeam, r, n, k);
   double dr = rnd_.Gaus(0., resolutions_->get_tipResolutionPerp());
   double dn = rnd_.Gaus(0., resolutions_->get_tipResolutionPerp());
-  double smeared_pcaX = tipPCA.x() + dr*r.x() + dn*n.x();
-  double smeared_pcaY = tipPCA.y() + dr*r.y() + dn*n.y();
-  double smeared_pcaZ = tipPCA.z() + dr*r.z() + dn*n.z();
+  double smeared_pcaX = tipPCA.x();
+  double smeared_pcaY = tipPCA.y();
+  double smeared_pcaZ = tipPCA.z();
+  if ( applySmearing_tipPerp_ )
+  {
+    smeared_pcaX += dr*r.x() + dn*n.x();
+    smeared_pcaY += dr*r.y() + dn*n.y();
+    smeared_pcaZ += dr*r.z() + dn*n.z();
+  }
   reco::Candidate::Point smeared_tipPCA(smeared_pcaX, smeared_pcaY, smeared_pcaZ);
   return smeared_tipPCA;
 }
@@ -160,9 +189,21 @@ Smearing::smear_sv(const reco::Candidate::LorentzVector& p4, const reco::Candida
   double dr = rnd_.Gaus(0., resolutions_->get_svResolutionPerp());
   double dn = rnd_.Gaus(0., resolutions_->get_svResolutionPerp());
   double dk = rnd_.Gaus(0., resolutions_->get_svResolutionParl());
-  double smeared_svX = sv.x() + dr*r.x() + dn*n.x() + dk*k.x();
-  double smeared_svY = sv.y() + dr*r.y() + dn*n.y() + dk*k.y();
-  double smeared_svZ = sv.z() + dr*r.z() + dn*n.z() + dk*k.z();
+  double smeared_svX = sv.x();
+  double smeared_svY = sv.y();
+  double smeared_svZ = sv.z();
+  if ( applySmearing_svPerp_ )
+  {
+    smeared_svX += dr*r.x() + dn*n.x();
+    smeared_svY += dr*r.y() + dn*n.y();
+    smeared_svZ += dr*r.z() + dn*n.z();
+  }
+  if ( applySmearing_svParl_ )
+  {
+    smeared_svX += dk*k.x();
+    smeared_svY += dk*k.y();
+    smeared_svZ += dk*k.z();
+  }
   reco::Candidate::Point smeared_sv(smeared_svX, smeared_svY, smeared_svZ);
   return smeared_sv;
 }

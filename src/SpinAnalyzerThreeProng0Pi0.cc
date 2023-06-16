@@ -20,9 +20,13 @@ namespace
                                      const std::vector<KinematicParticle>& daughters,
                                      const ROOT::Math::Boost& boost_ttrf,
                                      const reco::Candidate::Vector& r, const reco::Candidate::Vector& n, const reco::Candidate::Vector& k,
-                                     const ROOT::Math::Boost& boost_trf)
+                                     const ROOT::Math::Boost& boost_trf,
+                                     int verbosity = 0, bool cartesian = true)
   {
-    //std::cout << "<getPolarimetricVec_ThreeProng0PiZero>:" << std::endl;
+    if ( verbosity >= 1 )
+    {
+      std::cout << "<getPolarimetricVec_ThreeProng0PiZero>:\n";
+    }
 
     throw cmsException("SpinAnalyzerThreeProng0Pi0", __LINE__)
       << "Function 'getPolarimetricVec_ThreeProng0PiZero' not implemented yet !!\n";
@@ -34,6 +38,11 @@ namespace
 reco::Candidate::Vector
 SpinAnalyzerThreeProng0Pi0::operator()(const KinematicEvent& evt, int tau)
 {
+  if ( verbosity_ >= 1 )
+  {
+    std::cout << "<SpinAnalyzerThreeProng0Pi0::operator()>:\n";
+  }
+
   reco::Candidate::LorentzVector tauP4;
   const std::vector<KinematicParticle>* daughters = nullptr;
   if ( tau == kTauPlus )
@@ -51,10 +60,10 @@ SpinAnalyzerThreeProng0Pi0::operator()(const KinematicEvent& evt, int tau)
   ROOT::Math::Boost boost_ttrf = ROOT::Math::Boost(recoilP4.BoostToCM());
   reco::Candidate::LorentzVector tauP4_ttrf = getP4_rf(tauP4, boost_ttrf);
   reco::Candidate::Vector r, n, k;
-  get_localCoordinateSystem(evt.get_tauMinusP4(), &recoilP4, &boost_ttrf, hAxis_, r, n, k, verbosity_);
+  get_localCoordinateSystem(evt.get_tauMinusP4(), &recoilP4, &boost_ttrf, hAxis_, r, n, k, verbosity_, cartesian_);
   reco::Candidate::LorentzVector tauP4_hf = getP4_hf(tauP4_ttrf, r, n, k);
   ROOT::Math::Boost boost_trf = ROOT::Math::Boost(tauP4_hf.BoostToCM());
 
-  reco::Candidate::Vector h = getPolarimetricVec_ThreeProng0PiZero(tauP4, *daughters, boost_ttrf, r, n, k, boost_trf);
+  reco::Candidate::Vector h = getPolarimetricVec_ThreeProng0PiZero(tauP4, *daughters, boost_ttrf, r, n, k, boost_trf, verbosity_, cartesian_);
   return h;
 }

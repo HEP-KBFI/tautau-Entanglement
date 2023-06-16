@@ -7,7 +7,7 @@
 namespace
 {
   reco::Candidate::Vector
-  get_k(const reco::Candidate::LorentzVector& p4, const ROOT::Math::Boost* boost_ttrf, int verbosity)
+  get_k(const reco::Candidate::LorentzVector& p4, const ROOT::Math::Boost* boost_ttrf, int verbosity, bool cartesian)
   {
     reco::Candidate::Vector k;
     if ( boost_ttrf )
@@ -21,13 +21,13 @@ namespace
     }
     if ( verbosity >= 1 )
     {
-      printVector("k", k);
+      printVector("k", k, cartesian);
     }
     return k;
   }
 
   reco::Candidate::Vector
-  get_h_beamAxis(const ROOT::Math::Boost* boost_ttrf, int verbosity)
+  get_h_beamAxis(const ROOT::Math::Boost* boost_ttrf, int verbosity, bool cartesian)
   {
     const double beamE  = 7.e+3;
     const double beamPx = 0.;
@@ -46,13 +46,13 @@ namespace
     }
     if ( verbosity >= 1 )
     {
-      printVector("h", h);
+      printVector("h", h, cartesian);
     }
     return h;
   }
 
   reco::Candidate::Vector
-  get_h_higgsAxis(const reco::Candidate::LorentzVector& recoilP4, const ROOT::Math::Boost& boost_ttrf, int verbosity)
+  get_h_higgsAxis(const reco::Candidate::LorentzVector& recoilP4, const ROOT::Math::Boost& boost_ttrf, int verbosity, bool cartesian)
   {
     // CV: this code does not depend on the assumption that the tau pair originates from a Higgs boson decay;
     //     it also works for tau pairs originating from Z/gamma* -> tau+ tau- decays
@@ -66,13 +66,13 @@ namespace
     reco::Candidate::Vector h = higgsP4_ttrf.Vect().unit();
     if ( verbosity >= 1 )
     {
-      printVector("h", h);
+      printVector("h", h, cartesian);
     }
     return h;
   }
 
   reco::Candidate::Vector
-  get_r(const reco::Candidate::Vector& k, const reco::Candidate::Vector& h, int verbosity)
+  get_r(const reco::Candidate::Vector& k, const reco::Candidate::Vector& h, int verbosity, bool cartesian)
   {
     double cosTheta = k.Dot(h);
     assert(cosTheta >= -1. && cosTheta <= +1.);
@@ -80,18 +80,18 @@ namespace
     reco::Candidate::Vector r = (h - k*cosTheta)*(1./sinTheta);
     if ( verbosity >= 1 )
     {
-      printVector("r", r);
+      printVector("r", r, cartesian);
     }
     return r;
   }
 
   reco::Candidate::Vector
-  get_n(const reco::Candidate::Vector& k, const reco::Candidate::Vector& r, int verbosity)
+  get_n(const reco::Candidate::Vector& k, const reco::Candidate::Vector& r, int verbosity, bool cartesian)
   {
     reco::Candidate::Vector n = k.Cross(r);
     if ( verbosity >= 1 )
     {
-      printVector("n", n);
+      printVector("n", n, cartesian);
     }
     return n;
   }
@@ -102,19 +102,19 @@ get_localCoordinateSystem(const reco::Candidate::LorentzVector& p4,
                           const reco::Candidate::LorentzVector* recoilP4, const ROOT::Math::Boost* boost_ttrf,
                           int hAxis,
                           reco::Candidate::Vector& r, reco::Candidate::Vector& n, reco::Candidate::Vector& k,
-                          int verbosity)
+                          int verbosity, bool cartesian)
 {
   if ( verbosity >= 1 )
   {
     std::cout << "<get_localCoordinateSystem>:\n";
   }
 
-  k = get_k(p4, boost_ttrf, verbosity);
+  k = get_k(p4, boost_ttrf, verbosity, cartesian);
 
   reco::Candidate::Vector h;
   if ( hAxis == kBeam )
   {
-    h = get_h_beamAxis(boost_ttrf, verbosity);
+    h = get_h_beamAxis(boost_ttrf, verbosity, cartesian);
   }
   else if ( hAxis == kHiggs )
   {
@@ -124,11 +124,11 @@ get_localCoordinateSystem(const reco::Candidate::LorentzVector& p4,
     if ( !boost_ttrf )
       throw cmsException("get_localCoordinateSystem", __LINE__)
         << "Configuration parameter 'hAxis' = " << hAxis << ", but no boost_ttrf given !!\n";
-    h = get_h_higgsAxis(*recoilP4, *boost_ttrf, verbosity);
+    h = get_h_higgsAxis(*recoilP4, *boost_ttrf, verbosity, cartesian);
   }
   else assert(0);
-  r = get_r(k, h, verbosity);
-  n = get_n(k, r, verbosity);
+  r = get_r(k, h, verbosity, cartesian);
+  n = get_n(k, r, verbosity, cartesian);
 
   if ( verbosity >= 1 )
   {

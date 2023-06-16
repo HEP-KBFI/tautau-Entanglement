@@ -11,6 +11,7 @@
 #include "DataFormats/HepMCCandidate/interface/GenParticleFwd.h"           // reco::GenParticleCollection
 
 #include "TauAnalysis/Entanglement/interface/KinematicFit.h"               // KinematicFitOneProng0Pi0
+#include "TauAnalysis/Entanglement/interface/Resolutions.h"                // Resolutions
 #include "TauAnalysis/Entanglement/interface/Smearing.h"                   // Smearing
 #include "TauAnalysis/Entanglement/interface/SpinAnalyzerOneProng0Pi0.h"   // SpinAnalyzerOneProng0Pi0
 #include "TauAnalysis/Entanglement/interface/SpinAnalyzerOneProng1Pi0.h"   // SpinAnalyzerOneProng1Pi0
@@ -41,7 +42,10 @@ class EntanglementNtupleProducer : public edm::EDAnalyzer
   enum { kGen, kRec };
   int mode_;
 
+  Resolutions* resolutions_;
+
   Smearing smearing_;
+  bool applySmearing_;
 
   KinematicFit kineFit_;
 
@@ -284,6 +288,7 @@ class EntanglementNtupleProducer : public edm::EDAnalyzer
   branchType branches_had_had_;
 
   int verbosity_;
+  bool cartesian_;
 };
 
 #endif // TauAnalysis_Entanglement_EntanglementNtupleProducer_h

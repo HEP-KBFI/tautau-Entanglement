@@ -23,6 +23,9 @@ class KinematicFit
   reco::Candidate::LorentzVector tauMinusP4_;
 
   Resolutions* resolutions_;
+
+  int verbosity_;
+  bool cartesian_;
 };
 
 #endif // TauAnalysis_Entanglement_KinematicFit_h

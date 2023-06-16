@@ -16,24 +16,27 @@
 class KinematicEvent
 {
  public:
-  KinematicEvent(const reco::Candidate::Point& pv,
-                 const reco::Candidate::LorentzVector& recoilP4,
-                 const reco::Candidate::LorentzVector& visTauPlusP4, int tauPlus_decaymode, 
-                 const std::vector<KinematicParticle>& daughtersTauPlus,
-                 const reco::Candidate::Point& tipPCATauPlus,
-                 const reco::Candidate::LorentzVector& visTauMinusP4, int tauMinus_decaymode, 
-                 const std::vector<KinematicParticle>& daughtersTauMinus,
-                 const reco::Candidate::Point& tipPCATauMinus);
+  KinematicEvent(const reco::Candidate::Point& pv, const reco::Candidate::LorentzVector& recoilP4);
   ~KinematicEvent();
 
   void
   set_tauPlusP4(const reco::Candidate::LorentzVector& tauPlusP4);
 
   void
+  set_visTauPlus(const reco::Candidate::LorentzVector& visTauPlusP4, int tauPlus_decaymode, 
+                 const std::vector<KinematicParticle>& daughtersTauPlus,
+                 const reco::Candidate::Point& tipPCATauPlus);
+
+  void
   set_svTauPlus(const reco::Candidate::Point& svTauPlus);
 
   void
   set_tauMinusP4(const reco::Candidate::LorentzVector& tauMinusP4);
+
+  void
+  set_visTauMinus(const reco::Candidate::LorentzVector& visTauMinusP4, int tauMinus_decaymode, 
+                  const std::vector<KinematicParticle>& daughtersTauMinus,
+                  const reco::Candidate::Point& tipPCATauMinus);
 
   void
   set_svTauMinus(const reco::Candidate::Point& svTauMinus);
@@ -102,6 +105,7 @@ class KinematicEvent
   reco::Candidate::LorentzVector tauPlusP4_;
   bool tauPlusP4_isValid_;
   reco::Candidate::LorentzVector visTauPlusP4_;
+  bool visTauPlus_isValid_;
   int tauPlus_decaymode_;
   std::vector<KinematicParticle> daughtersTauPlus_;
   reco::Candidate::Point tipPCATauPlus_;
@@ -111,11 +115,17 @@ class KinematicEvent
   reco::Candidate::LorentzVector tauMinusP4_;
   bool tauMinusP4_isValid_;
   reco::Candidate::LorentzVector visTauMinusP4_;
+  bool visTauMinus_isValid_;
   int tauMinus_decaymode_;
   std::vector<KinematicParticle> daughtersTauMinus_;
   reco::Candidate::Point tipPCATauMinus_;
   reco::Candidate::Point svTauMinus_;
   bool svTauMinus_isValid_;
 };
+
+void
+printKinematicEvent(const std::string& label,
+                    const KinematicEvent& evt,
+                    bool cartesian = true);
 
 #endif // TauAnalysis_Entanglement_KinematicEvent_h

@@ -29,15 +29,15 @@ class Smearing
 
   TRandom3 rnd_;
 
-  bool recoilSmearPx_;
-  bool recoilSmearPy_;
-  bool recoilSmearPz_;
-  bool recoilSmearE_;
-  bool pvSmearXY_;
-  bool pvSmearZ_;
-  bool svSmearPerp_;
-  bool svSmearParl_;
-  bool tipSmearPerp_;
+  bool applySmearing_recoilPx_;
+  bool applySmearing_recoilPy_;
+  bool applySmearing_recoilPz_;
+  bool applySmearing_recoilE_;
+  bool applySmearing_pvXY_;
+  bool applySmearing_pvZ_;
+  bool applySmearing_svPerp_;
+  bool applySmearing_svParl_;
+  bool applySmearing_tipPerp_;
 
   Resolutions* resolutions_;
 };

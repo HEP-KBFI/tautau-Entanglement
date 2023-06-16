@@ -80,3 +80,11 @@ printVector(const std::string& label,
     std::cout << " pT = " << p3.r() << ", eta = " << p3.eta() << ", phi = " << p3.phi() << "\n";
   }
 }
+
+void
+printPoint(const std::string& label,
+           const reco::Candidate::Point& p)
+{
+  std::cout << label << ":";
+  std::cout << " x = " << p.x() << ", y = " << p.y() << ", z = " << p.z() << "\n";
+}

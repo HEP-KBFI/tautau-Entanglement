@@ -5,15 +5,16 @@
 
 #include "DataFormats/Common/interface/Handle.h"
 
-#include "DataFormats/Candidate/interface/Candidate.h"        // reco::Candidate::LorentzVector, reco::Candidate::Vector
-#include "DataFormats/TauReco/interface/PFTau.h"              // reco::PFTau::hadronicDecayMode
+#include "DataFormats/Candidate/interface/Candidate.h"                    // reco::Candidate::LorentzVector, reco::Candidate::Vector
+#include "DataFormats/TauReco/interface/PFTau.h"                          // reco::PFTau::hadronicDecayMode
 
-#include "TauAnalysis/Entanglement/interface/auxFunctions.h"  // printLorentzVector(), printVector()
-#include "TauAnalysis/Entanglement/interface/cmsException.h"  // cmsException
-#include "TauAnalysis/Entanglement/interface/constants.h"     // mProton, mTau, gamma_va
-#include "TauAnalysis/Entanglement/interface/SpinAnalyzer.h"  // SpinAnalyzer::kTauPlus, SpinAnalyzer::kTauMinus
+#include "TauAnalysis/Entanglement/interface/auxFunctions.h"              // printLorentzVector(), printVector(), square()
+#include "TauAnalysis/Entanglement/interface/cmsException.h"              // cmsException
+#include "TauAnalysis/Entanglement/interface/get_localCoordinateSystem.h" // get_localCoordinateSystem()
+#include "TauAnalysis/Entanglement/interface/constants.h"                 // mProton, mTau, gamma_va
+#include "TauAnalysis/Entanglement/interface/SpinAnalyzer.h"              // SpinAnalyzer::kTauPlus, SpinAnalyzer::kTauMinus
 
-#include <Math/Boost.h>                                       // Boost
+#include <Math/Boost.h>                                                   // Boost
 
 #include <iostream>
 #include <iomanip>
@@ -22,7 +23,9 @@
 EntanglementNtupleProducer::EntanglementNtupleProducer(const edm::ParameterSet& cfg)
   : moduleLabel_(cfg.getParameter<std::string>("@module_label"))
   , mode_(-1)
+  , resolutions_(nullptr)
   , smearing_(cfg)
+  , applySmearing_(cfg.getParameter<bool>("applySmearing"))
   , kineFit_(cfg)
   , spinAnalyzerOneProng0Pi0_(cfg)
   , spinAnalyzerOneProng1Pi0_(cfg)
@@ -38,6 +41,7 @@ EntanglementNtupleProducer::EntanglementNtupleProducer(const edm::ParameterSet& 
   , ntuple_had_had_(nullptr)
   , branches_had_had_(reco::PFTau::kNull, reco::PFTau::kNull)
   , verbosity_(-1)
+  , cartesian_(false)
 {
   src_ = cfg.getParameter<edm::InputTag>("src");
   token_ = consumes<reco::GenParticleCollection>(src_);
@@ -48,6 +52,9 @@ EntanglementNtupleProducer::EntanglementNtupleProducer(const edm::ParameterSet& 
   else throw cmsException("EntanglementNtupleProducer", __LINE__)
     << "Invalid Configuration parameter 'mode' = " << mode << " !!\n";
 
+  edm::ParameterSet cfg_resolutions = cfg.getParameterSet("resolutions");
+  resolutions_ = new Resolutions(cfg_resolutions);
+
   srcWeights_ = cfg.getParameter<vInputTag>("srcEvtWeights");
   for ( const edm::InputTag& srcWeight : srcWeights_ )
   {
@@ -55,10 +62,13 @@ EntanglementNtupleProducer::EntanglementNtupleProducer(const edm::ParameterSet& 
   }
 
   verbosity_ = cfg.getUntrackedParameter<int>("verbosity");
+  cartesian_ = cfg.getUntrackedParameter<bool>("cartesian");
 }
 
 EntanglementNtupleProducer::~EntanglementNtupleProducer()
-{}
+{
+  delete resolutions_;
+}
 
 void EntanglementNtupleProducer::beginJob()
 {
@@ -79,6 +89,22 @@ void EntanglementNtupleProducer::beginJob()
 
 namespace
 {
+  const reco::GenParticle*
+  findLastTau(const reco::GenParticle* mother)
+  {
+    size_t numDaughters = mother->numberOfDaughters();
+    for ( size_t idxDaughter = 0; idxDaughter < numDaughters; ++idxDaughter )
+    {
+      const reco::GenParticle* daughter = dynamic_cast<const reco::GenParticle*>(mother->daughter(idxDaughter));
+      assert(daughter);
+      if ( daughter->pdgId() == mother->pdgId() )
+      {
+        return findLastTau(daughter);
+      }
+    }
+    return mother;
+  }
+
   void
   findDecayProducts(const reco::GenParticle* mother, 
                     std::vector<const reco::GenParticle*>& daughters)
@@ -242,21 +268,43 @@ namespace
   }
 
   std::vector<KinematicParticle>
-  get_kineDaughters(const std::vector<const reco::GenParticle*>& decayProducts)
+  get_kineDaughters(const std::vector<const reco::GenParticle*>& decayProducts, const Resolutions& resolutions)
   {
     std::vector<KinematicParticle> kineDaughters;
     for ( const reco::GenParticle* decayProduct : decayProducts )
     {
       KinematicParticle kineDaughter(decayProduct->pdgId());
-      TVectorD params7;
-      params7(1) = decayProduct->px();
+      TVectorD params7(7);
+      params7(0) = decayProduct->px();
       params7(1) = decayProduct->py();
       params7(2) = decayProduct->pz();
       params7(3) = decayProduct->energy();
       params7(4) = decayProduct->vertex().x();
       params7(5) = decayProduct->vertex().y();
       params7(6) = decayProduct->vertex().z();
-      TMatrixD cov7x7; // CV: TO BE IMPLEMENTED !!
+      // CV: the covariance matrix is only a crude approximation;
+      //     to be implemented in more detail later !!
+      TMatrixD cov7x7(7,7);
+      reco::Candidate::Vector r, n, k; 
+      get_localCoordinateSystem(decayProduct->p4(), nullptr, nullptr, kBeam, r, n, k);
+      double dk = 0.;
+      double dr = resolutions.get_tipResolutionPerp();
+      double dn = resolutions.get_tipResolutionPerp();
+      reco::Candidate::Vector x(1., 0., 0.);
+      reco::Candidate::Vector y(0., 1., 0.);
+      reco::Candidate::Vector z(0., 0., 1.);
+      double dx = dr*r.Dot(x) + dn*n.Dot(x) + dk*k.Dot(x);
+      double dy = dr*r.Dot(y) + dn*n.Dot(y) + dk*k.Dot(y);
+      double dz = dr*r.Dot(z) + dn*n.Dot(z) + dk*k.Dot(z);
+      cov7x7(4,4) = square(dr*r.Dot(x) + dn*n.Dot(x) + dk*k.Dot(x));
+      cov7x7(4,5) = dx*dy;
+      cov7x7(4,6) = dx*dz;
+      cov7x7(5,4) = dy*dx;
+      cov7x7(5,5) = square(dy);
+      cov7x7(5,6) = dy*dz;
+      cov7x7(6,4) = dz*dx;
+      cov7x7(6,5) = dz*dy;
+      cov7x7(6,6) = square(dz);
       kineDaughter.set_params7(params7, cov7x7);
       kineDaughters.push_back(kineDaughter);
     }
@@ -310,8 +358,8 @@ void EntanglementNtupleProducer::analyze(const edm::Event& evt, const edm::Event
   const reco::GenParticle* tauMinus = nullptr;
   for ( const reco::GenParticle& genParticle : *genParticles )
   {
-    if ( genParticle.pdgId() == -15 && !tauPlus  ) tauPlus  = &genParticle;
-    if ( genParticle.pdgId() == +15 && !tauMinus ) tauMinus = &genParticle;
+    if ( genParticle.pdgId() == -15 && !tauPlus  ) tauPlus  = findLastTau(&genParticle);
+    if ( genParticle.pdgId() == +15 && !tauMinus ) tauMinus = findLastTau(&genParticle);
   }
 
   if ( !(tauPlus && tauMinus) ) 
@@ -325,18 +373,26 @@ void EntanglementNtupleProducer::analyze(const edm::Event& evt, const edm::Event
   std::vector<const reco::GenParticle*> tauPlus_daughters;
   findDecayProducts(tauPlus, tauPlus_daughters);
   reco::Candidate::LorentzVector visTauPlusP4 = compVisP4(tauPlus_daughters);
-  if ( verbosity_ >= 1 )
-  {
-    printLorentzVector("tauPlusP4", tauPlusP4);
-    std::cout << "tau+ decay products:" << "\n";
-    printGenParticles(tauPlus_daughters, false);
-    printGenParticles(tauPlus_daughters, true);
-    printLorentzVector("visTauPlusP4", visTauPlusP4);
-  }
   std::vector<const reco::GenParticle*> tauPlus_ch = get_chargedHadrons(tauPlus_daughters);
   std::vector<const reco::GenParticle*> tauPlus_pi0 = get_neutralPions(tauPlus_daughters);
   std::vector<const reco::GenParticle*> tauPlus_nu = get_neutrinos(tauPlus_daughters);
   int tauPlus_decaymode = get_decayMode(tauPlus_ch, tauPlus_pi0, tauPlus_nu);
+  if ( verbosity_ >= 1 )
+  {
+    printLorentzVector("tauPlusP4", tauPlusP4, cartesian_);
+    if ( cartesian_ )
+    {
+      std::cout << " mass = " << tauPlusP4.mass() << "\n";
+    }
+    std::cout << "tau+ decay products:" << "\n";
+    printGenParticles(tauPlus_daughters, cartesian_);
+    printLorentzVector("visTauPlusP4", visTauPlusP4, cartesian_);
+    if ( cartesian_ )
+    {
+      std::cout << " mass = " << visTauPlusP4.mass() << "\n";
+    }
+    std::cout << "tauPlus_decaymode = " << tauPlus_decaymode << "\n";
+  }
   int tauPlus_nChargedKaons = get_chargedKaons(tauPlus_daughters).size();
   int tauPlus_nNeutralKaons = get_neutralKaons(tauPlus_daughters).size();
   std::vector<const reco::GenParticle*> tauPlus_y = get_photons(tauPlus_daughters);
@@ -346,18 +402,26 @@ void EntanglementNtupleProducer::analyze(const edm::Event& evt, const edm::Event
   std::vector<const reco::GenParticle*> tauMinus_daughters;
   findDecayProducts(tauMinus, tauMinus_daughters);
   reco::Candidate::LorentzVector visTauMinusP4 = compVisP4(tauMinus_daughters);
-  if ( verbosity_ >= 1 )
-  {
-    printLorentzVector("tauMinusP4", tauMinusP4);
-    std::cout << "tau- decay products:" << "\n";
-    printGenParticles(tauMinus_daughters, false);
-    printGenParticles(tauMinus_daughters, true);
-    printLorentzVector("visTauMinusP4", visTauMinusP4);
-  }
   std::vector<const reco::GenParticle*> tauMinus_ch = get_chargedHadrons(tauMinus_daughters);
   std::vector<const reco::GenParticle*> tauMinus_pi0 = get_neutralPions(tauMinus_daughters);
   std::vector<const reco::GenParticle*> tauMinus_nu = get_neutrinos(tauMinus_daughters);
   int tauMinus_decaymode = get_decayMode(tauMinus_ch, tauMinus_pi0, tauMinus_nu);
+  if ( verbosity_ >= 1 )
+  {
+    printLorentzVector("tauMinusP4", tauMinusP4, cartesian_);
+    if ( cartesian_ )
+    {
+      std::cout << " mass = " << tauPlusP4.mass() << "\n";
+    }
+    std::cout << "tau- decay products:" << "\n";
+    printGenParticles(tauMinus_daughters, cartesian_);
+    printLorentzVector("visTauMinusP4", visTauMinusP4, cartesian_);
+    if ( cartesian_ )
+    {
+      std::cout << " mass = " << visTauMinusP4.mass() << "\n";
+    }
+    std::cout << "tauMinus_decaymode = " << tauMinus_decaymode << "\n";
+  }
   int tauMinus_nChargedKaons = get_chargedKaons(tauMinus_daughters).size();
   int tauMinus_nNeutralKaons = get_neutralKaons(tauMinus_daughters).size();
   std::vector<const reco::GenParticle*> tauMinus_y = get_photons(tauMinus_daughters);
@@ -383,15 +447,17 @@ void EntanglementNtupleProducer::analyze(const edm::Event& evt, const edm::Event
     return;
   }
 
-  std::vector<KinematicParticle> daughtersTauPlus = get_kineDaughters(tauPlus_daughters);
+  std::vector<KinematicParticle> daughtersTauPlus = get_kineDaughters(tauPlus_daughters, *resolutions_);
   reco::Candidate::Point tipPCATauPlus = get_tipPCA(pv, tauPlus_leadTrack);
-  std::vector<KinematicParticle> daughtersTauMinus = get_kineDaughters(tauMinus_daughters);
+  std::vector<KinematicParticle> daughtersTauMinus = get_kineDaughters(tauMinus_daughters, *resolutions_);
   reco::Candidate::Point tipPCATauMinus = get_tipPCA(pv, tauMinus_leadTrack);
-  KinematicEvent kineEvt(pv, recoilP4,
-                         visTauPlusP4,  tauPlus_decaymode,  daughtersTauPlus,  tipPCATauPlus, 
-                         visTauMinusP4, tauMinus_decaymode, daughtersTauMinus, tipPCATauMinus);
+  KinematicEvent kineEvt(pv, recoilP4);
+  kineEvt.set_visTauPlus(visTauPlusP4,  tauPlus_decaymode,  daughtersTauPlus,  tipPCATauPlus);
+  kineEvt.set_visTauMinus(visTauMinusP4, tauMinus_decaymode, daughtersTauMinus, tipPCATauMinus);
   if ( mode_ == kGen )
   {
+    // CV: set tau decay vertex for all taus,
+    //     using generator-level information
     kineEvt.set_tauPlusP4(tauPlusP4);
     if ( tauPlus_ch.size() >= 1 )
     {
@@ -405,10 +471,9 @@ void EntanglementNtupleProducer::analyze(const edm::Event& evt, const edm::Event
   }
   else if ( mode_ == kRec )
   {
-    KinematicEvent fitted_kineEvt = kineFit_(kineEvt);
-    kineEvt.set_tauPlusP4(fitted_kineEvt.get_tauPlusP4());
-    kineEvt.set_tauMinusP4(fitted_kineEvt.get_tauMinusP4());
-    // CV: set tau decay vertex for 3-prongs only
+    // CV: set tau decay vertex for three-prongs only,
+    //     using generator-level information,
+    //     which subsequently gets smeared to simulate experimental resolution
     if ( tauPlus_ch.size() >= 3 )
     {
       kineEvt.set_svTauPlus(tauPlus_ch[0]->vertex());
@@ -417,8 +482,18 @@ void EntanglementNtupleProducer::analyze(const edm::Event& evt, const edm::Event
     {
       kineEvt.set_svTauMinus(tauMinus_ch[0]->vertex());
     }
-    kineEvt = smearing_(kineEvt);
+    if ( applySmearing_ )
+    {
+      kineEvt = smearing_(kineEvt);
+    }
+    KinematicEvent fitted_kineEvt = kineFit_(kineEvt);
+    kineEvt.set_tauPlusP4(fitted_kineEvt.get_tauPlusP4());
+    kineEvt.set_tauMinusP4(fitted_kineEvt.get_tauMinusP4());
   } else assert(0);
+  if ( verbosity_ >= 1 )
+  {
+    printKinematicEvent("kineEvt", kineEvt, cartesian_);
+  }
 
   reco::Candidate::Vector hPlus;
   if ( tauPlus_decaymode == reco::PFTau::kOneProng0PiZero )
@@ -468,16 +543,42 @@ void EntanglementNtupleProducer::analyze(const edm::Event& evt, const edm::Event
   if ( branches )
   {
     ROOT::Math::Boost boost_ttrf = ROOT::Math::Boost(recoilP4.BoostToCM());
-    double zPlus = get_z(tauPlusP4, visTauPlusP4, boost_ttrf);
-    double zMinus = get_z(tauMinusP4, visTauMinusP4, boost_ttrf);
+    double zPlus = 0.;
+    bool zPlus_isValid = false;
+    double zMinus = 0.;
+    bool zMinus_isValid = false;
+    if ( kineEvt.get_tauPlusP4_isValid() )
+    {
+      zPlus = get_z(tauPlusP4, visTauPlusP4, boost_ttrf);
+      zPlus_isValid = true;
+    }
+    if ( kineEvt.get_tauMinusP4_isValid() )
+    {
+      zMinus = get_z(tauMinusP4, visTauMinusP4, boost_ttrf);
+      zMinus_isValid = true;
+    }
     reco::Candidate::LorentzVector tauMinusP4_ttrf = getP4_rf(kineEvt.get_tauMinusP4(), boost_ttrf);
     double cosTheta = cos(tauMinusP4_ttrf.theta());
     if ( verbosity_ >= 1 )
     {
-      printVector("hPlus", hPlus);
-      std::cout << "zPlus = " << zPlus << std::endl;
-      printVector("hMinus", hMinus);
-      std::cout << "zMinus = " << zMinus << std::endl;
+      printVector("hPlus", hPlus, cartesian_);
+      if ( zPlus_isValid )
+      {
+        std::cout << "zPlus = " << zPlus << std::endl;
+      }
+      else
+      {
+        std::cout << "zPlus: N/A\n";
+      }
+      printVector("hMinus", hMinus, cartesian_);
+      if ( zMinus_isValid )
+      {
+        std::cout << "zMinus = " << zMinus << std::endl;
+      }
+      else
+      {
+        std::cout << "zMinus: N/A\n";
+      }
       std::cout << "C_rr = " << hPlus.x()*hMinus.x() << "\n";
       std::cout << "C_rn = " << hPlus.x()*hMinus.y() << "\n";
       std::cout << "C_rk = " << hPlus.x()*hMinus.z() << "\n";

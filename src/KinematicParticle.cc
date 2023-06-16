@@ -1,6 +1,6 @@
 #include "TauAnalysis/Entanglement/interface/KinematicParticle.h"
 
-#include "TauAnalysis/Entanglement/interface/auxFunctions.h" // square()
+#include "TauAnalysis/Entanglement/interface/auxFunctions.h" // PrintLorentzVector(), PrintPoint(), square()
 #include "TauAnalysis/Entanglement/interface/cmsException.h" // cmsException
 #include "TauAnalysis/Entanglement/interface/constants.h"    // Bfield; xr, yr, zr
 
@@ -10,7 +10,11 @@ TDatabasePDG* KinematicParticle::pdg_ = nullptr;
 
 KinematicParticle::KinematicParticle(int pdgId)
   : pdgId_(pdgId)
+  , params5_(5)
+  , cov5x5_(5,5)
   , params5_isValid_(false)
+  , params7_(7)
+  , cov7x7_(7,7)
   , params7_isValid_(false)
 {
   if ( !pdg_ )
@@ -29,7 +33,7 @@ KinematicParticle::KinematicParticle(int pdgId)
     throw cmsException("KinematicParticle", __LINE__)
       << "Failed to find entry in PDG table for particle with pdgId = " << pdgId << " !!\n";
   mass_ = pdgEntry->Mass();
-  charge_ = round(pdgEntry->Charge());
+  charge_ = round(pdgEntry->Charge()/3.);
 }
 
 KinematicParticle::~KinematicParticle()
@@ -38,7 +42,9 @@ KinematicParticle::~KinematicParticle()
 void 
 KinematicParticle::set_params5(const TVectorD& params5, const TMatrixD& cov5x5)
 {
+  params5_.ResizeTo(5);
   params5_ = params5;
+  cov5x5_.ResizeTo(5,5);
   cov5x5_ = cov5x5;
   params5_isValid_ = true;
 
@@ -113,8 +119,16 @@ KinematicParticle::set_params5(const TVectorD& params5, const TMatrixD& cov5x5)
 void 
 KinematicParticle::set_params7(const TVectorD& params7, const TMatrixD& cov7x7)
 {
+  p4_ = reco::Candidate::LorentzVector(params7(0), params7(1), params7(2), params7(3));
+
+  vertex_ = reco::Candidate::Point(params7(4), params7(5), params7(6));
+
+  params7_.ResizeTo(7);
   params7_ = params7;
+
+  cov7x7_.ResizeTo(7,7);
   cov7x7_ = cov7x7;
+
   params7_isValid_ = true;
 }
 
@@ -178,4 +192,16 @@ KinematicParticle::get_cov7x7() const
   throw cmsException("KinematicParticle", __LINE__)
     << "Parametrization 'W' not initialized !!\n";
   return cov7x7_;
+}
+
+void
+printKinematicParticle(const std::string& label,
+                       const KinematicParticle& particle,
+                       bool cartesian)
+{
+  printLorentzVector(label, particle.get_p4(), cartesian);
+  std::cout << " pdgId = " << particle.get_pdgId() << "\n";
+  std::cout << " charge = " << particle.get_charge() << "\n";
+  std::cout << " mass = " << particle.get_mass() << "\n";
+  printPoint("vertex", particle.get_vertex());
 }
