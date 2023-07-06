@@ -36,9 +36,10 @@ process.analyzeEntanglementNtuple2 = cms.PSet(
 inputFilePath = '/scratch/persistent/veelken/Entanglement/ntuples/2023Jun02/'
 inputFileNames = None
 processName = "ggH_htt_pythia8"
+mode = "gen"
 hAxis = "higgs"
 par_gen = [ 0., 0., 0., 0., 0., 0., +1., 0., 0., 0., +1., 0., 0., 0., -1. ]
-outputFileName = 'analyzeEntanglementNtuple_%s_%s.root' % (processName, hAxis)
+outputFileName = 'analyzeEntanglementNtuple_%s_%sMode_%sAxis.root' % (processName, mode, hAxis)
 
 treeName = 'ntupleProducer/piPlus_piMinus'
 minVisTauPt = 20.
@@ -53,6 +54,7 @@ maxSumPhotonEn = 5.
 ##inputFilePath = None
 ##inputFileNames = $inputFileNames
 ##processName = "$processName"
+##mode = "$mode"
 ##hAxis = "$hAxis"
 ##par_gen = $par_gen
 ##outputFileName = "$outputFileName"
@@ -65,7 +67,7 @@ maxSumPhotonEn = 5.
 ##maxNumPhotons = $maxNumPhotons
 ##maxSumPhotonEn = $maxSumPhotonEn
 
-inputFile_regex = r"entanglementNtuple_%s_%sAxis_[0-9]+.root" % (processName, hAxis)
+inputFile_regex = r"entanglementNtuple_%s_%sMode_%sAxis_[0-9]+.root" % (processName, mode, hAxis)
 
 #--------------------------------------------------------------------------------
 # set input files

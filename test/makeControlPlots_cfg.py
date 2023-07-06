@@ -7,7 +7,7 @@ process.fwliteInput = cms.PSet(
     maxEvents_beforeCuts = cms.int32(-1),
     maxEvents_afterCuts = cms.int32(-1),
     outputEvery = cms.uint32(10000)
-)has opening angle = cGJm and axis = measured pi- momentum vector 
+)
 
 process.fwliteOutput = cms.PSet(
     fileName = cms.string('')
@@ -33,8 +33,9 @@ process.makeControlPlots = cms.PSet(
 inputFilePath = '/scratch/persistent/veelken/Entanglement/ntuples/2023Jun02/'
 inputFileNames = None
 processName = "ggH_htt_pythia8"
+mode = "gen"
 hAxis = "higgs"
-outputFileName = 'makeControlPlots_%s_%s.root' % (processName, hAxis)
+outputFileName = 'makeControlPlots_%s_%sMode_%sAxis.root' % (processName, mode, hAxis)
 
 treeName = 'ntupleProducer/piPlus_piMinus'
 #minVisTauPt = 20.
@@ -49,6 +50,7 @@ maxSumPhotonEn = 5.
 ##inputFilePath = None
 ##inputFileNames = $inputFileNames
 ##processName = "$processName"
+##mode = "$mode"
 ##hAxis = "$hAxis"
 ##outputFileName = "$outputFileName"
 
@@ -60,7 +62,7 @@ maxSumPhotonEn = 5.
 ##maxNumPhotons = $maxNumPhotons
 ##maxSumPhotonEn = $maxSumPhotonEn
 
-inputFile_regex = r"entanglementNtuple_%s_%sAxis_[0-9]+.root" % (processName, hAxis)
+inputFile_regex = r"entanglementNtuple_%s_%sMode_%sAxis_[0-9]+.root" % (processName, mode, hAxis)
 
 #--------------------------------------------------------------------------------
 # set input files
