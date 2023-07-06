@@ -321,6 +321,41 @@ namespace
     return tipPCA;
   }
 
+  reco::Candidate::Point
+  get_linearPCA(const reco::Candidate::Point& pv,
+                const reco::Candidate::Vector& tauP3,
+                const reco::Candidate::Point& sv,
+                const reco::Candidate::Vector& visTauP3,
+                int verbosity)
+  {
+    // CV: code based on https://math.stackexchange.com/questions/1993953/closest-points-between-two-lines
+    reco::Candidate::Vector d = tauP3.Cross(visTauP3).unit();
+    TMatrixD v(3,3);
+    v(0,0) =  tauP3.x();
+    v(0,1) = -visTauP3.x();
+    v(0,2) =  d.x();
+    v(1,0) =  tauP3.y();
+    v(1,1) = -visTauP3.y();
+    v(1,2) =  d.y();
+    v(2,0) =  tauP3.z();
+    v(2,1) = -visTauP3.z();
+    v(2,2) =  d.z();
+    TVectorD r(3);
+    r(0) = -pv.x() + sv.x();
+    r(1) = -pv.y() + sv.y();
+    r(2) = -pv.z() + sv.z();
+    TVectorD lambda = v.Invert()*r;
+    reco::Candidate::Point pca1 = pv + lambda(0)*tauP3;
+    reco::Candidate::Point pca2 = sv + lambda(1)*visTauP3;
+    if ( verbosity >= 1 )
+    {
+      printPoint("pca1", pca1);
+      printPoint("pca2", pca2);
+      std::cout << "|d| = " << lambda(2)*std::sqrt(d.mag2()) << std::endl;
+    }
+    return pca1;
+  }
+
   double
   get_z(const reco::Candidate::LorentzVector& tauP4, const reco::Candidate::LorentzVector& visTauP4, const ROOT::Math::Boost& boost_ttrf)
   {
@@ -435,7 +470,13 @@ void EntanglementNtupleProducer::analyze(const edm::Event& evt, const edm::Event
     std::cerr << "WARNING: Failed to find vertex of tau+ tau- pair --> skipping the event !!" << std::endl;
     return;
   }
+  // CV: set primary event vertex (PV),
+  //     using generator-level information
   reco::Candidate::Point pv = tauMinus->vertex();
+  if ( verbosity_ >= 1 )
+  {
+    printPoint("GenPV", pv);
+  }
 
   reco::Candidate::LorentzVector recoilP4 = tauPlusP4 + tauMinusP4;
 
@@ -445,6 +486,11 @@ void EntanglementNtupleProducer::analyze(const edm::Event& evt, const edm::Event
   {
     std::cerr << "WARNING: Failed to find leading tracks of tau+ tau- pair --> skipping the event !!" << std::endl;
     return;
+  }
+  if ( verbosity_ >= 1 )
+  {
+    printPoint("GenSV(tau+)", tauPlus_ch[0]->vertex());
+    printPoint("GenSV(tau-)", tauMinus_ch[0]->vertex());
   }
 
   std::vector<KinematicParticle> daughtersTauPlus = get_kineDaughters(tauPlus_daughters, *resolutions_);
@@ -460,18 +506,19 @@ void EntanglementNtupleProducer::analyze(const edm::Event& evt, const edm::Event
     //     using generator-level information
     kineEvt.set_tauPlusP4(tauPlusP4);
     if ( tauPlus_ch.size() >= 1 )
-    {
+    {  
       kineEvt.set_svTauPlus(tauPlus_ch[0]->vertex());
     }
     kineEvt.set_tauMinusP4(tauMinusP4);
     if ( tauMinus_ch.size() >= 1 )
-    {
+    { 
       kineEvt.set_svTauMinus(tauMinus_ch[0]->vertex());
     }
   }
   else if ( mode_ == kRec )
   {
-    // CV: set tau decay vertex for three-prongs only,
+    // CV: use generator-level information to set tau decay vertex (SV) for three-prongs only,
+    //     smear position of tau decay vertex to simulate experimental resolution
     //     using generator-level information,
     //     which subsequently gets smeared to simulate experimental resolution
     if ( tauPlus_ch.size() >= 3 )
@@ -485,6 +532,26 @@ void EntanglementNtupleProducer::analyze(const edm::Event& evt, const edm::Event
     if ( applySmearing_ )
     {
       kineEvt = smearing_(kineEvt);
+    }
+    // CV: set tau decay vertex for one-prongs
+    //     to point of closest approach between tau lepton momentum vector and track of charged pion
+    if ( tauPlus_ch.size() < 3 )
+    {
+      reco::Candidate::Point svTauPlus = get_linearPCA(pv, tauPlus->momentum(), tauPlus_ch[0]->vertex(), tauPlus_ch[0]->momentum(), verbosity_);
+      if ( verbosity_ >= 1 )
+      {
+        printPoint("RecSV(tau+)", svTauPlus);
+      }
+      kineEvt.set_svTauPlus(svTauPlus);
+    }
+    if ( tauMinus_ch.size() < 3 )
+    {
+      reco::Candidate::Point svTauMinus = get_linearPCA(pv, tauMinus->momentum(), tauMinus_ch[0]->vertex(), tauMinus_ch[0]->momentum(), verbosity_);
+      if ( verbosity_ >= 1 )
+      {
+        printPoint("RecSV(tau-)", svTauMinus);
+      }
+      kineEvt.set_svTauMinus(svTauMinus);
     }
     KinematicEvent fitted_kineEvt = kineFit_(kineEvt);
     kineEvt.set_tauPlusP4(fitted_kineEvt.get_tauPlusP4());
