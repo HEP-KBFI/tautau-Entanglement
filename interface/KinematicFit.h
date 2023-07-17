@@ -5,6 +5,7 @@
 
 #include "TauAnalysis/Entanglement/interface/KinematicEvent.h" // KinematicEvent
 #include "TauAnalysis/Entanglement/interface/Resolutions.h"    // Resolutions
+#include "TauAnalysis/Entanglement/interface/SpinAnalyzer.h"   // SpinAnalyzer
 
 class KinematicFit
 {
@@ -16,13 +17,9 @@ class KinematicFit
   operator()(const KinematicEvent& evt);
 
  private:
-  void
-  findStartPosition(const KinematicEvent& evt);
-
-  reco::Candidate::LorentzVector tauPlusP4_;
-  reco::Candidate::LorentzVector tauMinusP4_;
-
   Resolutions* resolutions_;
+
+  SpinAnalyzer spinAnalyzer_;
 
   int verbosity_;
   bool cartesian_;

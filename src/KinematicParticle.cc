@@ -1,20 +1,24 @@
 #include "TauAnalysis/Entanglement/interface/KinematicParticle.h"
 
-#include "TauAnalysis/Entanglement/interface/auxFunctions.h" // PrintLorentzVector(), PrintPoint(), square()
-#include "TauAnalysis/Entanglement/interface/cmsException.h" // cmsException
-#include "TauAnalysis/Entanglement/interface/constants.h"    // Bfield; xr, yr, zr
+#include "TauAnalysis/Entanglement/interface/cmsException.h"       // cmsException
+#include "TauAnalysis/Entanglement/interface/constants.h"          // Bfield; xr, yr, zr
+#include "TauAnalysis/Entanglement/interface/printLorentzVector.h" // printLorentzVector()
+#include "TauAnalysis/Entanglement/interface/printPoint.h"         // printPoint()
+#include "TauAnalysis/Entanglement/interface/square.h"             // square()
 
-#include <cstdlib>                                           // std::getenv()
+#include <cstdlib>                                                 // std::getenv()
+
+namespace math
+{
+  typedef Matrix<7,5>::type Matrix7x5;
+  typedef Matrix<5,7>::type Matrix5x7;
+}
 
 TDatabasePDG* KinematicParticle::pdg_ = nullptr;
 
 KinematicParticle::KinematicParticle(int pdgId)
   : pdgId_(pdgId)
-  , params5_(5)
-  , cov5x5_(5,5)
   , params5_isValid_(false)
-  , params7_(7)
-  , cov7x7_(7,7)
   , params7_isValid_(false)
 {
   if ( !pdg_ )
@@ -39,12 +43,10 @@ KinematicParticle::KinematicParticle(int pdgId)
 KinematicParticle::~KinematicParticle()
 {}
 
-void 
-KinematicParticle::set_params5(const TVectorD& params5, const TMatrixD& cov5x5)
+void
+KinematicParticle::set_params5(const math::Vector5& params5, const math::Matrix5x5& cov5x5)
 {
-  params5_.ResizeTo(5);
   params5_ = params5;
-  cov5x5_.ResizeTo(5,5);
   cov5x5_ = cov5x5;
   params5_isValid_ = true;
 
@@ -72,7 +74,6 @@ KinematicParticle::set_params5(const TVectorD& params5, const TMatrixD& cov5x5)
   vertex_ = reco::Candidate::Point(x, y, z);
 
   // pack "W" paramaters
-  params7_.ResizeTo(7);
   params7_(0) = px;
   params7_(1) = py;
   params7_(2) = pz;
@@ -86,13 +87,13 @@ KinematicParticle::set_params5(const TVectorD& params5, const TMatrixD& cov5x5)
   // where B refers to the partial derivatives of the "new coordinates" (7 params)
   // with respect to the "old coordinates" (5 params), cf. Eq. (4.50) in 
   //   V. Blobel and E. Lohrmann "Statistische und numerische Methoden der Datenanalyse".
-  // The partial derivatives are taken from appendix I of
+  // The partial derivatives are taken from Eq. (44) of
   //   http://www.phys.ufl.edu/~avery/fitting/kinematic.pdf
 
   double pt = sqrt(square(px) + square(py));
   double p = sqrt(square(px) + square(py) + square(pz));
 
-  TMatrixD B(7,7);
+  math::Matrix7x5 B;
   B(0,0) = -px/c;
   B(0,1) = -py;
   B(1,0) = -py/c;
@@ -107,28 +108,24 @@ KinematicParticle::set_params5(const TVectorD& params5, const TMatrixD& cov5x5)
   B(5,2) =  py/pt;
   B(6,4) =  1.;
 
-  TMatrixD BT = TMatrixD(B);
-  BT.Transpose(B);
+  // CV: compute transpose of matrix B;
+  //     see Section "Matrix and vector functions" of the ROOT documentation https://root.cern.ch/doc/v608/MatVecFunctions.html for the syntax
+  math::Matrix5x7 BT = ROOT::Math::Transpose(B);
 
-  cov7x7_.ResizeTo(7,7);
   cov7x7_ = B*cov5x5_*BT;
 
   params7_isValid_ = true;
 }
 
 void 
-KinematicParticle::set_params7(const TVectorD& params7, const TMatrixD& cov7x7)
+KinematicParticle::set_params7(const math::Vector7& params7, const math::Matrix7x7& cov7x7)
 {
   p4_ = reco::Candidate::LorentzVector(params7(0), params7(1), params7(2), params7(3));
 
   vertex_ = reco::Candidate::Point(params7(4), params7(5), params7(6));
 
-  params7_.ResizeTo(7);
   params7_ = params7;
-
-  cov7x7_.ResizeTo(7,7);
   cov7x7_ = cov7x7;
-
   params7_isValid_ = true;
 }
 
@@ -162,7 +159,7 @@ KinematicParticle::get_charge() const
   return charge_;
 }
 
-const TVectorD&
+const math::Vector5&
 KinematicParticle::get_params5() const
 {
   throw cmsException("KinematicParticle", __LINE__)
@@ -170,7 +167,7 @@ KinematicParticle::get_params5() const
   return params5_;
 }
 
-const TMatrixD&
+const math::Matrix5x5&
 KinematicParticle::get_cov5x5() const
 {
   throw cmsException("KinematicParticle", __LINE__)
@@ -178,7 +175,7 @@ KinematicParticle::get_cov5x5() const
   return cov5x5_;
 }
 
-const TVectorD&
+const math::Vector7&
 KinematicParticle::get_params7() const
 {
   throw cmsException("KinematicParticle", __LINE__)
@@ -186,7 +183,7 @@ KinematicParticle::get_params7() const
   return params7_;
 }
 
-const TMatrixD&
+const math::Matrix7x7&
 KinematicParticle::get_cov7x7() const
 {
   throw cmsException("KinematicParticle", __LINE__)

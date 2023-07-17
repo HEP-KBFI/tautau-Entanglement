@@ -9,37 +9,15 @@
  *
  */
 
-#include "DataFormats/Candidate/interface/Candidate.h"            // Candidate::LorentzVector, Candidate::Point
+#include "DataFormats/Candidate/interface/Candidate.h"            // reco::Candidate::LorentzVector, reco::Candidate::Point
 
 #include "TauAnalysis/Entanglement/interface/KinematicParticle.h" // KinematicParticle
 
 class KinematicEvent
 {
  public:
-  KinematicEvent(const reco::Candidate::Point& pv, const reco::Candidate::LorentzVector& recoilP4);
+  KinematicEvent();
   ~KinematicEvent();
-
-  void
-  set_tauPlusP4(const reco::Candidate::LorentzVector& tauPlusP4);
-
-  void
-  set_visTauPlus(const reco::Candidate::LorentzVector& visTauPlusP4, int tauPlus_decaymode, 
-                 const std::vector<KinematicParticle>& daughtersTauPlus,
-                 const reco::Candidate::Point& tipPCATauPlus);
-
-  void
-  set_svTauPlus(const reco::Candidate::Point& svTauPlus);
-
-  void
-  set_tauMinusP4(const reco::Candidate::LorentzVector& tauMinusP4);
-
-  void
-  set_visTauMinus(const reco::Candidate::LorentzVector& visTauMinusP4, int tauMinus_decaymode, 
-                  const std::vector<KinematicParticle>& daughtersTauMinus,
-                  const reco::Candidate::Point& tipPCATauMinus);
-
-  void
-  set_svTauMinus(const reco::Candidate::Point& svTauMinus);
 
   const reco::Candidate::Point&
   get_pv() const;
@@ -57,7 +35,7 @@ class KinematicEvent
   get_visTauPlusP4() const;
 
   int
-  get_tauPlus_decaymode() const;
+  get_tauPlus_decayMode() const;
 
   const std::vector<KinematicParticle>&
   get_daughtersTauPlus() const;
@@ -71,6 +49,12 @@ class KinematicEvent
   bool
   get_svTauPlus_isValid() const;
 
+  const reco::Candidate::Vector&
+  get_hPlus() const;
+
+  bool
+  get_hPlus_isValid() const;
+
   reco::Candidate::LorentzVector
   get_tauMinusP4() const;
 
@@ -81,7 +65,7 @@ class KinematicEvent
   get_visTauMinusP4() const;
 
   int
-  get_tauMinus_decaymode() const;
+  get_tauMinus_decayMode() const;
 
   const std::vector<KinematicParticle>&
   get_daughtersTauMinus() const;
@@ -95,6 +79,14 @@ class KinematicEvent
   bool
   get_svTauMinus_isValid() const;
 
+  const reco::Candidate::Vector&
+  get_hMinus() const;
+
+  bool
+  get_hMinus_isValid() const;
+
+  friend class GenKinematicEventBuilder;
+  friend class KinematicFitStartPosFinder;
   friend class Smearing;
 
  private:
@@ -105,27 +97,29 @@ class KinematicEvent
   reco::Candidate::LorentzVector tauPlusP4_;
   bool tauPlusP4_isValid_;
   reco::Candidate::LorentzVector visTauPlusP4_;
-  bool visTauPlus_isValid_;
-  int tauPlus_decaymode_;
+  int tauPlus_decayMode_;
   std::vector<KinematicParticle> daughtersTauPlus_;
   reco::Candidate::Point tipPCATauPlus_;
   reco::Candidate::Point svTauPlus_;
   bool svTauPlus_isValid_;
+  reco::Candidate::Vector hPlus_;
+  bool hPlus_isValid_;
 
   reco::Candidate::LorentzVector tauMinusP4_;
   bool tauMinusP4_isValid_;
   reco::Candidate::LorentzVector visTauMinusP4_;
-  bool visTauMinus_isValid_;
-  int tauMinus_decaymode_;
+  int tauMinus_decayMode_;
   std::vector<KinematicParticle> daughtersTauMinus_;
   reco::Candidate::Point tipPCATauMinus_;
   reco::Candidate::Point svTauMinus_;
   bool svTauMinus_isValid_;
+  reco::Candidate::Vector hMinus_;
+  bool hMinus_isValid_;
 };
 
 void
 printKinematicEvent(const std::string& label,
-                    const KinematicEvent& evt,
+                    const KinematicEvent& kineEvt,
                     bool cartesian = true);
 
 #endif // TauAnalysis_Entanglement_KinematicEvent_h

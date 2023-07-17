@@ -10,6 +10,7 @@
 #include "TauAnalysis/Entanglement/interface/get_leadTrack.h"             // get_leadTrack()
 #include "TauAnalysis/Entanglement/interface/get_localCoordinateSystem.h" // get_localCoordinateSystem()
 #include "TauAnalysis/Entanglement/interface/get_particles_of_type.h"     // get_chargedHadrons(), get_neutralPions(), get_neutrinos()
+#include "TauAnalysis/Entanglement/interface/KinematicParticle.h"         // math::Matrix7x7, math::Vector7
 #include "TauAnalysis/Entanglement/interface/printGenParticles.h"         // printGenParticles()
 #include "TauAnalysis/Entanglement/interface/printLorentzVector.h"        // printLorentzVector()
 #include "TauAnalysis/Entanglement/interface/printPoint.h"                // printPoint()
@@ -18,8 +19,8 @@
 #include "TauAnalysis/Entanglement/interface/square.h"                    // square()
 
 #include <Math/Boost.h>                                                   // ROOT::Math::Boost
-#include <TMatrixDSym.h>                                                  // TMatrixDSym
 #include <TMath.h>                                                        // TMath::Pi()
+#include <TMatrixD.h>                                                     // TMatrixD
 #include <TVectorD.h>                                                     // TVectorD
 
 #include <iostream>                                                       // std::cout
@@ -79,7 +80,7 @@ namespace
     {
       KinematicParticle kineDaughter(decayProduct->pdgId());
 
-      TVectorD params7(7);
+      math::Vector7 params7;
       params7(0) = decayProduct->px();
       params7(1) = decayProduct->py();
       params7(2) = decayProduct->pz();
@@ -88,7 +89,7 @@ namespace
       params7(5) = decayProduct->vertex().y();
       params7(6) = decayProduct->vertex().z();
 
-      TMatrixDSym cov7x7(7);
+      math::Matrix7x7 cov7x7;
       double sigma_pt     = 0.;
       double sigma_theta  = 0.;
       double sigma_phi    = 0.;      
@@ -192,7 +193,14 @@ namespace
       cov7x7(6,6) = dk2*k_z*k_z + dr2*r_z*r_z + dn2*n_z*n_z;
       if ( verbosity >= 3 )
       {
-        TMatrixDSym cov3x3 = cov7x7.GetSub(4, 6, 4, 6);
+        TMatrixD cov3x3;
+        for ( int idxRow = 0; idxRow < 3; ++idxRow )
+        {
+          for ( int idxColumn = 0; idxColumn < 3; ++idxColumn )
+          {
+            cov3x3(idxRow,idxColumn) = cov7x7(idxRow + 4,idxColumn + 4);
+          }
+        }
         std::cout << "cov3x3:\n";
         cov3x3.Print();
 

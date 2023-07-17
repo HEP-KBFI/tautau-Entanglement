@@ -1,8 +1,10 @@
 #include "TauAnalysis/Entanglement/interface/get_localCoordinateSystem.h"
 
-#include "TauAnalysis/Entanglement/interface/auxFunctions.h" // printVector()
 #include "TauAnalysis/Entanglement/interface/cmsException.h" // cmsException
 #include "TauAnalysis/Entanglement/interface/constants.h"    // mProton
+#include "TauAnalysis/Entanglement/interface/getP4_rf.h"     // getP4_rf()
+#include "TauAnalysis/Entanglement/interface/printVector.h"  // printVector()
+#include "TauAnalysis/Entanglement/interface/square.h"       // square()
 
 namespace
 {

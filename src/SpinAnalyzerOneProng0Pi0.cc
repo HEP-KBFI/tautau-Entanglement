@@ -2,15 +2,21 @@
 
 #include "DataFormats/Candidate/interface/Candidate.h"                    // Candidate::LorentzVector, Candidate::Point
 
-#include "TauAnalysis/Entanglement/interface/auxFunctions.h"              // getP4_rf(), getP4_hf(), getP4_ttrf_hf_trf(), printVector()
 #include "TauAnalysis/Entanglement/interface/cmsException.h"              // cmsException
+#include "TauAnalysis/Entanglement/interface/cube.h"                      // cube()
 #include "TauAnalysis/Entanglement/interface/constants.h"                 // mTau, gamma_va
 #include "TauAnalysis/Entanglement/interface/get_localCoordinateSystem.h" // get_localCoordinateSystem()
+#include "TauAnalysis/Entanglement/interface/getP4_hf.h"                  // getP4_hf()
+#include "TauAnalysis/Entanglement/interface/getP4_rf.h"                  // getP4_rf()
+#include "TauAnalysis/Entanglement/interface/getP4_ttrf_hf_trf.h"         // getP4_ttrf_hf_trf()
+#include "TauAnalysis/Entanglement/interface/printLorentzVector.h"        // printLorentzVector()
+#include "TauAnalysis/Entanglement/interface/printVector.h"               // printVector()
+#include "TauAnalysis/Entanglement/interface/square.h"                    // square()
 
 #include <Math/Boost.h>                                                   // Boost
 
 SpinAnalyzerOneProng0Pi0::SpinAnalyzerOneProng0Pi0(const edm::ParameterSet& cfg)
-  : SpinAnalyzer(cfg)
+  : SpinAnalyzerBase(cfg)
 {}
 
 SpinAnalyzerOneProng0Pi0::~SpinAnalyzerOneProng0Pi0()
@@ -77,12 +83,12 @@ SpinAnalyzerOneProng0Pi0::operator()(const KinematicEvent& evt, int tau)
 
   reco::Candidate::LorentzVector tauP4;
   const std::vector<KinematicParticle>* daughters = nullptr;
-  if ( tau == kTauPlus )
+  if ( tau == SpinAnalyzerBase::kTauPlus )
   {
     tauP4 = evt.get_tauPlusP4();
     daughters = &evt.get_daughtersTauPlus();
   }
-  else if ( tau == kTauMinus )
+  else if ( tau == SpinAnalyzerBase::kTauMinus )
   {
     tauP4 = evt.get_tauMinusP4();
     daughters = &evt.get_daughtersTauMinus();

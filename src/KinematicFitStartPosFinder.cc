@@ -2,9 +2,12 @@
 
 #include "DataFormats/Candidate/interface/Candidate.h"             // reco::Candidate::LorentzVector
 #include "DataFormats/Math/interface/deltaR.h"                     // deltaR2()
+#include "DataFormats/Math/interface/Matrix.h"                     // math::Matrix
+#include "DataFormats/Math/interface/Vector.h"                     // math::Vector
 #include "DataFormats/TauReco/interface/PFTau.h"                   // reco::PFTau::hadronicDecayMode
 
 #include "TauAnalysis/Entanglement/interface/constants.h"          // mChargedPion, mTau
+#include "TauAnalysis/Entanglement/interface/cmsException.h"       // cmsException
 #include "TauAnalysis/Entanglement/interface/get_leadTrack.h"      // get_leadTrack()
 #include "TauAnalysis/Entanglement/interface/printLorentzVector.h" // printLorentzVector()
 #include "TauAnalysis/Entanglement/interface/printPoint.h"         // printPoint()
@@ -13,6 +16,12 @@
 
 #include <utility>                                                 // std::make_pair()
 #include <iostream>                                                // std::cout
+
+namespace math
+{
+  typedef Matrix<3,3>::type Matrix3x3;
+  typedef Vector<3>::type   Vector3;
+}
 
 KinematicFitStartPosFinder::KinematicFitStartPosFinder(const edm::ParameterSet& cfg)
   : spinAnalyzer_(cfg)
@@ -240,7 +249,7 @@ namespace
     // CV: compute point of closest approach (PCA) between two straight lines in three dimensions;
     //     code based on https://math.stackexchange.com/questions/1993953/closest-points-between-two-lines
     reco::Candidate::Vector d = tauP3.Cross(visTauP3).unit();
-    TMatrixD v(3,3);
+    math::Matrix3x3 v;
     v(0,0) =  tauP3.x();
     v(0,1) = -visTauP3.x();
     v(0,2) =  d.x();
@@ -250,11 +259,18 @@ namespace
     v(2,0) =  tauP3.z();
     v(2,1) = -visTauP3.z();
     v(2,2) =  d.z();
-    TVectorD r(3);
+    math::Vector3 r;
     r(0) = -pv.x() + sv.x();
     r(1) = -pv.y() + sv.y();
     r(2) = -pv.z() + sv.z();
-    TVectorD lambda = v.Invert()*r;
+    // CV: invert matrix x;
+    //     see Section "Linear algebra functions" of the ROOT documentation https://root.cern.ch/doc/v608/SMatrixDoc.html for the syntax
+    int errorFlag = 0;
+    math::Matrix3x3 vinv = v.Inverse(errorFlag);
+    if ( errorFlag != 0 )
+      throw cmsException("get_linearPCA", __LINE__)
+         << "Failed to invertex matrix v !!\n";
+    math::Vector3 lambda = vinv*r;
     reco::Candidate::Point pca1 = pv + lambda(0)*tauP3;
     reco::Candidate::Point pca2 = sv + lambda(1)*visTauP3;
     if ( verbosity >= 1 )
@@ -294,7 +310,7 @@ KinematicFitStartPosFinder::operator()(const KinematicEvent& kineEvt)
   double mVisTauPlus2 = square(mVisTauPlus);
   double mVisTauMinus2 = square(mVisTauMinus);
 
-  TMatrixD M(3,3);
+  math::Matrix3x3 M;
   M(0,0) = -x;
   M(0,1) = mVisTauPlus2;
   M(0,2) = -z;
@@ -307,22 +323,30 @@ KinematicFitStartPosFinder::operator()(const KinematicEvent& kineEvt)
   if ( verbosity_ >= 1 )
   {
     std::cout << "M0:\n";
-    M.Print();
+    std::cout << M << "\n";
   }
 
   const double mTau2 = square(mTau);
 
-  TVectorD lambda(3);
+  math::Vector3 lambda;
   lambda(0) = mTau2 + mVisTauPlus2  - x;
   lambda(1) = mTau2 + mVisTauMinus2 - y;
   lambda(2) = 0.;
   if ( verbosity_ >= 1 )
   {
     std::cout << "lambda0:\n";
-    lambda.Print();
+    std::cout << lambda << "\n";
   }
 
-  TVectorD v = M.Invert()*lambda;
+  // CV: invert matrix M;
+  //     see Section "Linear algebra functions" of the ROOT documentation https://root.cern.ch/doc/v608/SMatrixDoc.html for the syntax
+  int errorFlag = 0;
+  math::Matrix3x3 Minv = M.Inverse(errorFlag);
+  if ( errorFlag != 0 )
+    throw cmsException("KinematicFitStartPosFinder::operator()", __LINE__)
+      << "Failed to invertex matrix M !!\n";
+
+  math::Vector3 v = Minv*lambda;
 
   double a0 = v(0);
   double b0 = v(1);
@@ -359,7 +383,7 @@ KinematicFitStartPosFinder::operator()(const KinematicEvent& kineEvt)
     if ( verbosity_ >= 1 )
     {
       std::cout << "M" << iteration << ":\n";
-      M.Print();
+      std::cout << M << "\n";
     }
   
     lambda(0) = mTau2 + mVisTauPlus2  - x;
@@ -368,10 +392,10 @@ KinematicFitStartPosFinder::operator()(const KinematicEvent& kineEvt)
     if ( verbosity_ >= 1 )
     {
       std::cout << "lambda" << iteration << ":\n";
-      lambda.Print();
+      std::cout << lambda << "\n";
     }
  
-    v = M.Invert()*lambda;
+    v = Minv*lambda;
 
     double a1 = v(0);
     double b1 = v(1);

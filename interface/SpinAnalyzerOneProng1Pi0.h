@@ -1,10 +1,12 @@
 #ifndef TauAnalysis_Entanglement_SpinAnalyzerOneProng1Pi0_h
 #define TauAnalysis_Entanglement_SpinAnalyzerOneProng1Pi0_h
 
-#include "TauAnalysis/Entanglement/interface/KinematicEvent.h" // KinematicEvent
-#include "TauAnalysis/Entanglement/interface/SpinAnalyzer.h"   // SpinAnalyzer
+#include "FWCore/ParameterSet/interface/ParameterSet.h"          // edm::ParameterSet
 
-class SpinAnalyzerOneProng1Pi0 : public SpinAnalyzer
+#include "TauAnalysis/Entanglement/interface/KinematicEvent.h"   // KinematicEvent
+#include "TauAnalysis/Entanglement/interface/SpinAnalyzerBase.h" // SpinAnalyzerBase
+
+class SpinAnalyzerOneProng1Pi0 : public SpinAnalyzerBase
 {
  public:
   SpinAnalyzerOneProng1Pi0(const edm::ParameterSet& cfg);

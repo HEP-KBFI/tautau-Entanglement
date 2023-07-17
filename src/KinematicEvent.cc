@@ -1,75 +1,21 @@
 #include "TauAnalysis/Entanglement/interface/KinematicEvent.h"
 
-#include "TauAnalysis/Entanglement/interface/auxFunctions.h" // printLorentzVector(), printPoint()
-#include "TauAnalysis/Entanglement/interface/cmsException.h" // cmsException
+#include "TauAnalysis/Entanglement/interface/cmsException.h"       // cmsException
+#include "TauAnalysis/Entanglement/interface/printLorentzVector.h" // printLorentzVector()
+#include "TauAnalysis/Entanglement/interface/printPoint.h"         // printPoint()
+#include "TauAnalysis/Entanglement/interface/printVector.h"        // printVector()
 
-#include <TString.h>                                         // Form()
+#include <TString.h>                                               // Form()
 
-KinematicEvent::KinematicEvent(const reco::Candidate::Point& pv, const reco::Candidate::LorentzVector& recoilP4)
-  : pv_(pv)
-  , recoilP4_(recoilP4)
-  , tauPlusP4_isValid_(false)
-  , visTauPlus_isValid_(false)
+KinematicEvent::KinematicEvent()
+  : tauPlusP4_isValid_(false)
   , svTauPlus_isValid_(false)
   , tauMinusP4_isValid_(false)
-  , visTauMinus_isValid_(false)
   , svTauMinus_isValid_(false)
 {}
 
 KinematicEvent::~KinematicEvent()
 {}
-
-void
-KinematicEvent::set_tauPlusP4(const reco::Candidate::LorentzVector& tauPlusP4)
-{
-  tauPlusP4_ = tauPlusP4;
-  tauPlusP4_isValid_ = true;
-}
-
-void
-KinematicEvent::set_visTauPlus(const reco::Candidate::LorentzVector& visTauPlusP4, int tauPlus_decaymode, 
-                               const std::vector<KinematicParticle>& daughtersTauPlus,
-                               const reco::Candidate::Point& tipPCATauPlus)
-{
-  visTauPlusP4_ = visTauPlusP4;
-  tauPlus_decaymode_ = tauPlus_decaymode;
-  daughtersTauPlus_ = daughtersTauPlus;
-  tipPCATauPlus_ = tipPCATauPlus;
-  visTauPlus_isValid_ = true;
-}
-
-void
-KinematicEvent::set_svTauPlus(const reco::Candidate::Point& svTauPlus)
-{
-  svTauPlus_ = svTauPlus;
-  svTauPlus_isValid_ = true;
-}
-
-void
-KinematicEvent::set_tauMinusP4(const reco::Candidate::LorentzVector& tauMinusP4)
-{
-  tauMinusP4_ = tauMinusP4;
-  tauMinusP4_isValid_ = true;
-}
-
-void
-KinematicEvent::set_visTauMinus(const reco::Candidate::LorentzVector& visTauMinusP4, int tauMinus_decaymode, 
-                                const std::vector<KinematicParticle>& daughtersTauMinus,
-                                const reco::Candidate::Point& tipPCATauMinus)
-{
-  visTauMinusP4_ = visTauMinusP4;
-  tauMinus_decaymode_ = tauMinus_decaymode;
-  daughtersTauMinus_ = daughtersTauMinus;
-  tipPCATauMinus_ = tipPCATauMinus;
-  visTauMinus_isValid_ = true;
-}
-
-void
-KinematicEvent::set_svTauMinus(const reco::Candidate::Point& svTauMinus)
-{
-  svTauMinus_ = svTauMinus;
-  svTauMinus_isValid_ = true;
-}
 
 const reco::Candidate::Point&
 KinematicEvent::get_pv() const
@@ -86,9 +32,6 @@ KinematicEvent::get_recoilP4() const
 reco::Candidate::LorentzVector
 KinematicEvent::get_tauPlusP4() const
 {
-  if ( !tauPlusP4_isValid_ )
-    throw cmsException("KinematicParticle", __LINE__)
-      << "Tau+ four-vector not initialized !!\n";
   return tauPlusP4_;
 }
 
@@ -105,9 +48,9 @@ KinematicEvent::get_visTauPlusP4() const
 }
 
 int
-KinematicEvent::get_tauPlus_decaymode() const
+KinematicEvent::get_tauPlus_decayMode() const
 {
-  return tauPlus_decaymode_;
+  return tauPlus_decayMode_;
 }
 
 const std::vector<KinematicParticle>&
@@ -125,9 +68,6 @@ KinematicEvent::get_tipPCATauPlus() const
 const reco::Candidate::Point&
 KinematicEvent::get_svTauPlus() const
 {
-  if ( !svTauPlus_isValid_ )
-    throw cmsException("KinematicParticle", __LINE__)
-      << "Tau+ decay vertex not initialized !!\n";
   return svTauPlus_;
 }
 
@@ -137,12 +77,21 @@ KinematicEvent::get_svTauPlus_isValid() const
   return svTauPlus_isValid_;
 }
 
+const reco::Candidate::Vector&
+KinematicEvent::get_hPlus() const
+{
+  return hPlus_;
+}
+
+bool
+KinematicEvent::get_hPlus_isValid() const
+{
+  return hPlus_isValid_;
+}
+
 reco::Candidate::LorentzVector
 KinematicEvent::get_tauMinusP4() const
 {
-  if ( !tauMinusP4_isValid_ )
-    throw cmsException("KinematicParticle", __LINE__)
-      << "Tau- four-vector not initialized !!\n";
   return tauMinusP4_;
 }
 
@@ -159,9 +108,9 @@ KinematicEvent::get_visTauMinusP4() const
 }
 
 int
-KinematicEvent::get_tauMinus_decaymode() const
+KinematicEvent::get_tauMinus_decayMode() const
 {
-  return tauMinus_decaymode_;
+  return tauMinus_decayMode_;
 }
 
 const std::vector<KinematicParticle>&
@@ -179,9 +128,6 @@ KinematicEvent::get_tipPCATauMinus() const
 const reco::Candidate::Point&
 KinematicEvent::get_svTauMinus() const
 {
-  if ( !svTauMinus_isValid_ )
-    throw cmsException("KinematicParticle", __LINE__)
-      << "Tau- decay vertex not initialized !!\n";
   return svTauMinus_;
 }
 
@@ -191,70 +137,98 @@ KinematicEvent::get_svTauMinus_isValid() const
   return svTauMinus_isValid_;
 }
 
+const reco::Candidate::Vector&
+KinematicEvent::get_hMinus() const
+{
+  return hMinus_;
+}
+
+bool
+KinematicEvent::get_hMinus_isValid() const
+{
+  return hMinus_isValid_;
+}
+
 void
 printKinematicEvent(const std::string& label,
-                    const KinematicEvent& evt,
+                    const KinematicEvent& kineEvt,
                     bool cartesian)
 {
   std::cout << label << ":\n";
 
-  printPoint("pv", evt.get_pv());
+  printPoint("pv", kineEvt.get_pv());
 
-  printLorentzVector("recoilP4", evt.get_recoilP4(), cartesian);
+  printLorentzVector("recoilP4", kineEvt.get_recoilP4(), cartesian);
 
-  if ( evt.get_tauPlusP4_isValid() )
+  if ( kineEvt.get_tauPlusP4_isValid() )
   {
-    printLorentzVector("tauPlusP4", evt.get_tauPlusP4(), cartesian);
+    printLorentzVector("tauPlusP4", kineEvt.get_tauPlusP4(), cartesian);
   }
   else
   {
     std::cout << "tauPlusP4: N/A\n";
   }
-  printLorentzVector("visTauPlusP4", evt.get_visTauPlusP4(), cartesian);
-  std::cout << "tauPlus_decaymode = " << evt.get_tauPlus_decaymode() << "\n";
+  printLorentzVector("visTauPlusP4", kineEvt.get_visTauPlusP4(), cartesian);
+  std::cout << "tauPlus_decayMode = " << kineEvt.get_tauPlus_decayMode() << "\n";
   std::cout << "daughtersTauPlus:\n";
-  const std::vector<KinematicParticle>& daughtersTauPlus = evt.get_daughtersTauPlus();
+  const std::vector<KinematicParticle>& daughtersTauPlus = kineEvt.get_daughtersTauPlus();
   for ( size_t idx = 0; idx < daughtersTauPlus.size(); ++idx )
   {
     const KinematicParticle& daughter = daughtersTauPlus[idx];
     std::string label = Form("#%i", (int)idx);
     printKinematicParticle(label, daughter, cartesian);
   }
-  printPoint("tipPCATauPlus", evt.get_tipPCATauPlus());
-  if ( evt.get_svTauPlus_isValid() )
+  printPoint("tipPCATauPlus", kineEvt.get_tipPCATauPlus());
+  if ( kineEvt.get_svTauPlus_isValid() )
   {
-    printPoint("svTauPlus", evt.get_svTauPlus());
+    printPoint("svTauPlus", kineEvt.get_svTauPlus());
   }
   else
   {
     std::cout << "svTauPlus: N/A\n";
   }
-  
-  if ( evt.get_tauMinusP4_isValid() )
+  if ( kineEvt.get_hPlus_isValid() )
   {
-    printLorentzVector("tauMinusP4", evt.get_tauMinusP4(), cartesian);
+    printVector("hPlus", kineEvt.get_hPlus());
+  }
+  else
+  {
+    std::cout << "hPlus: N/A\n";
+  }
+
+  if ( kineEvt.get_tauMinusP4_isValid() )
+  {
+    printLorentzVector("tauMinusP4", kineEvt.get_tauMinusP4(), cartesian);
   }
   else
   {
     std::cout << "tauMinusP4: N/A\n";
   }
-  printLorentzVector("visTauMinusP4", evt.get_visTauMinusP4(), cartesian);
-  std::cout << "tauMinus_decaymode = " << evt.get_tauMinus_decaymode() << "\n";
+  printLorentzVector("visTauMinusP4", kineEvt.get_visTauMinusP4(), cartesian);
+  std::cout << "tauMinus_decayMode = " << kineEvt.get_tauMinus_decayMode() << "\n";
   std::cout << "daughtersTauMinus:\n";
-  const std::vector<KinematicParticle>& daughtersTauMinus = evt.get_daughtersTauMinus();
+  const std::vector<KinematicParticle>& daughtersTauMinus = kineEvt.get_daughtersTauMinus();
   for ( size_t idx = 0; idx < daughtersTauMinus.size(); ++idx )
   {
     const KinematicParticle& daughter = daughtersTauMinus[idx];
     std::string label = Form("#%i", (int)idx);
     printKinematicParticle(label, daughter, cartesian);
   }
-  printPoint("tipPCATauMinus", evt.get_tipPCATauMinus());
-  if ( evt.get_svTauMinus_isValid() )
+  printPoint("tipPCATauMinus", kineEvt.get_tipPCATauMinus());
+  if ( kineEvt.get_svTauMinus_isValid() )
   {
-    printPoint("svTauMinus", evt.get_svTauMinus());
+    printPoint("svTauMinus", kineEvt.get_svTauMinus());
   }
   else
   {
     std::cout << "svTauMinus: N/A\n";
+  }
+  if ( kineEvt.get_hMinus_isValid() )
+  {
+    printVector("hMinus", kineEvt.get_hMinus());
+  }
+  else
+  {
+    std::cout << "hMinus: N/A\n";
   }
 }

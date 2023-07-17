@@ -22,7 +22,7 @@
 #include <fstream>                                                                              // std::ofstream
 #include <iostream>                                                                             // std::cout
 #include <string>                                                                               // std::string
-#include <vector>                                                                               // std::vector
+#include <vector>                                                                               // std::vector<>
 #include <cmath>                                                                                // std::fabs
 
 TH1*

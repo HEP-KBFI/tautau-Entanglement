@@ -1,19 +1,42 @@
 #include "TauAnalysis/Entanglement/interface/SpinAnalyzer.h"
 
+#include "DataFormats/TauReco/interface/PFTau.h"                          // reco::PFTau::hadronicDecayMode
+
 #include "TauAnalysis/Entanglement/interface/cmsException.h"              // cmsException
 #include "TauAnalysis/Entanglement/interface/get_localCoordinateSystem.h" // kBeam, kHiggs
+#include "TauAnalysis/Entanglement/interface/SpinAnalyzerBase.h"          // SpinAnalyzerBase::kTauPlus, SpinAnalyzerBase::kTauMinus
 
 SpinAnalyzer::SpinAnalyzer(const edm::ParameterSet& cfg)
-  : verbosity_(cfg.getUntrackedParameter<int>("verbosity"))
+  : spinAnalyzerOneProng0Pi0_(cfg)
+  , spinAnalyzerOneProng1Pi0_(cfg)
+  , spinAnalyzerThreeProng0Pi0_(cfg)
+  , verbosity_(cfg.getUntrackedParameter<int>("verbosity"))
   , cartesian_(cfg.getUntrackedParameter<bool>("cartesian"))
-{
-  std::string hAxis = cfg.getParameter<std::string>("hAxis");
-  if      ( hAxis == "beam"  ) hAxis_ = kBeam;
-  else if ( hAxis == "higgs" ) hAxis_ = kHiggs;
-  else throw cmsException("SpinAnalyzer", __LINE__)
-    << "Invalid Configuration parameter 'hAxis' = " << hAxis << " !!\n";
-}
+{}
 
 SpinAnalyzer::~SpinAnalyzer()
 {}
 
+reco::Candidate::Vector
+SpinAnalyzer::operator()(const KinematicEvent& kineEvt, int tau)
+{
+  int tau_decayMode = -1;
+  if      ( tau == SpinAnalyzerBase::kTauPlus  ) tau_decayMode = kineEvt.get_tauPlus_decayMode();
+  else if ( tau == SpinAnalyzerBase::kTauMinus ) tau_decayMode = kineEvt.get_tauMinus_decayMode();
+  else assert(0);
+
+  reco::Candidate::Vector h;
+  if ( tau_decayMode == reco::PFTau::kOneProng0PiZero )
+  {
+    h = spinAnalyzerOneProng0Pi0_(kineEvt, tau);
+  }
+  else if ( tau_decayMode == reco::PFTau::kOneProng1PiZero )
+  {
+    h = spinAnalyzerOneProng1Pi0_(kineEvt, tau);
+  }
+  //else if ( tau_decayMode == reco::PFTau::kThreeProng0PiZero )
+  //{
+  //  h = spinAnalyzerThreeProng0Pi0_(kineEvt, tau);
+  //}
+  return h;
+}

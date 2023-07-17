@@ -1,13 +1,14 @@
 #include "TauAnalysis/Entanglement/interface/SpinAnalyzerThreeProng0Pi0.h"
 
-#include "TauAnalysis/Entanglement/interface/auxFunctions.h"              // getP4_rf(), getP4_hf(), getP4_ttrf_hf_trf()
 #include "TauAnalysis/Entanglement/interface/cmsException.h"              // cmsException
 #include "TauAnalysis/Entanglement/interface/get_localCoordinateSystem.h" // get_localCoordinateSystem()
+#include "TauAnalysis/Entanglement/interface/getP4_hf.h"                  // getP4_hf()
+#include "TauAnalysis/Entanglement/interface/getP4_rf.h"                  // getP4_rf()
 
 #include <Math/Boost.h>                                                   // Boost
 
 SpinAnalyzerThreeProng0Pi0::SpinAnalyzerThreeProng0Pi0(const edm::ParameterSet& cfg)
-  : SpinAnalyzer(cfg)
+  : SpinAnalyzerBase(cfg)
 {}
 
 SpinAnalyzerThreeProng0Pi0::~SpinAnalyzerThreeProng0Pi0()
@@ -45,12 +46,12 @@ SpinAnalyzerThreeProng0Pi0::operator()(const KinematicEvent& evt, int tau)
 
   reco::Candidate::LorentzVector tauP4;
   const std::vector<KinematicParticle>* daughters = nullptr;
-  if ( tau == kTauPlus )
+  if ( tau == SpinAnalyzerBase::kTauPlus )
   {
     tauP4 = evt.get_tauPlusP4();
     daughters = &evt.get_daughtersTauPlus();
   }
-  else if ( tau == kTauMinus )
+  else if ( tau == SpinAnalyzerBase::kTauMinus )
   {
     tauP4 = evt.get_tauMinusP4();
     daughters = &evt.get_daughtersTauMinus();
