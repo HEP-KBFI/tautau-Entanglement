@@ -6,20 +6,24 @@
 #include "DataFormats/TauReco/interface/PFTau.h"                  // reco::PFTau::kOneProng0PiZero
 
 #include "TauAnalysis/Entanglement/interface/cmsException.h"      // cmsException
+#include "TauAnalysis/Entanglement/interface/constants.h"         // mHiggs, mTau
 #include "TauAnalysis/Entanglement/interface/KinematicParticle.h" // math::Matrix7x7
 #include "TauAnalysis/Entanglement/interface/square.h"            // square()
 
 #include "Math/Functions.h"                                       // ROOT::Math::Dot(), ROOT::Math::Similarity(), ROOT::Math::Transpose() 
 
 #include <cmath>                                                  // std::abs(), std::sqrt()
+#include <iostream>                                               // std::cout
+#include <string>                                                 // std::string
 
 const int numParameters = 32; 
 // CV: the parameters are defined in the following order:
-//    (tauPlusP4     (4), tauPlusVtx     (3);
-//     tauMinusP4    (4), tauMinusVtx    (3);
-//     visTauPlusP4  (4), visTauPlusVtx  (3);
-//     visTauMinusP4 (4), visTauMinusVtx (3);
-//     recoilP4)     (4)                    )
+//    (primaryVtx       (3);
+//     tauPlusP4        (4)                    ;
+       tauPlusDecayVtx  (3);
+//     tauMinusP4       (4)                    ;
+//     tauMinusDecayVtx (3);
+//     recoilP4)        (4))
 // where:
 //     tauPlusVtx = tauMinusVtx = primary event vertex (PV)
 //     visTauPlusVtx            = tau+ decay vertex    (SV+)
@@ -63,9 +67,28 @@ KinematicFit::~KinematicFit()
   delete resolutions_;
 }
 
+namespace
+{
+  template <typename T>
+  void
+  printCovMatrix(const std::string& label, const T& cov)
+  {
+    std::cout << label << ":\n";
+    std::cout << cov << "\n";
+    double det = -1.;
+    cov.Det2(det);
+    std::cout << " det = " << det << "\n";
+  }
+}
+
 KinematicEvent
 KinematicFit::operator()(const KinematicEvent& kineEvt)
 {
+  if ( verbosity_ >= 1 )
+  {
+    std::cout << "<KinematicFit::operator()>:\n"; 
+  }
+
   reco::Candidate::LorentzVector tauPlusP4 = kineEvt.get_tauPlusP4();
   double tauPlusPx = tauPlusP4.px();
   double tauPlusPy = tauPlusP4.py();
@@ -88,7 +111,11 @@ KinematicFit::operator()(const KinematicEvent& kineEvt)
   double tauPlusDz = tauPlusD3.Z();
   double tauPlusDt = std::sqrt(tauPlusD3.Perp2());
   double tauPlusD  = std::sqrt(tauPlusD3.Mag2());
-  
+  if ( verbosity_ >= 1 )
+  {
+    printCovMatrix("tauPlus_cov4x4", tauPlus_cov4x4);
+  }
+
   reco::Candidate::LorentzVector tauMinusP4 = kineEvt.get_tauMinusP4();
   double tauMinusPx = tauMinusP4.px();
   double tauMinusPy = tauMinusP4.py();
@@ -100,7 +127,7 @@ KinematicFit::operator()(const KinematicEvent& kineEvt)
   //     we acccount for this by setting the diagonal elements of the covariance matrix to large values,
   //     following the "huge error method" described in Section 6 of https://www.phys.ufl.edu/~avery/fitting/fitting1.pdf
   //    (same as for tau+)
-  math::Matrix4x4 tauMinus_cov4x4 = tauMinus_cov4x4;
+  math::Matrix4x4 tauMinus_cov4x4 = tauPlus_cov4x4;
   assert(kineEvt.get_svTauMinus_isValid());
   auto tauMinusD3 = kineEvt.get_svTauMinus() - kineEvt.get_pv();
   double tauMinusDx = tauMinusD3.X();
@@ -108,11 +135,19 @@ KinematicFit::operator()(const KinematicEvent& kineEvt)
   double tauMinusDz = tauMinusD3.Z();
   double tauMinusDt = std::sqrt(tauMinusD3.Perp2());
   double tauMinusD  = std::sqrt(tauMinusD3.Mag2());
+  if ( verbosity_ >= 1 )
+  {
+    printCovMatrix("tauMinus_cov4x4", tauMinus_cov4x4);
+  }
 
   math::Matrix3x3 pv_cov;
   pv_cov(0,0) = square(resolutions_->get_pvResolution_xy());
   pv_cov(1,1) = square(resolutions_->get_pvResolution_xy());
   pv_cov(2,2) = square(resolutions_->get_pvResolution_z());
+  if ( verbosity_ >= 1 )
+  {
+    printCovMatrix("pv_cov", pv_cov);
+  }
 
   reco::Candidate::LorentzVector visTauPlusP4 = kineEvt.get_visTauPlusP4();
   double visTauPlusPx = visTauPlusP4.px();
@@ -122,12 +157,18 @@ KinematicFit::operator()(const KinematicEvent& kineEvt)
   const std::vector<KinematicParticle>& daughtersTauPlus = kineEvt.get_daughtersTauPlus();
   math::Matrix4x4 visTauPlus_cov4x4;
   math::Matrix3x3 visTauPlus_cov3x3;
-  bool visTauPlus_isFirst = false;
+  int idxDaughterTauPlus = 0;
+  bool visTauPlus_isFirst = true;
   for ( const KinematicParticle& daughter : daughtersTauPlus )
   {
     int daughter_absPdgId = std::abs(daughter.get_pdgId());
     if ( daughter_absPdgId == 12 || daughter_absPdgId == 14 || daughter_absPdgId == 16 ) continue;
     const math::Matrix7x7& cov7x7 = daughter.get_cov7x7();
+    if ( verbosity_ >= 1 )
+    {
+      std::cout << "daughterTauPlus #" << idxDaughterTauPlus << "\n";
+      printCovMatrix("cov7x7", cov7x7);
+    }
     // CV: compute 4x4 covariance matrix of the tauh four-vector by summing the covariance matrices of all visible tau decay products;
     //     for the 3x3 covariance matrix of the tauh vertex position, simply take covariance matrix of first tau decay product
     //    (assuming the vertex positions of all tau decay products to be equal)
@@ -136,9 +177,21 @@ KinematicFit::operator()(const KinematicEvent& kineEvt)
     visTauPlus_cov4x4 += cov7x7.Sub<math::Matrix4x4>(0,0);
     if ( visTauPlus_isFirst )
     {
-      visTauPlus_cov3x3 = cov7x7.Sub<math::Matrix4x4>(4,4);
+      visTauPlus_cov3x3 = cov7x7.Sub<math::Matrix3x3>(4,4);
       visTauPlus_isFirst = false;
     }
+    ++idxDaughterTauPlus;
+  }
+  // CV: add uncertainty on mass of visible decay products.
+  //     This uncertainty needs to be added even if tau is reconstructed in OneProng0Pi0 decay mode,
+  //     to avoid that covariance matrix has rank zero
+  //    (matrices of rank zero cannot be inverted !!)
+  const double visTauPlus_sigma2_mass = square(1.e-1);
+  visTauPlus_cov4x4(3,3) += square(visTauPlusP4.mass()/visTauPlusP4.energy())*visTauPlus_sigma2_mass;
+  if ( verbosity_ >= 1 )
+  {
+    printCovMatrix("visTauPlus_cov4x4", visTauPlus_cov4x4);
+    printCovMatrix("visTauPlus_cov3x3", visTauPlus_cov3x3);
   }
 
   reco::Candidate::LorentzVector visTauMinusP4 = kineEvt.get_visTauMinusP4();
@@ -149,12 +202,18 @@ KinematicFit::operator()(const KinematicEvent& kineEvt)
   const std::vector<KinematicParticle>& daughtersTauMinus = kineEvt.get_daughtersTauMinus();
   math::Matrix4x4 visTauMinus_cov4x4;
   math::Matrix3x3 visTauMinus_cov3x3;
-  bool visTauMinus_isFirst = false;
+  int idxDaughterTauMinus = 0;
+  bool visTauMinus_isFirst = true;
   for ( const KinematicParticle& daughter : daughtersTauMinus )
   {
     int daughter_absPdgId = std::abs(daughter.get_pdgId());
     if ( daughter_absPdgId == 12 || daughter_absPdgId == 14 || daughter_absPdgId == 16 ) continue;
     const math::Matrix7x7& cov7x7 = daughter.get_cov7x7();
+    if ( verbosity_ >= 1 )
+    {
+      std::cout << "daughterTauMinus #" << idxDaughterTauMinus << "\n";
+      printCovMatrix("cov7x7", cov7x7);
+    }
     // CV: compute 4x4 covariance matrix of the tauh four-vector by summing the covariance matrices of all visible tau decay products;
     //     for the 3x3 covariance matrix of the tauh vertex position, simply take covariance matrix of first tau decay product
     //    (assuming the vertex positions of all tau decay products to be equal)
@@ -163,9 +222,21 @@ KinematicFit::operator()(const KinematicEvent& kineEvt)
     visTauMinus_cov4x4 += cov7x7.Sub<math::Matrix4x4>(0,0);
     if ( visTauMinus_isFirst )
     {
-      visTauMinus_cov3x3 = cov7x7.Sub<math::Matrix4x4>(4,4);
+      visTauMinus_cov3x3 = cov7x7.Sub<math::Matrix3x3>(4,4);
       visTauMinus_isFirst = false;
     }
+    ++idxDaughterTauMinus;
+  }
+  // CV: add uncertainty on mass of visible decay products.
+  //     This uncertainty needs to be added even if tau is reconstructed in OneProng0Pi0 decay mode,
+  //     to avoid that covariance matrix has rank zero
+  //    (matrices of rank zero cannot be inverted !!)
+  const double visTauMinus_sigma2_mass = square(1.e-1);
+  visTauMinus_cov4x4(3,3) += square(visTauMinusP4.mass()/visTauMinusP4.energy())*visTauMinus_sigma2_mass;
+  if ( verbosity_ >= 1 )
+  {
+    printCovMatrix("visTauMinus_cov4x4", visTauMinus_cov4x4);
+    printCovMatrix("visTauMinus_cov3x3", visTauMinus_cov3x3);
   }
 
   math::Matrix4x4 recoil_cov;
@@ -173,17 +244,27 @@ KinematicFit::operator()(const KinematicEvent& kineEvt)
   recoil_cov(1,1) = square(resolutions_->get_recoilResolution_py());
   recoil_cov(2,2) = square(resolutions_->get_recoilResolution_pz());
   recoil_cov(3,3) = square(resolutions_->get_recoilResolution_energy());
+  if ( verbosity_ >= 1 )
+  {
+    printCovMatrix("recoil_cov", recoil_cov);
+  }
 
   math::MatrixPxP V_alpha0;
+  // CV: add resolution on tau+ four-vector
+  V_alpha0.Place_at(tauPlus_cov4x4    , 0*7 + 0, 0*7 + 0);
+  // CV: add resolution on tau- four-vector
+  V_alpha0.Place_at(tauMinus_cov4x4   , 1*7 + 0, 1*7 + 0);
   // CV: add resolution on production vertex of tau+ and tau-
   //     Note that the production vertex of tau+ and tau- equal the PV and are thus 100% correlated;
   //     in order to avoid that the resolution on the primary event vertex constrains the tau+ and tau- production vertex twice,
   //     we scale the covariance matrix of the PV by a factor two.
   //     For the syntax of "embedding" a small covariance matrix into a larger one, 
   //     see Section "Accessing and setting methods" of the ROOT documentation https://root.cern.ch/doc/v608/SMatrixDoc.html
-  V_alpha0.Place_at(2.*pv_cov      , 0*7 + 4, 0*7 + 4);
-  V_alpha0.Place_at(2.*pv_cov         , 0*7 + 4, 1*7 + 4);
-  V_alpha0.Place_at(2.*pv_cov         , 1*7 + 4, 0*7 + 4);
+  V_alpha0.Place_at(2.*pv_cov         , 0*7 + 4, 0*7 + 4);
+  // CV: ignore correlation between position of tau+ and tau- production vertex,
+  //     as covariance matrix attains rank zero and cannot be inverted otherwise !!
+  //V_alpha0.Place_at(2.*pv_cov         , 0*7 + 4, 1*7 + 4);
+  //V_alpha0.Place_at(2.*pv_cov         , 1*7 + 4, 0*7 + 4);
   V_alpha0.Place_at(2.*pv_cov         , 1*7 + 4, 1*7 + 4);
   // CV: add resolutions on four-vector of visible decay products and on decay vertex of tau+
   V_alpha0.Place_at(visTauPlus_cov4x4 , 2*7 + 0, 2*7 + 0);
@@ -205,19 +286,19 @@ KinematicFit::operator()(const KinematicEvent& kineEvt)
   D( 0,1*7 + 1) = -2.*(tauPlusPy + tauMinusPy);
   D( 0,1*7 + 2) = -2.*(tauPlusPz + tauMinusPz);
   D( 0,1*7 + 3) = +2.*(tauPlusE  + tauMinusE );
-  d( 0) = (tauPlusP4 + tauMinusP4).mass();
+  d( 0) = (tauPlusP4 + tauMinusP4).mass() - mHiggs;
   // CV: add tau+ mass constraint
   D( 1,0*7 + 0) = -2.*tauPlusPx;
   D( 1,0*7 + 1) = -2.*tauPlusPy;
   D( 1,0*7 + 2) = -2.*tauPlusPz;
   D( 1,0*7 + 3) = +2.*tauPlusE;
-  d( 1) = tauPlusP4.mass();
+  d( 1) = tauPlusP4.mass() - mTau;
   // CV: add tau- mass constraint
   D( 2,1*7 + 0) = -2.*tauMinusPx;
   D( 2,1*7 + 1) = -2.*tauMinusPy;
   D( 2,1*7 + 2) = -2.*tauMinusPz;
   D( 2,1*7 + 3) = +2.*tauMinusE;
-  d( 2) = tauMinusP4.mass();
+  d( 2) = tauMinusP4.mass() - mTau;
   // CV: add neutrino mass constraint for tau+
   D( 3,1*7 + 0) = -2.*(tauPlusPx  - visTauPlusPx );
   D( 3,1*7 + 1) = -2.*(tauPlusPy  - visTauPlusPy );
@@ -293,21 +374,43 @@ KinematicFit::operator()(const KinematicEvent& kineEvt)
     D(12 + idx,4*7 + idx) = -1.;
   }
 
+  if ( verbosity_ >= 1 )
+  {
+    std::cout << "V_alpha0:\n";
+    std::cout << V_alpha0 << "\n";
+    double det = -1.;
+    V_alpha0.Det2(det);
+    std::cout << " det = " << det << "\n";
+    std::cout << "D:\n";
+    std::cout << D << "\n";
+    std::cout << "d:\n";
+    std::cout << d << "\n";
+  }
+
   //-------------------------------------------------------------------------------------------------
   // CV: compute solution to minimization problem
   //     using formulas given in Section 3 of https://www.phys.ufl.edu/~avery/fitting/kinematic.pdf
   //     see Section "Matrix and vector functions" of the ROOT documentation https://root.cern.ch/doc/v608/MatVecFunctions.html 
   //     and Section "Linear algebra functions" of the ROOT documentation https://root.cern.ch/doc/v608/SMatrixDoc.html 
   //     for the syntax of matrix operations
+
   math::MatrixPxC DT = ROOT::Math::Transpose(D);
 
   math::MatrixCxC Vinv_D = D*V_alpha0*DT;
+  if ( verbosity_ >= 1 )
+  {
+    std::cout << "Vinv_D:\n";
+    std::cout << Vinv_D << "\n";
+    double det = -1.;
+    Vinv_D.Det2(det);
+    std::cout << " det = " << det << "\n";
+  }
 
   int errorFlag = 0;
   math::MatrixCxC V_D = Vinv_D.Inverse(errorFlag);
   if ( errorFlag != 0 )
     throw cmsException("KinematicFit::operator()", __LINE__)
-      << "Failed to invertex matrix Vinv_D !!\n";
+      << "Failed to invert matrix Vinv_D !!\n";
 
   // CV: compute matrix lambda.
   //     Note that deltaalpha0 is zero, since the initial parameter vector and the expansion point are the same, i.e. alpha0 = alphaA
@@ -315,7 +418,7 @@ KinematicFit::operator()(const KinematicEvent& kineEvt)
 
   // CV: compute change in parameters alpha,
   //     where dalpha := alpha - alpha0
-  math::VectorP dalpha = V_alpha0*DT*lambda;
+  math::VectorP dalpha = -V_alpha0*DT*lambda;
   if ( verbosity_ >= 1 )
   {
     std::cout << "dalpha:\n";
@@ -347,6 +450,9 @@ KinematicFit::operator()(const KinematicEvent& kineEvt)
     math::VectorC residuals = D*dalpha + d;
     std::cout << "residuals of constraint equations:\n";
     std::cout << residuals << "\n";
+    reco::Candidate::LorentzVector tauPlusP4(tauPlusPx + dalpha(0), tauPlusPy + dalpha(1), tauPlusPz + dalpha(2), tauPlusE + dalpha(3));
+    reco::Candidate::LorentzVector tauMinusP4(tauMinusPx + dalpha(7), tauMinusPy + dalpha(8), tauMinusPz + dalpha(9), tauMinusE + dalpha(10));
+    std::cout << "tau-pair mass = " << (tauPlusP4 + tauMinusP4).mass() << "\n";
   }
   //-------------------------------------------------------------------------------------------------
 

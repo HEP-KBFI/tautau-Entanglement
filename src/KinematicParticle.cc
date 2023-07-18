@@ -162,32 +162,36 @@ KinematicParticle::get_charge() const
 const math::Vector5&
 KinematicParticle::get_params5() const
 {
-  throw cmsException("KinematicParticle", __LINE__)
-    << "Parametrization 'C' not initialized !!\n";
+  if ( !params5_isValid_ )
+    throw cmsException("KinematicParticle", __LINE__)
+      << "Parametrization 'C' not initialized !!\n";
   return params5_;
 }
 
 const math::Matrix5x5&
 KinematicParticle::get_cov5x5() const
 {
-  throw cmsException("KinematicParticle", __LINE__)
-    << "Parametrization 'C' not initialized !!\n";
+  if ( !params5_isValid_ )
+    throw cmsException("KinematicParticle", __LINE__)
+      << "Parametrization 'C' not initialized !!\n";
   return cov5x5_;
 }
 
 const math::Vector7&
 KinematicParticle::get_params7() const
 {
-  throw cmsException("KinematicParticle", __LINE__)
-    << "Parametrization 'W' not initialized !!\n";
+  if ( !params7_isValid_ )
+    throw cmsException("KinematicParticle", __LINE__)
+      << "Parametrization 'W' not initialized !!\n";
   return params7_;
 }
 
 const math::Matrix7x7&
 KinematicParticle::get_cov7x7() const
 {
-  throw cmsException("KinematicParticle", __LINE__)
-    << "Parametrization 'W' not initialized !!\n";
+  if ( !params7_isValid_ )
+    throw cmsException("KinematicParticle", __LINE__)
+      << "Parametrization 'W' not initialized !!\n";
   return cov7x7_;
 }
 

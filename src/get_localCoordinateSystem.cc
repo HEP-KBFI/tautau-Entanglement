@@ -21,7 +21,7 @@ namespace
     {
       k = p4.Vect().unit();
     }
-    if ( verbosity >= 1 )
+    if ( verbosity >= 3 )
     {
       printVector("k", k, cartesian);
     }
@@ -46,7 +46,7 @@ namespace
     {
       h = beamP4.Vect().unit();
     }
-    if ( verbosity >= 1 )
+    if ( verbosity >= 3 )
     {
       printVector("h", h, cartesian);
     }
@@ -66,7 +66,7 @@ namespace
     reco::Candidate::LorentzVector higgsP4(higgsPx, higgsPy, higgsPz, higgsE);
     reco::Candidate::LorentzVector higgsP4_ttrf = getP4_rf(higgsP4, boost_ttrf);
     reco::Candidate::Vector h = higgsP4_ttrf.Vect().unit();
-    if ( verbosity >= 1 )
+    if ( verbosity >= 3 )
     {
       printVector("h", h, cartesian);
     }
@@ -80,7 +80,7 @@ namespace
     assert(cosTheta >= -1. && cosTheta <= +1.);
     double sinTheta = std::sqrt(1. - cosTheta*cosTheta);
     reco::Candidate::Vector r = (h - k*cosTheta)*(1./sinTheta);
-    if ( verbosity >= 1 )
+    if ( verbosity >= 3 )
     {
       printVector("r", r, cartesian);
     }
@@ -91,7 +91,7 @@ namespace
   get_n(const reco::Candidate::Vector& k, const reco::Candidate::Vector& r, int verbosity, bool cartesian)
   {
     reco::Candidate::Vector n = k.Cross(r);
-    if ( verbosity >= 1 )
+    if ( verbosity >= 3 )
     {
       printVector("n", n, cartesian);
     }
@@ -106,7 +106,7 @@ get_localCoordinateSystem(const reco::Candidate::LorentzVector& p4,
                           reco::Candidate::Vector& r, reco::Candidate::Vector& n, reco::Candidate::Vector& k,
                           int verbosity, bool cartesian)
 {
-  if ( verbosity >= 1 )
+  if ( verbosity >= 3 )
   {
     std::cout << "<get_localCoordinateSystem>:\n";
   }
@@ -132,7 +132,7 @@ get_localCoordinateSystem(const reco::Candidate::LorentzVector& p4,
   r = get_r(k, h, verbosity, cartesian);
   n = get_n(k, r, verbosity, cartesian);
 
-  if ( verbosity >= 1 )
+  if ( verbosity >= 4 )
   {
     std::cout << "r*n = " << r.Dot(n) << "\n";
     std::cout << "r*k = " << r.Dot(k) << "\n";

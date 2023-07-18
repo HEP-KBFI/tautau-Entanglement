@@ -12,6 +12,7 @@
 #include <TMath.h>                                                        // TMath::Pi()
 
 #include <cmath>                                                          // std::sqrt()
+#include <iostream>                                                       // std::cout
 
 Smearing::Smearing(const edm::ParameterSet& cfg)
   : resolutions_(nullptr)
@@ -199,7 +200,7 @@ Smearing::smear_tipPCA(const std::vector<KinematicParticle>& daughters, const re
   const KinematicParticle* leadTrack = get_leadTrack(daughters);
   if ( !leadTrack )
   {
-    std::cerr << "WARNING: Failed to find leading track of tau --> returning null vector !!" << std::endl;
+    std::cerr << "WARNING: Failed to find leading track of tau --> returning null vector !!\n";
     return reco::Candidate::Point(0.,0.,0.);
   }
   reco::Candidate::Vector r, n, k;

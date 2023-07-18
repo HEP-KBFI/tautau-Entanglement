@@ -92,7 +92,7 @@ namespace
       math::Matrix7x7 cov7x7;
       double sigma_pt     = 0.;
       double sigma_theta  = 0.;
-      double sigma_phi    = 0.;      
+      double sigma_phi    = 0.;
       if ( std::fabs(decayProduct->charge()) > 0.5 )
       {
         sigma_pt          = get_trackResolution_pt(decayProduct->p4(), resolutions);
@@ -133,12 +133,12 @@ namespace
       cov7x7(1,3) = (pt*sin_phi*csc2_theta/energy)*sigma2_pt;
       cov7x7(2,0) = cov7x7(0,2);
       cov7x7(2,1) = cov7x7(1,2);
-      cov7x7(2,2) = cot2_theta*sigma2_pt + pt2*csc4_theta*sigma2_phi;
-      cov7x7(2,3) = (pt*cot_theta*csc2_theta/energy)*sigma2_pt - (pt3*cot_theta*csc4_theta/energy)*sigma2_theta;
+      cov7x7(2,2) = cot2_theta*sigma2_pt + pt2*csc4_theta*sigma2_theta;
+      cov7x7(2,3) = (pt*cot_theta*csc2_theta/energy)*sigma2_pt + (pt3*cot_theta*csc4_theta/energy)*sigma2_theta;
       cov7x7(3,0) = cov7x7(0,3);
       cov7x7(3,1) = cov7x7(1,3);
       cov7x7(3,2) = cov7x7(2,3);
-      cov7x7(3,3) = (pt2*csc4_theta/energy2)*sigma2_pt + (pt4*cot2_theta*csc4_theta/energy2)*sigma2_theta;
+      cov7x7(3,3) = (pt2*csc4_theta/energy2)*sigma2_pt + (pt4*cot2_theta*csc4_theta/energy2)*sigma2_theta ;
       double dk = 0.;
       double dr = 0.;
       double dn = 0.;

@@ -32,7 +32,7 @@ namespace
                                      const ROOT::Math::Boost& boost_trf,
                                      int verbosity = 0, bool cartesian = true)
   {
-    if ( verbosity >= 1 )
+    if ( verbosity >= 2 )
     { 
       std::cout << "<getPolarimetricVec_OneProng0PiZero>:\n";
     }
@@ -52,20 +52,20 @@ namespace
     // CV: notation of four-vectors chosen according to Section 3.3 of the paper
     //       Comput.Phys.Commun. 64 (1990) 275
     reco::Candidate::LorentzVector chP4 = ch->get_p4();
-    if ( verbosity >= 1 )
+    if ( verbosity >= 2 )
     { 
       printLorentzVector("chP4", chP4, cartesian);
     }
     
     reco::Candidate::LorentzVector Q = getP4_ttrf_hf_trf(chP4, boost_ttrf, r, n, k, boost_trf);
-    if ( verbosity >= 1 )
+    if ( verbosity >= 2 )
     { 
       printLorentzVector("Q", Q, cartesian);
     }
     const double f1 = 0.1284;
     double omega = (square(mTau) - chP4.mass2())*square(mTau);
     reco::Candidate::Vector h = -(2.*gamma_va*square(f1)*cube(mTau)/omega)*Q.Vect();
-    if ( verbosity >= 1 )
+    if ( verbosity >= 2 )
     { 
       printVector("h", h, cartesian);
     }
@@ -76,7 +76,7 @@ namespace
 reco::Candidate::Vector
 SpinAnalyzerOneProng0Pi0::operator()(const KinematicEvent& evt, int tau)
 {
-  if ( verbosity_ >= 1 )
+  if ( verbosity_ >= 2 )
   {
     std::cout << "<SpinAnalyzerOneProng0Pi0::operator()>:\n";
   }

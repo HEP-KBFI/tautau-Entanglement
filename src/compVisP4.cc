@@ -7,10 +7,8 @@ compVisP4(const std::vector<const reco::GenParticle*>& decayProducts)
   for ( const reco::GenParticle* decayProduct : decayProducts )
   {
     int absPdgId = std::abs(decayProduct->pdgId());
-    if ( !(absPdgId == 12 || absPdgId == 14 || absPdgId == 16) )
-    {
-      visP4 += decayProduct->p4();
-    }
+    if ( absPdgId == 12 || absPdgId == 14 || absPdgId == 16) continue;
+    visP4 += decayProduct->p4();
   }
   return visP4;
 }

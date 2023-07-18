@@ -24,7 +24,7 @@ namespace
                                      const ROOT::Math::Boost& boost_trf,
                                      int verbosity = 0, bool cartesian = true)
   {
-    if ( verbosity >= 1 )
+    if ( verbosity >= 2 )
     {
       std::cout << "<getPolarimetricVec_ThreeProng0PiZero>:\n";
     }
@@ -39,7 +39,7 @@ namespace
 reco::Candidate::Vector
 SpinAnalyzerThreeProng0Pi0::operator()(const KinematicEvent& evt, int tau)
 {
-  if ( verbosity_ >= 1 )
+  if ( verbosity_ >= 2 )
   {
     std::cout << "<SpinAnalyzerThreeProng0Pi0::operator()>:\n";
   }

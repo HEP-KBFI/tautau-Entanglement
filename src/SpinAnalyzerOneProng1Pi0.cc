@@ -42,7 +42,7 @@ namespace
                                      const ROOT::Math::Boost& boost_trf,
                                      int verbosity = 0, bool cartesian = true)
   {
-    if ( verbosity >= 1 )
+    if ( verbosity >= 2 )
     {
       std::cout << "<getPolarimetricVec_OneProng1PiZero>:\n";
     }
@@ -71,7 +71,7 @@ namespace
     //       Comput.Phys.Commun. 64 (1990) 275
     reco::Candidate::LorentzVector chP4 = ch->get_p4();
     reco::Candidate::LorentzVector q1 = getP4_ttrf_hf_trf(chP4, boost_ttrf, r, n, k, boost_trf);
-    if ( verbosity >= 1 )
+    if ( verbosity >= 2 )
     { 
       printLorentzVector("chP4", chP4, cartesian);
       printLorentzVector("q1", q1, cartesian);
@@ -79,7 +79,7 @@ namespace
 
     reco::Candidate::LorentzVector pi0P4 = pi0->get_p4();
     reco::Candidate::LorentzVector q2 = getP4_ttrf_hf_trf(pi0P4, boost_ttrf, r, n, k, boost_trf);
-    if ( verbosity >= 1 )
+    if ( verbosity >= 2 )
     {
       printLorentzVector("pi0P4", pi0P4, cartesian);
       printLorentzVector("q2", q2, cartesian);
@@ -92,7 +92,7 @@ namespace
     //     while keeping the Px, Py, Pz momentum components fixed
     reco::Candidate::LorentzVector nuP4 = fixNeutrinoMass(tauP4 - visTauP4);
     reco::Candidate::LorentzVector N = fixNeutrinoMass(getP4_ttrf_hf_trf(nuP4, boost_ttrf, r, n, k, boost_trf));
-    if ( verbosity >= 1 )
+    if ( verbosity >= 2 )
     {
       printLorentzVector("nuP4", nuP4, cartesian);
       std::cout << " mass = " << nuP4.mass() << "\n";
@@ -102,7 +102,7 @@ namespace
     assert(nuP4.energy() >= 0. && N.energy() >= 0.);
 
     reco::Candidate::LorentzVector P = getP4_ttrf_hf_trf(tauP4, boost_ttrf, r, n, k, boost_trf);
-    if ( verbosity >= 1 )
+    if ( verbosity >= 2 )
     {
       printLorentzVector("P", P, cartesian);
     }
@@ -112,7 +112,7 @@ namespace
     // CV: term 2.*|f2|^2 appears in expression for h as well as in expression for omega
     //     and drops out
     reco::Candidate::Vector h = -(gamma_va*mTau/omega)*(2.*(q.Dot(N))*q.Vect() - q.mass2()*N.Vect());
-    if ( verbosity >= 1 )
+    if ( verbosity >= 2 )
     { 
       printVector("h", h, cartesian);
     }
@@ -123,7 +123,7 @@ namespace
 reco::Candidate::Vector
 SpinAnalyzerOneProng1Pi0::operator()(const KinematicEvent& evt, int tau)
 {
-  if ( verbosity_ >= 1 )
+  if ( verbosity_ >= 2 )
   {
     std::cout << "<SpinAnalyzerOneProng1Pi0::operator()>:\n";
   }

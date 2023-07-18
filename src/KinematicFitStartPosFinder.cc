@@ -269,7 +269,7 @@ namespace
     math::Matrix3x3 vinv = v.Inverse(errorFlag);
     if ( errorFlag != 0 )
       throw cmsException("get_linearPCA", __LINE__)
-         << "Failed to invertex matrix v !!\n";
+         << "Failed to invert matrix v !!\n";
     math::Vector3 lambda = vinv*r;
     reco::Candidate::Point pca1 = pv + lambda(0)*tauP3;
     reco::Candidate::Point pca2 = sv + lambda(1)*visTauP3;
@@ -288,7 +288,7 @@ KinematicFitStartPosFinder::operator()(const KinematicEvent& kineEvt)
 {
   if ( verbosity_ >= 1 )
   {
-    std::cout << "<KinematicFit::findStartPosition>:\n";
+    std::cout << "<KinematicFitStartPosFinder::operator()>:\n";
   }
 
   const reco::Candidate::LorentzVector& higgsP4       = kineEvt.get_recoilP4();
@@ -344,7 +344,7 @@ KinematicFitStartPosFinder::operator()(const KinematicEvent& kineEvt)
   math::Matrix3x3 Minv = M.Inverse(errorFlag);
   if ( errorFlag != 0 )
     throw cmsException("KinematicFitStartPosFinder::operator()", __LINE__)
-      << "Failed to invertex matrix M !!\n";
+      << "Failed to invert matrix M !!\n";
 
   math::Vector3 v = Minv*lambda;
 
