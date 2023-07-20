@@ -23,10 +23,10 @@ get_leadTrack(const std::vector<KinematicParticle>& daughters)
   double max_pt = -1.;
   for ( const KinematicParticle& daughter : daughters )
   {
-    if ( std::fabs(daughter.get_charge()) > 0.5 && daughter.get_p4().pt() > max_pt )
+    if ( std::fabs(daughter.charge()) > 0.5 && daughter.p4().pt() > max_pt )
     {
       leadTrack = &daughter;
-      max_pt = daughter.get_p4().pt();
+      max_pt = daughter.p4().pt();
     }
   }
   return leadTrack;

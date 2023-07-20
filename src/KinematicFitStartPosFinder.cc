@@ -193,8 +193,8 @@ namespace
     {
       reco::Candidate::LorentzVector tauPlusP4  = 0.5*(1. - a)*higgsP4 + 0.5*b*visTauPlusP4 - 0.5*c*visTauMinusP4 + d[idx]*qP4;
       reco::Candidate::LorentzVector tauMinusP4 = 0.5*(1. + a)*higgsP4 - 0.5*b*visTauPlusP4 + 0.5*c*visTauMinusP4 - d[idx]*qP4;
-      double tipPerp = get_tipPerp(tauPlusP4, visTauPlusP4, evt.get_pv(), evt.get_tipPCATauPlus())
-                      + get_tipPerp(tauMinusP4, visTauMinusP4, evt.get_pv(), evt.get_tipPCATauMinus());
+      double tipPerp = get_tipPerp(tauPlusP4, visTauPlusP4, evt.pv(), evt.tipPCATauPlus())
+                      + get_tipPerp(tauMinusP4, visTauMinusP4, evt.pv(), evt.tipPCATauMinus());
       if ( verbosity >= 1 )
       {
         std::cout << "solution #" << idx << ": tipPerp = " << tipPerp << "\n";
@@ -291,15 +291,15 @@ KinematicFitStartPosFinder::operator()(const KinematicEvent& kineEvt)
     std::cout << "<KinematicFitStartPosFinder::operator()>:\n";
   }
 
-  const reco::Candidate::LorentzVector& higgsP4       = kineEvt.get_recoilP4();
-  const reco::Candidate::LorentzVector& visTauPlusP4  = kineEvt.get_visTauPlusP4();
-  const reco::Candidate::LorentzVector& visTauMinusP4 = kineEvt.get_visTauMinusP4();
+  const reco::Candidate::LorentzVector& higgsP4       = kineEvt.recoilP4();
+  const reco::Candidate::LorentzVector& visTauPlusP4  = kineEvt.visTauPlusP4();
+  const reco::Candidate::LorentzVector& visTauMinusP4 = kineEvt.visTauMinusP4();
 
   // reconstruct the four-vectors of tau+ and tau- in the laboratory (detector) system.
   // The formulas are taken from Appendix C of the paper arXiv:2211.10513
-  double mVisTauPlus  = kineEvt.get_tauPlus_decayMode()  == reco::PFTau::kOneProng0PiZero ?
+  double mVisTauPlus  = kineEvt.tauPlus_decayMode()  == reco::PFTau::kOneProng0PiZero ?
     mChargedPion : visTauPlusP4.mass();
-  double mVisTauMinus = kineEvt.get_tauMinus_decayMode() == reco::PFTau::kOneProng0PiZero ?
+  double mVisTauMinus = kineEvt.tauMinus_decayMode() == reco::PFTau::kOneProng0PiZero ?
     mChargedPion : visTauMinusP4.mass();
 
   double x = higgsP4.Dot(visTauPlusP4);
@@ -367,8 +367,13 @@ KinematicFitStartPosFinder::operator()(const KinematicEvent& kineEvt)
   bool hasConverged = false;
   int iteration = 1;
   const int max_iterations = 10;
-  while ( !hasConverged )
+  while ( !hasConverged && iteration <= max_iterations )
   {
+    if ( verbosity_ >= 1 )
+    {
+      std::cout << "iteration #" << iteration << ":\n";
+    }
+
     double dm2 = mVisTauMinus2 - mVisTauPlus2;
 
     M(0,0) = -x;
@@ -382,7 +387,7 @@ KinematicFitStartPosFinder::operator()(const KinematicEvent& kineEvt)
     M(2,2) =  y + 0.5*c0*dm2;
     if ( verbosity_ >= 1 )
     {
-      std::cout << "M" << iteration << ":\n";
+      std::cout << "M:\n";
       std::cout << M << "\n";
     }
   
@@ -391,7 +396,7 @@ KinematicFitStartPosFinder::operator()(const KinematicEvent& kineEvt)
     lambda(2) = 0.25*(square(b0) + square(c0))*dm2;
     if ( verbosity_ >= 1 )
     {
-      std::cout << "lambda" << iteration << ":\n";
+      std::cout << "lambda:\n";
       std::cout << lambda << "\n";
     }
  
@@ -402,9 +407,9 @@ KinematicFitStartPosFinder::operator()(const KinematicEvent& kineEvt)
     double c1 = v(2);
     if ( verbosity_ >= 1 )
     {
-      std::cout << "a " << iteration << " = " << a1 << "\n";
-      std::cout << "b " << iteration << " = " << b1 << "\n";
-      std::cout << "c " << iteration << " = " << c1 << "\n";
+      std::cout << "a = " << a1 << "\n";
+      std::cout << "b = " << b1 << "\n";
+      std::cout << "c = " << c1 << "\n";
     }
 
     reco::Candidate::LorentzVector q1P4;
@@ -412,8 +417,7 @@ KinematicFitStartPosFinder::operator()(const KinematicEvent& kineEvt)
     auto tau1P4 = comp_tauP4(a1, b1, c1, d1, higgsP4, visTauPlusP4, visTauMinusP4, q1P4, kineEvt, verbosity_, cartesian_);
 
     double dR2sum = deltaR2(tau0P4.first, tau1P4.first) + deltaR2(tau0P4.second, tau1P4.second);
-
-    if ( dR2sum > 1.e-6 && iteration < max_iterations )
+    if ( dR2sum > 1.e-6 )
     {
       ++iteration;
       a0 = a1;
@@ -427,6 +431,10 @@ KinematicFitStartPosFinder::operator()(const KinematicEvent& kineEvt)
     {
       hasConverged = true;
     }
+  }
+  if ( iteration > max_iterations )
+  {
+    std::cerr << "WARNING: KinematicFitStartPosFinder failed to converge !!" << std::endl;
   }
   if ( verbosity_ >= 1 )
   {
@@ -451,32 +459,34 @@ KinematicFitStartPosFinder::operator()(const KinematicEvent& kineEvt)
 
   kineEvt_startpos.tauPlusP4_ = tauPlusP4;
   kineEvt_startpos.tauPlusP4_isValid_ = true;
-  if ( !kineEvt_startpos.get_svTauPlus_isValid() )
+  if ( !kineEvt_startpos.svTauPlus_isValid() )
   {
-    const KinematicParticle* leadTrack = get_leadTrack(kineEvt_startpos.get_daughtersTauPlus());
+    const KinematicParticle* leadTrack = get_leadTrack(kineEvt_startpos.daughtersTauPlus());
     assert(leadTrack);
-    const reco::Candidate::Point& tipPCA = kineEvt_startpos.get_tipPCATauPlus();
-    kineEvt_startpos.svTauPlus_ = get_linearPCA(kineEvt_startpos.get_pv(), tauPlusP4.Vect(), tipPCA, leadTrack->get_p4().Vect(), verbosity_);
+    const reco::Candidate::Point& tipPCA = kineEvt_startpos.tipPCATauPlus();
+    kineEvt_startpos.svTauPlus_ = get_linearPCA(kineEvt_startpos.pv(), tauPlusP4.Vect(), tipPCA, leadTrack->p4().Vect(), verbosity_);
     kineEvt_startpos.svTauPlus_isValid_ = true;
   }
 
   kineEvt_startpos.tauMinusP4_ = tauMinusP4;
   kineEvt_startpos.tauMinusP4_isValid_ = true;
-  if ( !kineEvt_startpos.get_svTauMinus_isValid() )
+  if ( !kineEvt_startpos.svTauMinus_isValid() )
   {
-    const KinematicParticle* leadTrack = get_leadTrack(kineEvt_startpos.get_daughtersTauMinus());
+    const KinematicParticle* leadTrack = get_leadTrack(kineEvt_startpos.daughtersTauMinus());
     assert(leadTrack);
-    const reco::Candidate::Point& tipPCA = kineEvt_startpos.get_tipPCATauMinus();
-    kineEvt_startpos.svTauMinus_ = get_linearPCA(kineEvt_startpos.get_pv(), tauMinusP4.Vect(), tipPCA, leadTrack->get_p4().Vect(), verbosity_);
+    const reco::Candidate::Point& tipPCA = kineEvt_startpos.tipPCATauMinus();
+    kineEvt_startpos.svTauMinus_ = get_linearPCA(kineEvt_startpos.pv(), tauMinusP4.Vect(), tipPCA, leadTrack->p4().Vect(), verbosity_);
     kineEvt_startpos.svTauMinus_isValid_ = true;
   }
 
   kineEvt_startpos.recoilP4_ = tauPlusP4 + tauMinusP4;
 
-  reco::Candidate::Vector hPlus = spinAnalyzer_(kineEvt, SpinAnalyzerBase::kTauPlus);
+  reco::Candidate::Vector hPlus = spinAnalyzer_(kineEvt_startpos, SpinAnalyzerBase::kTauPlus);
   kineEvt_startpos.hPlus_ = hPlus;
-  reco::Candidate::Vector hMinus = spinAnalyzer_(kineEvt, SpinAnalyzerBase::kTauMinus);
+  kineEvt_startpos.hPlus_isValid_ = true;
+  reco::Candidate::Vector hMinus = spinAnalyzer_(kineEvt_startpos, SpinAnalyzerBase::kTauMinus);
   kineEvt_startpos.hMinus_ = hMinus;
+  kineEvt_startpos.hMinus_isValid_ = true;
 
   return kineEvt_startpos;
 }

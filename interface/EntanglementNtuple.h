@@ -1,20 +1,21 @@
 #ifndef TauAnalysis_Entanglement_EntanglementNtuple_h
 #define TauAnalysis_Entanglement_EntanglementNtuple_h
 
-#include "FWCore/Framework/interface/Event.h"                  // edm::Event
+#include "FWCore/Framework/interface/Event.h"                     // edm::Event
 
-#include "DataFormats/Candidate/interface/Candidate.h"         // reco::Candidate::LorentzVector
+#include "DataFormats/Candidate/interface/Candidate.h"            // reco::Candidate::LorentzVector
 
-#include "TauAnalysis/Entanglement/interface/getP4_rf.h"       // getP4_rf()
-#include "TauAnalysis/Entanglement/interface/KinematicEvent.h" // KinematicEvent
+#include "TauAnalysis/Entanglement/interface/getP4_rf.h"          // getP4_rf()
+#include "TauAnalysis/Entanglement/interface/KinematicEvent.h"    // KinematicEvent
+#include "TauAnalysis/Entanglement/interface/Matrix_and_Vector.h" // numMeasurements, numParameters
 
-#include <Math/Boost.h>                                        // ROOT::Math::Boost
-#include <TString.h>                                           // Form()
-#include <TTree.h>                                             // TTree
-#include <Rtypes.h>                                            // Float_t, Int_t
+#include <Math/Boost.h>                                           // ROOT::Math::Boost
+#include <TString.h>                                              // Form()
+#include <TTree.h>                                                // TTree
+#include <Rtypes.h>                                               // Float_t, Int_t
 
-#include <vector>                                              // std::vector<>
-#include <string>                                              // std::string
+#include <vector>                                                 // std::vector<>
+#include <string>                                                 // std::string
 
 namespace
 {
@@ -42,7 +43,7 @@ namespace
   }
 
   double
-  get_z(const reco::Candidate::LorentzVector& tauP4, const reco::Candidate::LorentzVector& visTauP4, const ROOT::Math::Boost& boost_ttrf)
+  comp_z(const reco::Candidate::LorentzVector& tauP4, const reco::Candidate::LorentzVector& visTauP4, const ROOT::Math::Boost& boost_ttrf)
   {
     reco::Candidate::LorentzVector tauP4_ttrf = getP4_rf(tauP4, boost_ttrf);
     reco::Candidate::LorentzVector visTauP4_ttrf = getP4_rf(visTauP4, boost_ttrf);
@@ -176,21 +177,21 @@ class EntanglementNtuple
     void
     fillBranches(const KinematicEvent& kineEvt)
     {
-      const reco::Candidate::Point& pv = kineEvt.get_pv();
+      const reco::Candidate::Point& pv = kineEvt.pv();
       pv_x_               = pv.x();
       pv_y_               = pv.y();
       pv_z_               = pv.z();
 
-      const reco::Candidate::LorentzVector& recoilP4 = kineEvt.get_recoilP4();
+      const reco::Candidate::LorentzVector& recoilP4 = kineEvt.recoilP4();
       recoil_pt_          = recoilP4.pt();
       recoil_eta_         = recoilP4.eta();
       recoil_phi_         = recoilP4.phi();
       recoil_mass_        = recoilP4.mass();
       ROOT::Math::Boost boost_ttrf = ROOT::Math::Boost(recoilP4.BoostToCM());
 
-      if ( kineEvt.get_hPlus_isValid() )
+      if ( kineEvt.hPlus_isValid() )
       {
-        reco::Candidate::Vector hPlus = kineEvt.get_hPlus();
+        reco::Candidate::Vector hPlus = kineEvt.hPlus();
         hPlus_r_          = hPlus.x();
         hPlus_n_          = hPlus.y();
         hPlus_k_          = hPlus.z();
@@ -202,9 +203,9 @@ class EntanglementNtuple
         hPlus_k_          = 0.;
       }
       reco::Candidate::LorentzVector tauPlusP4;
-      if ( kineEvt.get_tauPlusP4_isValid() )
+      if ( kineEvt.tauPlusP4_isValid() )
       {
-        kineEvt.get_tauPlusP4();
+        kineEvt.tauPlusP4();
         tauPlus_pt_       = tauPlusP4.pt();
         tauPlus_eta_      = tauPlusP4.eta();
         tauPlus_phi_      = tauPlusP4.phi();
@@ -217,10 +218,10 @@ class EntanglementNtuple
         tauPlus_phi_      = 0.;
         tauPlus_mass_     = 0.;
       }
-      tauPlus_decayMode_  = kineEvt.get_tauPlus_decayMode();
-      if ( kineEvt.get_svTauPlus_isValid() )
+      tauPlus_decayMode_  = kineEvt.tauPlus_decayMode();
+      if ( kineEvt.svTauPlus_isValid() )
       {
-        const reco::Candidate::Point& svPlus = kineEvt.get_svTauPlus();
+        const reco::Candidate::Point& svPlus = kineEvt.svTauPlus();
         svPlus_x_         = svPlus.x();
         svPlus_y_         = svPlus.y();
         svPlus_z_         = svPlus.z();
@@ -231,19 +232,19 @@ class EntanglementNtuple
         svPlus_y_         = 0.;
         svPlus_z_         = 0.;
       }
-      const reco::Candidate::LorentzVector& visPlusP4 = kineEvt.get_visTauPlusP4();
+      const reco::Candidate::LorentzVector& visPlusP4 = kineEvt.visTauPlusP4();
       visPlus_pt_         = visPlusP4.pt();
       visPlus_eta_        = visPlusP4.eta();
       visPlus_phi_        = visPlusP4.phi();
       visPlus_mass_       = visPlusP4.mass();
-      if ( kineEvt.get_tauPlusP4_isValid() )
+      if ( kineEvt.tauPlusP4_isValid() )
       {
-        zPlus_            = get_z(tauPlusP4, visPlusP4, boost_ttrf);
+        zPlus_            = comp_z(tauPlusP4, visPlusP4, boost_ttrf);
       }
 
-      if ( kineEvt.get_hMinus_isValid() )
+      if ( kineEvt.hMinus_isValid() )
       {
-        reco::Candidate::Vector hMinus = kineEvt.get_hMinus();
+        reco::Candidate::Vector hMinus = kineEvt.hMinus();
         hMinus_r_         = hMinus.x();
         hMinus_n_         = hMinus.y();
         hMinus_k_         = hMinus.z();
@@ -255,9 +256,9 @@ class EntanglementNtuple
         hMinus_k_         = 0.;
       }
       reco::Candidate::LorentzVector tauMinusP4;
-      if ( kineEvt.get_tauMinusP4_isValid() )
+      if ( kineEvt.tauMinusP4_isValid() )
       {
-        kineEvt.get_tauMinusP4();
+        kineEvt.tauMinusP4();
         tauMinus_pt_      = tauMinusP4.pt();
         tauMinus_eta_     = tauMinusP4.eta();
         tauMinus_phi_     = tauMinusP4.phi();
@@ -270,10 +271,10 @@ class EntanglementNtuple
         tauMinus_phi_     = 0.;
         tauMinus_mass_    = 0.;
       }
-      tauMinus_decayMode_ = kineEvt.get_tauMinus_decayMode();
-      if ( kineEvt.get_svTauMinus_isValid() )
+      tauMinus_decayMode_ = kineEvt.tauMinus_decayMode();
+      if ( kineEvt.svTauMinus_isValid() )
       {
-        const reco::Candidate::Point& svMinus = kineEvt.get_svTauMinus();
+        const reco::Candidate::Point& svMinus = kineEvt.svTauMinus();
         svMinus_x_        = svMinus.x();
         svMinus_y_        = svMinus.y();
         svMinus_z_        = svMinus.z();
@@ -284,17 +285,17 @@ class EntanglementNtuple
         svMinus_y_        = 0.;
         svMinus_z_        = 0.;
       }
-      const reco::Candidate::LorentzVector& visMinusP4 = kineEvt.get_visTauMinusP4();
+      const reco::Candidate::LorentzVector& visMinusP4 = kineEvt.visTauMinusP4();
       visMinus_pt_        = visMinusP4.pt();
       visMinus_eta_       = visMinusP4.eta();
       visMinus_phi_       = visMinusP4.phi();
       visMinus_mass_      = visMinusP4.mass();
-      if ( kineEvt.get_tauMinusP4_isValid() )
+      if ( kineEvt.tauMinusP4_isValid() )
       {
-        zMinus_           = get_z(tauMinusP4, visMinusP4, boost_ttrf);
+        zMinus_           = comp_z(tauMinusP4, visMinusP4, boost_ttrf);
       }
 
-      if ( kineEvt.get_tauPlusP4_isValid() && kineEvt.get_tauMinusP4_isValid() )
+      if ( kineEvt.tauPlusP4_isValid() && kineEvt.tauMinusP4_isValid() )
       {
         mTauTau_          = (tauPlusP4 + tauMinusP4).mass();
         reco::Candidate::LorentzVector tauMinusP4_ttrf = getP4_rf(tauMinusP4, boost_ttrf);
@@ -373,6 +374,9 @@ class EntanglementNtuple
   branchType_KinematicEvent branches_KinematicEvent_startPos_;
 
   branchType_KinematicEvent branches_KinematicEvent_kinFit_;
+  static const int kinFit_cov_size = kinFit::numMeasurements + kinFit::numParameters;
+  Float_t kinFit_cov_[kinFit_cov_size][kinFit_cov_size];
+  Float_t kinFit_chi2_;
 
   Float_t evtWeight_;                // event weight of Monte Carlo generator
 };

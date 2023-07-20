@@ -6,13 +6,9 @@
 #include "TauAnalysis/Entanglement/interface/printPoint.h"         // printPoint()
 #include "TauAnalysis/Entanglement/interface/square.h"             // square()
 
-#include <cstdlib>                                                 // std::getenv()
+#include <cmath>                                                   // cos(), sin(), std::sqrt()
 
-namespace math
-{
-  typedef Matrix<7,5>::type Matrix7x5;
-  typedef Matrix<5,7>::type Matrix5x7;
-}
+#include <cstdlib>                                                 // std::getenv()
 
 TDatabasePDG* KinematicParticle::pdg_ = nullptr;
 
@@ -36,7 +32,7 @@ KinematicParticle::KinematicParticle(int pdgId)
   if ( !pdgEntry )
     throw cmsException("KinematicParticle", __LINE__)
       << "Failed to find entry in PDG table for particle with pdgId = " << pdgId << " !!\n";
-  mass_ = pdgEntry->Mass();
+  pdgMass_ = pdgEntry->Mass();
   charge_ = round(pdgEntry->Charge()/3.);
 }
 
@@ -65,7 +61,7 @@ KinematicParticle::set_params5(const math::Vector5& params5, const math::Matrix5
   double px = a_over_2c*cos(phi0);
   double py = a_over_2c*sin(phi0);
   double pz = a_over_2c*lambda;
-  double E  = sqrt(square(a_over_2c)*(1. + square(lambda)) + square(mass_));
+  double E  = std::sqrt(square(a_over_2c)*(1. + square(lambda)) + square(pdgMass_));
   p4_ = reco::Candidate::LorentzVector(px, py, pz, E);
 
   double x = xr - d0*sin(phi0);
@@ -90,8 +86,8 @@ KinematicParticle::set_params5(const math::Vector5& params5, const math::Matrix5
   // The partial derivatives are taken from Eq. (44) of
   //   http://www.phys.ufl.edu/~avery/fitting/kinematic.pdf
 
-  double pt = sqrt(square(px) + square(py));
-  double p = sqrt(square(px) + square(py) + square(pz));
+  double pt = std::sqrt(square(px) + square(py));
+  double p = std::sqrt(square(px) + square(py) + square(pz));
 
   math::Matrix7x5 B;
   B(0,0) = -px/c;
@@ -130,37 +126,37 @@ KinematicParticle::set_params7(const math::Vector7& params7, const math::Matrix7
 }
 
 const reco::Candidate::LorentzVector&
-KinematicParticle::get_p4() const
+KinematicParticle::p4() const
 {
   return p4_;
 }
 
 const reco::Candidate::Point&
-KinematicParticle::get_vertex() const
+KinematicParticle::vertex() const
 {
   return vertex_;
 }
 
 int
-KinematicParticle::get_pdgId() const
+KinematicParticle::pdgId() const
 {
   return pdgId_;
 }
 
 double
-KinematicParticle::get_mass() const
+KinematicParticle::pdgMass() const
 {
-  return mass_;
+  return pdgMass_;
 }
 
 int
-KinematicParticle::get_charge() const
+KinematicParticle::charge() const
 {
   return charge_;
 }
 
 const math::Vector5&
-KinematicParticle::get_params5() const
+KinematicParticle::params5() const
 {
   if ( !params5_isValid_ )
     throw cmsException("KinematicParticle", __LINE__)
@@ -169,7 +165,7 @@ KinematicParticle::get_params5() const
 }
 
 const math::Matrix5x5&
-KinematicParticle::get_cov5x5() const
+KinematicParticle::cov5x5() const
 {
   if ( !params5_isValid_ )
     throw cmsException("KinematicParticle", __LINE__)
@@ -178,7 +174,7 @@ KinematicParticle::get_cov5x5() const
 }
 
 const math::Vector7&
-KinematicParticle::get_params7() const
+KinematicParticle::params7() const
 {
   if ( !params7_isValid_ )
     throw cmsException("KinematicParticle", __LINE__)
@@ -187,7 +183,7 @@ KinematicParticle::get_params7() const
 }
 
 const math::Matrix7x7&
-KinematicParticle::get_cov7x7() const
+KinematicParticle::cov7x7() const
 {
   if ( !params7_isValid_ )
     throw cmsException("KinematicParticle", __LINE__)
@@ -200,9 +196,9 @@ printKinematicParticle(const std::string& label,
                        const KinematicParticle& particle,
                        bool cartesian)
 {
-  printLorentzVector(label, particle.get_p4(), cartesian);
-  std::cout << " pdgId = " << particle.get_pdgId() << "\n";
-  std::cout << " charge = " << particle.get_charge() << "\n";
-  std::cout << " mass = " << particle.get_mass() << "\n";
-  printPoint("vertex", particle.get_vertex());
+  printLorentzVector(label, particle.p4(), cartesian);
+  std::cout << " pdgId = " << particle.pdgId() << "\n";
+  std::cout << " charge = " << particle.charge() << "\n";
+  std::cout << " mass = " << particle.pdgMass() << "\n";
+  printPoint("vertex", particle.vertex());
 }

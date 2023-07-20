@@ -53,17 +53,17 @@ Smearing::operator()(const KinematicEvent& kineEvt)
 {
   KinematicEvent kineEvt_smeared(kineEvt);
 
-  kineEvt_smeared.pv_ = smear_pv(kineEvt.get_pv());
+  kineEvt_smeared.pv_ = smear_pv(kineEvt.pv());
 
-  kineEvt_smeared.recoilP4_ = smear_recoil_p4(kineEvt.get_recoilP4());
+  kineEvt_smeared.recoilP4_ = smear_recoil_p4(kineEvt.recoilP4());
 
   kineEvt_smeared.tauPlusP4_ = reco::Candidate::LorentzVector(0.,0.,0.,0.);
   kineEvt_smeared.tauPlusP4_isValid_ = false;
-  if ( kineEvt.get_svTauPlus_isValid() )
+  if ( kineEvt.svTauPlus_isValid() )
   {
-    kineEvt_smeared.svTauPlus_ = smear_sv(kineEvt.get_visTauPlusP4(), kineEvt.get_svTauPlus());
+    kineEvt_smeared.svTauPlus_ = smear_sv(kineEvt.visTauPlusP4(), kineEvt.svTauPlus());
   }
-  const std::vector<KinematicParticle>& daughtersTauPlus = kineEvt.get_daughtersTauPlus();
+  const std::vector<KinematicParticle>& daughtersTauPlus = kineEvt.daughtersTauPlus();
   kineEvt_smeared.daughtersTauPlus_.clear();
   for ( const KinematicParticle& daughter : daughtersTauPlus )
   {
@@ -72,15 +72,15 @@ Smearing::operator()(const KinematicEvent& kineEvt)
     daughter_smeared.vertex_ = kineEvt_smeared.svTauPlus_;
     kineEvt_smeared.daughtersTauPlus_.push_back(daughter_smeared);
   }
-  kineEvt_smeared.tipPCATauPlus_ = smear_tipPCA(daughtersTauPlus, kineEvt.get_tipPCATauPlus());
+  kineEvt_smeared.tipPCATauPlus_ = smear_tipPCA(daughtersTauPlus, kineEvt.tipPCATauPlus());
 
   kineEvt_smeared.tauMinusP4_ = reco::Candidate::LorentzVector(0.,0.,0.,0.);
   kineEvt_smeared.tauMinusP4_isValid_ = false;
-  if ( kineEvt.get_svTauMinus_isValid() )
+  if ( kineEvt.svTauMinus_isValid() )
   {
-    kineEvt_smeared.svTauMinus_ = smear_sv(kineEvt.get_visTauMinusP4(), kineEvt.get_svTauMinus());
+    kineEvt_smeared.svTauMinus_ = smear_sv(kineEvt.visTauMinusP4(), kineEvt.svTauMinus());
   }
-  const std::vector<KinematicParticle>& daughtersTauMinus = kineEvt.get_daughtersTauMinus();
+  const std::vector<KinematicParticle>& daughtersTauMinus = kineEvt.daughtersTauMinus();
   kineEvt_smeared.daughtersTauMinus_.clear();
   for ( const KinematicParticle& daughter : daughtersTauMinus )
   {
@@ -89,7 +89,12 @@ Smearing::operator()(const KinematicEvent& kineEvt)
     daughter_smeared.vertex_ = kineEvt_smeared.svTauPlus_;
     kineEvt_smeared.daughtersTauMinus_.push_back(daughter_smeared);
   }
-  kineEvt_smeared.tipPCATauMinus_ = smear_tipPCA(daughtersTauMinus, kineEvt.get_tipPCATauMinus());
+  kineEvt_smeared.tipPCATauMinus_ = smear_tipPCA(daughtersTauMinus, kineEvt.tipPCATauMinus());
+
+  kineEvt_smeared.hPlus_ = reco::Candidate::Vector(0.,0.,0.);
+  kineEvt_smeared.hPlus_isValid_ = false;
+  kineEvt_smeared.hMinus_ = reco::Candidate::Vector(0.,0.,0.);
+  kineEvt_smeared.hMinus_isValid_ = false;
 
   return kineEvt_smeared;
 }
@@ -102,12 +107,12 @@ Smearing::smear_pv(const reco::Candidate::Point& pv)
   double smeared_pvZ = pv.z();
   if ( applySmearing_pv_xy_ )
   {
-    smeared_pvX += rnd_.Gaus(0., resolutions_->get_pvResolution_xy());
-    smeared_pvY += rnd_.Gaus(0., resolutions_->get_pvResolution_xy());
+    smeared_pvX += rnd_.Gaus(0., resolutions_->pvResolution_xy());
+    smeared_pvY += rnd_.Gaus(0., resolutions_->pvResolution_xy());
   }
   if ( applySmearing_pv_z_ )
   {
-    smeared_pvZ += rnd_.Gaus(0., resolutions_->get_pvResolution_z());
+    smeared_pvZ += rnd_.Gaus(0., resolutions_->pvResolution_z());
   }
   return reco::Candidate::Point(smeared_pvX, smeared_pvY, smeared_pvZ);
 }
@@ -121,19 +126,19 @@ Smearing::smear_recoil_p4(const reco::Candidate::LorentzVector& recoilP4)
   double smeared_recoilE  = recoilP4.energy();
   if ( applySmearing_recoil_px_ )
   {
-    smeared_recoilPx += rnd_.Gaus(0., resolutions_->get_recoilResolution_px());
+    smeared_recoilPx += rnd_.Gaus(0., resolutions_->recoilResolution_px());
   }
   if ( applySmearing_recoil_py_ )
   {
-    smeared_recoilPy += rnd_.Gaus(0., resolutions_->get_recoilResolution_py());
+    smeared_recoilPy += rnd_.Gaus(0., resolutions_->recoilResolution_py());
   }
   if ( applySmearing_recoil_pz_ )
   {
-    smeared_recoilPz += rnd_.Gaus(0., resolutions_->get_recoilResolution_pz());
+    smeared_recoilPz += rnd_.Gaus(0., resolutions_->recoilResolution_pz());
   }
   if ( applySmearing_recoil_energy_ )
   {
-    smeared_recoilE  += rnd_.Gaus(0., resolutions_->get_recoilResolution_energy());
+    smeared_recoilE  += rnd_.Gaus(0., resolutions_->recoilResolution_energy());
   }
   return reco::Candidate::LorentzVector(smeared_recoilPx, smeared_recoilPy, smeared_recoilPz, smeared_recoilE);
 }
@@ -143,9 +148,9 @@ Smearing::smear_sv(const reco::Candidate::LorentzVector& p4, const reco::Candida
 {
   reco::Candidate::Vector r, n, k;
   get_localCoordinateSystem(p4, nullptr, nullptr, kBeam, r, n, k);
-  double dr = rnd_.Gaus(0., resolutions_->get_svResolution_perp());
-  double dn = rnd_.Gaus(0., resolutions_->get_svResolution_perp());
-  double dk = rnd_.Gaus(0., resolutions_->get_svResolution_parl());
+  double dr = rnd_.Gaus(0., resolutions_->svResolution_perp());
+  double dn = rnd_.Gaus(0., resolutions_->svResolution_perp());
+  double dk = rnd_.Gaus(0., resolutions_->svResolution_parl());
   double smeared_svX = sv.x();
   double smeared_svY = sv.y();
   double smeared_svZ = sv.z();
@@ -171,19 +176,19 @@ Smearing::smear_daughter_p4(const KinematicParticle& daughter)
   double sigma_pt    = 0.;
   double sigma_theta = 0.;
   double sigma_phi   = 0.;      
-  if ( std::fabs(daughter.get_charge()) > 0.5 )
+  if ( std::fabs(daughter.charge()) > 0.5 )
   {
-    sigma_pt         = get_trackResolution_pt(daughter.get_p4(), *resolutions_);
-    sigma_theta      = TMath::Pi()*resolutions_->get_trackResolution_theta();
-    sigma_phi        = TMath::Pi()*resolutions_->get_trackResolution_phi();
+    sigma_pt         = get_trackResolution_pt(daughter.p4(), *resolutions_);
+    sigma_theta      = TMath::Pi()*resolutions_->trackResolution_theta();
+    sigma_phi        = TMath::Pi()*resolutions_->trackResolution_phi();
   }
-  else if ( daughter.get_pdgId() == 111 )
+  else if ( daughter.pdgId() == 111 )
   {
-    sigma_pt         = get_ecalResolution_pt(daughter.get_p4(), *resolutions_);
-    sigma_theta      = TMath::Pi()*resolutions_->get_ecalResolution_theta();
-    sigma_phi        = TMath::Pi()*resolutions_->get_ecalResolution_phi();
+    sigma_pt         = get_ecalResolution_pt(daughter.p4(), *resolutions_);
+    sigma_theta      = TMath::Pi()*resolutions_->ecalResolution_theta();
+    sigma_phi        = TMath::Pi()*resolutions_->ecalResolution_phi();
   }
-  const reco::Candidate::LorentzVector& daughterP4 = daughter.get_p4();
+  const reco::Candidate::LorentzVector& daughterP4 = daughter.p4();
   double smeared_daughterPt    = rnd_.Gaus(daughterP4.pt(), sigma_pt);
   double smeared_daughterTheta = rnd_.Gaus(daughterP4.theta(), sigma_theta);
   double smeared_daughterPhi   = rnd_.Gaus(daughterP4.phi(), sigma_phi);
@@ -204,9 +209,9 @@ Smearing::smear_tipPCA(const std::vector<KinematicParticle>& daughters, const re
     return reco::Candidate::Point(0.,0.,0.);
   }
   reco::Candidate::Vector r, n, k;
-  get_localCoordinateSystem(leadTrack->get_p4(), nullptr, nullptr, kBeam, r, n, k);
-  double dr = rnd_.Gaus(0., resolutions_->get_tipResolution_perp());
-  double dn = rnd_.Gaus(0., resolutions_->get_tipResolution_perp());
+  get_localCoordinateSystem(leadTrack->p4(), nullptr, nullptr, kBeam, r, n, k);
+  double dr = rnd_.Gaus(0., resolutions_->tipResolution_perp());
+  double dn = rnd_.Gaus(0., resolutions_->tipResolution_perp());
   double smeared_pcaX = tipPCA.x();
   double smeared_pcaY = tipPCA.y();
   double smeared_pcaZ = tipPCA.z();

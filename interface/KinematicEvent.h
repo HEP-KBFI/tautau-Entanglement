@@ -12,6 +12,7 @@
 #include "DataFormats/Candidate/interface/Candidate.h"            // reco::Candidate::LorentzVector, reco::Candidate::Point
 
 #include "TauAnalysis/Entanglement/interface/KinematicParticle.h" // KinematicParticle
+#include "TauAnalysis/Entanglement/interface/Matrix_and_Vector.h" // math::Matrix3x3, math::Matrix4x4
 
 class KinematicEvent
 {
@@ -20,101 +21,155 @@ class KinematicEvent
   ~KinematicEvent();
 
   const reco::Candidate::Point&
-  get_pv() const;
+  pv() const;
+
+  const math::Matrix3x3&
+  pvCov() const;
 
   const reco::Candidate::LorentzVector&
-  get_recoilP4() const;
+  recoilP4() const;
 
-  reco::Candidate::LorentzVector
-  get_tauPlusP4() const;
+  const math::Matrix4x4&
+  recoilCov() const;
+
+  const reco::Candidate::LorentzVector&
+  tauPlusP4() const;
 
   bool
-  get_tauPlusP4_isValid() const;
+  tauPlusP4_isValid() const;
+
+  const math::Matrix4x4&
+  tauPlusCov() const;
+
+  bool
+  tauPlusCov_isValid() const;
 
   const reco::Candidate::LorentzVector&
-  get_visTauPlusP4() const;
+  visTauPlusP4() const;
+
+  const math::Matrix4x4&
+  visTauPlusCov() const;
 
   int
-  get_tauPlus_decayMode() const;
+  tauPlus_decayMode() const;
 
   const std::vector<KinematicParticle>&
-  get_daughtersTauPlus() const;
+  daughtersTauPlus() const;
 
   const reco::Candidate::Point&
-  get_tipPCATauPlus() const;
+  tipPCATauPlus() const;
 
   const reco::Candidate::Point&
-  get_svTauPlus() const;
+  svTauPlus() const;
+
+  const math::Matrix3x3&
+  svTauPlusCov() const;
 
   bool
-  get_svTauPlus_isValid() const;
+  svTauPlus_isValid() const;
 
   const reco::Candidate::Vector&
-  get_hPlus() const;
+  hPlus() const;
 
   bool
-  get_hPlus_isValid() const;
-
-  reco::Candidate::LorentzVector
-  get_tauMinusP4() const;
-
-  bool
-  get_tauMinusP4_isValid() const;
+  hPlus_isValid() const;
 
   const reco::Candidate::LorentzVector&
-  get_visTauMinusP4() const;
+  tauMinusP4() const;
+
+  bool
+  tauMinusP4_isValid() const;
+
+  const math::Matrix4x4&
+  tauMinusCov() const;
+
+  bool
+  tauMinusCov_isValid() const;
+
+  const reco::Candidate::LorentzVector&
+  visTauMinusP4() const;
+
+  const math::Matrix4x4&
+  visTauMinusCov() const;
 
   int
-  get_tauMinus_decayMode() const;
+  tauMinus_decayMode() const;
 
   const std::vector<KinematicParticle>&
-  get_daughtersTauMinus() const;
+  daughtersTauMinus() const;
 
   const reco::Candidate::Point&
-  get_tipPCATauMinus() const;
+  tipPCATauMinus() const;
 
   const reco::Candidate::Point&
-  get_svTauMinus() const;
+  svTauMinus() const;
+
+  const math::Matrix3x3&
+  svTauMinusCov() const;
 
   bool
-  get_svTauMinus_isValid() const;
+  svTauMinus_isValid() const;
 
   const reco::Candidate::Vector&
-  get_hMinus() const;
+  hMinus() const;
 
   bool
-  get_hMinus_isValid() const;
+  hMinus_isValid() const;
+
+  double
+  kinFitChi2() const;
+
+  const math::MatrixMpPxMpP&
+  kinFitCov() const;
+
+  bool
+  kinFit_isValid() const;
 
   friend class GenKinematicEventBuilder;
+  friend class KinematicFit;
   friend class KinematicFitStartPosFinder;
   friend class Smearing;
 
  private:
   reco::Candidate::Point pv_;
+  math::Matrix3x3 pvCov_;
 
   reco::Candidate::LorentzVector recoilP4_;
+  math::Matrix4x4 recoilCov_;
 
   reco::Candidate::LorentzVector tauPlusP4_;
   bool tauPlusP4_isValid_;
+  math::Matrix4x4 tauPlusCov_;
+  bool tauPlusCov_isValid_;
   reco::Candidate::LorentzVector visTauPlusP4_;
+  math::Matrix4x4 visTauPlusCov_;
   int tauPlus_decayMode_;
   std::vector<KinematicParticle> daughtersTauPlus_;
   reco::Candidate::Point tipPCATauPlus_;
   reco::Candidate::Point svTauPlus_;
+  math::Matrix3x3 svTauPlusCov_;
   bool svTauPlus_isValid_;
   reco::Candidate::Vector hPlus_;
   bool hPlus_isValid_;
 
   reco::Candidate::LorentzVector tauMinusP4_;
   bool tauMinusP4_isValid_;
+  math::Matrix4x4 tauMinusCov_;
+  bool tauMinusCov_isValid_;
   reco::Candidate::LorentzVector visTauMinusP4_;
+  math::Matrix4x4 visTauMinusCov_;
   int tauMinus_decayMode_;
   std::vector<KinematicParticle> daughtersTauMinus_;
   reco::Candidate::Point tipPCATauMinus_;
   reco::Candidate::Point svTauMinus_;
+  math::Matrix3x3 svTauMinusCov_;
   bool svTauMinus_isValid_;
   reco::Candidate::Vector hMinus_;
   bool hMinus_isValid_;
+
+  math::MatrixMpPxMpP kinFitCov_;
+  double kinFitChi2_;
+  bool kinFit_isValid_;
 };
 
 void

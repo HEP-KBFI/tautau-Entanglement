@@ -21,8 +21,8 @@ reco::Candidate::Vector
 SpinAnalyzer::operator()(const KinematicEvent& kineEvt, int tau)
 {
   int tau_decayMode = -1;
-  if      ( tau == SpinAnalyzerBase::kTauPlus  ) tau_decayMode = kineEvt.get_tauPlus_decayMode();
-  else if ( tau == SpinAnalyzerBase::kTauMinus ) tau_decayMode = kineEvt.get_tauMinus_decayMode();
+  if      ( tau == SpinAnalyzerBase::kTauPlus  ) tau_decayMode = kineEvt.tauPlus_decayMode();
+  else if ( tau == SpinAnalyzerBase::kTauMinus ) tau_decayMode = kineEvt.tauMinus_decayMode();
   else assert(0);
 
   reco::Candidate::Vector h;

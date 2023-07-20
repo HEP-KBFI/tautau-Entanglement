@@ -51,11 +51,11 @@ namespace
     const KinematicParticle* pi0 = nullptr;
     for ( const KinematicParticle& daughter : daughters )
     {
-      if ( abs(daughter.get_pdgId()) == 211 || abs(daughter.get_pdgId()) == 321 )
+      if ( abs(daughter.pdgId()) == 211 || abs(daughter.pdgId()) == 321 )
       {
         ch = &daughter;
       }
-      if ( daughter.get_pdgId() == 111 )
+      if ( daughter.pdgId() == 111 )
       {
         pi0 = &daughter;
       }
@@ -69,7 +69,7 @@ namespace
 
     // CV: notation of four-vectors chosen according to Section 3.4 of the paper
     //       Comput.Phys.Commun. 64 (1990) 275
-    reco::Candidate::LorentzVector chP4 = ch->get_p4();
+    reco::Candidate::LorentzVector chP4 = ch->p4();
     reco::Candidate::LorentzVector q1 = getP4_ttrf_hf_trf(chP4, boost_ttrf, r, n, k, boost_trf);
     if ( verbosity >= 2 )
     { 
@@ -77,7 +77,7 @@ namespace
       printLorentzVector("q1", q1, cartesian);
     }
 
-    reco::Candidate::LorentzVector pi0P4 = pi0->get_p4();
+    reco::Candidate::LorentzVector pi0P4 = pi0->p4();
     reco::Candidate::LorentzVector q2 = getP4_ttrf_hf_trf(pi0P4, boost_ttrf, r, n, k, boost_trf);
     if ( verbosity >= 2 )
     {
@@ -133,22 +133,22 @@ SpinAnalyzerOneProng1Pi0::operator()(const KinematicEvent& evt, int tau)
   reco::Candidate::LorentzVector visTauP4;
   if ( tau == SpinAnalyzerBase::kTauPlus )
   {
-    tauP4 = evt.get_tauPlusP4();
-    daughters = &evt.get_daughtersTauPlus();
-    visTauP4 = evt.get_visTauPlusP4();
+    tauP4 = evt.tauPlusP4();
+    daughters = &evt.daughtersTauPlus();
+    visTauP4 = evt.visTauPlusP4();
   }
   else if ( tau == SpinAnalyzerBase::kTauMinus )
   {
-    tauP4 = evt.get_tauMinusP4();
-    daughters = &evt.get_daughtersTauMinus();
-    visTauP4 = evt.get_visTauMinusP4();
+    tauP4 = evt.tauMinusP4();
+    daughters = &evt.daughtersTauMinus();
+    visTauP4 = evt.visTauMinusP4();
   }
   else assert(0);
-  reco::Candidate::LorentzVector recoilP4 = evt.get_recoilP4();
+  reco::Candidate::LorentzVector recoilP4 = evt.recoilP4();
   ROOT::Math::Boost boost_ttrf = ROOT::Math::Boost(recoilP4.BoostToCM());
   reco::Candidate::LorentzVector tauP4_ttrf = getP4_rf(tauP4, boost_ttrf);
   reco::Candidate::Vector r, n, k;
-  get_localCoordinateSystem(evt.get_tauMinusP4(), &recoilP4, &boost_ttrf, hAxis_, r, n, k, verbosity_, cartesian_);
+  get_localCoordinateSystem(evt.tauMinusP4(), &recoilP4, &boost_ttrf, hAxis_, r, n, k, verbosity_, cartesian_);
   reco::Candidate::LorentzVector tauP4_hf = getP4_hf(tauP4_ttrf, r, n, k);
   ROOT::Math::Boost boost_trf = ROOT::Math::Boost(tauP4_hf.BoostToCM());
 

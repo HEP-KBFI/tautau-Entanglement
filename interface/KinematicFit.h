@@ -4,7 +4,6 @@
 #include "DataFormats/Candidate/interface/Candidate.h"         // reco::Candidate::LorentzVector
 
 #include "TauAnalysis/Entanglement/interface/KinematicEvent.h" // KinematicEvent
-#include "TauAnalysis/Entanglement/interface/Resolutions.h"    // Resolutions
 #include "TauAnalysis/Entanglement/interface/SpinAnalyzer.h"   // SpinAnalyzer
 
 class KinematicFit
@@ -17,8 +16,6 @@ class KinematicFit
   operator()(const KinematicEvent& evt);
 
  private:
-  Resolutions* resolutions_;
-
   SpinAnalyzer spinAnalyzer_;
 
   int verbosity_;

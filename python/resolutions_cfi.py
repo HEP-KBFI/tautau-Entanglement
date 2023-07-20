@@ -1,10 +1,10 @@
 import FWCore.ParameterSet.Config as cms
 
 resolutions = cms.PSet(
-    recoilResolution_px     = cms.double(2.),     # [GeV]
-    recoilResolution_py     = cms.double(2.),     # [GeV]
+    recoilResolution_px     = cms.double(1.),     # [GeV]
+    recoilResolution_py     = cms.double(1.),     # [GeV]
     recoilResolution_pz     = cms.double(5.),     # [GeV]
-    recoilResolution_energy = cms.double(5.),     # [GeV]
+    recoilResolution_energy = cms.double(5.1),     # [GeV]
 
     pvResolution_xy         = cms.double(0.0015), # [cm]
     pvResolution_z          = cms.double(0.0030), # [cm]

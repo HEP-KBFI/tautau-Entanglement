@@ -27,22 +27,11 @@
  *
  */
 
-#include "DataFormats/Candidate/interface/Candidate.h" // reco::Candidate::LorentzVector, reco::Candidate::Point
-#include "DataFormats/Math/interface/Matrix.h"         // math::Matrix
-#include "DataFormats/Math/interface/Vector.h"         // math::Vector
+#include "DataFormats/Candidate/interface/Candidate.h"            // reco::Candidate::LorentzVector, reco::Candidate::Point
 
-#include <TDatabasePDG.h>                              // TDatabasePDG
+#include "TauAnalysis/Entanglement/interface/Matrix_and_Vector.h" // math::Matrix5x5, math::Matrix7x7, math::Vector5, math::Vector7
 
-#include <cmath>                                       // cos, sin, sqrt
-
-namespace math
-{
-  typedef Matrix<5,5>::type Matrix5x5;
-  typedef Vector<5>::type   Vector5;
-
-  typedef Matrix<7,7>::type Matrix7x7;
-  typedef Vector<7>::type   Vector7;
-}
+#include <TDatabasePDG.h>                                         // TDatabasePDG
 
 class KinematicParticle
 {
@@ -57,31 +46,31 @@ class KinematicParticle
   set_params7(const math::Vector7& params7, const math::Matrix7x7& cov7x7);
 
   const reco::Candidate::LorentzVector&
-  get_p4() const;
+  p4() const;
 
   const reco::Candidate::Point&
-  get_vertex() const;
+  vertex() const;
 
   int
-  get_pdgId() const;
+  pdgId() const;
 
   double
-  get_mass() const;
+  pdgMass() const;
 
   int
-  get_charge() const;
+  charge() const;
 
   const math::Vector5&
-  get_params5() const;
+  params5() const;
 
   const math::Matrix5x5&
-  get_cov5x5() const;
+  cov5x5() const;
 
   const math::Vector7&
-  get_params7() const;
+  params7() const;
 
   const math::Matrix7x7&
-  get_cov7x7() const;
+  cov7x7() const;
 
   friend class Smearing;
 
@@ -93,7 +82,7 @@ class KinematicParticle
   reco::Candidate::Point vertex_;
 
   int pdgId_;
-  double mass_;
+  double pdgMass_;
   int charge_;
 
   math::Vector5 params5_;

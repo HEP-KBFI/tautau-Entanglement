@@ -12,52 +12,52 @@ class Resolutions
   ~Resolutions();
 
   double
-  get_recoilResolution_px() const;
+  recoilResolution_px() const;
 
   double
-  get_recoilResolution_py() const;
+  recoilResolution_py() const;
   
   double
-  get_recoilResolution_pz() const;
+  recoilResolution_pz() const;
 
   double
-  get_recoilResolution_energy() const;
+  recoilResolution_energy() const;
 
   double
-  get_pvResolution_xy() const;
+  pvResolution_xy() const;
   
   double
-  get_pvResolution_z() const;
+  pvResolution_z() const;
 
   double
-  get_trackResolution_pt() const;
+  trackResolution_pt() const;
 
   double
-  get_trackResolution_theta() const;
+  trackResolution_theta() const;
 
   double
-  get_trackResolution_phi() const;
+  trackResolution_phi() const;
 
   double
-  get_ecalResolution_energy_a() const;
+  ecalResolution_energy_a() const;
 
   double
-  get_ecalResolution_energy_b() const;
+  ecalResolution_energy_b() const;
 
   double
-  get_ecalResolution_theta() const;
+  ecalResolution_theta() const;
 
   double
-  get_ecalResolution_phi() const;
+  ecalResolution_phi() const;
   
   double
-  get_svResolution_parl() const;
+  svResolution_parl() const;
   
   double
-  get_svResolution_perp() const;
+  svResolution_perp() const;
   
   double
-  get_tipResolution_perp() const;
+  tipResolution_perp() const;
 
  private:
   double recoilResolution_px_;     // [GeV]

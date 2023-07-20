@@ -45,8 +45,74 @@ GenKinematicEventBuilder::~GenKinematicEventBuilder()
 
 namespace
 {
+  math::Matrix3x3
+  build_pvCov(const Resolutions& resolutions)
+  {
+    math::Matrix3x3 pvCov;
+    pvCov(0,0) = square(resolutions.pvResolution_xy());
+    pvCov(1,1) = square(resolutions.pvResolution_xy());
+    pvCov(2,2) = square(resolutions.pvResolution_z());
+    return pvCov;
+  }
+
+  math::Matrix4x4
+  build_recoilCov(const Resolutions& resolutions)
+  {
+    math::Matrix4x4 recoilCov;
+    recoilCov(0,0) = square(resolutions.recoilResolution_px());
+    recoilCov(1,1) = square(resolutions.recoilResolution_py());
+    recoilCov(2,2) = square(resolutions.recoilResolution_pz());
+    recoilCov(3,3) = square(resolutions.recoilResolution_energy());
+    return recoilCov;
+  }
+
+  math::Matrix4x4
+  comp_visTauCov(const reco::Candidate::LorentzVector& visTauP4, const std::vector<KinematicParticle>& daughters)
+  {
+    math::Matrix4x4 visTauCov;
+    for ( const KinematicParticle& daughter : daughters )
+    {
+      int daughter_absPdgId = std::abs(daughter.pdgId());
+      if ( daughter_absPdgId == 12 || daughter_absPdgId == 14 || daughter_absPdgId == 16 ) continue;
+      const math::Matrix7x7& cov7x7 = daughter.cov7x7();
+      // CV: compute 4x4 covariance matrix of the tauh four-vector by summing the covariance matrices of all visible tau decay products;
+      //     for the syntax of retrieving a small covariance matrix from a larger one, 
+      //     see Section "Accessing and setting methods" of the ROOT documentation https://root.cern.ch/doc/v608/SMatrixDoc.html
+      visTauCov += cov7x7.Sub<math::Matrix4x4>(0,0);
+    }
+    // CV: add uncertainty on mass of visible tau decay products.
+    //     This uncertainty needs to be added even if tau is reconstructed in OneProng0Pi0 decay mode,
+    //     to avoid that covariance matrix is rank-deficient and cannot be inverted
+    const double visTau_sigma2_mass = square(1.e-1);
+    visTauCov(3,3) += square(visTauP4.mass()/visTauP4.energy())*visTau_sigma2_mass;
+    return visTauCov;
+  }
+
+  math::Matrix3x3
+  comp_svTauCov(const std::vector<KinematicParticle>& daughters)
+  {
+    math::Matrix3x3 svTauCov;
+    bool isFirst = true;
+    for ( const KinematicParticle& daughter : daughters )
+    {
+      int daughter_absPdgId = std::abs(daughter.pdgId());
+      if ( daughter_absPdgId == 12 || daughter_absPdgId == 14 || daughter_absPdgId == 16 ) continue;
+      const math::Matrix7x7& cov7x7 = daughter.cov7x7();
+      // CV: compute 3x3 covariance matrix of the tauh vertex position, simply take covariance matrix of first tau decay product
+      //    (assuming the vertex positions of all tau decay products to be equal)
+      //     For the syntax of retrieving a small covariance matrix from a larger one, 
+      //     see Section "Accessing and setting methods" of the ROOT documentation https://root.cern.ch/doc/v608/SMatrixDoc.html
+      if ( isFirst )
+      {
+        svTauCov = cov7x7.Sub<math::Matrix3x3>(4,4);
+        isFirst = false;
+      }
+    }
+    return svTauCov;
+  }
+
   reco::Candidate::Point
-  get_tipPCA(const reco::Candidate::Point& pv, const reco::GenParticle* leadTrack)
+  comp_tipPCA(const reco::Candidate::Point& pv, const reco::GenParticle* leadTrack)
   {
     // CV: compute point of closest approach (PCA) between primary event vertex and track
     reco::Candidate::Point sv = leadTrack->vertex();
@@ -57,13 +123,13 @@ namespace
   }
 
   std::vector<KinematicParticle>
-  get_kineDaughters(const reco::Candidate::LorentzVector& visTauP4, int tau_decayMode, const std::vector<const reco::GenParticle*>& tau_decayProducts,
-                    const Resolutions& resolutions,
-                    int verbosity)
+  build_kineDaughters(const reco::Candidate::LorentzVector& visTauP4, int tau_decayMode, const std::vector<const reco::GenParticle*>& tau_decayProducts,
+                      const Resolutions& resolutions,
+                      int verbosity)
   {
     if ( verbosity >= 3 )
     {
-      std::cout << "<get_kineDaughters>:" << std::endl;
+      std::cout << "<build_kineDaughters>:" << std::endl;
     }
 
     reco::Candidate::Vector r, n, k; 
@@ -96,14 +162,14 @@ namespace
       if ( std::fabs(decayProduct->charge()) > 0.5 )
       {
         sigma_pt          = get_trackResolution_pt(decayProduct->p4(), resolutions);
-        sigma_theta       = TMath::Pi()*resolutions.get_trackResolution_theta();
-        sigma_phi         = TMath::Pi()*resolutions.get_trackResolution_phi();
+        sigma_theta       = TMath::Pi()*resolutions.trackResolution_theta();
+        sigma_phi         = TMath::Pi()*resolutions.trackResolution_phi();
       }
       else if ( decayProduct->pdgId() == 111 )
       {
         sigma_pt          = get_ecalResolution_pt(decayProduct->p4(), resolutions);
-        sigma_theta       = TMath::Pi()*resolutions.get_ecalResolution_theta();
-        sigma_phi         = TMath::Pi()*resolutions.get_ecalResolution_phi();
+        sigma_theta       = TMath::Pi()*resolutions.ecalResolution_theta();
+        sigma_phi         = TMath::Pi()*resolutions.ecalResolution_phi();
       }
       double sigma2_pt    = square(sigma_pt);
       double sigma2_theta = square(sigma_theta);
@@ -147,9 +213,9 @@ namespace
         // CV: set uncertainty on position of tau decay vertex 
         //     in direction parallel and perpendicular to the momentum vector of the visible decay products
         //     for three-prongs
-        dk = resolutions.get_svResolution_parl();
-        dr = resolutions.get_svResolution_perp();
-        dn = resolutions.get_svResolution_perp();
+        dk = resolutions.svResolution_parl();
+        dr = resolutions.svResolution_perp();
+        dn = resolutions.svResolution_perp();
       }
       else
       {
@@ -160,8 +226,8 @@ namespace
         //     we set the uncertainty in parallel direction to a large (but not very large, to avoid numerical instabilities) value,
         //     so that the position in parallel direction is practically unconstrained.
         dk = 1.e+2;
-        dr = resolutions.get_tipResolution_perp();
-        dn = resolutions.get_tipResolution_perp();
+        dr = resolutions.tipResolution_perp();
+        dn = resolutions.tipResolution_perp();
       }
       double dk2 = square(dk);
       double dr2 = square(dr);
@@ -231,7 +297,10 @@ namespace
 KinematicEvent
 GenKinematicEventBuilder::operator()(const reco::GenParticleCollection& genParticles)
 {
-  KinematicEvent kineEvt;
+  if ( verbosity_ >= 1 )
+  {
+    std::cout << "<GenKinematicEventBuilder::operator()>:\n";
+  }
 
   const reco::GenParticle* tauPlus  = nullptr;
   const reco::GenParticle* tauMinus = nullptr;
@@ -243,7 +312,7 @@ GenKinematicEventBuilder::operator()(const reco::GenParticleCollection& genParti
   if ( !(tauPlus && tauMinus) ) 
   {
     std::cerr << "WARNING: Failed to find tau+ tau- pair --> skipping the event !!" << std::endl;
-    return kineEvt;
+    return KinematicEvent();
   }
   reco::Candidate::LorentzVector tauPlusP4 = tauPlus->p4();
   reco::Candidate::LorentzVector tauMinusP4 = tauMinus->p4();
@@ -271,6 +340,7 @@ GenKinematicEventBuilder::operator()(const reco::GenParticleCollection& genParti
     }
     std::cout << "tauPlus_decayMode = " << tauPlus_decayMode << "\n";
   }
+  std::vector<KinematicParticle> daughtersTauPlus = build_kineDaughters(visTauPlusP4, tauPlus_decayMode, tauPlus_daughters, *resolutions_, verbosity_);
 
   std::vector<const reco::GenParticle*> tauMinus_daughters;
   findDecayProducts(tauMinus, tauMinus_daughters);
@@ -295,20 +365,31 @@ GenKinematicEventBuilder::operator()(const reco::GenParticleCollection& genParti
     }
     std::cout << "tauMinus_decayMode = " << tauMinus_decayMode << "\n";
   }
+  std::vector<KinematicParticle> daughtersTauMinus = build_kineDaughters(visTauMinusP4, tauMinus_decayMode, tauMinus_daughters, *resolutions_, verbosity_);
  
   if ( !(std::fabs(tauPlus->vertex().x() - tauMinus->vertex().x()) < 1.e-3 &&
          std::fabs(tauPlus->vertex().y() - tauMinus->vertex().y()) < 1.e-3 &&
          std::fabs(tauPlus->vertex().z() - tauMinus->vertex().z()) < 1.e-3) )
   {
     std::cerr << "WARNING: Failed to find vertex of tau+ tau- pair --> skipping the event !!" << std::endl;
-    return kineEvt;
+    return KinematicEvent();
   }
   // CV: set primary event vertex (PV),
   //     using generator-level information
   reco::Candidate::Point pv = tauMinus->vertex();
+  math::Matrix3x3 pvCov = build_pvCov(*resolutions_);
   if ( verbosity_ >= 1 )
   {
-    printPoint("GenPV", pv);
+    printPoint("pv", pv);
+    printCovMatrix("pvCov", pvCov);
+  }
+
+  reco::Candidate::LorentzVector recoilP4 = tauPlusP4 + tauMinusP4;
+  math::Matrix4x4 recoilCov = build_recoilCov(*resolutions_);
+  if ( verbosity_ >= 1 )
+  {
+    printLorentzVector("recoilP4", recoilP4, cartesian_);
+    printCovMatrix("recoilCov", recoilCov);
   }
 
   const reco::GenParticle* tauPlus_leadTrack = get_leadTrack(tauPlus_daughters);
@@ -316,17 +397,27 @@ GenKinematicEventBuilder::operator()(const reco::GenParticleCollection& genParti
   if ( !(tauPlus_leadTrack && tauMinus_leadTrack) )
   {
     std::cerr << "WARNING: Failed to find leading tracks of tau+ tau- pair --> skipping the event !!" << std::endl;
-    return kineEvt;
+    return KinematicEvent();
   }
+  reco::Candidate::Point svTauPlus = tauPlus_leadTrack->vertex();
+  math::Matrix3x3 svTauPlusCov = comp_svTauCov(daughtersTauPlus);
+  reco::Candidate::Point svTauMinus = tauMinus_leadTrack->vertex();
+  math::Matrix3x3 svTauMinusCov = comp_svTauCov(daughtersTauMinus);
   if ( verbosity_ >= 1 )
   {
-    printPoint("GenSV(tau+)", tauPlus_leadTrack->vertex());
-    printPoint("GenSV(tau-)", tauMinus_leadTrack->vertex());
+    printPoint("svTauPlus", svTauPlus);
+    printCovMatrix("svTauPlusCov", svTauPlusCov);
+    printPoint("svTauMinus", svTauMinus);
+    printCovMatrix("svTauMinusCov", svTauMinusCov);
   }
 
+  KinematicEvent kineEvt;
+
   kineEvt.pv_ = pv;
-  reco::Candidate::LorentzVector recoilP4 = tauPlusP4 + tauMinusP4;
+  kineEvt.pvCov_ = pvCov;
+
   kineEvt.recoilP4_ = recoilP4;
+  kineEvt.recoilCov_ = recoilCov;
 
   if ( !applySmearing_ )
   {
@@ -334,15 +425,20 @@ GenKinematicEventBuilder::operator()(const reco::GenParticleCollection& genParti
     kineEvt.tauPlusP4_isValid_ = true;
   }
   kineEvt.visTauPlusP4_ = visTauPlusP4;
+  kineEvt.visTauPlusCov_ = comp_visTauCov(visTauPlusP4, daughtersTauPlus);
   kineEvt.tauPlus_decayMode_ = tauPlus_decayMode;
-  kineEvt.daughtersTauPlus_ = get_kineDaughters(visTauPlusP4, tauPlus_decayMode, tauPlus_daughters, *resolutions_, verbosity_);
-  kineEvt.tipPCATauPlus_ = get_tipPCA(pv, tauPlus_leadTrack);
+  kineEvt.daughtersTauPlus_ = daughtersTauPlus;
+  kineEvt.tipPCATauPlus_ = comp_tipPCA(pv, tauPlus_leadTrack);
   // CV: set tau decay vertex (SV) for three-prongs
   if ( tauPlus_ch.size() >= 3 )
   {
-    kineEvt.svTauPlus_ = tauPlus_leadTrack->vertex();
+    kineEvt.svTauPlus_ = svTauPlus;
     kineEvt.svTauPlus_isValid_ = true;
   }
+  // CV: set uncertainty on SV for all tau decays
+  //    (the uncertainty is computed differently for one-prongs and three-prongs;
+  //     cf. code of build_kineDaughters() function)
+  kineEvt.svTauPlusCov_ = svTauPlusCov;
 
   if ( !applySmearing_ )
   {
@@ -350,15 +446,20 @@ GenKinematicEventBuilder::operator()(const reco::GenParticleCollection& genParti
     kineEvt.tauMinusP4_isValid_ = true;
   }
   kineEvt.visTauMinusP4_ = visTauMinusP4;
+  kineEvt.visTauMinusCov_ = comp_visTauCov(visTauMinusP4, daughtersTauMinus);
   kineEvt.tauMinus_decayMode_ = tauMinus_decayMode;
-  kineEvt.daughtersTauMinus_ = get_kineDaughters(visTauMinusP4, tauMinus_decayMode, tauMinus_daughters, *resolutions_, verbosity_);
-  kineEvt.tipPCATauMinus_ = get_tipPCA(pv, tauMinus_leadTrack);
+  kineEvt.daughtersTauMinus_ = daughtersTauMinus;
+  kineEvt.tipPCATauMinus_ = comp_tipPCA(pv, tauMinus_leadTrack);
   // CV: set tau decay vertex (SV) for three-prongs
   if ( tauMinus_ch.size() >= 3 )
   {
     kineEvt.svTauMinus_ = tauMinus_leadTrack->vertex();
     kineEvt.svTauMinus_isValid_ = true;
   }
+  // CV: set uncertainty on SV for all tau decays
+  //    (the uncertainty is computed differently for one-prongs and three-prongs;
+  //     cf. code of build_kineDaughters() function)
+  kineEvt.svTauMinusCov_ = svTauMinusCov;
 
   if ( applySmearing_ )
   {
@@ -367,8 +468,10 @@ GenKinematicEventBuilder::operator()(const reco::GenParticleCollection& genParti
 
   reco::Candidate::Vector hPlus = spinAnalyzer_(kineEvt, SpinAnalyzerBase::kTauPlus);
   kineEvt.hPlus_ = hPlus;
+  kineEvt.hPlus_isValid_ = true;
   reco::Candidate::Vector hMinus = spinAnalyzer_(kineEvt, SpinAnalyzerBase::kTauMinus);
   kineEvt.hMinus_ = hMinus;
+  kineEvt.hMinus_isValid_ = true;
 
   return kineEvt;
 }
