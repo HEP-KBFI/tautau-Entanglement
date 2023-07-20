@@ -213,7 +213,7 @@ KinematicEvent::kinFitChi2() const
   return kinFitChi2_;
 }
 
-const math::MatrixMpPxMpP&
+const math::MatrixPxP&
 KinematicEvent::kinFitCov() const
 {
   return kinFitCov_;

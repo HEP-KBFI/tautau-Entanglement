@@ -119,7 +119,7 @@ class KinematicEvent
   double
   kinFitChi2() const;
 
-  const math::MatrixMpPxMpP&
+  const math::MatrixPxP&
   kinFitCov() const;
 
   bool
@@ -167,7 +167,7 @@ class KinematicEvent
   reco::Candidate::Vector hMinus_;
   bool hMinus_isValid_;
 
-  math::MatrixMpPxMpP kinFitCov_;
+  math::MatrixPxP kinFitCov_;
   double kinFitChi2_;
   bool kinFit_isValid_;
 };

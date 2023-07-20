@@ -23,9 +23,9 @@ EntanglementNtuple::EntanglementNtuple(TTree* ntuple)
 
   branches_KinematicEvent_kinFit_.initBranches(ntuple);
   createBranchF(ntuple_, "kinFit", "chi2", &kinFit_chi2_);
-  for ( int idxRow = 0; idxRow < kinFit_cov_size; ++idxRow )
+  for ( int idxRow = 0; idxRow < kinFit::numParameters; ++idxRow )
   {
-    for ( int idxColumn = 0; idxColumn < kinFit_cov_size; ++idxColumn )
+    for ( int idxColumn = 0; idxColumn < kinFit::numParameters; ++idxColumn )
     {
       std::string branchName = Form("cov_r%02ic%02i", idxRow, idxColumn);
       createBranchF(ntuple_, "kinFit", branchName.c_str(), &kinFit_cov_[idxRow][idxColumn]);
@@ -77,10 +77,10 @@ EntanglementNtuple::fillBranches(const edm::Event& evt,
     if ( kineEvt_kinFit->kinFit_isValid() )
     {
       kinFit_chi2_ = kineEvt_kinFit->kinFitChi2();
-      const math::MatrixMpPxMpP& kinFitCov = kineEvt_kinFit->kinFitCov();
-      for ( int idxRow = 0; idxRow < kinFit_cov_size; ++idxRow )
+      const math::MatrixPxP& kinFitCov = kineEvt_kinFit->kinFitCov();
+      for ( int idxRow = 0; idxRow < kinFit::numParameters; ++idxRow )
       {
-        for ( int idxColumn = 0; idxColumn < kinFit_cov_size; ++idxColumn )
+        for ( int idxColumn = 0; idxColumn < kinFit::numParameters; ++idxColumn )
         {
           kinFit_cov_[idxRow][idxColumn] = kinFitCov[idxRow][idxColumn];
         }
@@ -89,9 +89,9 @@ EntanglementNtuple::fillBranches(const edm::Event& evt,
     else
     {
       kinFit_chi2_ = -1.;
-      for ( int idxRow = 0; idxRow < kinFit::numMeasurements + kinFit::numParameters; ++idxRow )
+      for ( int idxRow = 0; idxRow < kinFit::numParameters; ++idxRow )
       {
-        for ( int idxColumn = 0; idxColumn < kinFit::numMeasurements + kinFit::numParameters; ++idxColumn )
+        for ( int idxColumn = 0; idxColumn < kinFit::numParameters; ++idxColumn )
         {
           kinFit_cov_[idxRow][idxColumn] = 0.;
         }

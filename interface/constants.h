@@ -3,8 +3,11 @@
 
 // define charged and neutral pion, proton and tau lepton mass.
 // The values are taken from Prog. Theor. Exp. Phys. 2022 (2022) 083C01
+// and are referred to as "PDG values"
 const double mChargedPion =   0.139571; // [GeV]
-const double mHiggs       = 125.25;     // [GeV]
+// CV: use Higgs boson mass used in Monte Carlo production instead of "PDG value"
+//const double mHiggs       = 125.25;      // [GeV]
+const double mHiggs       = 125.0;      // [GeV]
 const double mNeutralPion =   0.134977; // [GeV]
 const double mProton      =   0.938272; // [GeV]
 const double mTau         =   1.77686;  // [GeV]

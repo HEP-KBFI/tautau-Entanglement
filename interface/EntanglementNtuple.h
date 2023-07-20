@@ -374,8 +374,7 @@ class EntanglementNtuple
   branchType_KinematicEvent branches_KinematicEvent_startPos_;
 
   branchType_KinematicEvent branches_KinematicEvent_kinFit_;
-  static const int kinFit_cov_size = kinFit::numMeasurements + kinFit::numParameters;
-  Float_t kinFit_cov_[kinFit_cov_size][kinFit_cov_size];
+  Float_t kinFit_cov_[kinFit::numParameters][kinFit::numParameters];
   Float_t kinFit_chi2_;
 
   Float_t evtWeight_;                // event weight of Monte Carlo generator
