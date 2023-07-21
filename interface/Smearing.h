@@ -34,6 +34,7 @@ class Smearing
   smear_tipPCA(const std::vector<KinematicParticle>& daughters, const reco::Candidate::Point& tipPCA);
 
   TRandom3 rnd_;
+  ULong_t rndSeed_;
 
   bool applySmearing_recoil_px_;
   bool applySmearing_recoil_py_;

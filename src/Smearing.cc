@@ -4,6 +4,7 @@
 
 #include "TauAnalysis/Entanglement/interface/cmsException.h"              // cmsException
 #include "TauAnalysis/Entanglement/interface/constants.h"                 // mChargedPion
+#include "TauAnalysis/Entanglement/interface/fixTauMass.h"                // fixTauMass()
 #include "TauAnalysis/Entanglement/interface/get_leadTrack.h"             // get_leadTrack()
 #include "TauAnalysis/Entanglement/interface/get_localCoordinateSystem.h" // get_localCoordinateSystem()
 #include "TauAnalysis/Entanglement/interface/KinematicParticle.h"         // KinematicParticle
@@ -39,6 +40,8 @@ Smearing::Smearing(const edm::ParameterSet& cfg)
 
   applySmearing_tip_perp_      = cfg_smearing.getParameter<bool>("applySmearing_tip_perp");
 
+  rndSeed_                     = cfg_smearing.getParameter<unsigned long long>("rndSeed");
+
   edm::ParameterSet cfg_resolutions = cfg.getParameterSet("resolutions");
   resolutions_ = new Resolutions(cfg_resolutions);
 }
@@ -56,9 +59,23 @@ Smearing::operator()(const KinematicEvent& kineEvt)
   kineEvt_smeared.pv_ = smear_pv(kineEvt.pv());
 
   kineEvt_smeared.recoilP4_ = smear_recoil_p4(kineEvt.recoilP4());
+  double drecoilPx = kineEvt_smeared.recoilP4_.px()     - kineEvt.recoilP4().px();
+  double drecoilPy = kineEvt_smeared.recoilP4_.py()     - kineEvt.recoilP4().py();
+  double drecoilPz = kineEvt_smeared.recoilP4_.pz()     - kineEvt.recoilP4().pz();
+  double drecoilE  = kineEvt_smeared.recoilP4_.energy() - kineEvt.recoilP4().energy();
 
-  kineEvt_smeared.tauPlusP4_ = reco::Candidate::LorentzVector(0.,0.,0.,0.);
-  kineEvt_smeared.tauPlusP4_isValid_ = false;
+  double u = rnd_.Uniform(0., 1.);
+
+  if ( kineEvt.tauPlusP4_isValid() )
+  {
+    const reco::Candidate::LorentzVector& tauPlusP4 = kineEvt.tauPlusP4();
+    double tauPlusPx_smeared = tauPlusP4.px()      + u*drecoilPx;
+    double tauPlusPy_smeared = tauPlusP4.py()      + u*drecoilPy;
+    double tauPlusPz_smeared = tauPlusP4.pz()      + u*drecoilPz;
+    double tauPlusE_smeared  = tauPlusP4.energy()  + u*drecoilE;
+    reco::Candidate::LorentzVector tauPlusP4_smeared(tauPlusPx_smeared, tauPlusPy_smeared, tauPlusPz_smeared, tauPlusE_smeared);
+    kineEvt_smeared.tauPlusP4_ = fixTauMass(tauPlusP4_smeared);
+  }
   if ( kineEvt.svTauPlus_isValid() )
   {
     kineEvt_smeared.svTauPlus_ = smear_sv(kineEvt.visTauPlusP4(), kineEvt.svTauPlus());
@@ -74,8 +91,16 @@ Smearing::operator()(const KinematicEvent& kineEvt)
   }
   kineEvt_smeared.tipPCATauPlus_ = smear_tipPCA(daughtersTauPlus, kineEvt.tipPCATauPlus());
 
-  kineEvt_smeared.tauMinusP4_ = reco::Candidate::LorentzVector(0.,0.,0.,0.);
-  kineEvt_smeared.tauMinusP4_isValid_ = false;
+  if ( kineEvt.tauMinusP4_isValid() )
+  {
+    const reco::Candidate::LorentzVector& tauMinusP4 = kineEvt.tauMinusP4();
+    double tauMinusPx_smeared = tauMinusP4.px()      + (1. - u)*drecoilPx;
+    double tauMinusPy_smeared = tauMinusP4.py()      + (1. - u)*drecoilPy;
+    double tauMinusPz_smeared = tauMinusP4.pz()      + (1. - u)*drecoilPz;
+    double tauMinusE_smeared  = tauMinusP4.energy()  + (1. - u)*drecoilE;
+    reco::Candidate::LorentzVector tauMinusP4_smeared(tauMinusPx_smeared, tauMinusPy_smeared, tauMinusPz_smeared, tauMinusE_smeared);
+    kineEvt_smeared.tauMinusP4_ = fixTauMass(tauMinusP4_smeared);
+  }
   if ( kineEvt.svTauMinus_isValid() )
   {
     kineEvt_smeared.svTauMinus_ = smear_sv(kineEvt.visTauMinusP4(), kineEvt.svTauMinus());

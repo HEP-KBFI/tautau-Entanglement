@@ -4,6 +4,7 @@
 
 #include "TauAnalysis/Entanglement/interface/cmsException.h"              // cmsException
 #include "TauAnalysis/Entanglement/interface/get_localCoordinateSystem.h" // kBeam, kHiggs
+#include "TauAnalysis/Entanglement/interface/printVector.h"               // printVector()
 #include "TauAnalysis/Entanglement/interface/SpinAnalyzerBase.h"          // SpinAnalyzerBase::kTauPlus, SpinAnalyzerBase::kTauMinus
 
 SpinAnalyzer::SpinAnalyzer(const edm::ParameterSet& cfg)
@@ -20,10 +21,19 @@ SpinAnalyzer::~SpinAnalyzer()
 reco::Candidate::Vector
 SpinAnalyzer::operator()(const KinematicEvent& kineEvt, int tau)
 {
+  if ( verbosity_ >= 1 )
+  {
+    std::cout << "<SpinAnalyzer::operator()>:\n";
+  }
+
   int tau_decayMode = -1;
   if      ( tau == SpinAnalyzerBase::kTauPlus  ) tau_decayMode = kineEvt.tauPlus_decayMode();
   else if ( tau == SpinAnalyzerBase::kTauMinus ) tau_decayMode = kineEvt.tauMinus_decayMode();
   else assert(0);
+  if ( verbosity_ >= 1 )
+  {
+    std::cout << " tau_decayMode = " << tau_decayMode << "\n";
+  }
 
   reco::Candidate::Vector h;
   if ( tau_decayMode == reco::PFTau::kOneProng0PiZero )
@@ -38,5 +48,10 @@ SpinAnalyzer::operator()(const KinematicEvent& kineEvt, int tau)
   //{
   //  h = spinAnalyzerThreeProng0Pi0_(kineEvt, tau);
   //}
+  if ( verbosity_ >= 1 )
+  {
+    printVector("h", h);
+  }
+
   return h;
 }

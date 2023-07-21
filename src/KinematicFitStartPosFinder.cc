@@ -8,6 +8,7 @@
 
 #include "TauAnalysis/Entanglement/interface/constants.h"          // mChargedPion, mTau
 #include "TauAnalysis/Entanglement/interface/cmsException.h"       // cmsException
+#include "TauAnalysis/Entanglement/interface/fixTauMass.h"         // fixTauMass()
 #include "TauAnalysis/Entanglement/interface/get_leadTrack.h"      // get_leadTrack()
 #include "TauAnalysis/Entanglement/interface/printLorentzVector.h" // printLorentzVector()
 #include "TauAnalysis/Entanglement/interface/printPoint.h"         // printPoint()
@@ -166,17 +167,6 @@ namespace
     return tipPerp;
   }
 
-  reco::Candidate::LorentzVector
-  fixTauMass(const reco::Candidate::LorentzVector& tauP4)
-  {
-    double tauPx = tauP4.px();
-    double tauPy = tauP4.py();
-    double tauPz = tauP4.pz();
-    double tauE  = std::sqrt(tauPx*tauPx + tauPy*tauPy + tauPz*tauPz + mTau*mTau);
-    reco::Candidate::LorentzVector tauP4_fixed(tauPx, tauPy, tauPz, tauE);
-    return tauP4_fixed;
-  }
-
   std::pair<reco::Candidate::LorentzVector, reco::Candidate::LorentzVector>
   comp_tauP4(double a, double b, double c, const std::vector<double>& d,
              const reco::Candidate::LorentzVector& higgsP4,
@@ -184,6 +174,7 @@ namespace
              const reco::Candidate::LorentzVector& visTauMinusP4,
              const reco::Candidate::LorentzVector& qP4,
              const KinematicEvent& evt,
+             double& tauMassFix,
              int verbosity, bool cartesian = true)
   {
     reco::Candidate::LorentzVector tauPlusP4_min_tipPerp;
@@ -218,7 +209,8 @@ namespace
         //     while keeping the Px, Py, Pz momentum components fixed
         tauPlusP4_min_tipPerp = fixTauMass(tauPlusP4);
         tauMinusP4_min_tipPerp = fixTauMass(tauMinusP4);
-        min_tipPerp = tipPerp; 
+        min_tipPerp = tipPerp;
+        tauMassFix = square(tauPlusP4.mass() - mTau) + square(tauMinusP4.mass() - mTau);
       }
     }
     if ( verbosity >= 1 )
@@ -360,13 +352,14 @@ KinematicFitStartPosFinder::operator()(const KinematicEvent& kineEvt)
 
   reco::Candidate::LorentzVector q0P4;
   std::vector<double> d0 = comp_d(a0, b0, c0, x, y, z, higgsP4, visTauPlusP4, mVisTauPlus2, visTauMinusP4, mVisTauMinus2, q0P4, verbosity_, cartesian_);
-  auto tau0P4 = comp_tauP4(a0, b0, c0, d0, higgsP4, visTauPlusP4, visTauMinusP4, q0P4, kineEvt, verbosity_, cartesian_);
+  double tauMassFix0 = 0.;
+  auto tau0P4 = comp_tauP4(a0, b0, c0, d0, higgsP4, visTauPlusP4, visTauMinusP4, q0P4, kineEvt, tauMassFix0, verbosity_, cartesian_);
   reco::Candidate::LorentzVector tauPlusP4 = tau0P4.first;
   reco::Candidate::LorentzVector tauMinusP4 = tau0P4.second;
 
-  bool hasConverged = false;
   int iteration = 1;
   const int max_iterations = 10;
+  bool hasConverged = false;
   while ( !hasConverged && iteration <= max_iterations )
   {
     if ( verbosity_ >= 1 )
@@ -414,18 +407,19 @@ KinematicFitStartPosFinder::operator()(const KinematicEvent& kineEvt)
 
     reco::Candidate::LorentzVector q1P4;
     std::vector<double> d1 = comp_d(a1, b1, c1, x, y, z, higgsP4, visTauPlusP4, mVisTauPlus2, visTauMinusP4, mVisTauMinus2, q1P4, verbosity_, cartesian_);
-    auto tau1P4 = comp_tauP4(a1, b1, c1, d1, higgsP4, visTauPlusP4, visTauMinusP4, q1P4, kineEvt, verbosity_, cartesian_);
+    double tauMassFix1 = 0.;
+    auto tau1P4 = comp_tauP4(a1, b1, c1, d1, higgsP4, visTauPlusP4, visTauMinusP4, q1P4, kineEvt, tauMassFix1, verbosity_, cartesian_);
 
-    double dR2sum = deltaR2(tau0P4.first, tau1P4.first) + deltaR2(tau0P4.second, tau1P4.second);
-    if ( dR2sum > 1.e-6 )
+    if ( tauMassFix1 < tauMassFix0 )
     {
-      ++iteration;
       a0 = a1;
       b0 = b1;
       c0 = c1;
       tau0P4 = tau1P4;
       tauPlusP4 = tau1P4.first;
       tauMinusP4 = tau1P4.second;
+      tauMassFix0 = tauMassFix1;
+      ++iteration;
     }
     else
     {

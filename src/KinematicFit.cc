@@ -54,32 +54,38 @@ KinematicFit::operator()(const KinematicEvent& kineEvt)
 
   KinematicEvent kineEvt_kinfit = kineEvt;
 
-  bool hasConverged = false;
-  bool hasFailed = false;
   int iteration = 1;
   const int max_iterations = 10;
+  math::VectorP alpha0;
+  KinematicEvent kineEvtA = kineEvt;
   double min_chi2 = -1.;
-  while ( !hasConverged && !hasFailed && iteration <= max_iterations )
+  bool hasConverged = false;
+  while ( !hasConverged && iteration <= max_iterations )
   {
     if ( verbosity_ >= 1 )
     {
       std::cout << "iteration #" << iteration << ":\n";
     }
 
-    const reco::Candidate::Point& pv = kineEvt_kinfit.pv();
+    //-----------------------------------------------------------------------------------------------
+    // CV: take all covariance matrix from kineEvt and NOT from kineEvtA,
+    //     as otherwise uncertainties will continuously shrink as iterations progress !!
+    //-----------------------------------------------------------------------------------------------
+
+    const reco::Candidate::Point& pv = kineEvtA.pv();
     double pvX = pv.X();
     double pvY = pv.Y();
     double pvZ = pv.Z();
-    const math::Matrix3x3& pvCov = kineEvt_kinfit.pvCov();
+    const math::Matrix3x3& pvCov = kineEvt.pvCov();
 
-    const reco::Candidate::LorentzVector& recoilP4 = kineEvt_kinfit.recoilP4();
+    const reco::Candidate::LorentzVector& recoilP4 = kineEvtA.recoilP4();
     double recoilPx = recoilP4.px();
     double recoilPy = recoilP4.py();
     double recoilPz = recoilP4.pz();
     double recoilE  = recoilP4.energy();
-    const math::Matrix4x4& recoilCov = kineEvt_kinfit.recoilCov();
+    const math::Matrix4x4& recoilCov = kineEvt.recoilCov();
 
-    reco::Candidate::LorentzVector tauPlusP4 = kineEvt_kinfit.tauPlusP4();
+    reco::Candidate::LorentzVector tauPlusP4 = kineEvtA.tauPlusP4();
     double tauPlusPx = tauPlusP4.px();
     double tauPlusPy = tauPlusP4.py();
     double tauPlusPz = tauPlusP4.pz();
@@ -87,12 +93,12 @@ KinematicFit::operator()(const KinematicEvent& kineEvt)
     double tauPlusP  = tauPlusP4.P();
     double tauPlusE  = tauPlusP4.energy();
     math::Matrix4x4 tauPlusCov = get_tauCov();
-    assert(kineEvt_kinfit.svTauPlus_isValid());
-    const reco::Candidate::Point& svTauPlus = kineEvt_kinfit.svTauPlus();
+    assert(kineEvtA.svTauPlus_isValid());
+    const reco::Candidate::Point& svTauPlus = kineEvtA.svTauPlus();
     double svTauPlusX = svTauPlus.X();
     double svTauPlusY = svTauPlus.Y();
     double svTauPlusZ = svTauPlus.Z();
-    const math::Matrix3x3& svTauPlusCov = kineEvt_kinfit.svTauPlusCov();
+    const math::Matrix3x3& svTauPlusCov = kineEvt.svTauPlusCov();
     auto tauPlusD3 = svTauPlus - pv;
     double tauPlusDx = tauPlusD3.X();
     double tauPlusDy = tauPlusD3.Y();
@@ -100,13 +106,13 @@ KinematicFit::operator()(const KinematicEvent& kineEvt)
     double tauPlusDt = std::sqrt(tauPlusD3.Perp2());
     double tauPlusD  = std::sqrt(tauPlusD3.Mag2());
 
-    reco::Candidate::LorentzVector visTauPlusP4 = kineEvt_kinfit.visTauPlusP4();
+    reco::Candidate::LorentzVector visTauPlusP4 = kineEvtA.visTauPlusP4();
     double visTauPlusPx = visTauPlusP4.px();
     double visTauPlusPy = visTauPlusP4.py();
     double visTauPlusPz = visTauPlusP4.pz();
     double visTauPlusE  = visTauPlusP4.energy();
 
-    reco::Candidate::LorentzVector tauMinusP4 = kineEvt_kinfit.tauMinusP4();
+    reco::Candidate::LorentzVector tauMinusP4 = kineEvtA.tauMinusP4();
     double tauMinusPx = tauMinusP4.px();
     double tauMinusPy = tauMinusP4.py();
     double tauMinusPz = tauMinusP4.pz();
@@ -114,12 +120,12 @@ KinematicFit::operator()(const KinematicEvent& kineEvt)
     double tauMinusP  = tauMinusP4.P();
     double tauMinusE  = tauMinusP4.energy();
     math::Matrix4x4 tauMinusCov = get_tauCov();
-    assert(kineEvt_kinfit.svTauMinus_isValid());
-    const reco::Candidate::Point& svTauMinus = kineEvt_kinfit.svTauMinus();
+    assert(kineEvtA.svTauMinus_isValid());
+    const reco::Candidate::Point& svTauMinus = kineEvtA.svTauMinus();
     double svTauMinusX = svTauMinus.X();
     double svTauMinusY = svTauMinus.Y();
     double svTauMinusZ = svTauMinus.Z();
-    const math::Matrix3x3& svTauMinusCov = kineEvt_kinfit.svTauMinusCov();
+    const math::Matrix3x3& svTauMinusCov = kineEvt.svTauMinusCov();
     auto tauMinusD3 = svTauMinus - pv;
     double tauMinusDx = tauMinusD3.X();
     double tauMinusDy = tauMinusD3.Y();
@@ -127,7 +133,7 @@ KinematicFit::operator()(const KinematicEvent& kineEvt)
     double tauMinusDt = std::sqrt(tauMinusD3.Perp2());
     double tauMinusD  = std::sqrt(tauMinusD3.Mag2());
 
-    reco::Candidate::LorentzVector visTauMinusP4 = kineEvt_kinfit.visTauMinusP4();
+    reco::Candidate::LorentzVector visTauMinusP4 = kineEvtA.visTauMinusP4();
     double visTauMinusPx = visTauMinusP4.px();
     double visTauMinusPy = visTauMinusP4.py();
     double visTauMinusPz = visTauMinusP4.pz();
@@ -143,6 +149,41 @@ KinematicFit::operator()(const KinematicEvent& kineEvt)
     //     cf. Eq. (3) in https://www.phys.ufl.edu/~avery/fitting/kinematic.pdf
     //-----------------------------------------------------------------------------------------------
 
+    // CV: build vector of all measured parameters at point A 
+    //     where constrained equations are linearized
+    math::VectorP alphaA;
+    alphaA( 0) = pvX;
+    alphaA( 1) = pvY;
+    alphaA( 2) = pvZ;
+    alphaA( 3) = tauPlusPx;
+    alphaA( 4) = tauPlusPy;
+    alphaA( 5) = tauPlusPz;
+    alphaA( 6) = tauPlusE;
+    alphaA( 7) = svTauPlusX;
+    alphaA( 8) = svTauPlusY;
+    alphaA( 9) = svTauPlusZ;
+    alphaA(10) = tauMinusPx;
+    alphaA(11) = tauMinusPy;
+    alphaA(12) = tauMinusPz;
+    alphaA(13) = tauMinusE;
+    alphaA(14) = svTauMinusX;
+    alphaA(15) = svTauMinusY;
+    alphaA(16) = svTauMinusZ;
+    alphaA(17) = recoilPx;
+    alphaA(18) = recoilPy;
+    alphaA(19) = recoilPz;
+    alphaA(20) = recoilE;
+    if ( verbosity_ >= 1 )
+    {
+      std::cout << "alphaA:\n";
+      std::cout << alphaA << "\n";
+    }
+
+    if ( iteration == 1 )
+    {
+      alpha0 = alphaA;
+    }
+
     // CV: build covariance matrix of all measured parameters;
     //     for the syntax of "embedding" a small covariance matrix into a larger one, 
     //     see Section "Accessing and setting methods" of the ROOT documentation https://root.cern.ch/doc/v608/SMatrixDoc.html
@@ -153,7 +194,25 @@ KinematicFit::operator()(const KinematicEvent& kineEvt)
     V_alpha0.Place_at(tauMinusCov  , 10, 10);
     V_alpha0.Place_at(svTauMinusCov, 14, 14);
     V_alpha0.Place_at(recoilCov    , 17, 17);
+    if ( verbosity_ >= 1 )
+    {
+      printCovMatrix("V_alpha0", V_alpha0);
+    }
 
+    int Vinv_alpha0_errorFlag = 0;
+    math::MatrixPxP Vinv_alpha0 = V_alpha0.Inverse(Vinv_alpha0_errorFlag);
+    if ( Vinv_alpha0_errorFlag != 0 )
+    {
+      printCovMatrix("V_alpha0", V_alpha0);
+      throw cmsException("KinematicFit::operator()", __LINE__)
+        << "Failed to invert matrix V_alpha0 !!\n";
+    }
+    if ( verbosity_ >= 1 )
+    {
+      std::cout << "Vinv_alpha0:\n";
+      std::cout << Vinv_alpha0 << "\n";
+    }
+  
     math::MatrixCxP D;
     math::VectorC   d;
     // CV: add Higgs mass constraint
@@ -262,7 +321,6 @@ KinematicFit::operator()(const KinematicEvent& kineEvt)
     d(12) = tauPlusE  + tauMinusE  - recoilE;
     if ( verbosity_ >= 1 )
     {
-      printCovMatrix("V_alpha0", V_alpha0);
       std::cout << "D:\n";
       std::cout << D << "\n";
       std::cout << "d:\n";
@@ -281,7 +339,7 @@ KinematicFit::operator()(const KinematicEvent& kineEvt)
     //     respectively.
     //-----------------------------------------------------------------------------------------------
 
-    math::MatrixPxC DT = ROOT::Math::Transpose(D);
+    math::MatrixPxC DT = ROOT::Math::Transpose(D);    
 
     math::MatrixCxC Vinv_D = D*V_alpha0*DT;
     int V_D_errorFlag = 0;
@@ -293,18 +351,21 @@ KinematicFit::operator()(const KinematicEvent& kineEvt)
         << "Failed to invert matrix Vinv_D !!\n";
     }
 
-    math::VectorC lambda = V_D*d;
+    math::VectorP dalpha0 = alpha0 - alphaA;
+    math::VectorC lambda = V_D*(D*dalpha0 + d);
     if ( verbosity_ >= 1 )
     {
       std::cout << "lambda:\n";
       std::cout << lambda << "\n";
     }
 
-    math::VectorP dalpha = -V_alpha0*DT*lambda;
+    math::VectorP alpha = alpha0 - V_alpha0*DT*lambda;
     if ( verbosity_ >= 1 )
     {
-      std::cout << "dalpha:\n";
-      std::cout << dalpha << "\n";
+      std::cout << "alpha0:\n";
+      std::cout << alpha0 << "\n";
+      std::cout << "alpha:\n";
+      std::cout << alpha << "\n";
     }
  
     math::MatrixPxP V_alpha = V_alpha0 - V_alpha0*DT*V_D*D*V_alpha0;
@@ -314,9 +375,15 @@ KinematicFit::operator()(const KinematicEvent& kineEvt)
     }
 
     // CV: compute chi^2
-    double chi2 = ROOT::Math::Dot(lambda, d);
+    math::VectorP alpha_minus_alpha0 = alpha - alpha0;
+    math::VectorP dalpha = alpha - alphaA;
+    double chi2 = ROOT::Math::Dot(alpha_minus_alpha0, Vinv_alpha0*alpha_minus_alpha0) + 2.*ROOT::Math::Dot(lambda, D*dalpha + d);
     if ( verbosity_ >= 1 )
     {
+      std::cout << "dalpha:\n";
+      std::cout << dalpha << "\n";
+      double dalpha_mag = std::sqrt(ROOT::Math::Dot(dalpha, dalpha));
+      std::cout << "|alpha - alphaA| = " << dalpha_mag << "\n";
       std::cout << "chi^2 = " << chi2 << "\n";
     }
 
@@ -331,7 +398,7 @@ KinematicFit::operator()(const KinematicEvent& kineEvt)
     {
       std::cout << "residuals of constraint equations:\n";
       std::cout << residuals << "\n";
-      std::cout << "sum = " << residuals_sum << "\n";
+      std::cout << "sum_i |residual[i]| = " << residuals_sum << "\n";
     }
 
     if ( verbosity_ >= 1 )
@@ -339,7 +406,7 @@ KinematicFit::operator()(const KinematicEvent& kineEvt)
       math::VectorP pulls;
       for ( int idx = 0; idx < numParameters; ++idx )
       {      
-        pulls(idx) = dalpha(idx)/std::sqrt(V_alpha0(idx,idx));
+        pulls(idx) = alpha_minus_alpha0(idx)/std::sqrt(V_alpha0(idx,idx));
       }
       std::cout << "pulls:\n";
       std::cout << pulls << "\n";
@@ -348,78 +415,70 @@ KinematicFit::operator()(const KinematicEvent& kineEvt)
     // CV: store results of kinematic fit in KinematicEvent class;
     //     for the syntax of retrieving a small covariance matrix from a larger one, 
     //     see Section "Accessing and setting methods" of the ROOT documentation https://root.cern.ch/doc/v608/SMatrixDoc.html
-    const double epsilon = 1.e-2;
-    if ( residuals_sum < epsilon && (iteration == 1 || chi2 < min_chi2) )
+    kineEvtA.pv_ = reco::Candidate::Point(alpha(0), alpha(1), alpha(2));
+    kineEvtA.pvCov_ = V_alpha.Sub<math::Matrix3x3>(0,0);
+    kineEvtA.recoilP4_ = reco::Candidate::LorentzVector(alpha(17), alpha(18), alpha(19), alpha(20));
+    kineEvtA.recoilCov_ = V_alpha.Sub<math::Matrix4x4>(17,17);
+    kineEvtA.tauPlusP4_ = reco::Candidate::LorentzVector(alpha(3), alpha(4), alpha(5), alpha(6));
+    kineEvtA.tauPlusP4_isValid_ = true;
+    kineEvtA.tauPlusCov_ = V_alpha.Sub<math::Matrix4x4>(3,3);
+    kineEvtA.svTauPlus_ = reco::Candidate::Point(alpha(7), alpha(8), alpha(9));
+    kineEvtA.svTauPlusCov_ = V_alpha.Sub<math::Matrix3x3>(7,7);
+    kineEvtA.tauMinusP4_ = reco::Candidate::LorentzVector(alpha(10), alpha(11), alpha(12), alpha(13));
+    kineEvtA.tauMinusP4_isValid_ = true;
+    kineEvtA.tauMinusCov_ = V_alpha.Sub<math::Matrix4x4>(10,10);
+    kineEvtA.svTauMinus_ = reco::Candidate::Point(alpha(14), alpha(15), alpha(16));
+    kineEvtA.svTauMinusCov_ = V_alpha.Sub<math::Matrix3x3>(14,14);
+    kineEvtA.kinFitCov_ = V_alpha;
+    kineEvtA.kinFitChi2_ = chi2;
+    kineEvtA.kinFit_isValid_ = true;
+    if ( verbosity_ >= 1 )
     {
-      reco::Candidate::Point pv_kinfit(pvX + dalpha(0), pvY + dalpha(1), pvZ + dalpha(2));
-      kineEvt_kinfit.pv_ = pv;
-      kineEvt_kinfit.pvCov_ = V_alpha.Sub<math::Matrix3x3>(0,0);
-      reco::Candidate::LorentzVector recoilP4_kinfit(recoilPx + dalpha(17), recoilPy + dalpha(18), recoilPz + dalpha(19), recoilE + dalpha(20));
-      kineEvt_kinfit.recoilP4_ = recoilP4_kinfit;
-      kineEvt_kinfit.recoilCov_ = V_alpha.Sub<math::Matrix4x4>(17,17);
-      reco::Candidate::LorentzVector tauPlusP4_kinfit(tauPlusPx + dalpha(3), tauPlusPy + dalpha(4), tauPlusPz + dalpha(5), tauPlusE + dalpha(6));
-      kineEvt_kinfit.tauPlusP4_ = tauPlusP4_kinfit;
-      kineEvt_kinfit.tauPlusP4_isValid_ = true;
-      kineEvt_kinfit.tauPlusCov_ = V_alpha.Sub<math::Matrix4x4>(3,3);
-      reco::Candidate::Point svTauPlus_kinfit(svTauPlusX + dalpha(7), svTauPlusY + dalpha(8), svTauPlusZ + dalpha(9));
-      kineEvt_kinfit.svTauPlus_ = svTauPlus_kinfit;
-      kineEvt_kinfit.svTauPlusCov_ = V_alpha.Sub<math::Matrix3x3>(7,7);
-      reco::Candidate::LorentzVector tauMinusP4_kinfit(tauMinusPx + dalpha(10), tauMinusPy + dalpha(11), tauMinusPz + dalpha(12), tauMinusE + dalpha(13));
-      kineEvt_kinfit.tauMinusP4_ = tauMinusP4_kinfit;
-      kineEvt_kinfit.tauMinusP4_isValid_ = true;
-      kineEvt_kinfit.tauMinusCov_ = V_alpha.Sub<math::Matrix4x4>(10,10);
-      reco::Candidate::Point svTauMinus_kinfit(svTauMinusX + dalpha(14), svTauMinusY + dalpha(15), svTauMinusZ + dalpha(16));
-      kineEvt_kinfit.svTauMinus_ = svTauMinus_kinfit;
-      kineEvt_kinfit.svTauMinusCov_ = V_alpha.Sub<math::Matrix3x3>(14,14);
-      kineEvt_kinfit.kinFitCov_ = V_alpha;
-      kineEvt_kinfit.kinFitChi2_ = chi2;
-      kineEvt_kinfit.kinFit_isValid_ = true;
-      if ( verbosity_ >= 1 )
-      {
-        std::cout << "constraint equations:\n";
-        reco::Candidate::LorentzVector higgsP4_kinfit = tauPlusP4_kinfit + tauMinusP4_kinfit;
-        std::cout << "Higgs mass = " << higgsP4_kinfit.mass() << "\n";
-        std::cout << "tau+ mass = " << tauPlusP4_kinfit.mass() << "\n";
-        double nuTauPlusPx   = tauPlusP4_kinfit.px()     - visTauPlusP4.px();
-        double nuTauPlusPy   = tauPlusP4_kinfit.py()     - visTauPlusP4.py();
-        double nuTauPlusPz   = tauPlusP4_kinfit.pz()     - visTauPlusP4.pz();
-        double nuTauPlusE    = tauPlusP4_kinfit.energy() - visTauPlusP4.energy();
-        std::cout << "neutrino from tau+ decay:" 
-                  << " E = " << nuTauPlusE << ", Px = " << nuTauPlusPx << ", Py = " << nuTauPlusPy << ", Pz = " << nuTauPlusPz << ","
-                  << " mass = " << (tauPlusP4 - visTauPlusP4).mass() << "\n";
-        auto tauPlusD3_kinfit = svTauPlus_kinfit - pv_kinfit;
-        std::cout << "phi of tau+: four-vector = " << tauPlusP4_kinfit.phi() << ", decay vertex = " << tauPlusD3_kinfit.phi() << "\n";
-        std::cout << "theta of tau+: four-vector = " << tauPlusP4_kinfit.theta() << ", decay vertex = " << tauPlusD3_kinfit.theta() << "\n";
-        std::cout << "tau- mass = " << tauMinusP4_kinfit.mass() << "\n";
-        double nuTauMinusPx   = tauMinusP4_kinfit.px()     - visTauMinusP4.px();
-        double nuTauMinusPy   = tauMinusP4_kinfit.py()     - visTauMinusP4.py();
-        double nuTauMinusPz   = tauMinusP4_kinfit.pz()     - visTauMinusP4.pz();
-        double nuTauMinusE    = tauMinusP4_kinfit.energy() - visTauMinusP4.energy();
-        std::cout << "neutrino from tau- decay:" 
-                  << " E = " << nuTauMinusE << ", Px = " << nuTauMinusPx << ", Py = " << nuTauMinusPy << ", Pz = " << nuTauMinusPz << ","
-                  << " mass = " << (tauMinusP4 - visTauMinusP4).mass() << "\n";
-        auto tauMinusD3_kinfit = svTauMinus_kinfit - pv_kinfit;
-        std::cout << "phi of tau-: four-vector = " << tauMinusP4_kinfit.phi() << ", decay vertex = " << tauMinusD3_kinfit.phi() << "\n";
-        std::cout << "theta of tau-: four-vector = " << tauMinusP4_kinfit.theta() << ", decay vertex = " << tauMinusD3_kinfit.theta() << "\n";
-        std::cout << "Higgs - recoil:"
-                  " dE = "  << higgsP4_kinfit.energy() - recoilP4_kinfit.energy() << ","
-                  " dPx = " << higgsP4_kinfit.px()     - recoilP4_kinfit.px()     << ","
-                  " dPy = " << higgsP4_kinfit.py()     - recoilP4_kinfit.py()     << ","
-                  " dPz = " << higgsP4_kinfit.pz()     - recoilP4_kinfit.pz()     << "\n";
-      }
+      std::cout << "constraint equations:\n";
+      reco::Candidate::LorentzVector higgsP4 = kineEvtA.tauPlusP4_ + kineEvtA.tauMinusP4_;
+      std::cout << "Higgs mass = " << higgsP4.mass() << "\n";
+      std::cout << "tau+ mass = " << tauPlusP4.mass() << "\n";      
+      double nuTauPlusPx   = kineEvtA.tauPlusP4_.px()     - visTauPlusP4.px();
+      double nuTauPlusPy   = kineEvtA.tauPlusP4_.py()     - visTauPlusP4.py();
+      double nuTauPlusPz   = kineEvtA.tauPlusP4_.pz()     - visTauPlusP4.pz();
+      double nuTauPlusE    = kineEvtA.tauPlusP4_.energy() - visTauPlusP4.energy();
+      std::cout << "neutrino from tau+ decay:" 
+                << " E = " << nuTauPlusE << ", Px = " << nuTauPlusPx << ", Py = " << nuTauPlusPy << ", Pz = " << nuTauPlusPz << ","
+                << " mass = " << (kineEvtA.tauPlusP4_ - visTauPlusP4).mass() << "\n";
+      auto tauPlusD3 = kineEvtA.svTauPlus_ - kineEvtA.pv_;
+      std::cout << "phi of tau+: four-vector = " << kineEvtA.tauPlusP4_.phi() << ", decay vertex = " << tauPlusD3.phi() << "\n";
+      std::cout << "theta of tau+: four-vector = " << kineEvtA.tauPlusP4_.theta() << ", decay vertex = " << tauPlusD3.theta() << "\n";
+      std::cout << "tau- mass = " << kineEvtA.tauMinusP4_.mass() << "\n";
+      double nuTauMinusPx   = kineEvtA.tauMinusP4_.px()     - visTauMinusP4.px();
+      double nuTauMinusPy   = kineEvtA.tauMinusP4_.py()     - visTauMinusP4.py();
+      double nuTauMinusPz   = kineEvtA.tauMinusP4_.pz()     - visTauMinusP4.pz();
+      double nuTauMinusE    = kineEvtA.tauMinusP4_.energy() - visTauMinusP4.energy();
+      std::cout << "neutrino from tau- decay:" 
+                << " E = " << nuTauMinusE << ", Px = " << nuTauMinusPx << ", Py = " << nuTauMinusPy << ", Pz = " << nuTauMinusPz << ","
+                << " mass = " << (kineEvtA.tauMinusP4_ - visTauMinusP4).mass() << "\n";
+      auto tauMinusD3 = kineEvtA.svTauMinus_ - kineEvtA.pv_;
+      std::cout << "phi of tau-: four-vector = " << kineEvtA.tauMinusP4_.phi() << ", decay vertex = " << tauMinusD3.phi() << "\n";
+      std::cout << "theta of tau-: four-vector = " << kineEvtA.tauMinusP4_.theta() << ", decay vertex = " << tauMinusD3.theta() << "\n";
+      std::cout << "Higgs - recoil:"
+                << " dE = "  << higgsP4.energy() - kineEvtA.recoilP4_.energy() << ","
+                << " dPx = " << higgsP4.px()     - kineEvtA.recoilP4_.px()     << ","
+                << " dPy = " << higgsP4.py()     - kineEvtA.recoilP4_.py()     << ","
+                << " dPz = " << higgsP4.pz()     - kineEvtA.recoilP4_.pz()     << "\n";
     }
 
-    double diff = std::sqrt(ROOT::Math::Dot(dalpha, dalpha));
-    if ( residuals_sum > epsilon )
+    const double epsilon = 1.e-1;
+    if ( residuals_sum < epsilon && (iteration == 1 || chi2 < min_chi2) )
     {
-      hasFailed = true;
+      kineEvt_kinfit = kineEvtA;
+      min_chi2 = chi2;
+      ++iteration;
     }
-    else if ( diff < 1.e-2 )
+    else
     {
       hasConverged = true;
     }
   }
-  if ( hasFailed || iteration > max_iterations )
+  if ( iteration > max_iterations )
   {
     std::cerr << "WARNING: KinematicFit failed to converge !!" << std::endl;
   }

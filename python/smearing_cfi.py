@@ -20,5 +20,7 @@ smearing = cms.PSet(
     applySmearing_sv_perp       = cms.bool(False),
     applySmearing_sv_parl       = cms.bool(False),
 
-    applySmearing_tip_perp      = cms.bool(False)
+    applySmearing_tip_perp      = cms.bool(False),
+
+    rndSeed                     = cms.uint64(0)
 )

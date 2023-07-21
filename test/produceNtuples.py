@@ -31,7 +31,7 @@ samples = {
 modes = [ "gen", "rec" ]
 hAxes = [ "higgs" ]
 
-version = "2023Jun16"
+version = "2023Jul21"
 
 configDir  = os.path.join("/home",               getpass.getuser(), "Entanglement/ntuples/", version)
 outputDir  = os.path.join("/scratch/persistent", getpass.getuser(), "Entanglement/ntuples/", version)
@@ -48,6 +48,7 @@ run_command('mkdir -p %s' % outputDir)
 def build_cfgFile(cfgFile_original, cfgFile_modified, 
                   inputFileNames, process,
                   mode, hAxis,
+                  rndSeed,
                   outputFileName):
   print("Building configFile = '%s'" % cfgFile_modified)
 
@@ -60,6 +61,7 @@ def build_cfgFile(cfgFile_original, cfgFile_modified,
   sedCommand += '  s/##processName/processName/; s/\$processName/%s/;' % process
   sedCommand += '  s/##mode/mode/; s/\$mode/%s/;' % mode
   sedCommand += '  s/##hAxis/hAxis/; s/\$hAxis/%s/;' % hAxis
+  sedCommand += '  s/##rndSeed/rndSeed/; s/\$rndSeed/%i/;' % rndSeed
   sedCommand += '  s/##outputFileName/outputFileName/; s/\$outputFileName/%s/"' % outputFileName
   sedCommand += ' %s > %s' % (cfgFile_original, cfgFile_modified)
   run_command(sedCommand)
@@ -82,12 +84,14 @@ for sampleName, sample in samples.items():
         inputFileNames_job = inputFileNames[idxFirstFile:idxLastFile + 1]
         cfgFileName_modified = os.path.join(configDir, "produceEntanglementNtuple_%s_%sMode_%sAxis_%i_cfg.py" % \
           (sampleName, mode, hAxis, jobId))
+        rndSeed = jobId
         outputFileName = "entanglementNtuple_%s_%sMode_%sAxis_%i.root" % \
           (sampleName, mode, hAxis, jobId)
         build_cfgFile(
           "produceEntanglementNtuple_cfg.py", cfgFileName_modified, 
           inputFileNames_job, sample['process'],
-          mode, hAxis, 
+          mode, hAxis,
+          rndSeed,
           outputFileName)
         logFileName = cfgFileName_modified.replace("_cfg.py", ".log")
         job_key = '%s_%s_%s_%i' % (process, mode, hAxis, jobId)
