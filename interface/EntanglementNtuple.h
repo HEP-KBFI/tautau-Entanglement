@@ -374,8 +374,9 @@ class EntanglementNtuple
   branchType_KinematicEvent branches_KinematicEvent_startPos_;
 
   branchType_KinematicEvent branches_KinematicEvent_kinFit_;
-  Float_t kinFit_cov_[kinFit::numParameters][kinFit::numParameters];
-  Float_t kinFit_chi2_;
+  Int_t   kinFit_status_;            // status of kinematic fit: +1 = converged, -1 = failed
+  Float_t kinFit_cov_[kinFit::numParameters][kinFit::numParameters]; // covariance matrix V_alpha of kinematic fit
+  Float_t kinFit_chi2_;              // chi^2 of kinematic fit (computed according to Eq. (4) in https://www.phys.ufl.edu/~avery/fitting/kinematic.pdf)
 
   Float_t evtWeight_;                // event weight of Monte Carlo generator
 };

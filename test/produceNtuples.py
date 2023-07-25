@@ -51,6 +51,7 @@ def build_cfgFile(cfgFile_original, cfgFile_modified,
                   rndSeed,
                   outputFileName):
   print("Building configFile = '%s'" % cfgFile_modified)
+  #print(" rndSeed = %i" % rndSeed)
 
   rmCommand   = 'rm -f %s' % cfgFile_modified
   run_command(rmCommand)

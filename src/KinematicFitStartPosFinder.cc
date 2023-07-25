@@ -8,7 +8,7 @@
 
 #include "TauAnalysis/Entanglement/interface/constants.h"          // mChargedPion, mTau
 #include "TauAnalysis/Entanglement/interface/cmsException.h"       // cmsException
-#include "TauAnalysis/Entanglement/interface/fixTauMass.h"         // fixTauMass()
+#include "TauAnalysis/Entanglement/interface/fixMass.h"            // fixTauMass()
 #include "TauAnalysis/Entanglement/interface/get_leadTrack.h"      // get_leadTrack()
 #include "TauAnalysis/Entanglement/interface/printLorentzVector.h" // printLorentzVector()
 #include "TauAnalysis/Entanglement/interface/printPoint.h"         // printPoint()
@@ -419,14 +419,14 @@ KinematicFitStartPosFinder::operator()(const KinematicEvent& kineEvt)
       tauPlusP4 = tau1P4.first;
       tauMinusP4 = tau1P4.second;
       tauMassFix0 = tauMassFix1;
-      ++iteration;
     }
     else
     {
       hasConverged = true;
     }
+    ++iteration;
   }
-  if ( iteration > max_iterations )
+  if ( !hasConverged )
   {
     std::cerr << "WARNING: KinematicFitStartPosFinder failed to converge !!" << std::endl;
   }

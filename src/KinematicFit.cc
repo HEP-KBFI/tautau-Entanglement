@@ -7,6 +7,7 @@
 
 #include "TauAnalysis/Entanglement/interface/cmsException.h"      // cmsException
 #include "TauAnalysis/Entanglement/interface/constants.h"         // mHiggs, mTau
+#include "TauAnalysis/Entanglement/interface/fixMass.h"           // fixHiggsMass(), fixTauMass()
 #include "TauAnalysis/Entanglement/interface/Matrix_and_Vector.h" // math::Matrix*, math::Vector*, printCovMatrix()
 #include "TauAnalysis/Entanglement/interface/square.h"            // square()
 
@@ -59,6 +60,7 @@ KinematicFit::operator()(const KinematicEvent& kineEvt)
   math::VectorP alpha0;
   KinematicEvent kineEvtA = kineEvt;
   double min_chi2 = -1.;
+  int status = -1;
   bool hasConverged = false;
   while ( !hasConverged && iteration <= max_iterations )
   {
@@ -216,30 +218,33 @@ KinematicFit::operator()(const KinematicEvent& kineEvt)
     math::MatrixCxP D;
     math::VectorC   d;
     // CV: add Higgs mass constraint
-    //       H = (tauPlusE + tauMinusE)^2 - (tauPlusPx + tauMinusPx)^2 - (tauPlusPy + tauMinusPy)^2 - (tauPlusPz + tauMinusPz)^2 - mHiggs^2 = 0
-    D( 0, 3) = -2.*(tauPlusPx + tauMinusPx);                                // dH/dtauPlusPx
-    D( 0, 4) = -2.*(tauPlusPy + tauMinusPy);                                // dH/dtauPlusPy
-    D( 0, 5) = -2.*(tauPlusPz + tauMinusPz);                                // dH/dtauPlusPz
-    D( 0, 6) = +2.*(tauPlusE  + tauMinusE );                                // dH/dtauPlusE
-    D( 0,10) = -2.*(tauPlusPx + tauMinusPx);                                // dH/dtauMinusPx
-    D( 0,11) = -2.*(tauPlusPy + tauMinusPy);                                // dH/dtauMinusPy
-    D( 0,12) = -2.*(tauPlusPz + tauMinusPz);                                // dH/dtauMinusPz
-    D( 0,13) = +2.*(tauPlusE  + tauMinusE );                                // dH/dtauMinusE
-    d( 0) = square((tauPlusP4 + tauMinusP4).mass()) - square(mHiggs);
+    //       H = sqrt((tauPlusE + tauMinusE)^2 - (tauPlusPx + tauMinusPx)^2 - (tauPlusPy + tauMinusPy)^2 - (tauPlusPz + tauMinusPz)^2) - mHiggs = 0
+    double denominator0 = (tauPlusP4 + tauMinusP4).mass();
+    D( 0, 3) = -(tauPlusPx + tauMinusPx)/denominator0;                      // dH/dtauPlusPx
+    D( 0, 4) = -(tauPlusPy + tauMinusPy)/denominator0;                      // dH/dtauPlusPy
+    D( 0, 5) = -(tauPlusPz + tauMinusPz)/denominator0;                      // dH/dtauPlusPz
+    D( 0, 6) = +(tauPlusE  + tauMinusE )/denominator0;                      // dH/dtauPlusE
+    D( 0,10) = -(tauPlusPx + tauMinusPx)/denominator0;                      // dH/dtauMinusPx
+    D( 0,11) = -(tauPlusPy + tauMinusPy)/denominator0;                      // dH/dtauMinusPy
+    D( 0,12) = -(tauPlusPz + tauMinusPz)/denominator0;                      // dH/dtauMinusPz
+    D( 0,13) = +(tauPlusE  + tauMinusE )/denominator0;                      // dH/dtauMinusE
+    d( 0) = (tauPlusP4 + tauMinusP4).mass() - mHiggs;
     // CV: add tau+ mass constraint
-    //       H = tauPlusE^2 - tauPlusPx^2 - tauPlusPy^2 - tauPlusPz^2 - mTau^2 = 0
-    D( 1, 3) = -2.*tauPlusPx;                                               // dH/dtauPlusPx
-    D( 1, 4) = -2.*tauPlusPy;                                               // dH/dtauPlusPy
-    D( 1, 5) = -2.*tauPlusPz;                                               // dH/dtauPlusPz
-    D( 1, 6) = +2.*tauPlusE;                                                // dH/dtauPlusE
-    d( 1) = square(tauPlusP4.mass()) - square(mTau);
+    //       H = sqrt(tauPlusE^2 - tauPlusPx^2 - tauPlusPy^2 - tauPlusPz^2) - mTau = 0
+    double denominator1 = tauPlusP4.mass();
+    D( 1, 3) = -tauPlusPx/denominator1;                                     // dH/dtauPlusPx
+    D( 1, 4) = -tauPlusPy/denominator1;                                     // dH/dtauPlusPy
+    D( 1, 5) = -tauPlusPz/denominator1;                                     // dH/dtauPlusPz
+    D( 1, 6) = +tauPlusE/denominator1;                                      // dH/dtauPlusE
+    d( 1) = tauPlusP4.mass() - mTau;
     // CV: add neutrino mass constraint for tau+
-    //       H = (tauPlusE - visTauPlusE)^2 - (tauPlusPx - visTauPlusPx)^2 - (tauPlusPy - visTauPlusPy)^2 - (tauPlusPz - visTauPlusPz)^2 = 0
-    D( 2, 3) = -2.*(tauPlusPx - visTauPlusPx );                             // dH/dtauPlusPx
-    D( 2, 4) = -2.*(tauPlusPy - visTauPlusPy );                             // dH/dtauPlusPy
-    D( 2, 5) = -2.*(tauPlusPz - visTauPlusPz );                             // dH/dtauPlusPz
-    D( 2, 6) = +2.*(tauPlusE  - visTauPlusE  );                             // dH/dtauPlusE
-    d( 2) = square((tauPlusP4 - visTauPlusP4).mass());
+    //       H = sqrt((tauPlusE - visTauPlusE)^2 - (tauPlusPx - visTauPlusPx)^2 - (tauPlusPy - visTauPlusPy)^2 - (tauPlusPz - visTauPlusPz)^2) = 0
+    double denominator2 = (tauPlusP4 - visTauPlusP4).mass();
+    D( 2, 3) = -(tauPlusPx - visTauPlusPx)/denominator2;                    // dH/dtauPlusPx
+    D( 2, 4) = -(tauPlusPy - visTauPlusPy)/denominator2;                    // dH/dtauPlusPy
+    D( 2, 5) = -(tauPlusPz - visTauPlusPz)/denominator2;                    // dH/dtauPlusPz
+    D( 2, 6) = +(tauPlusE  - visTauPlusE )/denominator2;                    // dH/dtauPlusE
+    d( 2) = (tauPlusP4 - visTauPlusP4).mass();
     // CV: add "parallelism" constraint for tau+
     //     The constraint equations H_Pphi and H_Ptheta are given by Eqs. (4.10) and (4.11)
     //     in Section 4.1.3.3 of https://cds.cern.ch/record/1358627/files/CERN-THESIS-2011-028.pdf
@@ -263,19 +268,21 @@ KinematicFit::operator()(const KinematicEvent& kineEvt)
     D( 4, 9) = -D(4,2);                                                     // dH_Ptheta/dsvTauPlusZ
     d( 4) =  (tauPlusD - tauPlusDt)/tauPlusDz + (tauPlusPt - tauPlusP)/tauPlusPz;
     // CV: add tau- mass constraint
-    //       H = tauMinusE^2 - tauMinusPx^2 - tauMinusPy^2 - tauMinusPz^2 - mTau^2 = 0
-    D( 5,10) = -2.*tauMinusPx;                                              // dH/dtauMinusPx
-    D( 5,11) = -2.*tauMinusPy;                                              // dH/dtauMinusPy
-    D( 5,12) = -2.*tauMinusPz;                                              // dH/dtauMinusPz
-    D( 5,13) = +2.*tauMinusE;                                               // dH/dtauMinusE
-    d( 5) = square(tauMinusP4.mass()) - square(mTau);
+    //       H = sqrt(tauMinusE^2 - tauMinusPx^2 - tauMinusPy^2 - tauMinusPz^2) - mTau = 0
+    double denominator5 = tauMinusP4.mass();
+    D( 5,10) = -tauMinusPx/denominator5;                                    // dH/dtauMinusPx
+    D( 5,11) = -tauMinusPy/denominator5;                                    // dH/dtauMinusPy
+    D( 5,12) = -tauMinusPz/denominator5;                                    // dH/dtauMinusPz
+    D( 5,13) = +tauMinusE/denominator5;                                     // dH/dtauMinusE
+    d( 5) = tauMinusP4.mass() - mTau;
     // CV: add neutrino mass constraint for tau-
-    //       H = (tauMinusE - visTauMinusE)^2 - (tauMinusPx - visTauMinusPx)^2 - (tauMinusPy - visTauMinusPy)^2 - (tauMinusPz - visTauMinusPz)^2 = 0
-    D( 6,10) = -2.*(tauMinusPx - visTauMinusPx);                            // dH/dtauMinusPx
-    D( 6,11) = -2.*(tauMinusPy - visTauMinusPy);                            // dH/dtauMinusPy
-    D( 6,12) = -2.*(tauMinusPz - visTauMinusPz);                            // dH/dtauMinusPz
-    D( 6,13) = +2.*(tauMinusE  - visTauMinusE );                            // dH/dtauMinusE
-    d( 6) = square((tauMinusP4 - visTauMinusP4).mass());
+    //       H = sqrt((tauMinusE - visTauMinusE)^2 - (tauMinusPx - visTauMinusPx)^2 - (tauMinusPy - visTauMinusPy)^2 - (tauMinusPz - visTauMinusPz)^2) = 0
+    double denominator6 = (tauMinusP4 - visTauMinusP4).mass();
+    D( 6,10) = -(tauMinusPx - visTauMinusPx)/denominator6;                  // dH/dtauMinusPx
+    D( 6,11) = -(tauMinusPy - visTauMinusPy)/denominator6;                  // dH/dtauMinusPy
+    D( 6,12) = -(tauMinusPz - visTauMinusPz)/denominator6;                  // dH/dtauMinusPz
+    D( 6,13) = +(tauMinusE  - visTauMinusE )/denominator6;                  // dH/dtauMinusE
+    d( 6) = (tauMinusP4 - visTauMinusP4).mass();
     // CV: add "parallelism" constraint for tau+
     //     The constraint equations H_Pphi and H_Ptheta are given by Eqs. (4.10) and (4.11)
     //     in Section 4.1.3.3 of https://cds.cern.ch/record/1358627/files/CERN-THESIS-2011-028.pdf
@@ -374,16 +381,20 @@ KinematicFit::operator()(const KinematicEvent& kineEvt)
       printCovMatrix("V_alpha", V_alpha);
     }
 
-    // CV: compute chi^2
-    math::VectorP alpha_minus_alpha0 = alpha - alpha0;
     math::VectorP dalpha = alpha - alphaA;
-    double chi2 = ROOT::Math::Dot(alpha_minus_alpha0, Vinv_alpha0*alpha_minus_alpha0) + 2.*ROOT::Math::Dot(lambda, D*dalpha + d);
+    double dalpha_mag = std::sqrt(ROOT::Math::Dot(dalpha, dalpha));
     if ( verbosity_ >= 1 )
     {
       std::cout << "dalpha:\n";
       std::cout << dalpha << "\n";
-      double dalpha_mag = std::sqrt(ROOT::Math::Dot(dalpha, dalpha));
       std::cout << "|alpha - alphaA| = " << dalpha_mag << "\n";
+    }
+
+    // CV: compute chi^2
+    math::VectorP alpha_minus_alpha0 = alpha - alpha0;
+    double chi2 = ROOT::Math::Dot(alpha_minus_alpha0, Vinv_alpha0*alpha_minus_alpha0) + 2.*ROOT::Math::Dot(lambda, D*dalpha + d);
+    if ( verbosity_ >= 1 )
+    {
       std::cout << "chi^2 = " << chi2 << "\n";
     }
 
@@ -417,68 +428,76 @@ KinematicFit::operator()(const KinematicEvent& kineEvt)
     //     see Section "Accessing and setting methods" of the ROOT documentation https://root.cern.ch/doc/v608/SMatrixDoc.html
     kineEvtA.pv_ = reco::Candidate::Point(alpha(0), alpha(1), alpha(2));
     kineEvtA.pvCov_ = V_alpha.Sub<math::Matrix3x3>(0,0);
+    //kineEvtA.recoilP4_ = fixHiggsMass(reco::Candidate::LorentzVector(alpha(17), alpha(18), alpha(19), alpha(20)));
     kineEvtA.recoilP4_ = reco::Candidate::LorentzVector(alpha(17), alpha(18), alpha(19), alpha(20));
     kineEvtA.recoilCov_ = V_alpha.Sub<math::Matrix4x4>(17,17);
+    //kineEvtA.tauPlusP4_ = fixTauMass(reco::Candidate::LorentzVector(alpha(3), alpha(4), alpha(5), alpha(6)));
     kineEvtA.tauPlusP4_ = reco::Candidate::LorentzVector(alpha(3), alpha(4), alpha(5), alpha(6));
     kineEvtA.tauPlusP4_isValid_ = true;
     kineEvtA.tauPlusCov_ = V_alpha.Sub<math::Matrix4x4>(3,3);
     kineEvtA.svTauPlus_ = reco::Candidate::Point(alpha(7), alpha(8), alpha(9));
     kineEvtA.svTauPlusCov_ = V_alpha.Sub<math::Matrix3x3>(7,7);
+    //kineEvtA.tauMinusP4_ = fixTauMass(reco::Candidate::LorentzVector(alpha(10), alpha(11), alpha(12), alpha(13)));
     kineEvtA.tauMinusP4_ = reco::Candidate::LorentzVector(alpha(10), alpha(11), alpha(12), alpha(13));
     kineEvtA.tauMinusP4_isValid_ = true;
     kineEvtA.tauMinusCov_ = V_alpha.Sub<math::Matrix4x4>(10,10);
     kineEvtA.svTauMinus_ = reco::Candidate::Point(alpha(14), alpha(15), alpha(16));
     kineEvtA.svTauMinusCov_ = V_alpha.Sub<math::Matrix3x3>(14,14);
-    kineEvtA.kinFitCov_ = V_alpha;
-    kineEvtA.kinFitChi2_ = chi2;
-    kineEvtA.kinFit_isValid_ = true;
     if ( verbosity_ >= 1 )
     {
       std::cout << "constraint equations:\n";
-      reco::Candidate::LorentzVector higgsP4 = kineEvtA.tauPlusP4_ + kineEvtA.tauMinusP4_;
+      reco::Candidate::LorentzVector tauPlusP4(alpha(3), alpha(4), alpha(5), alpha(6));
+      reco::Candidate::LorentzVector tauMinusP4(alpha(10), alpha(11), alpha(12), alpha(13));
+      reco::Candidate::LorentzVector higgsP4 = tauPlusP4 + tauMinusP4;
       std::cout << "Higgs mass = " << higgsP4.mass() << "\n";
       std::cout << "tau+ mass = " << tauPlusP4.mass() << "\n";      
-      double nuTauPlusPx   = kineEvtA.tauPlusP4_.px()     - visTauPlusP4.px();
-      double nuTauPlusPy   = kineEvtA.tauPlusP4_.py()     - visTauPlusP4.py();
-      double nuTauPlusPz   = kineEvtA.tauPlusP4_.pz()     - visTauPlusP4.pz();
-      double nuTauPlusE    = kineEvtA.tauPlusP4_.energy() - visTauPlusP4.energy();
+      double nuTauPlusPx   = tauPlusP4.px()     - visTauPlusP4.px();
+      double nuTauPlusPy   = tauPlusP4.py()     - visTauPlusP4.py();
+      double nuTauPlusPz   = tauPlusP4.pz()     - visTauPlusP4.pz();
+      double nuTauPlusE    = tauPlusP4.energy() - visTauPlusP4.energy();
       std::cout << "neutrino from tau+ decay:" 
                 << " E = " << nuTauPlusE << ", Px = " << nuTauPlusPx << ", Py = " << nuTauPlusPy << ", Pz = " << nuTauPlusPz << ","
-                << " mass = " << (kineEvtA.tauPlusP4_ - visTauPlusP4).mass() << "\n";
+                << " mass = " << (tauPlusP4 - visTauPlusP4).mass() << "\n";
       auto tauPlusD3 = kineEvtA.svTauPlus_ - kineEvtA.pv_;
-      std::cout << "phi of tau+: four-vector = " << kineEvtA.tauPlusP4_.phi() << ", decay vertex = " << tauPlusD3.phi() << "\n";
-      std::cout << "theta of tau+: four-vector = " << kineEvtA.tauPlusP4_.theta() << ", decay vertex = " << tauPlusD3.theta() << "\n";
-      std::cout << "tau- mass = " << kineEvtA.tauMinusP4_.mass() << "\n";
-      double nuTauMinusPx   = kineEvtA.tauMinusP4_.px()     - visTauMinusP4.px();
-      double nuTauMinusPy   = kineEvtA.tauMinusP4_.py()     - visTauMinusP4.py();
-      double nuTauMinusPz   = kineEvtA.tauMinusP4_.pz()     - visTauMinusP4.pz();
-      double nuTauMinusE    = kineEvtA.tauMinusP4_.energy() - visTauMinusP4.energy();
+      std::cout << "phi of tau+: four-vector = " << tauPlusP4.phi() << ", decay vertex = " << tauPlusD3.phi() << "\n";
+      std::cout << "theta of tau+: four-vector = " << tauPlusP4.theta() << ", decay vertex = " << tauPlusD3.theta() << "\n";
+      std::cout << "tau- mass = " << tauMinusP4.mass() << "\n";
+      double nuTauMinusPx   = tauMinusP4.px()     - visTauMinusP4.px();
+      double nuTauMinusPy   = tauMinusP4.py()     - visTauMinusP4.py();
+      double nuTauMinusPz   = tauMinusP4.pz()     - visTauMinusP4.pz();
+      double nuTauMinusE    = tauMinusP4.energy() - visTauMinusP4.energy();
       std::cout << "neutrino from tau- decay:" 
                 << " E = " << nuTauMinusE << ", Px = " << nuTauMinusPx << ", Py = " << nuTauMinusPy << ", Pz = " << nuTauMinusPz << ","
-                << " mass = " << (kineEvtA.tauMinusP4_ - visTauMinusP4).mass() << "\n";
+                << " mass = " << (tauMinusP4 - visTauMinusP4).mass() << "\n";
       auto tauMinusD3 = kineEvtA.svTauMinus_ - kineEvtA.pv_;
-      std::cout << "phi of tau-: four-vector = " << kineEvtA.tauMinusP4_.phi() << ", decay vertex = " << tauMinusD3.phi() << "\n";
-      std::cout << "theta of tau-: four-vector = " << kineEvtA.tauMinusP4_.theta() << ", decay vertex = " << tauMinusD3.theta() << "\n";
+      std::cout << "phi of tau-: four-vector = " << tauMinusP4.phi() << ", decay vertex = " << tauMinusD3.phi() << "\n";
+      std::cout << "theta of tau-: four-vector = " << tauMinusP4.theta() << ", decay vertex = " << tauMinusD3.theta() << "\n";
+      reco::Candidate::LorentzVector recoilP4(alpha(17), alpha(18), alpha(19), alpha(20));
       std::cout << "Higgs - recoil:"
-                << " dE = "  << higgsP4.energy() - kineEvtA.recoilP4_.energy() << ","
-                << " dPx = " << higgsP4.px()     - kineEvtA.recoilP4_.px()     << ","
-                << " dPy = " << higgsP4.py()     - kineEvtA.recoilP4_.py()     << ","
-                << " dPz = " << higgsP4.pz()     - kineEvtA.recoilP4_.pz()     << "\n";
+                << " dE = "  << higgsP4.energy() - recoilP4.energy() << ","
+                << " dPx = " << higgsP4.px()     - recoilP4.px()     << ","
+                << " dPy = " << higgsP4.py()     - recoilP4.py()     << ","
+                << " dPz = " << higgsP4.pz()     - recoilP4.pz()     << "\n";
     }
 
     const double epsilon = 1.e-1;
     if ( residuals_sum < epsilon && (iteration == 1 || chi2 < min_chi2) )
     {
       kineEvt_kinfit = kineEvtA;
+      kineEvt_kinfit.kinFitCov_ = V_alpha;
+      kineEvt_kinfit.kinFitChi2_ = chi2;
+      kineEvt_kinfit.kinFit_isValid_ = true;
       min_chi2 = chi2;
-      ++iteration;
+      status = 0;
     }
-    else
+    if ( status == 0 && dalpha_mag < 1. )
     {
+      status = 1;
       hasConverged = true;
     }
+    ++iteration;
   }
-  if ( iteration > max_iterations )
+  if ( !hasConverged )
   {
     std::cerr << "WARNING: KinematicFit failed to converge !!" << std::endl;
   }
@@ -486,6 +505,8 @@ KinematicFit::operator()(const KinematicEvent& kineEvt)
   {
     std::cout << "#iterations = " << iteration << " (max_iterations = " << max_iterations << ")\n";
   }
+
+  kineEvt_kinfit.kinFitStatus_ = status;
 
   reco::Candidate::Vector hPlus = spinAnalyzer_(kineEvt_kinfit, SpinAnalyzerBase::kTauPlus);
   kineEvt_kinfit.hPlus_ = hPlus;

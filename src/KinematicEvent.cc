@@ -14,6 +14,7 @@ KinematicEvent::KinematicEvent()
   , tauMinusP4_isValid_(false)
   , tauMinusCov_isValid_(false)
   , svTauMinus_isValid_(false)
+  , kinFitStatus_(-1)
   , kinFitChi2_(-1.)
   , kinFit_isValid_(false)
 {}
@@ -205,6 +206,12 @@ bool
 KinematicEvent::hMinus_isValid() const
 {
   return hMinus_isValid_;
+}
+
+int
+KinematicEvent::kinFitStatus() const
+{
+  return kinFitStatus_;
 }
 
 double

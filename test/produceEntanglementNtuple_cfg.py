@@ -127,8 +127,8 @@ process.ntupleProducer = cms.EDAnalyzer("EntanglementNtupleProducer",
     ),
     applySmearing = cms.bool(False),
     srcEvtWeights = cms.VInputTag('genWeight'),
-    verbosity = cms.untracked.int32(-1),
-    #verbosity = cms.untracked.int32(1),
+    #verbosity = cms.untracked.int32(-1),
+    verbosity = cms.untracked.int32(1),
     cartesian = cms.untracked.bool(True)
 )
 process.analysisSequence += process.ntupleProducer

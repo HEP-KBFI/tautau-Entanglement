@@ -225,7 +225,8 @@ namespace
         //     Following the "huge error method" described in Section 6 of https://www.phys.ufl.edu/~avery/fitting/fitting1.pdf
         //     we set the uncertainty in parallel direction to a large (but not very large, to avoid numerical instabilities) value,
         //     so that the position in parallel direction is practically unconstrained.
-        dk = 1.e+2;
+        //dk = 1.e+2;
+        dk = 0.1; // ONLY FOR TESTING !!
         dr = resolutions.tipResolution_perp();
         dn = resolutions.tipResolution_perp();
       }

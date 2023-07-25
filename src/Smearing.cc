@@ -4,7 +4,7 @@
 
 #include "TauAnalysis/Entanglement/interface/cmsException.h"              // cmsException
 #include "TauAnalysis/Entanglement/interface/constants.h"                 // mChargedPion
-#include "TauAnalysis/Entanglement/interface/fixTauMass.h"                // fixTauMass()
+#include "TauAnalysis/Entanglement/interface/fixMass.h"                   // fixTauMass()
 #include "TauAnalysis/Entanglement/interface/get_leadTrack.h"             // get_leadTrack()
 #include "TauAnalysis/Entanglement/interface/get_localCoordinateSystem.h" // get_localCoordinateSystem()
 #include "TauAnalysis/Entanglement/interface/KinematicParticle.h"         // KinematicParticle

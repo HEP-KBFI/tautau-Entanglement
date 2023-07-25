@@ -4,6 +4,7 @@
 
 #include "TauAnalysis/Entanglement/interface/cmsException.h"              // cmsException
 #include "TauAnalysis/Entanglement/interface/constants.h"                 // mTau, gamma_va
+#include "TauAnalysis/Entanglement/interface/fixMass.h"                   // fixTauMass()
 #include "TauAnalysis/Entanglement/interface/get_localCoordinateSystem.h" // get_localCoordinateSystem()
 #include "TauAnalysis/Entanglement/interface/getP4_hf.h"                  // getP4_hf()
 #include "TauAnalysis/Entanglement/interface/getP4_rf.h"                  // getP4_rf()
@@ -144,14 +145,37 @@ SpinAnalyzerOneProng1Pi0::operator()(const KinematicEvent& evt, int tau)
     visTauP4 = evt.visTauMinusP4();
   }
   else assert(0);
+  if ( verbosity_ >= 2 )
+  {
+    printLorentzVector("tauP4", tauP4);
+    std::cout << " mass = " << tauP4.mass() << "\n";
+    printLorentzVector("visTauP4", visTauP4);
+    std::cout << " mass = " << visTauP4.mass() << "\n";
+  } 
   reco::Candidate::LorentzVector recoilP4 = evt.recoilP4();
+  if ( verbosity_ >= 2 )
+  {
+    printLorentzVector("recoilP4", recoilP4);
+    std::cout << " mass = " << recoilP4.mass() << "\n";
+  }
   ROOT::Math::Boost boost_ttrf = ROOT::Math::Boost(recoilP4.BoostToCM());
-  reco::Candidate::LorentzVector tauP4_ttrf = getP4_rf(tauP4, boost_ttrf);
+  reco::Candidate::LorentzVector tauP4_ttrf = fixTauMass(getP4_rf(tauP4, boost_ttrf));
+  if ( verbosity_ >= 2 )
+  {
+    printLorentzVector("tauP4_ttrf", tauP4_ttrf);
+    std::cout << " mass = " << tauP4_ttrf.mass() << "\n";
+  }
   reco::Candidate::Vector r, n, k;
   get_localCoordinateSystem(evt.tauMinusP4(), &recoilP4, &boost_ttrf, hAxis_, r, n, k, verbosity_, cartesian_);
-  reco::Candidate::LorentzVector tauP4_hf = getP4_hf(tauP4_ttrf, r, n, k);
+  reco::Candidate::LorentzVector tauP4_hf = fixTauMass(getP4_hf(tauP4_ttrf, r, n, k));
+  if ( verbosity_ >= 2 )
+  {
+    printLorentzVector("tauP4_hf", tauP4_hf);
+    std::cout << " mass = " << tauP4_hf.mass() << "\n";
+  }
   ROOT::Math::Boost boost_trf = ROOT::Math::Boost(tauP4_hf.BoostToCM());
 
   reco::Candidate::Vector h = getPolarimetricVec_OneProng1PiZero(tauP4, *daughters, visTauP4, boost_ttrf, r, n, k, boost_trf, verbosity_, cartesian_);
+assert(getP4_hf(tauP4_ttrf, r, n, k).mass() >= 0.);
   return h;
 }

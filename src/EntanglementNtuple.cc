@@ -22,6 +22,7 @@ EntanglementNtuple::EntanglementNtuple(TTree* ntuple)
   branches_KinematicEvent_startPos_.initBranches(ntuple);
 
   branches_KinematicEvent_kinFit_.initBranches(ntuple);
+  createBranchI(ntuple_, "kinFit", "status", &kinFit_status_);
   createBranchF(ntuple_, "kinFit", "chi2", &kinFit_chi2_);
   for ( int idxRow = 0; idxRow < kinFit::numParameters; ++idxRow )
   {
@@ -76,6 +77,7 @@ EntanglementNtuple::fillBranches(const edm::Event& evt,
     branches_KinematicEvent_kinFit_.fillBranches(*kineEvt_kinFit);
     if ( kineEvt_kinFit->kinFit_isValid() )
     {
+      kinFit_status_ = kineEvt_kinFit->kinFitStatus();
       kinFit_chi2_ = kineEvt_kinFit->kinFitChi2();
       const math::MatrixPxP& kinFitCov = kineEvt_kinFit->kinFitCov();
       for ( int idxRow = 0; idxRow < kinFit::numParameters; ++idxRow )
@@ -88,6 +90,7 @@ EntanglementNtuple::fillBranches(const edm::Event& evt,
     }
     else
     {
+      kinFit_status_ = -1;
       kinFit_chi2_ = -1.;
       for ( int idxRow = 0; idxRow < kinFit::numParameters; ++idxRow )
       {
