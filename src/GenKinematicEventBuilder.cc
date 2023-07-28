@@ -3,9 +3,10 @@
 #include "DataFormats/Candidate/interface/Candidate.h"                    // reco::Candidate::LorentzVector, reco::Candidate::Vector
 #include "DataFormats/TauReco/interface/PFTau.h"                          // reco::PFTau::hadronicDecayMode
 
-#include "TauAnalysis/Entanglement/interface/compVisP4.h"                 // compVisP4()
+#include "TauAnalysis/Entanglement/interface/comp_visP4.h"                // comp_visP4()
 #include "TauAnalysis/Entanglement/interface/findDecayProducts.h"         // findDecayProducts()
 #include "TauAnalysis/Entanglement/interface/findLastTau.h"               // findLastTau()
+#include "TauAnalysis/Entanglement/interface/getCov_hf.h"                 // getCov_hf()
 #include "TauAnalysis/Entanglement/interface/get_decayMode.h"             // get_decayMode()
 #include "TauAnalysis/Entanglement/interface/get_leadTrack.h"             // get_leadTrack()
 #include "TauAnalysis/Entanglement/interface/get_localCoordinateSystem.h" // get_localCoordinateSystem()
@@ -225,39 +226,13 @@ namespace
         //     Following the "huge error method" described in Section 6 of https://www.phys.ufl.edu/~avery/fitting/fitting1.pdf
         //     we set the uncertainty in parallel direction to a large (but not very large, to avoid numerical instabilities) value,
         //     so that the position in parallel direction is practically unconstrained.
-        //dk = 1.e+2;
-        dk = 0.1; // ONLY FOR TESTING !!
+        dk = 1.e+2;
+        //dk = 0.1; // ONLY FOR TESTING !!
         dr = resolutions.tipResolution_perp();
         dn = resolutions.tipResolution_perp();
       }
-      double dk2 = square(dk);
-      double dr2 = square(dr);
-      double dn2 = square(dn);
-      reco::Candidate::Vector x(1., 0., 0.);
-      reco::Candidate::Vector y(0., 1., 0.);
-      reco::Candidate::Vector z(0., 0., 1.);
-      double k_x = k.Dot(x);
-      double k_y = k.Dot(y);
-      double k_z = k.Dot(z);
-      double r_x = r.Dot(x);
-      double r_y = r.Dot(y);
-      double r_z = r.Dot(z);
-      double n_x = n.Dot(x);
-      double n_y = n.Dot(y);
-      double n_z = n.Dot(z);
-      // CV: computation of covariance matrix in rotated coordinates taken from the paper
-      //       "On transformation of covariance matrices between local Cartesian cooridinate systems and commutative diagrams",
-      //       T. Soler and M. Chin; 
-      //     also see Appendix I of https://www.phys.ufl.edu/~avery/fitting/kinematic.pdf
-      cov7x7(4,4) = dk2*k_x*k_x + dr2*r_x*r_x + dn2*n_x*n_x;
-      cov7x7(4,5) = dk2*k_x*k_y + dr2*r_x*r_y + dn2*n_x*n_y;
-      cov7x7(4,6) = dk2*k_x*k_z + dr2*r_x*r_z + dn2*n_x*n_z;
-      cov7x7(5,4) = dk2*k_y*k_x + dr2*r_y*r_x + dn2*n_y*n_x;
-      cov7x7(5,5) = dk2*k_y*k_y + dr2*r_y*r_y + dn2*n_y*n_y;
-      cov7x7(5,6) = dk2*k_y*k_z + dr2*r_y*r_z + dn2*n_y*n_z;
-      cov7x7(6,4) = dk2*k_z*k_x + dr2*r_z*r_x + dn2*n_z*n_x;
-      cov7x7(6,5) = dk2*k_z*k_y + dr2*r_z*r_y + dn2*n_z*n_y;
-      cov7x7(6,6) = dk2*k_z*k_z + dr2*r_z*r_z + dn2*n_z*n_z;
+      math::Matrix3x3 cov3x3 = getCov_hf(dk, dr, dn, r, n, k);
+      cov7x7.Place_at(cov3x3, 4, 4);
       if ( verbosity >= 3 )
       {
         TMatrixD cov3x3;
@@ -320,10 +295,11 @@ GenKinematicEventBuilder::operator()(const reco::GenParticleCollection& genParti
 
   std::vector<const reco::GenParticle*> tauPlus_daughters;
   findDecayProducts(tauPlus, tauPlus_daughters);
-  reco::Candidate::LorentzVector visTauPlusP4 = compVisP4(tauPlus_daughters);
+  reco::Candidate::LorentzVector visTauPlusP4 = comp_visP4(tauPlus_daughters);
   std::vector<const reco::GenParticle*> tauPlus_ch = get_chargedHadrons(tauPlus_daughters);
   std::vector<const reco::GenParticle*> tauPlus_pi0 = get_neutralPions(tauPlus_daughters);
   std::vector<const reco::GenParticle*> tauPlus_nu = get_neutrinos(tauPlus_daughters);
+  reco::Candidate::LorentzVector nuTauPlusP4 = comp_visP4(tauPlus_nu);
   int tauPlus_decayMode = get_decayMode(tauPlus_ch, tauPlus_pi0, tauPlus_nu);
   if ( verbosity_ >= 1 )
   {
@@ -345,10 +321,11 @@ GenKinematicEventBuilder::operator()(const reco::GenParticleCollection& genParti
 
   std::vector<const reco::GenParticle*> tauMinus_daughters;
   findDecayProducts(tauMinus, tauMinus_daughters);
-  reco::Candidate::LorentzVector visTauMinusP4 = compVisP4(tauMinus_daughters);
+  reco::Candidate::LorentzVector visTauMinusP4 = comp_visP4(tauMinus_daughters);
   std::vector<const reco::GenParticle*> tauMinus_ch = get_chargedHadrons(tauMinus_daughters);
   std::vector<const reco::GenParticle*> tauMinus_pi0 = get_neutralPions(tauMinus_daughters);
   std::vector<const reco::GenParticle*> tauMinus_nu = get_neutrinos(tauMinus_daughters);
+  reco::Candidate::LorentzVector nuTauMinusP4 = comp_visP4(tauMinus_nu);
   int tauMinus_decayMode = get_decayMode(tauMinus_ch, tauMinus_pi0, tauMinus_nu);
   if ( verbosity_ >= 1 )
   {
@@ -424,6 +401,8 @@ GenKinematicEventBuilder::operator()(const reco::GenParticleCollection& genParti
   {
     kineEvt.tauPlusP4_ = tauPlusP4;
     kineEvt.tauPlusP4_isValid_ = true;
+    kineEvt.nuTauPlusP4_ = nuTauPlusP4;
+    kineEvt.nuTauPlusP4_isValid_ = true;
   }
   kineEvt.visTauPlusP4_ = visTauPlusP4;
   kineEvt.visTauPlusCov_ = comp_visTauCov(visTauPlusP4, daughtersTauPlus);
@@ -445,6 +424,8 @@ GenKinematicEventBuilder::operator()(const reco::GenParticleCollection& genParti
   {
     kineEvt.tauMinusP4_ = tauMinusP4;
     kineEvt.tauMinusP4_isValid_ = true;
+    kineEvt.nuTauMinusP4_ = nuTauMinusP4;
+    kineEvt.nuTauMinusP4_isValid_ = true;
   }
   kineEvt.visTauMinusP4_ = visTauMinusP4;
   kineEvt.visTauMinusCov_ = comp_visTauCov(visTauMinusP4, daughtersTauMinus);

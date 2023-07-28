@@ -12,6 +12,11 @@ const double mNeutralPion =   0.134977; // [GeV]
 const double mProton      =   0.938272; // [GeV]
 const double mTau         =   1.77686;  // [GeV]
 
+// define tau lepton lifetime 
+// The value is defined as the expected tau decay distance in the restframe of the tau lepton
+// and is taken from Prog. Theor. Exp. Phys. 2022 (2022) 083C01
+const double ct           = 8.7e-3;     // 87 micrometer
+
 // define electroweak coupling constant
 // cf. Eq. (15) in Comp. Phys. Commun. 64 (1991) 275
 const double gamma_va     =   1.;

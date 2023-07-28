@@ -1,11 +1,14 @@
 #include "TauAnalysis/Entanglement/interface/KinematicEvent.h"
 
 #include "TauAnalysis/Entanglement/interface/cmsException.h"       // cmsException
+#include "TauAnalysis/Entanglement/interface/comp_cosThetaGJ.h"    // comp_cosThetaGJ(), comp_cosThetaGJ_solution()
 #include "TauAnalysis/Entanglement/interface/printLorentzVector.h" // printLorentzVector()
 #include "TauAnalysis/Entanglement/interface/printPoint.h"         // printPoint()
 #include "TauAnalysis/Entanglement/interface/printVector.h"        // printVector()
 
 #include <TString.h>                                               // Form()
+
+#include <cmath>                                                   // std::acos()
 
 KinematicEvent::KinematicEvent()
   : tauPlusP4_isValid_(false)
@@ -80,6 +83,18 @@ const math::Matrix4x4&
 KinematicEvent::visTauPlusCov() const
 {
   return visTauPlusCov_;
+}
+
+const reco::Candidate::LorentzVector&
+KinematicEvent::nuTauPlusP4() const
+{
+  return nuTauPlusP4_;
+}
+
+bool
+KinematicEvent::nuTauPlusP4_isValid() const
+{
+  return nuTauPlusP4_isValid_;
 }
 
 int
@@ -158,6 +173,18 @@ const reco::Candidate::LorentzVector&
 KinematicEvent::visTauMinusP4() const
 {
   return visTauMinusP4_;
+}
+
+const reco::Candidate::LorentzVector&
+KinematicEvent::nuTauMinusP4() const
+{
+  return nuTauMinusP4_;
+}
+
+bool
+KinematicEvent::nuTauMinusP4_isValid() const
+{
+  return nuTauMinusP4_isValid_;
 }
 
 int
@@ -246,12 +273,16 @@ printKinematicEvent(const std::string& label,
   if ( kineEvt.tauPlusP4_isValid() )
   {
     printLorentzVector("tauPlusP4", kineEvt.tauPlusP4(), cartesian);
+    std::cout << " mass = " << kineEvt.tauPlusP4().mass() << "\n";
   }
   else
   {
     std::cout << "tauPlusP4: N/A\n";
   }
   printLorentzVector("visTauPlusP4", kineEvt.visTauPlusP4(), cartesian);
+  std::cout << " mass = " << kineEvt.visTauPlusP4().mass() << "\n";
+  printLorentzVector("nuTauPlusP4", kineEvt.nuTauPlusP4(), cartesian);
+  std::cout << " mass = " << kineEvt.nuTauPlusP4().mass() << "\n";
   std::cout << "tauPlus_decayMode = " << kineEvt.tauPlus_decayMode() << "\n";
   std::cout << "daughtersTauPlus:\n";
   const std::vector<KinematicParticle>& daughtersTauPlus = kineEvt.daughtersTauPlus();
@@ -261,6 +292,10 @@ printKinematicEvent(const std::string& label,
     std::string label = Form("#%i", (int)idx);
     printKinematicParticle(label, daughter, cartesian);
   }
+  double tauPlus_cosThetaGJ = comp_cosThetaGJ(kineEvt.tauPlusP4(), kineEvt.visTauPlusP4());
+  std::cout << "Gottfied-Jackson angle = " << std::acos(tauPlus_cosThetaGJ) << " "
+            << "(solution+ = " << comp_cosThetaGJ_solution(kineEvt.tauPlusP4(), kineEvt.visTauPlusP4(), kPlusSign) << ","
+            << " solution- = " << comp_cosThetaGJ_solution(kineEvt.tauPlusP4(), kineEvt.visTauPlusP4(), kMinusSign) << ")\n";
   printPoint("tipPCATauPlus", kineEvt.tipPCATauPlus());
   if ( kineEvt.svTauPlus_isValid() )
   {
@@ -282,12 +317,16 @@ printKinematicEvent(const std::string& label,
   if ( kineEvt.tauMinusP4_isValid() )
   {
     printLorentzVector("tauMinusP4", kineEvt.tauMinusP4(), cartesian);
+    std::cout << " mass = " << kineEvt.tauMinusP4().mass() << "\n";
   }
   else
   {
     std::cout << "tauMinusP4: N/A\n";
   }
   printLorentzVector("visTauMinusP4", kineEvt.visTauMinusP4(), cartesian);
+  std::cout << " mass = " << kineEvt.visTauMinusP4().mass() << "\n";
+  printLorentzVector("nuTauMinusP4", kineEvt.nuTauMinusP4(), cartesian);
+  std::cout << " mass = " << kineEvt.nuTauMinusP4().mass() << "\n";
   std::cout << "tauMinus_decayMode = " << kineEvt.tauMinus_decayMode() << "\n";
   std::cout << "daughtersTauMinus:\n";
   const std::vector<KinematicParticle>& daughtersTauMinus = kineEvt.daughtersTauMinus();
@@ -297,6 +336,10 @@ printKinematicEvent(const std::string& label,
     std::string label = Form("#%i", (int)idx);
     printKinematicParticle(label, daughter, cartesian);
   }
+  double tauMinus_cosThetaGJ = comp_cosThetaGJ(kineEvt.tauMinusP4(), kineEvt.visTauMinusP4());
+  std::cout << "Gottfied-Jackson angle = " << std::acos(tauMinus_cosThetaGJ) << " "
+            << "(solution+ = " << comp_cosThetaGJ_solution(kineEvt.tauMinusP4(), kineEvt.visTauMinusP4(), kPlusSign)  << ","
+            << " solution- = " << comp_cosThetaGJ_solution(kineEvt.tauMinusP4(), kineEvt.visTauMinusP4(), kMinusSign) << ")\n";
   printPoint("tipPCATauMinus", kineEvt.tipPCATauMinus());
   if ( kineEvt.svTauMinus_isValid() )
   {

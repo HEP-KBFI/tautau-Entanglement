@@ -7,7 +7,7 @@
 
 #include "DataFormats/TauReco/interface/PFTau.h"                      // reco::PFTau::hadronicDecayMode
 
-#include "TauAnalysis/Entanglement/interface/compVisP4.h"             // compVisP4()
+#include "TauAnalysis/Entanglement/interface/comp_visP4.h"            // comp_visP4()
 #include "TauAnalysis/Entanglement/interface/findDecayProducts.h"     // findDecayProducts()
 #include "TauAnalysis/Entanglement/interface/findLastTau.h"           // findLastTau()
 #include "TauAnalysis/Entanglement/interface/get_decayMode.h"         // get_decayMode()
@@ -137,7 +137,7 @@ void EntanglementNtupleProducer::analyze(const edm::Event& evt, const edm::Event
   int tauPlus_nNeutralKaons = get_neutralKaons(tauPlus_daughters).size();
   std::vector<const reco::GenParticle*> tauPlus_y = get_photons(tauPlus_daughters);
   int tauPlus_nPhotons = tauPlus_y.size();
-  double tauPlus_sumPhotonEn = compVisP4(tauPlus_y).energy();
+  double tauPlus_sumPhotonEn = comp_visP4(tauPlus_y).energy();
 
   std::vector<const reco::GenParticle*> tauMinus_daughters;
   findDecayProducts(tauMinus, tauMinus_daughters);
@@ -149,7 +149,7 @@ void EntanglementNtupleProducer::analyze(const edm::Event& evt, const edm::Event
   int tauMinus_nNeutralKaons = get_neutralKaons(tauMinus_daughters).size();
   std::vector<const reco::GenParticle*> tauMinus_y = get_photons(tauMinus_daughters);
   int tauMinus_nPhotons = tauMinus_y.size();
-  double tauMinus_sumPhotonEn = compVisP4(tauMinus_y).energy();
+  double tauMinus_sumPhotonEn = comp_visP4(tauMinus_y).energy();
 
   KinematicEvent kineEvt_gen_smeared = (*genKineEvtBuilder_wSmearing_)(*genParticles);
   if ( verbosity_ >= 1 )

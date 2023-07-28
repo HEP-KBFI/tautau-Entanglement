@@ -127,6 +127,9 @@ process.ntupleProducer = cms.EDAnalyzer("EntanglementNtupleProducer",
     ),
     applySmearing = cms.bool(False),
     srcEvtWeights = cms.VInputTag('genWeight'),
+    # CV: 0 = "regular" tau mass constraint, 1 = constraint on Gottfried-Jackson angle
+    applyTauMassConstraint = cms.int32(0),
+    applyLifetimeConstraint = cms.bool(False),
     #verbosity = cms.untracked.int32(-1),
     verbosity = cms.untracked.int32(1),
     cartesian = cms.untracked.bool(True)

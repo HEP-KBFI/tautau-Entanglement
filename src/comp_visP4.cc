@@ -1,7 +1,7 @@
-#include "TauAnalysis/Entanglement/interface/compVisP4.h"
+#include "TauAnalysis/Entanglement/interface/comp_visP4.h"
 
 reco::Candidate::LorentzVector
-compVisP4(const std::vector<const reco::GenParticle*>& decayProducts)
+comp_visP4(const std::vector<const reco::GenParticle*>& decayProducts)
 {
   reco::Candidate::LorentzVector visP4;
   for ( const reco::GenParticle* decayProduct : decayProducts )

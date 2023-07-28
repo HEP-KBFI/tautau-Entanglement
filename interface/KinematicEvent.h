@@ -50,6 +50,12 @@ class KinematicEvent
   const math::Matrix4x4&
   visTauPlusCov() const;
 
+  const reco::Candidate::LorentzVector&
+  nuTauPlusP4() const;
+
+  bool
+  nuTauPlusP4_isValid() const;
+
   int
   tauPlus_decayMode() const;
 
@@ -91,6 +97,12 @@ class KinematicEvent
 
   const math::Matrix4x4&
   visTauMinusCov() const;
+
+  const reco::Candidate::LorentzVector&
+  nuTauMinusP4() const;
+
+  bool
+  nuTauMinusP4_isValid() const;
 
   int
   tauMinus_decayMode() const;
@@ -146,6 +158,8 @@ class KinematicEvent
   bool tauPlusCov_isValid_;
   reco::Candidate::LorentzVector visTauPlusP4_;
   math::Matrix4x4 visTauPlusCov_;
+  reco::Candidate::LorentzVector nuTauPlusP4_;
+  bool nuTauPlusP4_isValid_;
   int tauPlus_decayMode_;
   std::vector<KinematicParticle> daughtersTauPlus_;
   reco::Candidate::Point tipPCATauPlus_;
@@ -161,6 +175,8 @@ class KinematicEvent
   bool tauMinusCov_isValid_;
   reco::Candidate::LorentzVector visTauMinusP4_;
   math::Matrix4x4 visTauMinusCov_;
+  reco::Candidate::LorentzVector nuTauMinusP4_;
+  bool nuTauMinusP4_isValid_;
   int tauMinus_decayMode_;
   std::vector<KinematicParticle> daughtersTauMinus_;
   reco::Candidate::Point tipPCATauMinus_;

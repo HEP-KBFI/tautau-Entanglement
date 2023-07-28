@@ -8,7 +8,7 @@
 
 #include "TauAnalysis/Entanglement/interface/constants.h"          // mChargedPion, mTau
 #include "TauAnalysis/Entanglement/interface/cmsException.h"       // cmsException
-#include "TauAnalysis/Entanglement/interface/fixMass.h"            // fixTauMass()
+#include "TauAnalysis/Entanglement/interface/fixMass.h"            // fixNuMass(), fixTauMass()
 #include "TauAnalysis/Entanglement/interface/get_leadTrack.h"      // get_leadTrack()
 #include "TauAnalysis/Entanglement/interface/printLorentzVector.h" // printLorentzVector()
 #include "TauAnalysis/Entanglement/interface/printPoint.h"         // printPoint()
@@ -453,6 +453,8 @@ KinematicFitStartPosFinder::operator()(const KinematicEvent& kineEvt)
 
   kineEvt_startpos.tauPlusP4_ = tauPlusP4;
   kineEvt_startpos.tauPlusP4_isValid_ = true;
+  kineEvt_startpos.nuTauPlusP4_ = fixNuMass(tauPlusP4 - visTauPlusP4);
+  kineEvt_startpos.nuTauPlusP4_isValid_ = true;
   if ( !kineEvt_startpos.svTauPlus_isValid() )
   {
     const KinematicParticle* leadTrack = get_leadTrack(kineEvt_startpos.daughtersTauPlus());
@@ -464,6 +466,8 @@ KinematicFitStartPosFinder::operator()(const KinematicEvent& kineEvt)
 
   kineEvt_startpos.tauMinusP4_ = tauMinusP4;
   kineEvt_startpos.tauMinusP4_isValid_ = true;
+  kineEvt_startpos.nuTauMinusP4_ = fixNuMass(tauMinusP4 - visTauMinusP4);
+  kineEvt_startpos.nuTauMinusP4_isValid_ = true;
   if ( !kineEvt_startpos.svTauMinus_isValid() )
   {
     const KinematicParticle* leadTrack = get_leadTrack(kineEvt_startpos.daughtersTauMinus());

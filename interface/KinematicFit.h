@@ -18,6 +18,9 @@ class KinematicFit
  private:
   SpinAnalyzer spinAnalyzer_;
 
+  int applyTauMassConstraint_;
+  bool applyLifetimeConstraint_;
+
   int verbosity_;
   bool cartesian_;
 };

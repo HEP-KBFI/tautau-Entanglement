@@ -99,6 +99,10 @@ class EntanglementNtuple
       , visPlus_eta_(0.)
       , visPlus_phi_(0.)
       , visPlus_mass_(0.)
+      , nuPlus_pt_(0.)
+      , nuPlus_eta_(0.)
+      , nuPlus_phi_(0.)
+      , nuPlus_mass_(0.)
       , zPlus_(0.)
       , hMinus_r_(0.)
       , hMinus_n_(0.)
@@ -115,6 +119,10 @@ class EntanglementNtuple
       , visMinus_eta_(0.)
       , visMinus_phi_(0.)
       , visMinus_mass_(0.)
+      , nuMinus_pt_(0.)
+      , nuMinus_eta_(0.)
+      , nuMinus_phi_(0.)
+      , nuMinus_mass_(0.)
       , zMinus_(0.)
       , mTauTau_(0.)
       , mVis_(0.)
@@ -150,6 +158,10 @@ class EntanglementNtuple
       createBranchF(ntuple, label_, "visPlus_eta", &visPlus_eta_);
       createBranchF(ntuple, label_, "visPlus_phi", &visPlus_phi_);
       createBranchF(ntuple, label_, "visPlus_mass", &visPlus_mass_);
+      createBranchF(ntuple, label_, "nuPlus_pt", &nuPlus_pt_);
+      createBranchF(ntuple, label_, "nuPlus_eta", &nuPlus_eta_);
+      createBranchF(ntuple, label_, "nuPlus_phi", &nuPlus_phi_);
+      createBranchF(ntuple, label_, "nuPlus_mass", &nuPlus_mass_);
       createBranchF(ntuple, label_, "zPlus", &zPlus_);
 
       createBranchF(ntuple, label_, "hMinus_r", &hMinus_r_);
@@ -167,6 +179,10 @@ class EntanglementNtuple
       createBranchF(ntuple, label_, "visMinus_eta", &visMinus_eta_);
       createBranchF(ntuple, label_, "visMinus_phi", &visMinus_phi_);
       createBranchF(ntuple, label_, "visMinus_mass", &visMinus_mass_);
+      createBranchF(ntuple, label_, "nuMinus_pt", &nuMinus_pt_);
+      createBranchF(ntuple, label_, "nuMinus_eta", &nuMinus_eta_);
+      createBranchF(ntuple, label_, "nuMinus_phi", &nuMinus_phi_);
+      createBranchF(ntuple, label_, "nuMinus_mass", &nuMinus_mass_);
       createBranchF(ntuple, label_, "zMinus", &zMinus_);
 
       createBranchF(ntuple, label_, "mTauTau", &mTauTau_);
@@ -237,6 +253,21 @@ class EntanglementNtuple
       visPlus_eta_        = visPlusP4.eta();
       visPlus_phi_        = visPlusP4.phi();
       visPlus_mass_       = visPlusP4.mass();
+      if ( kineEvt.nuTauPlusP4_isValid() )
+      {
+        const reco::Candidate::LorentzVector& nuPlusP4 = kineEvt.nuTauPlusP4();
+        nuPlus_pt_        = nuPlusP4.pt();
+        nuPlus_eta_       = nuPlusP4.eta();
+        nuPlus_phi_       = nuPlusP4.phi();
+        nuPlus_mass_      = nuPlusP4.mass();
+      }
+      else
+      {        
+        nuPlus_pt_        = 0.;
+        nuPlus_eta_       = 0.;
+        nuPlus_phi_       = 0.;
+        nuPlus_mass_      = 0.;
+      }
       if ( kineEvt.tauPlusP4_isValid() )
       {
         zPlus_            = comp_z(tauPlusP4, visPlusP4, boost_ttrf);
@@ -290,6 +321,21 @@ class EntanglementNtuple
       visMinus_eta_       = visMinusP4.eta();
       visMinus_phi_       = visMinusP4.phi();
       visMinus_mass_      = visMinusP4.mass();
+      if ( kineEvt.nuTauMinusP4_isValid() )
+      {
+        const reco::Candidate::LorentzVector& nuMinusP4 = kineEvt.nuTauMinusP4();
+        nuMinus_pt_       = nuMinusP4.pt();
+        nuMinus_eta_      = nuMinusP4.eta();
+        nuMinus_phi_      = nuMinusP4.phi();
+        nuMinus_mass_     = nuMinusP4.mass();
+      }
+      else
+      {        
+        nuMinus_pt_       = 0.;
+        nuMinus_eta_      = 0.;
+        nuMinus_phi_      = 0.;
+        nuMinus_mass_     = 0.;
+      }
       if ( kineEvt.tauMinusP4_isValid() )
       {
         zMinus_           = comp_z(tauMinusP4, visMinusP4, boost_ttrf);
@@ -335,6 +381,10 @@ class EntanglementNtuple
     Float_t visPlus_eta_;            // pseudo-rapidity (in laboratory frame) of visible decay products of tau+
     Float_t visPlus_phi_;            // azimuthal angle (in laboratory frame) of visible decay products of tau+
     Float_t visPlus_mass_;           // mass of visible decay products of tau+
+    Float_t nuPlus_pt_;              // transverse momentum (in laboratory frame) of neutrino produced in tau+ decay
+    Float_t nuPlus_eta_;             // pseudo-rapidity (in laboratory frame) of neutrino produced in tau+ decay
+    Float_t nuPlus_phi_;             // azimuthal angle (in laboratory frame) of neutrino produced in tau+ decay
+    Float_t nuPlus_mass_;            // mass of neutrino produced in tau+ decay
     Float_t zPlus_;                  // fraction of tau+ energy (in tau-pair restframe) carried by visible decay products of tau+
 
     Float_t hMinus_r_;               // r component (in helicity frame) of polarimetric vector of tau-
@@ -352,6 +402,10 @@ class EntanglementNtuple
     Float_t visMinus_eta_;           // pseudo-rapidity (in laboratory frame) of visible decay products of tau-
     Float_t visMinus_phi_;           // azimuthal angle (in laboratory frame) of visible decay products of tau-
     Float_t visMinus_mass_;          // mass of visible decay products of tau-
+    Float_t nuMinus_pt_;             // transverse momentum (in laboratory frame) of neutrino produced in tau- decay
+    Float_t nuMinus_eta_;            // pseudo-rapidity (in laboratory frame) of neutrino produced in tau- decay
+    Float_t nuMinus_phi_;            // azimuthal angle (in laboratory frame) of neutrino produced in tau- decay
+    Float_t nuMinus_mass_;           // mass of neutrino produced in tau- decay
     Float_t zMinus_;                 // fraction of tau- energy (in tau-pair restframe) carried by visible decay products of tau-
 
     Float_t mTauTau_;                // mass of tau pair
