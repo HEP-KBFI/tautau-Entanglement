@@ -12,10 +12,10 @@
 
 KinematicEvent::KinematicEvent()
   : tauPlusP4_isValid_(false)
-  , tauPlusCov_isValid_(false)
+  , nuTauPlusCov_isValid_(false)
   , svTauPlus_isValid_(false)
   , tauMinusP4_isValid_(false)
-  , tauMinusCov_isValid_(false)
+  , nuTauMinusCov_isValid_(false)
   , svTauMinus_isValid_(false)
   , kinFitStatus_(-1)
   , kinFitChi2_(-1.)
@@ -61,18 +61,6 @@ KinematicEvent::tauPlusP4_isValid() const
   return tauPlusP4_isValid_;
 }
 
-const math::Matrix4x4&
-KinematicEvent::tauPlusCov() const
-{
-  return tauPlusCov_;
-}
-
-bool
-KinematicEvent::tauPlusCov_isValid() const
-{
-  return tauPlusCov_isValid_;
-}
-
 const reco::Candidate::LorentzVector&
 KinematicEvent::visTauPlusP4() const
 {
@@ -95,6 +83,18 @@ bool
 KinematicEvent::nuTauPlusP4_isValid() const
 {
   return nuTauPlusP4_isValid_;
+}
+
+const math::Matrix3x3&
+KinematicEvent::nuTauPlusCov() const
+{
+  return nuTauPlusCov_;
+}
+
+bool
+KinematicEvent::nuTauPlusCov_isValid() const
+{
+  return nuTauPlusCov_isValid_;
 }
 
 int
@@ -157,18 +157,6 @@ KinematicEvent::tauMinusP4_isValid() const
   return tauMinusP4_isValid_;
 }
 
-const math::Matrix4x4&
-KinematicEvent::tauMinusCov() const
-{
-  return tauMinusCov_;
-}
-
-bool
-KinematicEvent::tauMinusCov_isValid() const
-{
-  return tauMinusCov_isValid_;
-}
-
 const reco::Candidate::LorentzVector&
 KinematicEvent::visTauMinusP4() const
 {
@@ -185,6 +173,18 @@ bool
 KinematicEvent::nuTauMinusP4_isValid() const
 {
   return nuTauMinusP4_isValid_;
+}
+
+const math::Matrix3x3&
+KinematicEvent::nuTauMinusCov() const
+{
+  return nuTauMinusCov_;
+}
+
+bool
+KinematicEvent::nuTauMinusCov_isValid() const
+{
+  return nuTauMinusCov_isValid_;
 }
 
 int
@@ -294,8 +294,7 @@ printKinematicEvent(const std::string& label,
   }
   double tauPlus_cosThetaGJ = comp_cosThetaGJ(kineEvt.tauPlusP4(), kineEvt.visTauPlusP4());
   std::cout << "Gottfied-Jackson angle = " << std::acos(tauPlus_cosThetaGJ) << " "
-            << "(solution+ = " << comp_cosThetaGJ_solution(kineEvt.tauPlusP4(), kineEvt.visTauPlusP4(), kPlusSign) << ","
-            << " solution- = " << comp_cosThetaGJ_solution(kineEvt.tauPlusP4(), kineEvt.visTauPlusP4(), kMinusSign) << ")\n";
+            << "(expected = " << std::acos(comp_cosThetaGJ_solution(kineEvt.tauPlusP4(), kineEvt.visTauPlusP4())) << ")\n";
   printPoint("tipPCATauPlus", kineEvt.tipPCATauPlus());
   if ( kineEvt.svTauPlus_isValid() )
   {
@@ -338,8 +337,7 @@ printKinematicEvent(const std::string& label,
   }
   double tauMinus_cosThetaGJ = comp_cosThetaGJ(kineEvt.tauMinusP4(), kineEvt.visTauMinusP4());
   std::cout << "Gottfied-Jackson angle = " << std::acos(tauMinus_cosThetaGJ) << " "
-            << "(solution+ = " << comp_cosThetaGJ_solution(kineEvt.tauMinusP4(), kineEvt.visTauMinusP4(), kPlusSign)  << ","
-            << " solution- = " << comp_cosThetaGJ_solution(kineEvt.tauMinusP4(), kineEvt.visTauMinusP4(), kMinusSign) << ")\n";
+            << "(expected = " << std::acos(comp_cosThetaGJ_solution(kineEvt.tauMinusP4(), kineEvt.visTauMinusP4())) << ")\n";
   printPoint("tipPCATauMinus", kineEvt.tipPCATauMinus());
   if ( kineEvt.svTauMinus_isValid() )
   {

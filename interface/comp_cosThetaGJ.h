@@ -6,9 +6,7 @@
 double
 comp_cosThetaGJ(const reco::Candidate::LorentzVector& tauP4, const reco::Candidate::LorentzVector& visP4);
 
-enum { kMinusSign, kPlusSign };
-
 double
-comp_cosThetaGJ_solution(const reco::Candidate::LorentzVector& tauP4, const reco::Candidate::LorentzVector& visP4, int sign);
+comp_cosThetaGJ_solution(const reco::Candidate::LorentzVector& tauP4, const reco::Candidate::LorentzVector& visP4);
 
 #endif // TauAnalysis_Entanglement_comp_cosThetaGJ_h

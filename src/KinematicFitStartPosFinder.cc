@@ -357,10 +357,10 @@ KinematicFitStartPosFinder::operator()(const KinematicEvent& kineEvt)
   reco::Candidate::LorentzVector tauPlusP4 = tau0P4.first;
   reco::Candidate::LorentzVector tauMinusP4 = tau0P4.second;
 
-  int iteration = 1;
+  int iteration = 0;
   const int max_iterations = 10;
   bool hasConverged = false;
-  while ( !hasConverged && iteration <= max_iterations )
+  while ( !hasConverged && iteration < max_iterations )
   {
     if ( verbosity_ >= 1 )
     {
