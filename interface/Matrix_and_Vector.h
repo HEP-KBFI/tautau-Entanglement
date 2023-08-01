@@ -9,9 +9,9 @@ namespace kinFit
   const int numParameters = 19;
   // CV: the measured parameters are defined in the following order:
   //       primary vertex                        (3)
-  //       tau+ momentum vector                  (3)
+  //       momentum of neutrino from tau+        (3)
   //       decay vertex of tau+                  (3)
-  //       tau- momentum vector                  (3)
+  //       momentum of neutrino from tau-        (3)
   //       decay vertex of tau-                  (3)
   //       recoil four-vector                    (4)
   // where:
@@ -62,17 +62,6 @@ namespace math
   typedef Matrix<C,C>::type MatrixCxC;
   typedef Vector<P>::type   VectorP;
   typedef Vector<C>::type   VectorC;
-}
-
-template <typename T>
-void
-printCovMatrix(const std::string& label, const T& cov)
-{
-  std::cout << label << ":\n";
-  std::cout << cov << "\n";
-  double det = -1.;
-  cov.Det2(det);
-  std::cout << " det = " << det << "\n";
 }
 
 #endif // TauAnalysis_Entanglement_Matrix_and_Vector_h

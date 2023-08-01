@@ -12,6 +12,6 @@ printVector(const std::string& label,
   }
   else
   {
-    std::cout << " pT = " << p3.r() << ", eta = " << p3.eta() << ", phi = " << p3.phi() << "\n";
+    std::cout << " pT = " << p3.r() << ", theta = " << p3.theta() << ", phi = " << p3.phi() << "\n";
   }
 }

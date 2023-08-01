@@ -12,8 +12,10 @@
 #include "TauAnalysis/Entanglement/interface/fixMass.h"                   // fixHiggsMass(), fixTauMass()
 #include "TauAnalysis/Entanglement/interface/getCov_hf.h"                 // getCov_hf()
 #include "TauAnalysis/Entanglement/interface/get_localCoordinateSystem.h" // get_localCoordinateSystem()
-#include "TauAnalysis/Entanglement/interface/Matrix_and_Vector.h"         // math::Matrix*, math::Vector*, printCovMatrix()
+#include "TauAnalysis/Entanglement/interface/Matrix_and_Vector.h"         // math::Matrix*, math::Vector*
+#include "TauAnalysis/Entanglement/interface/printCovMatrix.h"            // printCovMatrix()
 #include "TauAnalysis/Entanglement/interface/printLorentzVector.h"        // printLorentzVector()
+#include "TauAnalysis/Entanglement/interface/printPoint.h"                // printPoint()
 #include "TauAnalysis/Entanglement/interface/square.h"                    // square()
 
 #include "Math/Functions.h"                                               // ROOT::Math::Dot(), ROOT::Math::Similarity(), ROOT::Math::Transpose() 
@@ -37,33 +39,24 @@ KinematicFit::~KinematicFit()
 
 namespace
 {
-  math::Matrix3x3
-  get_nuCov(const reco::Candidate::Vector& r, const reco::Candidate::Vector& n, const reco::Candidate::Vector& k)
-  {
-    // CV: the four-vectors of tau+ and tau- are not really "measured";
-    //     we acccount for this by setting their covariance matrix to an ellipsoid.
-    //     The size of the ellipsoid in direction of the visible tau decay products (k) is set to a large value,
-    //     following the "huge error method" described in Section 6 of https://www.phys.ufl.edu/~avery/fitting/fitting1.pdf
-    //     In the direction transverse to the visible tau decay products (r, n),
-    //     the size of the ellipsoid is set to be 1 GeV each.
-    //     The motivation of using a smaller uncertainty in transverse direction is to guide the kinematic fit 
-    //     that the tau lepton momentum in this direction is limited by the tau lepton mass.
-    //     Note that the neutrino momentum in transverse direction is limited to half the tau lepton mass in the tau restframe
-    //     and is not affected by the Lorentz boost in tau direction.
-    //     We enlarge the uncertainty somewhat to allow for more flexibility in the fit.
-    double dk = 2.5e+2;
-    double dr = 2.e0;
-    double dn = dr;
-    math::Matrix3x3 nuCov = getCov_hf(dk, dr, dn, r, n, k);
-    return nuCov;
-  }
-
   reco::Candidate::LorentzVector
   get_nuP4(double nuPx, double nuPy, double nuPz)
   {
     double nuE = std::sqrt(square(nuPx) + square(nuPy) + square(nuPz));
     reco::Candidate::LorentzVector nuP4(nuPx, nuPy, nuPz, nuE);
     return nuP4;
+  }
+
+  template <typename T>
+  double
+  comp_mag(const T& v)
+  {
+    double mag2 = 0.;
+    for ( int idx = 0; idx < T::kSize; ++idx )
+    {
+      mag2 += square(v(idx));
+    }
+    return std::sqrt(mag2);
   }
 }
 
@@ -143,9 +136,7 @@ KinematicFit::operator()(const KinematicEvent& kineEvt)
     double nuTauPlusPy = nuTauPlusP4.py();
     double nuTauPlusPz = nuTauPlusP4.pz();
     double nuTauPlusE  = nuTauPlusP4.energy();
-    reco::Candidate::Vector nuTauPlus_r, nuTauPlus_n, nuTauPlus_k; 
-    get_localCoordinateSystem(visTauPlusP4, nullptr, nullptr, kBeam, nuTauPlus_r, nuTauPlus_n, nuTauPlus_k);
-    math::Matrix3x3 nuTauPlusCov = get_nuCov(nuTauPlus_r, nuTauPlus_n, nuTauPlus_k);
+    const math::Matrix3x3& nuTauPlusCov = kineEvt.nuTauPlusCov();
 
     assert(kineEvtA.tauMinusP4_isValid());
     reco::Candidate::LorentzVector tauMinusP4 = kineEvtA.tauMinusP4();
@@ -181,9 +172,7 @@ KinematicFit::operator()(const KinematicEvent& kineEvt)
     double nuTauMinusPy = nuTauMinusP4.py();
     double nuTauMinusPz = nuTauMinusP4.pz();
     double nuTauMinusE  = nuTauMinusP4.energy();
-    reco::Candidate::Vector nuTauMinus_r, nuTauMinus_n, nuTauMinus_k; 
-    get_localCoordinateSystem(visTauMinusP4, nullptr, nullptr, kBeam, nuTauMinus_r, nuTauMinus_n, nuTauMinus_k);
-    math::Matrix3x3 nuTauMinusCov = get_nuCov(nuTauMinus_r, nuTauMinus_n, nuTauMinus_k);
+    const math::Matrix3x3& nuTauMinusCov = kineEvt.nuTauMinusCov();
 
     //-----------------------------------------------------------------------------------------------
     // CV: the nomenclature of the different matrices and vectors used for the kinematic fit
@@ -327,26 +316,101 @@ KinematicFit::operator()(const KinematicEvent& kineEvt)
     else assert(0);
     // CV: add "parallelism" constraint for tau+
     //     The constraint equations H_Pphi and H_Ptheta are given by Eqs. (4.10) and (4.11)
-    //     in Section 4.1.3.3 of https://cds.cern.ch/record/1358627/files/CERN-THESIS-2011-028.pdf
+    //     in Section 4.1.3.3 of [1].
     //     The small correction for the helix bend between tau lepton production and decay in Eq. (4.13) is not used, 
-    //     as this correction is expected to be on the level of 50 microrad, which we consider negligible
-    D( 2, 0) =  (1. - tauPlusDx/tauPlusDt)/tauPlusDy;                                    // dH_Pphi/dpvX
-    D( 2, 1) = -(tauPlusDx/tauPlusDy)*D(2,0);                                            // dH_Pphi/dpvY
-    D( 2, 3) =  (1. - tauPlusPx/tauPlusPt)/tauPlusPy;                                    // dH_Pphi/dnuTauPlusPx
-    D( 2, 4) = -(tauPlusPx/tauPlusPy)*D(2,3);                                            // dH_Pphi/dnuTauPlusPy     
-    D( 2, 6) = -D(2,0);                                                                  // dH_Pphi/dsvTauPlusX
-    D( 2, 7) = -D(2,1);                                                                  // dH_Pphi/dsvTauPlusY
-    d( 2) =  (tauPlusDt - tauPlusDx)/tauPlusDy + (tauPlusPx - tauPlusPt)/tauPlusPy;
-    D( 3, 0) =  (tauPlusDx/tauPlusDz)*(1./tauPlusDt - 1./tauPlusD);                      // dH_Ptheta/dpvX
-    D( 3, 1) =  (tauPlusDy/tauPlusDz)*(1./tauPlusDt - 1./tauPlusD);                      // dH_Ptheta/dpvY
-    D( 3, 2) = -1./tauPlusD + (tauPlusD - tauPlusDt)/square(tauPlusDz);                  // dH_Ptheta/dpvZ
-    D( 3, 3) =  (tauPlusPx/tauPlusPz)*(1./tauPlusPt - 1./tauPlusP);                      // dH_Ptheta/dnuTauPlusPx
-    D( 3, 4) =  (tauPlusPy/tauPlusPz)*(1./tauPlusPt - 1./tauPlusP);                      // dH_Ptheta/dnuTauPlusPy
-    D( 3, 5) = -1./tauPlusP + (tauPlusP - tauPlusPt)/square(tauPlusPz);                  // dH_Ptheta/dnuTauPlusPz      
-    D( 3, 6) = -D(3,0);                                                                  // dH_Ptheta/dsvTauPlusX
-    D( 3, 7) = -D(3,1);                                                                  // dH_Ptheta/dsvTauPlusY
-    D( 3, 8) = -D(3,2);                                                                  // dH_Ptheta/dsvTauPlusZ
-    d( 3) =  (tauPlusD - tauPlusDt)/tauPlusDz + (tauPlusPt - tauPlusP)/tauPlusPz;
+    //     as this correction is expected to be on the level of 50 microrad, which we consider negligible.
+    //     Following [1], we perform a transformation of variables from phi and theta to 1/2*pi - phi and 1/2*pi - theta,
+    //     in order to reduce the magnitude of derivatives (by avoiding the division by small numbers)
+    //
+    //   [1] https://cds.cern.ch/record/1358627/files/CERN-THESIS-2011-028.pdf
+    math::VectorP D2_1;
+    D2_1( 0) =  (1. - tauPlusDx/tauPlusDt)/tauPlusDy;                                      // dH_Pphi/dpvX
+    D2_1( 1) = -(tauPlusDx/tauPlusDy)*D2_1(0);                                             // dH_Pphi/dpvY
+    D2_1( 3) =  (1. - tauPlusPx/tauPlusPt)/tauPlusPy;                                      // dH_Pphi/dnuTauPlusPx
+    D2_1( 4) = -(tauPlusPx/tauPlusPy)*D2_1(3);                                             // dH_Pphi/dnuTauPlusPy     
+    D2_1( 6) = -D2_1(0);                                                                   // dH_Pphi/dsvTauPlusX
+    D2_1( 7) = -D2_1(1);                                                                   // dH_Pphi/dsvTauPlusY
+    double D2_1_mag = comp_mag(D2_1);
+    math::VectorP D2_2;
+    D2_2( 0) = -(tauPlusDy/tauPlusDx)*(1. - tauPlusDy/tauPlusDt)/tauPlusDx;                // dH_Pphi/dpvX
+    D2_2( 1) =  (1. - tauPlusDy/tauPlusDt)/tauPlusDx;                                      // dH_Pphi/dpvY
+    D2_2( 3) = -(tauPlusPy/tauPlusPx)*(1. - tauPlusPy/tauPlusPt)/tauPlusPx;                // dH_Pphi/dnuTauPlusPx
+    D2_2( 4) =  (1. - tauPlusPy/tauPlusPt)/tauPlusPx;                                      // dH_Pphi/dnuTauPlusPy
+    D2_2( 6) = -D2_2(0);                                                                   // dH_Pphi/dsvTauPlusX
+    D2_2( 7) = -D2_2(1);                                                                   // dH_Pphi/dsvTauPlusY
+    double D2_2_mag = comp_mag(D2_2);
+    if ( verbosity_ >= 1 )
+    {
+      std::cout << "D2 (1st):\n";
+      std::cout << D2_1 << "\n";
+      std::cout << " mag = " << D2_1_mag << "\n";
+      std::cout << "D2 (2nd):\n";
+      std::cout << D2_2 << "\n";
+      std::cout << " mag = " << D2_2_mag << "\n";
+    }
+    if ( D2_1_mag < D2_2_mag )
+    {
+      for ( int idx = 0; idx < kinFit::numParameters; ++idx )
+      {
+        D( 2,idx) = D2_1(idx);
+      }
+      d( 2) = (tauPlusDt - tauPlusDx)/tauPlusDy + (tauPlusPx - tauPlusPt)/tauPlusPy;
+    }
+    else
+    {
+      for ( int idx = 0; idx < kinFit::numParameters; ++idx )
+      {
+        D( 2,idx) = D2_2(idx);
+      }
+      d( 2) = (tauPlusDt - tauPlusDy)/tauPlusDx + (tauPlusPy - tauPlusPt)/tauPlusPx;
+    }
+    math::VectorP D3_1;
+    D3_1( 0) =  (tauPlusDx/tauPlusDz)*(1./tauPlusDt - 1./tauPlusD);                        // dH_Ptheta/dpvX
+    D3_1( 1) =  (tauPlusDy/tauPlusDz)*(1./tauPlusDt - 1./tauPlusD);                        // dH_Ptheta/dpvY
+    D3_1( 2) = -1./tauPlusD + (tauPlusD - tauPlusDt)/square(tauPlusDz);                    // dH_Ptheta/dpvZ
+    D3_1( 3) =  (tauPlusPx/tauPlusPz)*(1./tauPlusPt - 1./tauPlusP);                        // dH_Ptheta/dnuTauPlusPx
+    D3_1( 4) =  (tauPlusPy/tauPlusPz)*(1./tauPlusPt - 1./tauPlusP);                        // dH_Ptheta/dnuTauPlusPy
+    D3_1( 5) = -1./tauPlusP + (tauPlusP - tauPlusPt)/square(tauPlusPz);                    // dH_Ptheta/dnuTauPlusPz      
+    D3_1( 6) = -D3_1(0);                                                                   // dH_Ptheta/dsvTauPlusX
+    D3_1( 7) = -D3_1(1);                                                                   // dH_Ptheta/dsvTauPlusY
+    D3_1( 8) = -D3_1(2);                                                                   // dH_Ptheta/dsvTauPlusZ
+    double D3_1_mag = comp_mag(D3_1);
+    math::VectorP D3_2;
+    D3_2( 0) = -(tauPlusDx*tauPlusDz/cube(tauPlusDt))*(1. - tauPlusDz/tauPlusD);           // dH_Ptheta/dpvX
+    D3_2( 1) = -(tauPlusDy*tauPlusDz/cube(tauPlusDt))*(1. - tauPlusDz/tauPlusD);           // dH_Ptheta/dpvY
+    D3_2( 2) =  (1. - tauPlusDz/tauPlusD)/tauPlusDt;                                       // dH_Ptheta/dpvZ
+    D3_2( 3) = -(tauPlusPx*tauPlusPz/cube(tauPlusPt))*(1. - tauPlusPz/tauPlusP);           // dH_Ptheta/dnuTauPlusPx
+    D3_2( 4) = -(tauPlusPy*tauPlusPz/cube(tauPlusPt))*(1. - tauPlusPz/tauPlusP);           // dH_Ptheta/dnuTauPlusPy
+    D3_2( 5) =  (1. - tauPlusPz/tauPlusP)/tauPlusPt;                                       // dH_Ptheta/dnuTauPlusPz
+    D3_2( 6) = -D3_2(0);                                                                   // dH_Ptheta/dsvTauPlusX
+    D3_2( 7) = -D3_2(1);                                                                   // dH_Ptheta/dsvTauPlusY
+    D3_2( 8) = -D3_2(2);                                                                   // dH_Ptheta/dsvTauPlusZ
+    double D3_2_mag = comp_mag(D3_2);
+    if ( verbosity_ >= 1 )
+    {
+      std::cout << "D3 (1st):\n";
+      std::cout << D3_1 << "\n";
+      std::cout << " mag = " << D3_1_mag << "\n";
+      std::cout << "D3 (2nd):\n";
+      std::cout << D3_2 << "\n";
+      std::cout << " mag = " << D3_2_mag << "\n";
+    }
+    if ( D3_1_mag < D3_2_mag )
+    {
+      for ( int idx = 0; idx < kinFit::numParameters; ++idx )
+      {
+        D( 3,idx) = D3_1(idx);
+      }
+      d( 3) = (tauPlusD - tauPlusDt)/tauPlusDz + (tauPlusPt - tauPlusP)/tauPlusPz;
+    }
+    else
+    {
+      for ( int idx = 0; idx < kinFit::numParameters; ++idx )
+      {
+        D( 3,idx) = D3_2(idx);
+      }
+      d( 3) = (tauPlusD - tauPlusDz)/tauPlusDt + (tauPlusPz - tauPlusP)/tauPlusPt;
+    }
     // CV: add mass constraint for tau-
     if ( applyTauMassConstraint_ == 0 )
     {
@@ -356,9 +420,9 @@ KinematicFit::operator()(const KinematicEvent& kineEvt)
       //     where
       //       nuTauMinusE = sqrt(nuTauMinusPx^2  + nuTauMinusPy^2  + nuTauMinusPz^2)
       double denominator1 = (visTauMinusP4 + nuTauMinusP4).mass();
-      D( 4, 9) = ((nuTauMinusPx/nuTauMinusE)*visTauMinusE - visTauMinusPx)/denominator1; // dH/dnuTauMinusPx
-      D( 4,10) = ((nuTauMinusPy/nuTauMinusE)*visTauMinusE - visTauMinusPy)/denominator1; // dH/dnuTauMinusPy
-      D( 4,11) = ((nuTauMinusPz/nuTauMinusE)*visTauMinusE - visTauMinusPz)/denominator1; // dH/dnuTauMinusPz
+      D( 4, 9) = ((nuTauMinusPx/nuTauMinusE)*visTauMinusE - visTauMinusPx)/denominator1;   // dH/dnuTauMinusPx
+      D( 4,10) = ((nuTauMinusPy/nuTauMinusE)*visTauMinusE - visTauMinusPy)/denominator1;   // dH/dnuTauMinusPy
+      D( 4,11) = ((nuTauMinusPz/nuTauMinusE)*visTauMinusE - visTauMinusPz)/denominator1;   // dH/dnuTauMinusPz
       d( 4) = (visTauMinusP4 + nuTauMinusP4).mass() - mTau;
     }
     else if ( applyTauMassConstraint_ == 1 )
@@ -398,26 +462,101 @@ KinematicFit::operator()(const KinematicEvent& kineEvt)
     else assert(0);
     // CV: add "parallelism" constraint for tau-
     //     The constraint equations H_Pphi and H_Ptheta are given by Eqs. (4.10) and (4.11)
-    //     in Section 4.1.3.3 of https://cds.cern.ch/record/1358627/files/CERN-THESIS-2011-028.pdf
+    //     in Section 4.1.3.3 of [1].
     //     The small correction for the helix bend between tau lepton production and decay in Eq. (4.13) is not used, 
-    //     as this correction is expected to be on the level of 50 microrad, which we consider negligible
-    D( 5, 0) =  (1. - tauMinusDx/tauMinusDt)/tauMinusDy;                                 // dH_Pphi/dpvX
-    D( 5, 1) = -(tauMinusDx/tauMinusDy)*D(5,0);                                          // dH_Pphi/dpvY
-    D( 5, 9) =  (1. - tauMinusPx/tauMinusPt)/tauMinusPy;                                 // dH_Pphi/dnuTauMinusPx
-    D( 5,10) = -(tauMinusPx/tauMinusPy)*D(5,3);                                          // dH_Pphi/dnuTauMinusPy      
-    D( 5,12) = -D(5,0);                                                                  // dH_Pphi/dsvTauMinusX
-    D( 5,13) = -D(5,1);                                                                  // dH_Pphi/dsvTauMinusY
-    d( 5) =  (tauMinusDt - tauMinusDx)/tauMinusDy + (tauMinusPx - tauMinusPt)/tauMinusPy;
-    D( 6, 0) =  (tauMinusDx/tauMinusDz)*(1./tauMinusDt - 1./tauMinusD);                  // dH_Ptheta/dpvX
-    D( 6, 1) =  (tauMinusDy/tauMinusDz)*(1./tauMinusDt - 1./tauMinusD);                  // dH_Ptheta/dpvY
-    D( 6, 2) = -1./tauMinusD + (tauMinusD - tauMinusDt)/square(tauMinusDz);              // dH_Ptheta/dpvZ
-    D( 6, 9) =  (tauMinusPx/tauMinusPz)*(1./tauMinusPt - 1./tauMinusP);                  // dH_Ptheta/dnuTauMinusPx
-    D( 6,10) =  (tauMinusPy/tauMinusPz)*(1./tauMinusPt - 1./tauMinusP);                  // dH_Ptheta/dnuTauMinusPy
-    D( 6,11) = -1./tauMinusP + (tauMinusP - tauMinusPt)/square(tauMinusPz);              // dH_Ptheta/dnuTauMinusPz      
-    D( 6,12) = -D(6,0);                                                                  // dH_Ptheta/dsvTauMinusX
-    D( 6,13) = -D(6,1);                                                                  // dH_Ptheta/dsvTauMinusY
-    D( 6,14) = -D(6,2);                                                                  // dH_Ptheta/dsvTauMinusZ
-    d( 6) =  (tauMinusD - tauMinusDt)/tauMinusDz + (tauMinusPt - tauMinusP)/tauMinusPz;
+    //     as this correction is expected to be on the level of 50 microrad, which we consider negligible.
+    //     Following [1], we perform a transformation of variables from phi and theta to 1/2*pi - phi and 1/2*pi - theta,
+    //     in order to reduce the magnitude of derivatives (by avoiding the division by small numbers)
+    //
+    //   [1] https://cds.cern.ch/record/1358627/files/CERN-THESIS-2011-028.pdf
+    math::VectorP D5_1;
+    D5_1( 0) =  (1. - tauMinusDx/tauMinusDt)/tauMinusDy;                                   // dH_Pphi/dpvX
+    D5_1( 1) = -(tauMinusDx/tauMinusDy)*D5_1(0);                                           // dH_Pphi/dpvY
+    D5_1( 9) =  (1. - tauMinusPx/tauMinusPt)/tauMinusPy;                                   // dH_Pphi/dnuTauMinusPx
+    D5_1(10) = -(tauMinusPx/tauMinusPy)*D5_1(9);                                           // dH_Pphi/dnuTauMinusPy      
+    D5_1(12) = -D5_1(0);                                                                   // dH_Pphi/dsvTauMinusX
+    D5_1(13) = -D5_1(1);                                                                   // dH_Pphi/dsvTauMinusY
+    double D5_1_mag = comp_mag(D5_1);
+    math::VectorP D5_2;
+    D5_2( 0) = -(tauMinusDy/tauMinusDx)*(1. - tauMinusDy/tauMinusDt)/tauMinusDx;           // dH_Pphi/dpvX
+    D5_2( 1) =  (1. - tauMinusDy/tauMinusDt)/tauMinusDx;                                   // dH_Pphi/dpvY
+    D5_2( 9) = -(tauMinusPy/tauMinusPx)*(1. - tauMinusPy/tauMinusPt)/tauMinusPx;           // dH_Pphi/dnuTauMinusPx
+    D5_2(10) =  (1. - tauMinusPy/tauMinusPt)/tauMinusPx;                                   // dH_Pphi/dnuTauMinusPy
+    D5_2(12) = -D5_2(0);                                                                   // dH_Pphi/dsvTauMinusX
+    D5_2(13) = -D5_2(1);                                                                   // dH_Pphi/dsvTauMinusY
+    double D5_2_mag = comp_mag(D5_2);
+    if ( verbosity_ >= 1 )
+    {
+      std::cout << "D5 (1st):\n";
+      std::cout << D5_1 << "\n";
+      std::cout << " mag = " << D5_1_mag << "\n";
+      std::cout << "D5 (2nd):\n";
+      std::cout << D5_2 << "\n";
+      std::cout << " mag = " << D5_2_mag << "\n";
+    }
+    if ( D5_1_mag < D5_2_mag )
+    {
+      for ( int idx = 0; idx < kinFit::numParameters; ++idx )
+      {
+        D( 5,idx) = D5_1(idx);
+      }
+      d( 5) =  (tauMinusDt - tauMinusDx)/tauMinusDy + (tauMinusPx - tauMinusPt)/tauMinusPy;
+    }
+    else
+    {
+      for ( int idx = 0; idx < kinFit::numParameters; ++idx )
+      {
+        D( 5,idx) = D5_2(idx);
+      }
+      d( 5) =  (tauMinusDt - tauMinusDy)/tauMinusDx + (tauMinusPy - tauMinusPt)/tauMinusPx;
+    }
+    math::VectorP D6_1;
+    D6_1( 0) =  (tauMinusDx/tauMinusDz)*(1./tauMinusDt - 1./tauMinusD);                    // dH_Ptheta/dpvX
+    D6_1( 1) =  (tauMinusDy/tauMinusDz)*(1./tauMinusDt - 1./tauMinusD);                    // dH_Ptheta/dpvY
+    D6_1( 2) = -1./tauMinusD + (tauMinusD - tauMinusDt)/square(tauMinusDz);                // dH_Ptheta/dpvZ
+    D6_1( 9) =  (tauMinusPx/tauMinusPz)*(1./tauMinusPt - 1./tauMinusP);                    // dH_Ptheta/dnuTauMinusPx
+    D6_1(10) =  (tauMinusPy/tauMinusPz)*(1./tauMinusPt - 1./tauMinusP);                    // dH_Ptheta/dnuTauMinusPy
+    D6_1(11) = -1./tauMinusP + (tauMinusP - tauMinusPt)/square(tauMinusPz);                // dH_Ptheta/dnuTauMinusPz      
+    D6_1(12) = -D6_1(0);                                                                   // dH_Ptheta/dsvTauMinusX
+    D6_1(13) = -D6_1(1);                                                                   // dH_Ptheta/dsvTauMinusY
+    D6_1(14) = -D6_1(2);                                                                   // dH_Ptheta/dsvTauMinusZ
+    double D6_1_mag = comp_mag(D6_1);
+    math::VectorP D6_2;
+    D6_2( 0) = -(tauMinusDx*tauMinusDz/cube(tauMinusDt))*(1. - tauMinusDz/tauMinusD);      // dH_Ptheta/dpvX
+    D6_2( 1) = -(tauMinusDy*tauMinusDz/cube(tauMinusDt))*(1. - tauMinusDz/tauMinusD);      // dH_Ptheta/dpvY
+    D6_2( 2) =  (1. - tauMinusDz/tauMinusD)/tauMinusDt;                                    // dH_Ptheta/dpvZ
+    D6_2( 9) = -(tauMinusPx*tauMinusPz/cube(tauMinusPt))*(1. - tauMinusPz/tauMinusP);      // dH_Ptheta/dnuTauMinusPx
+    D6_2(10) = -(tauMinusPy*tauMinusPz/cube(tauMinusPt))*(1. - tauMinusPz/tauMinusP);      // dH_Ptheta/dnuTauMinusPy
+    D6_2(11) =  (1. - tauMinusPz/tauMinusP)/tauMinusPt;                                    // dH_Ptheta/dnuTauMinusPz
+    D6_2(12) = -D6_2(0);                                                                   // dH_Ptheta/dsvTauMinusX
+    D6_2(13) = -D6_2(1);                                                                   // dH_Ptheta/dsvTauMinusY
+    D6_2(14) = -D6_2(2);                                                                   // dH_Ptheta/dsvTauMinusZ
+    double D6_2_mag = comp_mag(D6_2);
+    if ( verbosity_ >= 1 )
+    {
+      std::cout << "D6 (1st):\n";
+      std::cout << D6_1 << "\n";
+      std::cout << " mag = " << D6_1_mag << "\n";
+      std::cout << "D6 (2nd):\n";
+      std::cout << D6_2 << "\n";
+      std::cout << " mag = " << D6_2_mag << "\n";
+    }
+    if ( D6_1_mag < D6_2_mag )
+    {
+      for ( int idx = 0; idx < kinFit::numParameters; ++idx )
+      {
+        D( 6,idx) = D6_1(idx);
+      }
+      d( 6) =  (tauMinusD - tauMinusDt)/tauMinusDz + (tauMinusPt - tauMinusP)/tauMinusPz;
+    }
+    else
+    {
+      for ( int idx = 0; idx < kinFit::numParameters; ++idx )
+      {
+        D( 6,idx) = D6_2(idx);
+      }
+      d( 6) =  (tauMinusD - tauMinusDz)/tauMinusDt + (tauMinusPz - tauMinusP)/tauMinusPt;
+    }
     // CV: add constraint that recoil = tau+ + tau-
     //       H_px     = nuTauPlusPx + visTauPlusPx + nuTauMinusPx + visTauMinusPx - recoilPx = 0
     //       H_py     = nuTauPlusPy + visTauPlusPy + nuTauMinusPy + visTauMinusPy - recoilPy = 0
@@ -503,6 +642,11 @@ KinematicFit::operator()(const KinematicEvent& kineEvt)
     //-----------------------------------------------------------------------------------------------
 
     math::MatrixPxC DT = ROOT::Math::Transpose(D);    
+    if ( verbosity_ >= 1 )
+    {
+      std::cout << "DT:\n";
+      std::cout << DT << "\n";
+    }
 
     math::MatrixCxC Vinv_D = D*V_alpha0*DT;
     int V_D_errorFlag = 0;
@@ -513,6 +657,10 @@ KinematicFit::operator()(const KinematicEvent& kineEvt)
       throw cmsException("KinematicFit::operator()", __LINE__)
         << "Failed to invert matrix Vinv_D !!\n";
     }
+    if ( verbosity_ >= 1 )
+    {
+      printCovMatrix("V_D", V_D);
+    }
 
     math::VectorP dalpha0 = alpha0 - alphaA;
     math::VectorC lambda = V_D*(D*dalpha0 + d);
@@ -522,8 +670,32 @@ KinematicFit::operator()(const KinematicEvent& kineEvt)
     }
     if ( verbosity_ >= 1 )
     {
+      std::cout << "dalpha0:\n";
+      std::cout << dalpha0 << "\n";
+      std::cout << "D*dalpha0:\n";
+      std::cout << D*dalpha0 << "\n";
       std::cout << "lambda:\n";
       std::cout << lambda << "\n";
+      std::cout << "contributions to lambda:\n";
+      math::VectorC D_times_dalpha0 = D*dalpha0;
+      for ( int idxRow = 0; idxRow < kinFit::numConstraints; ++idxRow )
+      {
+        std::cout << "lambda[" << idxRow << "]:";
+        for ( int idxColumn = 0; idxColumn < kinFit::numConstraints; ++idxColumn )
+        {
+          if ( idxColumn != 0 ) std::cout << ",";
+          std::cout << " " << V_D(idxRow,idxColumn)*D_times_dalpha0(idxColumn) << " + " << V_D(idxRow,idxColumn)*d(idxColumn);
+        }
+        std::cout << "\n";
+      }
+      std::cout << "DT*lambda:\n";
+      std::cout << DT*lambda << "\n";
+      std::cout << "distance from satisfaction:\n";
+      for ( int idx = 0; idx < kinFit::numConstraints; ++idx )
+      {
+        double pull = (D_times_dalpha0(idx) + d(idx))/std::sqrt(Vinv_D(idx,idx));
+        std::cout << "pull[" << idx << "] = " << pull << "\n";
+      }
     }
 
     math::VectorP alpha = alpha0 - V_alpha0*DT*lambda;
@@ -556,7 +728,7 @@ KinematicFit::operator()(const KinematicEvent& kineEvt)
 
     // CV: compute chi^2
     math::VectorP alpha_minus_alpha0 = alpha - alpha0;
-    double chi2 = ROOT::Math::Dot(alpha_minus_alpha0, Vinv_alpha0*alpha_minus_alpha0) + 2.*ROOT::Math::Dot(lambda, D*dalpha + d);
+    double chi2 = ROOT::Math::Dot(alpha_minus_alpha0, Vinv_alpha0*alpha_minus_alpha0) + ROOT::Math::Dot(lambda, Vinv_D*lambda);
     if ( applyLifetimeConstraint_ )
     {
       chi2 += 2.*tauPlusD*mTau/(ct*tauPlusP) + 2.*tauMinusD*mTau/(ct*tauMinusP);
@@ -618,21 +790,29 @@ KinematicFit::operator()(const KinematicEvent& kineEvt)
     if ( verbosity_ >= 1 )
     {
       std::cout << "constraint equations:\n";
+      printPoint("PV", kineEvtA.pv_);
       reco::Candidate::LorentzVector higgsP4 = kineEvtA.tauPlusP4_ + kineEvtA.tauMinusP4_;
-      std::cout << "Higgs mass = " << higgsP4.mass() << "\n";
-      std::cout << "tau+ mass = " << kineEvtA.tauPlusP4_.mass() << "\n";
+      printLorentzVector("Higgs", higgsP4);
+      std::cout << " mass = " << higgsP4.mass() << "\n";
+      printLorentzVector("tau+", kineEvtA.tauPlusP4_);
+      std::cout << " mass = " << kineEvtA.tauPlusP4_.mass() << "\n";
       printLorentzVector("neutrino from tau+ decay", kineEvtA.nuTauPlusP4_);
       std::cout << " mass = " << kineEvtA.nuTauPlusP4_.mass() << "\n";
+      printPoint("SV(tau+)", kineEvtA.svTauPlus_);
       auto tauPlusD3 = kineEvtA.svTauPlus_ - kineEvtA.pv_;
       std::cout << "phi of tau+: four-vector = " << kineEvtA.tauPlusP4_.phi() << ", decay vertex = " << tauPlusD3.phi() << "\n";
       std::cout << "theta of tau+: four-vector = " << kineEvtA.tauPlusP4_.theta() << ", decay vertex = " << tauPlusD3.theta() << "\n";
-      std::cout << "tau- mass = " << kineEvtA.tauMinusP4_.mass() << "\n";
+      printLorentzVector("tau-", kineEvtA.tauMinusP4_);
+      std::cout << " mass = " << kineEvtA.tauMinusP4_.mass() << "\n";
       printLorentzVector("neutrino from tau- decay", kineEvtA.nuTauMinusP4_);
       std::cout << " mass = " << kineEvtA.nuTauMinusP4_.mass() << "\n";
+      printPoint("SV(tau-)", kineEvtA.svTauMinus_);
       auto tauMinusD3 = kineEvtA.svTauMinus_ - kineEvtA.pv_;
       std::cout << "phi of tau-: four-vector = " << kineEvtA.tauMinusP4_.phi() << ", decay vertex = " << tauMinusD3.phi() << "\n";
       std::cout << "theta of tau-: four-vector = " << kineEvtA.tauMinusP4_.theta() << ", decay vertex = " << tauMinusD3.theta() << "\n";
       reco::Candidate::LorentzVector recoilP4(alpha(15), alpha(16), alpha(17), alpha(18));
+      printLorentzVector("recoil", recoilP4);
+      std::cout << " mass = " << recoilP4.mass() << "\n";
       std::cout << "Higgs - recoil:"
                 << " dE = "  << higgsP4.energy() - recoilP4.energy() << ","
                 << " dPx = " << higgsP4.px()     - recoilP4.px()     << ","

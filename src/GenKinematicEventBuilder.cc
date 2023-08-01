@@ -1,31 +1,34 @@
 #include "TauAnalysis/Entanglement/interface/GenKinematicEventBuilder.h"
 
-#include "DataFormats/Candidate/interface/Candidate.h"                    // reco::Candidate::LorentzVector, reco::Candidate::Vector
-#include "DataFormats/TauReco/interface/PFTau.h"                          // reco::PFTau::hadronicDecayMode
+#include "DataFormats/Candidate/interface/Candidate.h"                            // reco::Candidate::LorentzVector, reco::Candidate::Vector
+#include "DataFormats/TauReco/interface/PFTau.h"                                  // reco::PFTau::hadronicDecayMode
 
-#include "TauAnalysis/Entanglement/interface/comp_visP4.h"                // comp_visP4()
-#include "TauAnalysis/Entanglement/interface/findDecayProducts.h"         // findDecayProducts()
-#include "TauAnalysis/Entanglement/interface/findLastTau.h"               // findLastTau()
-#include "TauAnalysis/Entanglement/interface/getCov_hf.h"                 // getCov_hf()
-#include "TauAnalysis/Entanglement/interface/get_decayMode.h"             // get_decayMode()
-#include "TauAnalysis/Entanglement/interface/get_leadTrack.h"             // get_leadTrack()
-#include "TauAnalysis/Entanglement/interface/get_localCoordinateSystem.h" // get_localCoordinateSystem()
-#include "TauAnalysis/Entanglement/interface/get_particles_of_type.h"     // get_chargedHadrons(), get_neutralPions(), get_neutrinos()
-#include "TauAnalysis/Entanglement/interface/KinematicParticle.h"         // math::Matrix7x7, math::Vector7
-#include "TauAnalysis/Entanglement/interface/printGenParticles.h"         // printGenParticles()
-#include "TauAnalysis/Entanglement/interface/printLorentzVector.h"        // printLorentzVector()
-#include "TauAnalysis/Entanglement/interface/printPoint.h"                // printPoint()
-#include "TauAnalysis/Entanglement/interface/printVector.h"               // printVector()
-#include "TauAnalysis/Entanglement/interface/SpinAnalyzerBase.h"          // SpinAnalyzerBase::kTauPlus, SpinAnalyzerBase::kTauMinus
-#include "TauAnalysis/Entanglement/interface/square.h"                    // square()
+#include "TauAnalysis/Entanglement/interface/comp_nuP4.h"                         // comp_nuP4()
+#include "TauAnalysis/Entanglement/interface/comp_visP4.h"                        // comp_visP4()
+#include "TauAnalysis/Entanglement/interface/findDecayProducts.h"                 // findDecayProducts()
+#include "TauAnalysis/Entanglement/interface/findLastTau.h"                       // findLastTau()
+#include "TauAnalysis/Entanglement/interface/getCov_hf.h"                         // getCov_hf()
+#include "TauAnalysis/Entanglement/interface/get_decayMode.h"                     // get_decayMode()
+#include "TauAnalysis/Entanglement/interface/get_leadTrack.h"                     // get_leadTrack()
+#include "TauAnalysis/Entanglement/interface/get_localCoordinateSystem.h"         // get_localCoordinateSystem()
+#include "TauAnalysis/Entanglement/interface/get_particles_of_type.h"             // get_chargedHadrons(), get_neutralPions(), get_neutrinos()
+#include "TauAnalysis/Entanglement/interface/Matrix_and_Vector.h"                 // math::Matrix*, math::Vector*
+#include "TauAnalysis/Entanglement/interface/KinematicParticle.h"                 // KinematicParticle
+#include "TauAnalysis/Entanglement/interface/printCovMatrix.h"                    // printCovMatrix()
+#include "TauAnalysis/Entanglement/interface/printDistance.h"                     // printDistance()
+#include "TauAnalysis/Entanglement/interface/printEigenVectors_and_EigenValues.h" // printEigenVectors_and_EigenValues()
+#include "TauAnalysis/Entanglement/interface/printGenParticles.h"                 // printGenParticles()
+#include "TauAnalysis/Entanglement/interface/printInverseCovMatrix.h"             // printInverseCovMatrix()
+#include "TauAnalysis/Entanglement/interface/printLorentzVector.h"                // printLorentzVector()
+#include "TauAnalysis/Entanglement/interface/printPoint.h"                        // printPoint()
+#include "TauAnalysis/Entanglement/interface/printVector.h"                       // printVector()
+#include "TauAnalysis/Entanglement/interface/SpinAnalyzerBase.h"                  // SpinAnalyzerBase::kTauPlus, SpinAnalyzerBase::kTauMinus
+#include "TauAnalysis/Entanglement/interface/square.h"                            // square()
 
-#include <Math/Boost.h>                                                   // ROOT::Math::Boost
-#include <TMath.h>                                                        // TMath::Pi()
-#include <TMatrixD.h>                                                     // TMatrixD
-#include <TVectorD.h>                                                     // TVectorD
+#include <TMath.h>                                                                // TMath::Pi()
 
-#include <iostream>                                                       // std::cout
-#include <cmath>                                                          // std::fabs(), std::sqrt()
+#include <iostream>                                                               // std::cout
+#include <cmath>                                                                  // std::fabs(), std::sqrt()
 
 GenKinematicEventBuilder::GenKinematicEventBuilder(const edm::ParameterSet& cfg)
   : resolutions_(nullptr)
@@ -226,47 +229,40 @@ namespace
         //     Following the "huge error method" described in Section 6 of https://www.phys.ufl.edu/~avery/fitting/fitting1.pdf
         //     we set the uncertainty in parallel direction to a large (but not very large, to avoid numerical instabilities) value,
         //     so that the position in parallel direction is practically unconstrained.
-        dk = 1.e+2;
-        //dk = 0.1; // ONLY FOR TESTING !!
+        dk = 1.e+1;
         dr = resolutions.tipResolution_perp();
         dn = resolutions.tipResolution_perp();
       }
       math::Matrix3x3 cov3x3 = getCov_hf(dk, dr, dn, r, n, k);
       cov7x7.Place_at(cov3x3, 4, 4);
-      if ( verbosity >= 3 )
-      {
-        TMatrixD cov3x3;
-        for ( int idxRow = 0; idxRow < 3; ++idxRow )
-        {
-          for ( int idxColumn = 0; idxColumn < 3; ++idxColumn )
-          {
-            cov3x3(idxRow,idxColumn) = cov7x7(idxRow + 4,idxColumn + 4);
-          }
-        }
-        std::cout << "cov3x3:\n";
-        cov3x3.Print();
-
-        TVectorD eigenValues(3);
-        TMatrixD eigenVectors = cov3x3.EigenVectors(eigenValues);
-        for ( int idx = 0; idx < 3; ++idx )
-        {
-          TVectorD eigenVector(3);
-          eigenVector(0) = eigenVectors(0,idx);
-          eigenVector(1) = eigenVectors(1,idx);
-          eigenVector(2) = eigenVectors(2,idx);
-          std::cout << "EigenVector #" << idx << " (EigenValue = " << eigenValues(idx) << "):\n";
-          eigenVector.Print();
-          reco::Candidate::Vector e(eigenVector(0), eigenVector(1), eigenVector(2));
-          std::cout << "e*k = " << e.Dot(k) << "\n";
-          std::cout << "e*r = " << e.Dot(r) << "\n";
-          std::cout << "e*n = " << e.Dot(n) << "\n";
-        }
-      }
       kineDaughter.set_params7(params7, cov7x7);
 
       kineDaughters.push_back(kineDaughter);
     }
     return kineDaughters;
+  }
+ 
+  math::Matrix3x3
+  comp_nuCov(const reco::Candidate::LorentzVector& visTauP4, int verbosity)
+  {
+    // CV: the four-vectors of tau+ and tau- are not really "measured";
+    //     we acccount for this by setting their covariance matrix to an ellipsoid.
+    //     The size of the ellipsoid in direction of the visible tau decay products (k) is set to a large value,
+    //     following the "huge error method" described in Section 6 of https://www.phys.ufl.edu/~avery/fitting/fitting1.pdf
+    //     In the direction transverse to the visible tau decay products (r, n),
+    //     the size of the ellipsoid is set to be 1 GeV each.
+    //     The motivation of using a smaller uncertainty in transverse direction is to guide the kinematic fit 
+    //     that the tau lepton momentum in this direction is limited by the tau lepton mass.
+    //     Note that the neutrino momentum in transverse direction is limited to half the tau lepton mass in the tau restframe
+    //     and is not affected by the Lorentz boost in tau direction.
+    //     We enlarge the uncertainty somewhat to allow for more flexibility in the fit.
+    reco::Candidate::Vector r, n, k; 
+    get_localCoordinateSystem(visTauP4, nullptr, nullptr, kBeam, r, n, k);
+    double dk = 2.5e+2;
+    double dr = 2.e0;
+    double dn = dr;
+    math::Matrix3x3 nuCov = getCov_hf(dk, dr, dn, r, n, k);
+    return nuCov;
   }
 }
 
@@ -296,10 +292,11 @@ GenKinematicEventBuilder::operator()(const reco::GenParticleCollection& genParti
   std::vector<const reco::GenParticle*> tauPlus_daughters;
   findDecayProducts(tauPlus, tauPlus_daughters);
   reco::Candidate::LorentzVector visTauPlusP4 = comp_visP4(tauPlus_daughters);
+  reco::Candidate::LorentzVector nuTauPlusP4 = comp_nuP4(tauPlus_daughters);  
+  math::Matrix3x3 nuTauPlusCov = comp_nuCov(visTauPlusP4, verbosity_);
   std::vector<const reco::GenParticle*> tauPlus_ch = get_chargedHadrons(tauPlus_daughters);
   std::vector<const reco::GenParticle*> tauPlus_pi0 = get_neutralPions(tauPlus_daughters);
   std::vector<const reco::GenParticle*> tauPlus_nu = get_neutrinos(tauPlus_daughters);
-  reco::Candidate::LorentzVector nuTauPlusP4 = comp_visP4(tauPlus_nu);
   int tauPlus_decayMode = get_decayMode(tauPlus_ch, tauPlus_pi0, tauPlus_nu);
   if ( verbosity_ >= 1 )
   {
@@ -316,16 +313,23 @@ GenKinematicEventBuilder::operator()(const reco::GenParticleCollection& genParti
       std::cout << " mass = " << visTauPlusP4.mass() << "\n";
     }
     std::cout << "tauPlus_decayMode = " << tauPlus_decayMode << "\n";
+    printCovMatrix("nuTauPlusCov", nuTauPlusCov);
+    if ( verbosity_ >= 3 )
+    {
+      printEigenVectors_and_EigenValues(nuTauPlusCov);
+    }
+    printInverseCovMatrix("nuTauPlusCov", nuTauPlusCov);
   }
   std::vector<KinematicParticle> daughtersTauPlus = build_kineDaughters(visTauPlusP4, tauPlus_decayMode, tauPlus_daughters, *resolutions_, verbosity_);
 
   std::vector<const reco::GenParticle*> tauMinus_daughters;
   findDecayProducts(tauMinus, tauMinus_daughters);
   reco::Candidate::LorentzVector visTauMinusP4 = comp_visP4(tauMinus_daughters);
+  reco::Candidate::LorentzVector nuTauMinusP4 = comp_nuP4(tauMinus_daughters);
+  math::Matrix3x3 nuTauMinusCov = comp_nuCov(visTauMinusP4, verbosity_);
   std::vector<const reco::GenParticle*> tauMinus_ch = get_chargedHadrons(tauMinus_daughters);
   std::vector<const reco::GenParticle*> tauMinus_pi0 = get_neutralPions(tauMinus_daughters);
   std::vector<const reco::GenParticle*> tauMinus_nu = get_neutrinos(tauMinus_daughters);
-  reco::Candidate::LorentzVector nuTauMinusP4 = comp_visP4(tauMinus_nu);
   int tauMinus_decayMode = get_decayMode(tauMinus_ch, tauMinus_pi0, tauMinus_nu);
   if ( verbosity_ >= 1 )
   {
@@ -342,6 +346,12 @@ GenKinematicEventBuilder::operator()(const reco::GenParticleCollection& genParti
       std::cout << " mass = " << visTauMinusP4.mass() << "\n";
     }
     std::cout << "tauMinus_decayMode = " << tauMinus_decayMode << "\n";
+    printCovMatrix("nuTauMinusCov", nuTauMinusCov);
+    if ( verbosity_ >= 3 )
+    {
+      printEigenVectors_and_EigenValues(nuTauMinusCov);
+    }
+    printInverseCovMatrix("nuTauMinusCov", nuTauMinusCov);
   }
   std::vector<KinematicParticle> daughtersTauMinus = build_kineDaughters(visTauMinusP4, tauMinus_decayMode, tauMinus_daughters, *resolutions_, verbosity_);
  
@@ -360,6 +370,7 @@ GenKinematicEventBuilder::operator()(const reco::GenParticleCollection& genParti
   {
     printPoint("pv", pv);
     printCovMatrix("pvCov", pvCov);
+    printInverseCovMatrix("pvCov", pvCov);
   }
 
   reco::Candidate::LorentzVector recoilP4 = tauPlusP4 + tauMinusP4;
@@ -368,6 +379,7 @@ GenKinematicEventBuilder::operator()(const reco::GenParticleCollection& genParti
   {
     printLorentzVector("recoilP4", recoilP4, cartesian_);
     printCovMatrix("recoilCov", recoilCov);
+    printInverseCovMatrix("recoilCov", recoilCov);
   }
 
   const reco::GenParticle* tauPlus_leadTrack = get_leadTrack(tauPlus_daughters);
@@ -384,9 +396,23 @@ GenKinematicEventBuilder::operator()(const reco::GenParticleCollection& genParti
   if ( verbosity_ >= 1 )
   {
     printPoint("svTauPlus", svTauPlus);
+    printDistance("svTauPlus - pv", svTauPlus - pv, cartesian_);
+    printDistance("svTauPlus - pv", svTauPlus - pv, false);
     printCovMatrix("svTauPlusCov", svTauPlusCov);
+    if ( verbosity_ >= 3 )
+    {
+      printEigenVectors_and_EigenValues(svTauPlusCov);
+    }
+    printInverseCovMatrix("svTauPlusCov", svTauPlusCov);
     printPoint("svTauMinus", svTauMinus);
+    printDistance("svTauMinus - pv", svTauMinus - pv, cartesian_);
+    printDistance("svTauMinus - pv", svTauMinus - pv, false);
     printCovMatrix("svTauMinusCov", svTauMinusCov);
+    if ( verbosity_ >= 3 )
+    {
+      printEigenVectors_and_EigenValues(svTauMinusCov);
+    }
+    printInverseCovMatrix("svTauMinusCov", svTauMinusCov);
   }
 
   KinematicEvent kineEvt;
@@ -404,6 +430,8 @@ GenKinematicEventBuilder::operator()(const reco::GenParticleCollection& genParti
     kineEvt.nuTauPlusP4_ = nuTauPlusP4;
     kineEvt.nuTauPlusP4_isValid_ = true;
   }
+  kineEvt.nuTauPlusCov_ = nuTauPlusCov;
+  kineEvt.nuTauPlusCov_isValid_ = true;
   kineEvt.visTauPlusP4_ = visTauPlusP4;
   kineEvt.visTauPlusCov_ = comp_visTauCov(visTauPlusP4, daughtersTauPlus);
   kineEvt.tauPlus_decayMode_ = tauPlus_decayMode;
@@ -427,6 +455,8 @@ GenKinematicEventBuilder::operator()(const reco::GenParticleCollection& genParti
     kineEvt.nuTauMinusP4_ = nuTauMinusP4;
     kineEvt.nuTauMinusP4_isValid_ = true;
   }
+  kineEvt.nuTauMinusCov_ = nuTauMinusCov;
+  kineEvt.nuTauMinusCov_isValid_ = true;
   kineEvt.visTauMinusP4_ = visTauMinusP4;
   kineEvt.visTauMinusCov_ = comp_visTauCov(visTauMinusP4, daughtersTauMinus);
   kineEvt.tauMinus_decayMode_ = tauMinus_decayMode;

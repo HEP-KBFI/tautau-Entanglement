@@ -2,6 +2,7 @@
 
 #include "TauAnalysis/Entanglement/interface/cmsException.h"       // cmsException
 #include "TauAnalysis/Entanglement/interface/comp_cosThetaGJ.h"    // comp_cosThetaGJ(), comp_cosThetaGJ_solution()
+#include "TauAnalysis/Entanglement/interface/printDistance.h"      // printDistance()
 #include "TauAnalysis/Entanglement/interface/printLorentzVector.h" // printLorentzVector()
 #include "TauAnalysis/Entanglement/interface/printPoint.h"         // printPoint()
 #include "TauAnalysis/Entanglement/interface/printVector.h"        // printVector()
@@ -269,11 +270,13 @@ printKinematicEvent(const std::string& label,
   printPoint("pv", kineEvt.pv());
 
   printLorentzVector("recoilP4", kineEvt.recoilP4(), cartesian);
+  std::cout << " mass = " << kineEvt.recoilP4().mass() << "\n";
 
   if ( kineEvt.tauPlusP4_isValid() )
   {
     printLorentzVector("tauPlusP4", kineEvt.tauPlusP4(), cartesian);
     std::cout << " mass = " << kineEvt.tauPlusP4().mass() << "\n";
+    printLorentzVector("tauPlusP4", kineEvt.tauPlusP4(), false);
   }
   else
   {
@@ -299,6 +302,8 @@ printKinematicEvent(const std::string& label,
   if ( kineEvt.svTauPlus_isValid() )
   {
     printPoint("svTauPlus", kineEvt.svTauPlus());
+    printDistance("svTauPlus - pv", kineEvt.svTauPlus() - kineEvt.pv(), cartesian);
+    printDistance("svTauPlus - pv", kineEvt.svTauPlus() - kineEvt.pv(), false);
   }
   else
   {
@@ -317,6 +322,7 @@ printKinematicEvent(const std::string& label,
   {
     printLorentzVector("tauMinusP4", kineEvt.tauMinusP4(), cartesian);
     std::cout << " mass = " << kineEvt.tauMinusP4().mass() << "\n";
+    printLorentzVector("tauMinusP4", kineEvt.tauMinusP4(), false);
   }
   else
   {
@@ -342,6 +348,8 @@ printKinematicEvent(const std::string& label,
   if ( kineEvt.svTauMinus_isValid() )
   {
     printPoint("svTauMinus", kineEvt.svTauMinus());
+    printDistance("svTauMinus - pv", kineEvt.svTauMinus() - kineEvt.pv(), cartesian);
+    printDistance("svTauMinus - pv", kineEvt.svTauMinus() - kineEvt.pv(), false);
   }
   else
   {

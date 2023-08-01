@@ -453,7 +453,8 @@ KinematicFitStartPosFinder::operator()(const KinematicEvent& kineEvt)
 
   kineEvt_startpos.tauPlusP4_ = tauPlusP4;
   kineEvt_startpos.tauPlusP4_isValid_ = true;
-  kineEvt_startpos.nuTauPlusP4_ = fixNuMass(tauPlusP4 - visTauPlusP4);
+  //kineEvt_startpos.nuTauPlusP4_ = fixNuMass(tauPlusP4 - visTauPlusP4);
+  kineEvt_startpos.nuTauPlusP4_ = tauPlusP4 - visTauPlusP4;
   kineEvt_startpos.nuTauPlusP4_isValid_ = true;
   if ( !kineEvt_startpos.svTauPlus_isValid() )
   {
@@ -466,7 +467,8 @@ KinematicFitStartPosFinder::operator()(const KinematicEvent& kineEvt)
 
   kineEvt_startpos.tauMinusP4_ = tauMinusP4;
   kineEvt_startpos.tauMinusP4_isValid_ = true;
-  kineEvt_startpos.nuTauMinusP4_ = fixNuMass(tauMinusP4 - visTauMinusP4);
+  //kineEvt_startpos.nuTauMinusP4_ = fixNuMass(tauMinusP4 - visTauMinusP4);
+  kineEvt_startpos.nuTauMinusP4_ = tauMinusP4 - visTauMinusP4;
   kineEvt_startpos.nuTauMinusP4_isValid_ = true;
   if ( !kineEvt_startpos.svTauMinus_isValid() )
   {

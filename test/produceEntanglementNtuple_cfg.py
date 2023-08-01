@@ -12,8 +12,8 @@ process.load('Configuration.StandardSequences.Reconstruction_cff')
 process.load('Configuration.StandardSequences.FrontierConditions_GlobalTag_cff')
 
 process.maxEvents = cms.untracked.PSet(
-    #input = cms.untracked.int32(-1)
-    input = cms.untracked.int32(1000)
+    input = cms.untracked.int32(-1)
+    #input = cms.untracked.int32(1000)
 )
 
 process.source = cms.Source("PoolSource",
@@ -25,6 +25,8 @@ process.source = cms.Source("PoolSource",
     #    '1:97:96091' 
     # tau+ -> pi+ pi0 nu event in which Px of neutrino is 3 GeV off when running in 'rec' mode
     #    '1:97:96038'
+    # tau+ -> pi+ pi0 nu event in which kinematic fit modifies svTauPlus by large amount and fails to converge
+    #    '1:97:96065'
     #)
 )
 
@@ -130,8 +132,8 @@ process.ntupleProducer = cms.EDAnalyzer("EntanglementNtupleProducer",
     # CV: 0 = "regular" tau mass constraint, 1 = constraint on Gottfried-Jackson angle
     applyTauMassConstraint = cms.int32(0),
     applyLifetimeConstraint = cms.bool(False),
-    #verbosity = cms.untracked.int32(-1),
-    verbosity = cms.untracked.int32(1),
+    verbosity = cms.untracked.int32(-1),
+    #verbosity = cms.untracked.int32(1),
     cartesian = cms.untracked.bool(True)
 )
 process.analysisSequence += process.ntupleProducer
