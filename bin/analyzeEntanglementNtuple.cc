@@ -401,16 +401,16 @@ int main(int argc, char* argv[])
     return EXIT_FAILURE;
   }
 
-  std::cout << "<analyzeEntanglementNtuple2>:\n";
+  std::cout << "<analyzeEntanglementNtuple>:\n";
 
 //--- keep track of time it takes the macro to execute
   TBenchmark clock;
-  clock.Start("analyzeEntanglementNtuple2");
+  clock.Start("analyzeEntanglementNtuple");
 
 //--- read python configuration parameters
   std::cout << "Reading config file " << argv[1] << "\n";
   if ( !edm::readPSetsFrom(argv[1])->existsAs<edm::ParameterSet>("process") )
-    throw cmsException("analyzeEntanglementNtuple2", __LINE__) << "No ParameterSet 'process' found in config file !!";
+    throw cmsException("analyzeEntanglementNtuple", __LINE__) << "No ParameterSet 'process' found in config file !!";
 
   edm::ParameterSet cfg = edm::readPSetsFrom(argv[1])->getParameterSet("process");
 
@@ -419,7 +419,7 @@ int main(int argc, char* argv[])
   int maxEvents_afterCuts = cfg_input.getParameter<int>("maxEvents_afterCuts");
   std::cout << " maxEvents: beforeCuts = " << maxEvents_beforeCuts << ", afterCuts = " << maxEvents_afterCuts << "\n";
 
-  edm::ParameterSet cfg_analyze = cfg.getParameterSet("analyzeEntanglementNtuple2");
+  edm::ParameterSet cfg_analyze = cfg.getParameterSet("analyzeEntanglementNtuple");
   std::string treeName = cfg_analyze.getParameter<std::string>("treeName");
   std::cout << " treeName = " << treeName << "\n";
   std::string mode = cfg_analyze.getParameter<std::string>("mode");
@@ -441,7 +441,7 @@ int main(int argc, char* argv[])
   
   std::vector<double> par_gen = cfg_analyze.getParameter<vdouble>("par_gen");
   if ( par_gen.size() != npar )
-    throw cmsException("analyzeEntanglementNtuple2", __LINE__) << "Invalid Configuration parameter 'par_gen' !!";
+    throw cmsException("analyzeEntanglementNtuple", __LINE__) << "Invalid Configuration parameter 'par_gen' !!";
 
   bool scanLikelihood = cfg_analyze.getParameter<bool>("scanLikelihood");
   std::cout << " scanLikelihood = " << scanLikelihood << "\n";
@@ -487,12 +487,12 @@ int main(int argc, char* argv[])
     std::cout << "Opening #" << idxInputFile << " file " << inputFileName << '\n';
     TFile* inputFile = TFile::Open(inputFileName.c_str());
     if ( !inputFile )
-      throw cmsException("analyzeEntanglementNtuple2", __LINE__) 
+      throw cmsException("analyzeEntanglementNtuple", __LINE__) 
         << "The file " << inputFileName << " failed to open !!";
    
     TTree* inputTree = dynamic_cast<TTree*>(inputFile->Get(treeName.c_str()));
     if ( !inputTree )
-      throw cmsException("analyzeEntanglementNtuple2", __LINE__) 
+      throw cmsException("analyzeEntanglementNtuple", __LINE__) 
         << "The file " << inputFileName << " does not contain a TTree named '" << treeName << "' !!";
     std::cout << "The file " << inputFileName << " contains " << inputTree->GetEntries() << " entries\n";
 
@@ -707,7 +707,7 @@ int main(int argc, char* argv[])
 
   delete mlfit;
 
-  clock.Show("analyzeEntanglementNtuple2");
+  clock.Show("analyzeEntanglementNtuple");
 
   return EXIT_SUCCESS;
 }

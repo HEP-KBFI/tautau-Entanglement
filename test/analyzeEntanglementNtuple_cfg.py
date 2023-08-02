@@ -14,7 +14,7 @@ process.fwliteOutput = cms.PSet(
     fileName = cms.string('')
 )
 
-process.analyzeEntanglementNtuple2 = cms.PSet(
+process.analyzeEntanglementNtuple = cms.PSet(
     treeName = cms.string('ntupleProducer/piPlus_piMinus'),
 
     mode = cms.string('gen'),
@@ -86,12 +86,12 @@ process.fwliteInput.fileNames = cms.vstring(inputFileNames)
 
 process.fwliteOutput.fileName = cms.string(outputFileName)
 
-process.analyzeEntanglementNtuple2.treeName = treeName
-process.analyzeEntanglementNtuple2.mode = mode
-process.analyzeEntanglementNtuple2.minVisTauPt = minVisTauPt
-process.analyzeEntanglementNtuple2.maxAbsVisTauEta = maxAbsVisTauEta
-process.analyzeEntanglementNtuple2.maxNumChargedKaons = maxNumChargedKaons
-process.analyzeEntanglementNtuple2.maxNumNeutralKaons = maxNumNeutralKaons
-process.analyzeEntanglementNtuple2.maxNumPhotons = maxNumPhotons
-process.analyzeEntanglementNtuple2.maxSumPhotonEn = maxSumPhotonEn
-process.analyzeEntanglementNtuple2.par_gen = par_gen
+process.analyzeEntanglementNtuple.treeName = treeName
+process.analyzeEntanglementNtuple.mode = mode
+process.analyzeEntanglementNtuple.minVisTauPt = minVisTauPt
+process.analyzeEntanglementNtuple.maxAbsVisTauEta = maxAbsVisTauEta
+process.analyzeEntanglementNtuple.maxNumChargedKaons = maxNumChargedKaons
+process.analyzeEntanglementNtuple.maxNumNeutralKaons = maxNumNeutralKaons
+process.analyzeEntanglementNtuple.maxNumPhotons = maxNumPhotons
+process.analyzeEntanglementNtuple.maxSumPhotonEn = maxSumPhotonEn
+process.analyzeEntanglementNtuple.par_gen = par_gen
