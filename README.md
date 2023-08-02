@@ -30,12 +30,16 @@ source /cvmfs/cms.cern.ch/cmsset_default.sh
 
 cd Entanglement/CMSSW_10_6_20/src/TauAnalysis/Entanglement/test
 
-./runJobs.py
+./produceNtuples.py
 
+Execute make command as instructed in terminal window
 
-# To analyze the Ntuples and determine the spin correlation matrix C:
+# To run the analysis code on these Ntuples:
 source /cvmfs/cms.cern.ch/cmsset_default.sh
 
 cd Entanglement/CMSSW_10_6_20/src/TauAnalysis/Entanglement/test
 
-analyzeEntanglementNtuple analyzeEntanglementNtuple_cfg.py
+./analyzeNtuples.py
+
+Execute make command as instructed in terminal window
+
