@@ -33,8 +33,6 @@ process.source = cms.Source("PoolSource",
 inputFilePath = '/store/mc/RunIISummer20UL18MiniAODv2/GluGluHToTauTau_M125_TuneCP5_13TeV-powheg-pythia8/MINIAODSIM/106X_upgrade2018_realistic_v16_L1v1-v3/100000/'
 inputFileNames = None
 processName = "qqH_htt_pythia8"
-#mode = "gen"
-mode = "rec"
 hAxis = "beam"
 rndSeed = 0
 outputFileName = "entanglementNtuple_%s_DEBUG.root" % processName
@@ -42,7 +40,6 @@ outputFileName = "entanglementNtuple_%s_DEBUG.root" % processName
 ##inputFilePath = None
 ##inputFileNames = $inputFileNames
 ##processName = "$processName"
-##mode = "$mode"
 ##hAxis = "$hAxis"
 ##rndSeed = $rndSeed
 ##outputFileName = "$outputFileName"
@@ -121,7 +118,6 @@ from TauAnalysis.Entanglement.resolutions_cfi import resolutions
 from TauAnalysis.Entanglement.smearing_cfi import smearing
 process.ntupleProducer = cms.EDAnalyzer("EntanglementNtupleProducer",
     src = cms.InputTag('prunedGenParticles'),
-    mode = cms.string(mode),
     hAxis = cms.string(hAxis),
     resolutions = resolutions,
     smearing = smearing.clone(

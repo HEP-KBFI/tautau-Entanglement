@@ -116,13 +116,26 @@ namespace
   }
 
   reco::Candidate::Point
-  comp_tipPCA(const reco::Candidate::Point& pv, const reco::GenParticle* leadTrack)
+  comp_tipPCA(const reco::Candidate::Point& pv, const reco::GenParticle* leadTrack, int verbosity)
   {
     // CV: compute point of closest approach (PCA) between primary event vertex and track
+    if ( verbosity >= 2 )
+    {
+      std::cout << "<comp_tipPCA>:" << std::endl;
+    }
     reco::Candidate::Point sv = leadTrack->vertex();
     auto flightlength = sv - pv;
+    if ( verbosity >= 2 )
+    {
+      printDistance("flightlength", flightlength, true);
+      printDistance("flightlength", flightlength, false);
+    }
     auto e_trk = leadTrack->momentum().unit();
     reco::Candidate::Point pca = pv + flightlength - flightlength.Dot(e_trk)*e_trk;
+    if ( verbosity >= 2 )
+    {
+      printPoint("pca", pca);
+    }
     return pca;
   }
 
@@ -436,7 +449,7 @@ GenKinematicEventBuilder::operator()(const reco::GenParticleCollection& genParti
   kineEvt.visTauPlusCov_ = comp_visTauCov(visTauPlusP4, daughtersTauPlus);
   kineEvt.tauPlus_decayMode_ = tauPlus_decayMode;
   kineEvt.daughtersTauPlus_ = daughtersTauPlus;
-  kineEvt.tipPCATauPlus_ = comp_tipPCA(pv, tauPlus_leadTrack);
+  kineEvt.tipPCATauPlus_ = comp_tipPCA(pv, tauPlus_leadTrack, verbosity_);
   // CV: set tau decay vertex (SV) for three-prongs
   if ( tauPlus_ch.size() >= 3 )
   {
@@ -461,7 +474,7 @@ GenKinematicEventBuilder::operator()(const reco::GenParticleCollection& genParti
   kineEvt.visTauMinusCov_ = comp_visTauCov(visTauMinusP4, daughtersTauMinus);
   kineEvt.tauMinus_decayMode_ = tauMinus_decayMode;
   kineEvt.daughtersTauMinus_ = daughtersTauMinus;
-  kineEvt.tipPCATauMinus_ = comp_tipPCA(pv, tauMinus_leadTrack);
+  kineEvt.tipPCATauMinus_ = comp_tipPCA(pv, tauMinus_leadTrack, verbosity_);
   // CV: set tau decay vertex (SV) for three-prongs
   if ( tauMinus_ch.size() >= 3 )
   {

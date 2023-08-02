@@ -77,7 +77,14 @@ namespace
   get_r(const reco::Candidate::Vector& k, const reco::Candidate::Vector& h, int verbosity, bool cartesian)
   {
     double cosTheta = k.Dot(h);
-    assert(cosTheta >= -1. && cosTheta <= +1.);
+    // CV: allow for small rounding errors
+    if ( cosTheta < -1.01 || cosTheta > +1.01 )
+    {
+      std::cerr << "Error in <get_r>: cosTheta = " << cosTheta << " outside physical range !!\n";
+      assert(0);
+    }
+    if ( cosTheta < -1. ) cosTheta = -1.;
+    if ( cosTheta > +1. ) cosTheta = +1.;
     double sinTheta = std::sqrt(1. - cosTheta*cosTheta);
     reco::Candidate::Vector r = (h - k*cosTheta)*(1./sinTheta);
     if ( verbosity >= 3 )

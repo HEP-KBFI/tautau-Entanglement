@@ -7,6 +7,7 @@
 
 #include "TauAnalysis/Entanglement/interface/cmsException.h"              // cmsException
 #include "TauAnalysis/Entanglement/interface/comp_cosThetaGJ.h"           // comp_cosThetaGJ(), comp_cosThetaGJ_solution(), kPlus, kMinus
+#include "TauAnalysis/Entanglement/interface/comp_mag.h"                  // comp_mag()
 #include "TauAnalysis/Entanglement/interface/constants.h"                 // ct, mHiggs, mTau
 #include "TauAnalysis/Entanglement/interface/cube.h"                      // cube()
 #include "TauAnalysis/Entanglement/interface/fixMass.h"                   // fixHiggsMass(), fixTauMass()
@@ -40,23 +41,11 @@ KinematicFit::~KinematicFit()
 namespace
 {
   reco::Candidate::LorentzVector
-  get_nuP4(double nuPx, double nuPy, double nuPz)
+  build_nuP4(double nuPx, double nuPy, double nuPz)
   {
     double nuE = std::sqrt(square(nuPx) + square(nuPy) + square(nuPz));
     reco::Candidate::LorentzVector nuP4(nuPx, nuPy, nuPz, nuE);
     return nuP4;
-  }
-
-  template <typename T>
-  double
-  comp_mag(const T& v)
-  {
-    double mag2 = 0.;
-    for ( int idx = 0; idx < T::kSize; ++idx )
-    {
-      mag2 += square(v(idx));
-    }
-    return std::sqrt(mag2);
   }
 }
 
@@ -771,7 +760,7 @@ KinematicFit::operator()(const KinematicEvent& kineEvt)
     //kineEvtA.recoilP4_ = fixHiggsMass(reco::Candidate::LorentzVector(alpha(15), alpha(16), alpha(17), alpha(18)));
     kineEvtA.recoilP4_ = reco::Candidate::LorentzVector(alpha(15), alpha(16), alpha(17), alpha(18));
     kineEvtA.recoilCov_ = V_alpha.Sub<math::Matrix4x4>(15,15);
-    kineEvtA.nuTauPlusP4_ = get_nuP4(alpha(3), alpha(4), alpha(5));
+    kineEvtA.nuTauPlusP4_ = build_nuP4(alpha(3), alpha(4), alpha(5));
     kineEvtA.nuTauPlusP4_isValid_ = true;
     kineEvtA.nuTauPlusCov_ = V_alpha.Sub<math::Matrix3x3>(3,3);
     //kineEvtA.tauPlusP4_ = fixTauMass(kineEvtA.visTauPlusP4_ + kineEvtA.nuTauPlusP4_);    
@@ -779,7 +768,7 @@ KinematicFit::operator()(const KinematicEvent& kineEvt)
     kineEvtA.tauPlusP4_isValid_ = true;
     kineEvtA.svTauPlus_ = reco::Candidate::Point(alpha(6), alpha(7), alpha(8));
     kineEvtA.svTauPlusCov_ = V_alpha.Sub<math::Matrix3x3>(6,6);
-    kineEvtA.nuTauMinusP4_ = get_nuP4(alpha(9), alpha(10), alpha(11));
+    kineEvtA.nuTauMinusP4_ = build_nuP4(alpha(9), alpha(10), alpha(11));
     kineEvtA.nuTauMinusP4_isValid_ = true;
     kineEvtA.nuTauMinusCov_ = V_alpha.Sub<math::Matrix3x3>(9,9);
     //kineEvtA.tauMinusP4_ = fixTauMass(kineEvtA.visTauMinusP4_ + kineEvtA.nuTauMinusP4_);

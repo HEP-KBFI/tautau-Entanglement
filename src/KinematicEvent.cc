@@ -284,6 +284,7 @@ printKinematicEvent(const std::string& label,
   }
   printLorentzVector("visTauPlusP4", kineEvt.visTauPlusP4(), cartesian);
   std::cout << " mass = " << kineEvt.visTauPlusP4().mass() << "\n";
+  printLorentzVector("visTauPlusP4", kineEvt.visTauPlusP4(), false);
   printLorentzVector("nuTauPlusP4", kineEvt.nuTauPlusP4(), cartesian);
   std::cout << " mass = " << kineEvt.nuTauPlusP4().mass() << "\n";
   std::cout << "tauPlus_decayMode = " << kineEvt.tauPlus_decayMode() << "\n";
@@ -299,6 +300,8 @@ printKinematicEvent(const std::string& label,
   std::cout << "Gottfied-Jackson angle = " << std::acos(tauPlus_cosThetaGJ) << " "
             << "(expected = " << std::acos(comp_cosThetaGJ_solution(kineEvt.tauPlusP4(), kineEvt.visTauPlusP4())) << ")\n";
   printPoint("tipPCATauPlus", kineEvt.tipPCATauPlus());
+  printDistance("tipPCATauPlus - pv", kineEvt.tipPCATauPlus() - kineEvt.pv(), cartesian);
+  printDistance("tipPCATauPlus - pv", kineEvt.tipPCATauPlus() - kineEvt.pv(), false);
   if ( kineEvt.svTauPlus_isValid() )
   {
     printPoint("svTauPlus", kineEvt.svTauPlus());
@@ -330,6 +333,7 @@ printKinematicEvent(const std::string& label,
   }
   printLorentzVector("visTauMinusP4", kineEvt.visTauMinusP4(), cartesian);
   std::cout << " mass = " << kineEvt.visTauMinusP4().mass() << "\n";
+  printLorentzVector("visTauMinusP4", kineEvt.visTauMinusP4(), false);
   printLorentzVector("nuTauMinusP4", kineEvt.nuTauMinusP4(), cartesian);
   std::cout << " mass = " << kineEvt.nuTauMinusP4().mass() << "\n";
   std::cout << "tauMinus_decayMode = " << kineEvt.tauMinus_decayMode() << "\n";
@@ -345,6 +349,8 @@ printKinematicEvent(const std::string& label,
   std::cout << "Gottfied-Jackson angle = " << std::acos(tauMinus_cosThetaGJ) << " "
             << "(expected = " << std::acos(comp_cosThetaGJ_solution(kineEvt.tauMinusP4(), kineEvt.visTauMinusP4())) << ")\n";
   printPoint("tipPCATauMinus", kineEvt.tipPCATauMinus());
+  printDistance("tipPCATauMinus - pv", kineEvt.tipPCATauMinus() - kineEvt.pv(), cartesian);
+  printDistance("tipPCATauMinus - pv", kineEvt.tipPCATauMinus() - kineEvt.pv(), false);
   if ( kineEvt.svTauMinus_isValid() )
   {
     printPoint("svTauMinus", kineEvt.svTauMinus());

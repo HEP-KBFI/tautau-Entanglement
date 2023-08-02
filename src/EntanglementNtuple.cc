@@ -6,6 +6,7 @@ EntanglementNtuple::EntanglementNtuple(TTree* ntuple)
   , branches_KinematicEvent_gen_smeared_("gen_smeared_")
   , branches_KinematicEvent_startPos_("startPos")
   , branches_KinematicEvent_kinFit_("kinFit")
+  , evtWeight_(1.)
 {
   branches_KinematicEvent_gen_.initBranches(ntuple);
   createBranchI(ntuple_, "gen", "tauPlus_nChargedKaons", &tauPlus_nChargedKaons_gen_); 
@@ -32,6 +33,8 @@ EntanglementNtuple::EntanglementNtuple(TTree* ntuple)
       createBranchF(ntuple_, "kinFit", branchName.c_str(), &kinFit_cov_[idxRow][idxColumn]);
     }
   }
+
+  ntuple_->Branch("evtWeight", &evtWeight_, "evtWeight/F");
 }
 
 EntanglementNtuple::~EntanglementNtuple()

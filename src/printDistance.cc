@@ -14,7 +14,6 @@ printDistance(const std::string& label,
   }
   else
   {
-    std::cout << " dT = " << std::sqrt(p3.perp2()) << ", theta = " << p3.theta() << ", phi = " << p3.phi() 
-              << " (d = " << std::sqrt(p3.mag2()) << ")\n";
+    std::cout << " d = " << std::sqrt(p3.mag2()) << ", theta = " << p3.theta() << ", phi = " << p3.phi() << "\n";
   }
 }

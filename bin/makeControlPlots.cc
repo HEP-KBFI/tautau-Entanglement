@@ -16,6 +16,7 @@
 #include <TH1.h>                                                                                // TH1D
 #include <TH2.h>                                                                                // TH2D
 #include <TAxis.h>                                                                              // TAxis
+#include <TString.h>                                                                            // Form()
 
 #include <assert.h>                                                                             // assert()
 #include <cstdlib>                                                                              // EXIT_SUCCESS, EXIT_FAILURE
@@ -174,6 +175,8 @@ int main(int argc, char* argv[])
   edm::ParameterSet cfg_ctrlPlots = cfg.getParameterSet("makeControlPlots");
   std::string treeName = cfg_ctrlPlots.getParameter<std::string>("treeName");
   std::cout << " treeName = " << treeName << "\n";
+  std::string mode = cfg_ctrlPlots.getParameter<std::string>("mode");
+  std::cout << " mode = " << mode << "\n";
   float minVisTauPt = cfg_ctrlPlots.getParameter<double>("minVisTauPt");
   std::cout << " minVisTauPt = " << minVisTauPt << "\n";
   float maxAbsVisTauEta = cfg_ctrlPlots.getParameter<double>("maxAbsVisTauEta");
@@ -251,47 +254,47 @@ int main(int argc, char* argv[])
     ++processedInputFiles;
 
     Float_t tauPlus_pt, tauPlus_eta;
-    inputTree->SetBranchAddress("tauPlus_pt", &tauPlus_pt);
-    inputTree->SetBranchAddress("tauPlus_eta", &tauPlus_eta);
+    inputTree->SetBranchAddress(Form("%s_tauPlus_pt", mode.c_str()), &tauPlus_pt);
+    inputTree->SetBranchAddress(Form("%s_tauPlus_eta", mode.c_str()), &tauPlus_eta);
     Float_t visTauPlus_pt, visTauPlus_eta;
-    inputTree->SetBranchAddress("visTauPlus_pt", &visTauPlus_pt);
-    inputTree->SetBranchAddress("visTauPlus_eta", &visTauPlus_eta);
+    inputTree->SetBranchAddress(Form("%s_visPlus_pt", mode.c_str()), &visTauPlus_pt);
+    inputTree->SetBranchAddress(Form("%s_visPlus_eta", mode.c_str()), &visTauPlus_eta);
     Int_t tauPlus_nChargedKaons, tauPlus_nNeutralKaons, tauPlus_nPhotons;
     Float_t tauPlus_sumPhotonEn;
-    inputTree->SetBranchAddress("tauPlus_nChargedKaons", &tauPlus_nChargedKaons);
-    inputTree->SetBranchAddress("tauPlus_nNeutralKaons", &tauPlus_nNeutralKaons);
-    inputTree->SetBranchAddress("tauPlus_nPhotons", &tauPlus_nPhotons);
-    inputTree->SetBranchAddress("tauPlus_sumPhotonEn", &tauPlus_sumPhotonEn);
+    inputTree->SetBranchAddress("gen_tauPlus_nChargedKaons", &tauPlus_nChargedKaons);
+    inputTree->SetBranchAddress("gen_tauPlus_nNeutralKaons", &tauPlus_nNeutralKaons);
+    inputTree->SetBranchAddress("gen_tauPlus_nPhotons", &tauPlus_nPhotons);
+    inputTree->SetBranchAddress("gen_tauPlus_sumPhotonEn", &tauPlus_sumPhotonEn);
     Float_t hPlus_r, hPlus_n, hPlus_k;
-    inputTree->SetBranchAddress("hPlus_r", &hPlus_r);
-    inputTree->SetBranchAddress("hPlus_n", &hPlus_n);
-    inputTree->SetBranchAddress("hPlus_k", &hPlus_k);
+    inputTree->SetBranchAddress(Form("%s_hPlus_r", mode.c_str()), &hPlus_r);
+    inputTree->SetBranchAddress(Form("%s_hPlus_n", mode.c_str()), &hPlus_n);
+    inputTree->SetBranchAddress(Form("%s_hPlus_k", mode.c_str()), &hPlus_k);
 
     Float_t tauMinus_pt, tauMinus_eta;
-    inputTree->SetBranchAddress("tauMinus_pt", &tauMinus_pt);
-    inputTree->SetBranchAddress("tauMinus_eta", &tauMinus_eta);
+    inputTree->SetBranchAddress(Form("%s_tauMinus_pt", mode.c_str()), &tauMinus_pt);
+    inputTree->SetBranchAddress(Form("%s_tauMinus_eta", mode.c_str()), &tauMinus_eta);
     Float_t visTauMinus_pt, visTauMinus_eta;
-    inputTree->SetBranchAddress("visTauMinus_pt", &visTauMinus_pt);
-    inputTree->SetBranchAddress("visTauMinus_eta", &visTauMinus_eta);
+    inputTree->SetBranchAddress(Form("%s_visMinus_pt", mode.c_str()), &visTauMinus_pt);
+    inputTree->SetBranchAddress(Form("%s_visMinus_eta", mode.c_str()), &visTauMinus_eta);
     Int_t tauMinus_nChargedKaons, tauMinus_nNeutralKaons, tauMinus_nPhotons;
     Float_t tauMinus_sumPhotonEn;
-    inputTree->SetBranchAddress("tauMinus_nChargedKaons", &tauMinus_nChargedKaons);
-    inputTree->SetBranchAddress("tauMinus_nNeutralKaons", &tauMinus_nNeutralKaons);
-    inputTree->SetBranchAddress("tauMinus_nPhotons", &tauMinus_nPhotons);
-    inputTree->SetBranchAddress("tauMinus_sumPhotonEn", &tauMinus_sumPhotonEn);
+    inputTree->SetBranchAddress("gen_tauMinus_nChargedKaons", &tauMinus_nChargedKaons);
+    inputTree->SetBranchAddress("gen_tauMinus_nNeutralKaons", &tauMinus_nNeutralKaons);
+    inputTree->SetBranchAddress("gen_tauMinus_nPhotons", &tauMinus_nPhotons);
+    inputTree->SetBranchAddress("gen_tauMinus_sumPhotonEn", &tauMinus_sumPhotonEn);
     Float_t hMinus_r, hMinus_n, hMinus_k;
-    inputTree->SetBranchAddress("hMinus_r", &hMinus_r);
-    inputTree->SetBranchAddress("hMinus_n", &hMinus_n);
-    inputTree->SetBranchAddress("hMinus_k", &hMinus_k);
+    inputTree->SetBranchAddress(Form("%s_hMinus_r", mode.c_str()), &hMinus_r);
+    inputTree->SetBranchAddress(Form("%s_hMinus_n", mode.c_str()), &hMinus_n);
+    inputTree->SetBranchAddress(Form("%s_hMinus_k", mode.c_str()), &hMinus_k);
 
     Float_t mTauTau, mVis, cosTheta;
-    inputTree->SetBranchAddress("mTauTau", &mTauTau);
-    inputTree->SetBranchAddress("mVis", &mVis);
-    inputTree->SetBranchAddress("cosTheta", &cosTheta);
+    inputTree->SetBranchAddress(Form("%s_mTauTau", mode.c_str()), &mTauTau);
+    inputTree->SetBranchAddress(Form("%s_mVis", mode.c_str()), &mVis);
+    inputTree->SetBranchAddress(Form("%s_cosTheta", mode.c_str()), &cosTheta);
 
     Float_t zPlus, zMinus;
-    inputTree->SetBranchAddress("zPlus", &zPlus);
-    inputTree->SetBranchAddress("zMinus", &zMinus);
+    inputTree->SetBranchAddress(Form("%s_zPlus", mode.c_str()), &zPlus);
+    inputTree->SetBranchAddress(Form("%s_zMinus", mode.c_str()), &zMinus);
 
     Float_t evtWeight = 1.;
     if ( branchName_evtWeight != "" )

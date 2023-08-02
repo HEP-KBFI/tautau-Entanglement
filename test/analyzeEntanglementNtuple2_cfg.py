@@ -17,6 +17,8 @@ process.fwliteOutput = cms.PSet(
 process.analyzeEntanglementNtuple2 = cms.PSet(
     treeName = cms.string('ntupleProducer/piPlus_piMinus'),
 
+    mode = cms.string('gen'),
+
     minVisTauPt = cms.double(0.),
     maxAbsVisTauEta = cms.double(1.e+3),
     maxNumChargedKaons = cms.int32(0),
@@ -33,10 +35,10 @@ process.analyzeEntanglementNtuple2 = cms.PSet(
     isDEBUG = cms.bool(False)
 )
 
-inputFilePath = '/scratch/persistent/veelken/Entanglement/ntuples/2023Jun02/'
+inputFilePath = '/scratch/persistent/veelken/Entanglement/ntuples/2023Aug02/'
 inputFileNames = None
 processName = "ggH_htt_pythia8"
-mode = "gen"
+mode = 'gen'
 hAxis = "higgs"
 par_gen = [ 0., 0., 0., 0., 0., 0., +1., 0., 0., 0., +1., 0., 0., 0., -1. ]
 outputFileName = 'analyzeEntanglementNtuple_%s_%sMode_%sAxis.root' % (processName, mode, hAxis)
@@ -67,7 +69,7 @@ maxSumPhotonEn = 5.
 ##maxNumPhotons = $maxNumPhotons
 ##maxSumPhotonEn = $maxSumPhotonEn
 
-inputFile_regex = r"entanglementNtuple_%s_%sMode_%sAxis_[0-9]+.root" % (processName, mode, hAxis)
+inputFile_regex = r"entanglementNtuple_%s_%sAxis_[0-9]+.root" % (processName, hAxis)
 
 #--------------------------------------------------------------------------------
 # set input files
@@ -85,6 +87,7 @@ process.fwliteInput.fileNames = cms.vstring(inputFileNames)
 process.fwliteOutput.fileName = cms.string(outputFileName)
 
 process.analyzeEntanglementNtuple2.treeName = treeName
+process.analyzeEntanglementNtuple2.mode = mode
 process.analyzeEntanglementNtuple2.minVisTauPt = minVisTauPt
 process.analyzeEntanglementNtuple2.maxAbsVisTauEta = maxAbsVisTauEta
 process.analyzeEntanglementNtuple2.maxNumChargedKaons = maxNumChargedKaons

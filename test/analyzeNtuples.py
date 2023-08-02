@@ -8,11 +8,11 @@ from TauAnalysis.Entanglement.tools.jobTools import getInputFileNames, build_Mak
 #samples = [ 'ggH_htt_pythia8', 'ggH_htt_tauola', 'dy_lo_pythia8', 'dy_nlo_pythia8' ]
 samples = [ 'ggH_htt_pythia8' ]
 
-modes = [ "gen", "rec" ]
+modes = [ "gen", "gen_smeared", "startPos", "kinFit" ]
 #hAxes = [ "beam", "higgs" ]
 hAxes = [ "higgs" ]
 
-version = "2023Jun16"
+version = "2023Aug02"
 
 inputFilePath = os.path.join("/scratch/persistent", getpass.getuser(), "Entanglement/ntuples/", version)
 
@@ -54,7 +54,7 @@ for sample in samples:
     for hAxis in hAxes:
       print("processing sample = '%s', mode = '%s', hAxis = '%s'" % (sample, mode, hAxis))
       print(" inputFilePath = '%s'" % inputFilePath)
-      inputFile_regex = r"entanglementNtuple_%s_%sMode_%sAxis_[0-9]+.root" % (sample, mode, hAxis)
+      inputFile_regex = r"entanglementNtuple_%s_%sAxis_[0-9]+.root" % (sample, hAxis)
       inputFileNames = getInputFileNames(inputFilePath, inputFile_regex)
       numInputFiles = len(inputFileNames)
       print("Found %i input files." % numInputFiles)
