@@ -1,4 +1,4 @@
-<bin file="analyzeEntanglementNtuple2.cc" name="analyzeEntanglementNtuple2">
+<bin file="analyzeEntanglementNtuple.cc" name="analyzeEntanglementNtuple">
   <use name="DataFormats/FWLite"/>
   <use name="FWCore/FWLite"/>
   <use name="FWCore/ParameterSet"/>
