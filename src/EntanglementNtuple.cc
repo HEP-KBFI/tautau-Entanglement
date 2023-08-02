@@ -3,7 +3,7 @@
 EntanglementNtuple::EntanglementNtuple(TTree* ntuple)
   : ntuple_(ntuple)
   , branches_KinematicEvent_gen_("gen")
-  , branches_KinematicEvent_gen_smeared_("gen_smeared_")
+  , branches_KinematicEvent_gen_smeared_("gen_smeared")
   , branches_KinematicEvent_startPos_("startPos")
   , branches_KinematicEvent_kinFit_("kinFit")
   , evtWeight_(1.)

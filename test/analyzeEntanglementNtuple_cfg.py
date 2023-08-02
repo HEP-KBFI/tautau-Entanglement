@@ -41,10 +41,10 @@ hAxis = "higgs"
 outputFileName = 'analyzeEntanglementNtuple_%s_%sMode_%sAxis.root' % (processName, mode, hAxis)
 
 treeName = 'ntupleProducer/piPlus_piMinus'
-#minVisTauPt = 20.
-#maxAbsVisTauEta = 2.3
-minVisTauPt = 0.
-maxAbsVisTauEta = 1.e+3
+minVisTauPt = 20.
+maxAbsVisTauEta = 2.3
+#minVisTauPt = 0.
+#maxAbsVisTauEta = 1.e+3
 maxNumChargedKaons = 0
 maxNumNeutralKaons = 0
 maxNumPhotons = -1

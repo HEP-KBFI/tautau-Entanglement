@@ -343,7 +343,6 @@ int main(int argc, char* argv[])
       histogram_Bp_n->Fill(hPlus_n, evtWeight);
       histogram_Bp_k->Fill(hPlus_k, evtWeight);
 
-      std::cout << "hMinus_r = " << hMinus_r << std::endl;
       histogram_Bm_r->Fill(hMinus_r, evtWeight);
       histogram_Bm_n->Fill(hMinus_n, evtWeight);
       histogram_Bm_k->Fill(hMinus_k, evtWeight);

@@ -503,28 +503,28 @@ int main(int argc, char* argv[])
     inputTree->SetBranchAddress(Form("%s_hPlus_n", mode.c_str()), &hPlus_n);
     inputTree->SetBranchAddress(Form("%s_hPlus_k", mode.c_str()), &hPlus_k);
     Float_t visTauPlus_pt, visTauPlus_eta;
-    inputTree->SetBranchAddress(Form("%s_visTauPlus_pt", mode.c_str()), &visTauPlus_pt);
-    inputTree->SetBranchAddress(Form("%s_visTauPlus_eta", mode.c_str()), &visTauPlus_eta);
+    inputTree->SetBranchAddress(Form("%s_visPlus_pt", mode.c_str()), &visTauPlus_pt);
+    inputTree->SetBranchAddress(Form("%s_visPlus_eta", mode.c_str()), &visTauPlus_eta);
     Int_t tauPlus_nChargedKaons, tauPlus_nNeutralKaons, tauPlus_nPhotons;
     Float_t tauPlus_sumPhotonEn;
-    inputTree->SetBranchAddress(Form("%s_tauPlus_nChargedKaons", mode.c_str()), &tauPlus_nChargedKaons);
-    inputTree->SetBranchAddress(Form("%s_tauPlus_nNeutralKaons", mode.c_str()), &tauPlus_nNeutralKaons);
-    inputTree->SetBranchAddress(Form("%s_tauPlus_nPhotons", mode.c_str()), &tauPlus_nPhotons);
-    inputTree->SetBranchAddress(Form("%s_tauPlus_sumPhotonEn", mode.c_str()), &tauPlus_sumPhotonEn);
+    inputTree->SetBranchAddress("gen_tauPlus_nChargedKaons", &tauPlus_nChargedKaons);
+    inputTree->SetBranchAddress("gen_tauPlus_nNeutralKaons", &tauPlus_nNeutralKaons);
+    inputTree->SetBranchAddress("gen_tauPlus_nPhotons", &tauPlus_nPhotons);
+    inputTree->SetBranchAddress("gen_tauPlus_sumPhotonEn", &tauPlus_sumPhotonEn);
 
     Float_t hMinus_r, hMinus_n, hMinus_k;
     inputTree->SetBranchAddress(Form("%s_hMinus_r", mode.c_str()), &hMinus_r);
     inputTree->SetBranchAddress(Form("%s_hMinus_n", mode.c_str()), &hMinus_n);
     inputTree->SetBranchAddress(Form("%s_hMinus_k", mode.c_str()), &hMinus_k);
     Float_t visTauMinus_pt, visTauMinus_eta;
-    inputTree->SetBranchAddress(Form("%s_visTauMinus_pt", mode.c_str()), &visTauMinus_pt);
-    inputTree->SetBranchAddress(Form("%s_visTauMinus_eta", mode.c_str()), &visTauMinus_eta);
+    inputTree->SetBranchAddress(Form("%s_visMinus_pt", mode.c_str()), &visTauMinus_pt);
+    inputTree->SetBranchAddress(Form("%s_visMinus_eta", mode.c_str()), &visTauMinus_eta);
     Int_t tauMinus_nChargedKaons, tauMinus_nNeutralKaons, tauMinus_nPhotons;
     Float_t tauMinus_sumPhotonEn;
-    inputTree->SetBranchAddress(Form("%s_tauMinus_nChargedKaons", mode.c_str()), &tauMinus_nChargedKaons);
-    inputTree->SetBranchAddress(Form("%s_tauMinus_nNeutralKaons", mode.c_str()), &tauMinus_nNeutralKaons);
-    inputTree->SetBranchAddress(Form("%s_tauMinus_nPhotons", mode.c_str()), &tauMinus_nPhotons);
-    inputTree->SetBranchAddress(Form("%s_tauMinus_sumPhotonEn", mode.c_str()), &tauMinus_sumPhotonEn);
+    inputTree->SetBranchAddress("gen_tauMinus_nChargedKaons", &tauMinus_nChargedKaons);
+    inputTree->SetBranchAddress("gen_tauMinus_nNeutralKaons", &tauMinus_nNeutralKaons);
+    inputTree->SetBranchAddress("gen_tauMinus_nPhotons", &tauMinus_nPhotons);
+    inputTree->SetBranchAddress("gen_tauMinus_sumPhotonEn", &tauMinus_sumPhotonEn);
 
     Float_t evtWeight = 1.;
     if ( branchName_evtWeight != "" )
