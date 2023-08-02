@@ -97,7 +97,8 @@ process.selectedGenHadTaus = cms.EDFilter("GenJetSelector",
 process.analysisSequence += process.selectedGenHadTaus
 
 process.selectedGenHadTauFilter = cms.EDFilter("CandViewCountFilter",
-    src = cms.InputTag('selectedGenHadTaus'),
+    ##src = cms.InputTag('selectedGenHadTaus'),
+    src = cms.InputTag('tauGenJetsSelectorAllHadrons'),
     minNumber = cms.uint32(2)
 )
 process.analysisSequence += process.selectedGenHadTauFilter
