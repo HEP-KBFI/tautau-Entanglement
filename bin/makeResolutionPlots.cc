@@ -22,7 +22,7 @@
 #include <TTree.h>                                                        // TTree
 
 #include <assert.h>                                                       // assert()
-#include <cmath>                                                          // std::cos(), std::fabs(), std::sin(), std::sinh(), std::sqrt()
+#include <cmath>                                                          // std::acos(), std::cos(), std::fabs(), std::sin(), std::sinh(), std::sqrt()
 #include <cstdlib>                                                        // EXIT_SUCCESS, EXIT_FAILURE
 #include <fstream>                                                        // std::ofstream
 #include <iostream>                                                       // std::cout
@@ -131,6 +131,7 @@ int main(int argc, char* argv[])
   TH1* histogram_res_hPlus_r      = bookHistogram1d(fs, "res_hPlus_r",      100,  -0.5,  +0.5);
   TH1* histogram_res_hPlus_n      = bookHistogram1d(fs, "res_hPlus_n",      100,  -0.5,  +0.5);
   TH1* histogram_res_hPlus_k      = bookHistogram1d(fs, "res_hPlus_k",      100,  -0.5,  +0.5);
+  TH1* histogram_res_hPlus_angle  = bookHistogram1d(fs, "res_hPlus_angle",  100,   0.,    0.5);
 
   TH1* histogram_res_tauMinus_pt  = bookHistogram1d(fs, "res_tauMinus_pt",  100, -50.,  +50.);
   TH1* histogram_res_tauMinus_eta = bookHistogram1d(fs, "res_tauMinus_eta", 100,  -0.5,  +0.5);
@@ -150,6 +151,7 @@ int main(int argc, char* argv[])
   TH1* histogram_res_hMinus_r     = bookHistogram1d(fs, "res_hMinus_r",     100,  -0.5,  +0.5);
   TH1* histogram_res_hMinus_n     = bookHistogram1d(fs, "res_hMinus_n",     100,  -0.5,  +0.5);
   TH1* histogram_res_hMinus_k     = bookHistogram1d(fs, "res_hMinus_k",     100,  -0.5,  +0.5);
+  TH1* histogram_res_hMinus_angle = bookHistogram1d(fs, "res_hMinus_angle", 100,   0.,    0.5);
 
   TH1* histogram_res_higgs_pt     = bookHistogram1d(fs, "res_higgs_pt",     100, -50.,  +50.);
   TH1* histogram_res_higgs_eta    = bookHistogram1d(fs, "res_higgs_eta",    100,  -0.5,  +0.5);
@@ -353,12 +355,14 @@ int main(int argc, char* argv[])
       double rec_svPlus_n = rec_svPlus.x()*tauPlus_n.x() + rec_svPlus.y()*tauPlus_n.y() + rec_svPlus.z()*tauPlus_n.z();
       double rec_svPlus_k = rec_svPlus.x()*tauPlus_k.x() + rec_svPlus.y()*tauPlus_k.y() + rec_svPlus.z()*tauPlus_k.z();
       reco::Candidate::LorentzVector rec_nuPlus_p4   = build_p4(rec_nuPlus_pt,   rec_nuPlus_eta,   rec_nuPlus_phi,   rec_nuPlus_mass);
+      double hPlus_angle = std::acos(gen_hPlus_r*rec_hPlus_r + gen_hPlus_n*rec_hPlus_n + gen_hPlus_k*rec_hPlus_k); 
       reco::Candidate::LorentzVector rec_tauMinus_p4 = build_p4(rec_tauMinus_pt, rec_tauMinus_eta, rec_tauMinus_phi, rec_tauMinus_mass);
       reco::Candidate::Point         rec_svMinus     = build_point(rec_svMinus_x, rec_svMinus_y, rec_svMinus_z);
       double rec_svMinus_r = rec_svMinus.x()*tauMinus_r.x() + rec_svMinus.y()*tauMinus_r.y() + rec_svMinus.z()*tauMinus_r.z();
       double rec_svMinus_n = rec_svMinus.x()*tauMinus_n.x() + rec_svMinus.y()*tauMinus_n.y() + rec_svMinus.z()*tauMinus_n.z();
       double rec_svMinus_k = rec_svMinus.x()*tauMinus_k.x() + rec_svMinus.y()*tauMinus_k.y() + rec_svMinus.z()*tauMinus_k.z();
       reco::Candidate::LorentzVector rec_nuMinus_p4  = build_p4(rec_nuMinus_pt,  rec_nuMinus_eta,  rec_nuMinus_phi,  rec_nuMinus_mass);
+      double hMinus_angle = std::acos(gen_hMinus_r*rec_hMinus_r + gen_hMinus_n*rec_hMinus_n + gen_hMinus_k*rec_hMinus_k); 
       reco::Candidate::LorentzVector rec_higgs_p4    = rec_tauPlus_p4 + rec_tauMinus_p4;
 
       histogram_res_pv_x->Fill(rec_pv_x - gen_pv_x, evtWeight);
@@ -383,6 +387,7 @@ int main(int argc, char* argv[])
       histogram_res_hPlus_r->Fill(rec_hPlus_r - gen_hPlus_r, evtWeight);
       histogram_res_hPlus_n->Fill(rec_hPlus_n - gen_hPlus_n, evtWeight);
       histogram_res_hPlus_k->Fill(rec_hPlus_k - gen_hPlus_k, evtWeight);
+      histogram_res_hPlus_angle->Fill(hPlus_angle, evtWeight);
 
       histogram_res_tauMinus_pt->Fill(rec_tauMinus_pt - gen_tauMinus_pt, evtWeight);
       histogram_res_tauMinus_eta->Fill(rec_tauMinus_eta - gen_tauMinus_eta, evtWeight);
@@ -402,6 +407,7 @@ int main(int argc, char* argv[])
       histogram_res_hMinus_r->Fill(rec_hMinus_r - gen_hMinus_r, evtWeight);
       histogram_res_hMinus_n->Fill(rec_hMinus_n - gen_hMinus_n, evtWeight);
       histogram_res_hMinus_k->Fill(rec_hMinus_k - gen_hMinus_k, evtWeight);
+      histogram_res_hMinus_angle->Fill(hMinus_angle, evtWeight);
 
       histogram_res_higgs_pt->Fill(rec_higgs_p4.pt() - gen_higgs_p4.pt(), evtWeight);
       histogram_res_higgs_eta->Fill(rec_higgs_p4.eta() - gen_higgs_p4.eta(), evtWeight);
@@ -451,6 +457,7 @@ int main(int argc, char* argv[])
   showHistogram1d(histogram_res_hPlus_r,      "h^{+} r^{rec} - r^{gen}",                          1.2, true, 1.e-3, 1.e0, "Events", 1.3, avEvtWeight, false, outputFile.file());
   showHistogram1d(histogram_res_hPlus_n,      "h^{+} n^{rec} - n^{gen}",                          1.2, true, 1.e-3, 1.e0, "Events", 1.3, avEvtWeight, false, outputFile.file());
   showHistogram1d(histogram_res_hPlus_k,      "h^{+} k^{rec} - k^{gen}",                          1.2, true, 1.e-3, 1.e0, "Events", 1.3, avEvtWeight, false, outputFile.file());
+  showHistogram1d(histogram_res_hPlus_angle,  "angle(h^{+,rec},h^{+,gen})",                       1.2, true, 1.e-3, 1.e0, "Events", 1.3, avEvtWeight, false, outputFile.file());
 
   showHistogram1d(histogram_res_tauMinus_pt,  "#tau^{-} p_{T}^{rec} - p_{T}^{gen} [GeV]",         1.2, true, 1.e-3, 1.e0, "Events", 1.3, avEvtWeight, true,  outputFile.file());
   showHistogram1d(histogram_res_tauMinus_eta, "#tau^{-} #eta^{rec} - #eta^{gen}",                 1.2, true, 1.e-3, 1.e0, "Events", 1.3, avEvtWeight, false, outputFile.file());
@@ -470,6 +477,7 @@ int main(int argc, char* argv[])
   showHistogram1d(histogram_res_hMinus_r,     "h^{-} r^{rec} - r^{gen}",                          1.2, true, 1.e-3, 1.e0, "Events", 1.3, avEvtWeight, false, outputFile.file());
   showHistogram1d(histogram_res_hMinus_n,     "h^{-} n^{rec} - n^{gen}",                          1.2, true, 1.e-3, 1.e0, "Events", 1.3, avEvtWeight, false, outputFile.file());
   showHistogram1d(histogram_res_hMinus_k,     "h^{-} k^{rec} - k^{gen}",                          1.2, true, 1.e-3, 1.e0, "Events", 1.3, avEvtWeight, false, outputFile.file());
+  showHistogram1d(histogram_res_hMinus_angle, "angle(h^{-,rec},h^{-,gen})",                       1.2, true, 1.e-3, 1.e0, "Events", 1.3, avEvtWeight, false, outputFile.file());
 
   showHistogram1d(histogram_res_higgs_pt,     "H p_{T}^{rec} - p_{T}^{gen} [GeV]",                1.2, true, 1.e-3, 1.e0, "Events", 1.3, avEvtWeight, true,  outputFile.file());
   showHistogram1d(histogram_res_higgs_eta,    "H #eta^{rec} - #eta^{gen}",                        1.2, true, 1.e-3, 1.e0, "Events", 1.3, avEvtWeight, true,  outputFile.file());

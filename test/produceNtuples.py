@@ -30,7 +30,7 @@ samples = {
 
 hAxes = [ "higgs" ]
 
-version = "2023Aug02"
+version = "2023Aug03"
 
 configDir  = os.path.join("/home",               getpass.getuser(), "Entanglement/ntuples/", version)
 outputDir  = os.path.join("/scratch/persistent", getpass.getuser(), "Entanglement/ntuples/", version)

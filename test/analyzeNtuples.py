@@ -12,7 +12,7 @@ modes = [ "gen", "gen_smeared", "startPos", "kinFit" ]
 #hAxes = [ "beam", "higgs" ]
 hAxes = [ "higgs" ]
 
-version = "2023Aug02"
+version = "2023Aug03"
 
 inputFilePath = os.path.join("/scratch/persistent", getpass.getuser(), "Entanglement/ntuples/", version)
 
@@ -95,24 +95,25 @@ for sample in samples:
         'outputFileName' : outputFileName_ctrlPlots,
         'logFileName'    : logFileName_ctrlPlots,
       }
-      cfgFileName_resPlots_modified = os.path.join(configDir, "makeResolutionPlots_%s_%sMode_%sAxis_cfg.py" % \
-        (sample, mode, hAxis))
-      outputFileName_resPlots = "makeResolutionPlots_%s_%sMode_%sAxis.root" % \
-        (sample, mode, hAxis)
-      build_cfgFile(
-        "makeResolutionPlots_cfg.py", cfgFileName_resPlots_modified, 
-        inputFileNames, sample,
-        mode, hAxis, 
-        outputFileName_resPlots)
-      logFileName_resPlots = cfgFileName_resPlots_modified.replace("_cfg.py", ".log")
-      job_key_resPlots = '%s_%s_%s_resPlots' % (sample, mode, hAxis)
-      jobOptions_resPlots[job_key_resPlots] = {
-        'inputFileNames' : inputFileNames,
-        'cfgFileName'    : cfgFileName_resPlots_modified,
-        'outputFilePath' : outputDir,
-        'outputFileName' : outputFileName_resPlots,
-        'logFileName'    : logFileName_resPlots,
-      }
+      if mode != "gen":
+        cfgFileName_resPlots_modified = os.path.join(configDir, "makeResolutionPlots_%s_%sMode_%sAxis_cfg.py" % \
+          (sample, mode, hAxis))
+        outputFileName_resPlots = "makeResolutionPlots_%s_%sMode_%sAxis.root" % \
+          (sample, mode, hAxis)
+        build_cfgFile(
+          "makeResolutionPlots_cfg.py", cfgFileName_resPlots_modified, 
+          inputFileNames, sample,
+          mode, hAxis, 
+          outputFileName_resPlots)
+        logFileName_resPlots = cfgFileName_resPlots_modified.replace("_cfg.py", ".log")
+        job_key_resPlots = '%s_%s_%s_resPlots' % (sample, mode, hAxis)
+        jobOptions_resPlots[job_key_resPlots] = {
+          'inputFileNames' : inputFileNames,
+          'cfgFileName'    : cfgFileName_resPlots_modified,
+          'outputFilePath' : outputDir,
+          'outputFileName' : outputFileName_resPlots,
+          'logFileName'    : logFileName_resPlots,
+        }
 
 jobOptions_Makefile = []
 for job_key, job in jobOptions_analysis.items():

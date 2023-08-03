@@ -221,7 +221,7 @@ class EntanglementNtuple
       reco::Candidate::LorentzVector tauPlusP4;
       if ( kineEvt.tauPlusP4_isValid() )
       {
-        kineEvt.tauPlusP4();
+        tauPlusP4 = kineEvt.tauPlusP4();
         tauPlus_pt_       = tauPlusP4.pt();
         tauPlus_eta_      = tauPlusP4.eta();
         tauPlus_phi_      = tauPlusP4.phi();
@@ -289,7 +289,7 @@ class EntanglementNtuple
       reco::Candidate::LorentzVector tauMinusP4;
       if ( kineEvt.tauMinusP4_isValid() )
       {
-        kineEvt.tauMinusP4();
+        tauMinusP4 = kineEvt.tauMinusP4();
         tauMinus_pt_      = tauMinusP4.pt();
         tauMinus_eta_     = tauMinusP4.eta();
         tauMinus_phi_     = tauMinusP4.phi();

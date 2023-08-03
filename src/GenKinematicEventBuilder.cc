@@ -450,15 +450,8 @@ GenKinematicEventBuilder::operator()(const reco::GenParticleCollection& genParti
   kineEvt.tauPlus_decayMode_ = tauPlus_decayMode;
   kineEvt.daughtersTauPlus_ = daughtersTauPlus;
   kineEvt.tipPCATauPlus_ = comp_tipPCA(pv, tauPlus_leadTrack, verbosity_);
-  // CV: set tau decay vertex (SV) for three-prongs
-  if ( tauPlus_ch.size() >= 3 )
-  {
-    kineEvt.svTauPlus_ = svTauPlus;
-    kineEvt.svTauPlus_isValid_ = true;
-  }
-  // CV: set uncertainty on SV for all tau decays
-  //    (the uncertainty is computed differently for one-prongs and three-prongs;
-  //     cf. code of build_kineDaughters() function)
+  kineEvt.svTauPlus_ = svTauPlus;
+  kineEvt.svTauPlus_isValid_ = true;
   kineEvt.svTauPlusCov_ = svTauPlusCov;
 
   if ( !applySmearing_ )
@@ -475,15 +468,8 @@ GenKinematicEventBuilder::operator()(const reco::GenParticleCollection& genParti
   kineEvt.tauMinus_decayMode_ = tauMinus_decayMode;
   kineEvt.daughtersTauMinus_ = daughtersTauMinus;
   kineEvt.tipPCATauMinus_ = comp_tipPCA(pv, tauMinus_leadTrack, verbosity_);
-  // CV: set tau decay vertex (SV) for three-prongs
-  if ( tauMinus_ch.size() >= 3 )
-  {
-    kineEvt.svTauMinus_ = tauMinus_leadTrack->vertex();
-    kineEvt.svTauMinus_isValid_ = true;
-  }
-  // CV: set uncertainty on SV for all tau decays
-  //    (the uncertainty is computed differently for one-prongs and three-prongs;
-  //     cf. code of build_kineDaughters() function)
+  kineEvt.svTauMinus_ = tauMinus_leadTrack->vertex();
+  kineEvt.svTauMinus_isValid_ = true;
   kineEvt.svTauMinusCov_ = svTauMinusCov;
 
   if ( applySmearing_ )
