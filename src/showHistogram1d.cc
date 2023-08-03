@@ -1,0 +1,60 @@
+#include "TauAnalysis/Entanglement/interface/showHistogram1d.h"
+
+#include <TAxis.h>   // TAxis
+#include <TCanvas.h> // TCanvas
+
+void showHistogram1d(TH1* histogram, 
+                     const std::string& xAxisTitle, double xAxisOffset, 
+                     bool useLogScale, double yMin, double yMax, const std::string& yAxisTitle, double yAxisOffset,
+                     double avEvtWeight,
+                     bool showStatsBox,
+                     const std::string& outputFileName)
+{
+  //double integral = histogram->Integral();
+  //if ( integral > 0. ) histogram->Scale(1./integral);
+  if ( avEvtWeight > 0. )
+  {
+    histogram->Scale(1./avEvtWeight);
+  }
+
+  TCanvas* canvas = new TCanvas("canvas", "canvas", 800, 600);
+  canvas->SetFillColor(10);
+  canvas->SetBorderSize(2); 
+  canvas->SetLeftMargin(0.14);
+  canvas->SetBottomMargin(0.12);
+  canvas->SetLogy(useLogScale);
+  
+  histogram->SetTitle("");
+  histogram->SetStats(showStatsBox);
+  histogram->SetMinimum(yMin*histogram->Integral());
+  histogram->SetMaximum(yMax*histogram->Integral());
+
+  TAxis* xAxis = histogram->GetXaxis();
+  xAxis->SetTitle(xAxisTitle.data());
+  xAxis->SetTitleSize(0.045);
+  xAxis->SetTitleOffset(xAxisOffset);  
+
+  TAxis* yAxis = histogram->GetYaxis();
+  yAxis->SetTitle(yAxisTitle.data());
+  yAxis->SetTitleSize(0.045);
+  yAxis->SetTitleOffset(yAxisOffset);
+
+  histogram->SetLineColor(1);
+  histogram->SetLineWidth(1);
+  histogram->SetLineStyle(1);
+  histogram->SetMarkerColor(1);
+  histogram->SetMarkerSize(1);
+  histogram->SetMarkerStyle(8);
+  histogram->Draw("E1P");
+
+  canvas->Update();
+  std::string outputFileName_plot = "plots/";
+  size_t idx = outputFileName.find_last_of('.');
+  outputFileName_plot.append(std::string(outputFileName, 0, idx));
+  outputFileName_plot.append("_");
+  outputFileName_plot.append(histogram->GetName());
+  canvas->Print(std::string(outputFileName_plot).append(".png").c_str());
+  //canvas->Print(std::string(outputFileName_plot).append(".pdf").c_str());
+  
+  delete canvas;  
+}

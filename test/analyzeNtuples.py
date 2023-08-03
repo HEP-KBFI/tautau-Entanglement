@@ -49,6 +49,7 @@ def build_cfgFile(cfgFile_original, cfgFile_modified,
  
 jobOptions_analysis  = {} # key = sample, mode, hAxis
 jobOptions_ctrlPlots = {} # key = sample, mode, hAxis
+jobOptions_resPlots  = {} # key = sample, mode, hAxis
 for sample in samples:
   for mode in modes:
     for hAxis in hAxes:
@@ -94,6 +95,24 @@ for sample in samples:
         'outputFileName' : outputFileName_ctrlPlots,
         'logFileName'    : logFileName_ctrlPlots,
       }
+      cfgFileName_resPlots_modified = os.path.join(configDir, "makeResolutionPlots_%s_%sMode_%sAxis_cfg.py" % \
+        (sample, mode, hAxis))
+      outputFileName_resPlots = "makeResolutionPlots_%s_%sMode_%sAxis.root" % \
+        (sample, mode, hAxis)
+      build_cfgFile(
+        "makeResolutionPlots_cfg.py", cfgFileName_resPlots_modified, 
+        inputFileNames, sample,
+        mode, hAxis, 
+        outputFileName_resPlots)
+      logFileName_resPlots = cfgFileName_resPlots_modified.replace("_cfg.py", ".log")
+      job_key_resPlots = '%s_%s_%s_resPlots' % (sample, mode, hAxis)
+      jobOptions_resPlots[job_key_resPlots] = {
+        'inputFileNames' : inputFileNames,
+        'cfgFileName'    : cfgFileName_resPlots_modified,
+        'outputFilePath' : outputDir,
+        'outputFileName' : outputFileName_resPlots,
+        'logFileName'    : logFileName_resPlots,
+      }
 
 jobOptions_Makefile = []
 for job_key, job in jobOptions_analysis.items():
@@ -114,6 +133,19 @@ for job_key, job in jobOptions_ctrlPlots.items():
   commands.append('rm -f %s' % job['outputFileName'])
   commands.append('rm -f %s' % job['logFileName'])
   commands.append('makeControlPlots %s >& %s' % (job['cfgFileName'], job['logFileName']))
+  commands.append('cp %s %s' % (job['outputFileName'], os.path.join(outputDir, job['outputFileName'])))
+  commands.append('rm -f %s' % job['outputFileName'])
+  jobOptions_Makefile.append({
+    'target'          : os.path.join(outputDir, job['outputFileName']),
+    'dependencies'    : [ inputFileName.replace("file:", "") for inputFileName in job['inputFileNames'] ],
+    'commands'        : commands,
+    'outputFileNames' : [ os.path.join(outputDir, job['outputFileName']) ],
+  })
+for job_key, job in jobOptions_resPlots.items():
+  commands = []
+  commands.append('rm -f %s' % job['outputFileName'])
+  commands.append('rm -f %s' % job['logFileName'])
+  commands.append('makeResolutionPlots %s >& %s' % (job['cfgFileName'], job['logFileName']))
   commands.append('cp %s %s' % (job['outputFileName'], os.path.join(outputDir, job['outputFileName'])))
   commands.append('rm -f %s' % job['outputFileName'])
   jobOptions_Makefile.append({

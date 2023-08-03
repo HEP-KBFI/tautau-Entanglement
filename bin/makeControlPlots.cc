@@ -1,149 +1,32 @@
 
-#include "DataFormats/FWLite/interface/InputSource.h"                                           // fwlite::InputSource
-#include "DataFormats/FWLite/interface/OutputFiles.h"                                           // fwlite::OutputFiles
-#include "FWCore/ParameterSet/interface/ParameterSet.h"                                         // edm::ParameterSet
-#include "FWCore/ParameterSetReader/interface/ParameterSetReader.h"                             // edm::readPSetsFrom()
-#include "FWCore/PluginManager/interface/PluginManager.h"                                       // edmplugin::PluginManager::configure()
-#include "FWCore/PluginManager/interface/standard.h"                                            // edmplugin::standard::config()
-#include "PhysicsTools/FWLite/interface/TFileService.h"                                         // fwlite::TFileService
+#include "DataFormats/FWLite/interface/InputSource.h"               // fwlite::InputSource
+#include "DataFormats/FWLite/interface/OutputFiles.h"               // fwlite::OutputFiles
+#include "FWCore/ParameterSet/interface/ParameterSet.h"             // edm::ParameterSet
+#include "FWCore/ParameterSetReader/interface/ParameterSetReader.h" // edm::readPSetsFrom()
+#include "FWCore/PluginManager/interface/PluginManager.h"           // edmplugin::PluginManager::configure()
+#include "FWCore/PluginManager/interface/standard.h"                // edmplugin::standard::config()
+#include "PhysicsTools/FWLite/interface/TFileService.h"             // fwlite::TFileService
 
-#include "TauAnalysis/Entanglement/interface/cmsException.h"                                    // cmsException
+#include "TauAnalysis/Entanglement/interface/bookHistogram1d.h"     // bookHistogram1d()
+#include "TauAnalysis/Entanglement/interface/bookHistogram2d.h"     // bookHistogram2d()
+#include "TauAnalysis/Entanglement/interface/cmsException.h"        // cmsException
+#include "TauAnalysis/Entanglement/interface/showHistogram1d.h"     // showHistogram1d()
+#include "TauAnalysis/Entanglement/interface/showHistogram2d.h"     // showHistogram2d()
 
-#include <TBenchmark.h>                                                                         // TBenchmark
-#include <TError.h>                                                                             // gErrorAbortLevel, kError
-#include <TTree.h>                                                                              // TTree
-#include <TCanvas.h>                                                                            // TCanvas
-#include <TH1.h>                                                                                // TH1D
-#include <TH2.h>                                                                                // TH2D
-#include <TAxis.h>                                                                              // TAxis
-#include <TString.h>                                                                            // Form()
+#include <TBenchmark.h>                                             // TBenchmark
+#include <TError.h>                                                 // gErrorAbortLevel, kError
+#include <TH1.h>                                                    // TH1
+#include <TH2.h>                                                    // TH2
+#include <TString.h>                                                // Form()
+#include <TTree.h>                                                  // TTree
 
-#include <assert.h>                                                                             // assert()
-#include <cstdlib>                                                                              // EXIT_SUCCESS, EXIT_FAILURE
-#include <fstream>                                                                              // std::ofstream
-#include <iostream>                                                                             // std::cout
-#include <string>                                                                               // std::string
-#include <vector>                                                                               // std::vector<>
-#include <cmath>                                                                                // std::fabs
-
-TH1*
-bookHistogram1d(fwlite::TFileService& fs, const std::string& name, int numBinsX, double xMin, double xMax)
-{
-  TH1* histogram = fs.make<TH1D>(name.c_str(), name.c_str(), numBinsX, xMin, xMax);
-  histogram->Sumw2();
-  return histogram;
-}
-
-void showHistogram1d(TH1* histogram, 
-                     const std::string& xAxisTitle, double xAxisOffset, 
-                     bool useLogScale, double yMin, double yMax, const std::string& yAxisTitle, double yAxisOffset,
-                     double avEvtWeight,
-                     bool showStatsBox,
-                     const std::string& outputFileName)
-{
-  //double integral = histogram->Integral();
-  //if ( integral > 0. ) histogram->Scale(1./integral);
-  if ( avEvtWeight > 0. )
-  {
-    histogram->Scale(1./avEvtWeight);
-  }
-
-  TCanvas* canvas = new TCanvas("canvas", "canvas", 800, 600);
-  canvas->SetFillColor(10);
-  canvas->SetBorderSize(2); 
-  canvas->SetLeftMargin(0.14);
-  canvas->SetBottomMargin(0.12);
-  canvas->SetLogy(useLogScale);
-  
-  histogram->SetTitle("");
-  histogram->SetStats(showStatsBox);
-  histogram->SetMinimum(yMin*histogram->Integral());
-  histogram->SetMaximum(yMax*histogram->Integral());
-
-  TAxis* xAxis = histogram->GetXaxis();
-  xAxis->SetTitle(xAxisTitle.data());
-  xAxis->SetTitleSize(0.045);
-  xAxis->SetTitleOffset(xAxisOffset);  
-
-  TAxis* yAxis = histogram->GetYaxis();
-  yAxis->SetTitle(yAxisTitle.data());
-  yAxis->SetTitleSize(0.045);
-  yAxis->SetTitleOffset(yAxisOffset);
-
-  histogram->SetLineColor(1);
-  histogram->SetLineWidth(1);
-  histogram->SetLineStyle(1);
-  histogram->SetMarkerColor(1);
-  histogram->SetMarkerSize(1);
-  histogram->SetMarkerStyle(8);
-  histogram->Draw("E1P");
-
-  canvas->Update();
-  std::string outputFileName_plot = "plots/";
-  size_t idx = outputFileName.find_last_of('.');
-  outputFileName_plot.append(std::string(outputFileName, 0, idx));
-  outputFileName_plot.append("_");
-  outputFileName_plot.append(histogram->GetName());
-  canvas->Print(std::string(outputFileName_plot).append(".png").c_str());
-  //canvas->Print(std::string(outputFileName_plot).append(".pdf").c_str());
-  
-  delete canvas;  
-}
-
-TH2*
-bookHistogram2d(fwlite::TFileService& fs, const std::string& name, int numBinsX, double xMin, double xMax, int numBinsY, double yMin, double yMax)
-{
-  TH2* histogram = fs.make<TH2D>(name.c_str(), name.c_str(), numBinsX, xMin, xMax, numBinsY, yMin, yMax);
-  histogram->Sumw2();
-  return histogram;
-}
-
-void showHistogram2d(TH2* histogram, 
-                     const std::string& xAxisTitle, double xAxisOffset, 
-                     const std::string& yAxisTitle, double yAxisOffset,
-                     double avEvtWeight,
-                     bool showStatsBox,
-                     const std::string& outputFileName)
-{
-  //double integral = histogram->Integral();
-  //if ( integral > 0. ) histogram->Scale(1./integral);
-  if ( avEvtWeight > 0. )
-  {
-    histogram->Scale(1./avEvtWeight);
-  }
-
-  TCanvas* canvas = new TCanvas("canvas", "canvas", 800, 800);
-  canvas->SetFillColor(10);
-  canvas->SetBorderSize(2); 
-  canvas->SetLeftMargin(0.14);
-  canvas->SetBottomMargin(0.12);
-  
-  histogram->SetTitle("");
-  histogram->SetStats(showStatsBox);
-
-  TAxis* xAxis = histogram->GetXaxis();
-  xAxis->SetTitle(xAxisTitle.c_str());
-  xAxis->SetTitleSize(0.045);
-  xAxis->SetTitleOffset(xAxisOffset);  
-
-  TAxis* yAxis = histogram->GetYaxis();
-  yAxis->SetTitle(yAxisTitle.c_str());
-  yAxis->SetTitleSize(0.045);
-  yAxis->SetTitleOffset(yAxisOffset);
-
-  histogram->Draw("BOX");
-
-  canvas->Update();
-  std::string outputFileName_plot = "plots/";
-  size_t idx = outputFileName.find_last_of('.');
-  outputFileName_plot.append(std::string(outputFileName, 0, idx));
-  outputFileName_plot.append("_");
-  outputFileName_plot.append(histogram->GetName());
-  canvas->Print(std::string(outputFileName_plot).append(".png").c_str());
-  //canvas->Print(std::string(outputFileName_plot).append(".pdf").c_str());
-  
-  delete canvas;  
-}
+#include <assert.h>                                                 // assert()
+#include <cmath>                                                    // std::fabs()
+#include <cstdlib>                                                  // EXIT_SUCCESS, EXIT_FAILURE
+#include <fstream>                                                  // std::ofstream
+#include <iostream>                                                 // std::cout
+#include <string>                                                   // std::string
+#include <vector>                                                   // std::vector<>
 
 int main(int argc, char* argv[])
 {
@@ -205,27 +88,27 @@ int main(int argc, char* argv[])
   size_t numInputFiles = inputFileNames.size();
   std::cout << "Loaded " << numInputFiles << " file(s).\n";
 
-  TH1* histogram_tauPlusPt       = bookHistogram1d(fs, "tauPlusPt",       40,  0., 200.);
-  TH1* histogram_tauPlusEta      = bookHistogram1d(fs, "tauPlusEta",      50, -5.,  +5.);
-  TH1* histogram_visTauPlusPt    = bookHistogram1d(fs, "visTauPlusPt",    40,  0., 200.);
-  TH1* histogram_visTauPlusEta   = bookHistogram1d(fs, "visTauPlusEta",   50, -5.,  +5.);
-  TH1* histogram_tauMinusPt      = bookHistogram1d(fs, "tauMinusPt",      40,  0., 200.);
-  TH1* histogram_tauMinusEta     = bookHistogram1d(fs, "tauMinusEta",     50, -5.,  +5.);
-  TH1* histogram_visTauMinusPt   = bookHistogram1d(fs, "visTauMinusPt",   40,  0., 200.);
-  TH1* histogram_visTauMinusEta  = bookHistogram1d(fs, "visTauMinusEta",  50, -5.,  +5.);
-  TH1* histogram_mTauTau         = bookHistogram1d(fs, "mTauTau",         40,  0., 200.);
-  TH1* histogram_mVis            = bookHistogram1d(fs, "mVis",            40,  0., 200.);
-  TH1* histogram_cosTheta        = bookHistogram1d(fs, "cosTheta",        40, -1.,  +1.);
+  TH1* histogram_tauPlusPt    = bookHistogram1d(fs, "tauPlusPt",   40,  0., 200.);
+  TH1* histogram_tauPlusEta   = bookHistogram1d(fs, "tauPlusEta",  50, -5.,  +5.);
+  TH1* histogram_visPlusPt    = bookHistogram1d(fs, "visPlusPt",   40,  0., 200.);
+  TH1* histogram_visPlusEta   = bookHistogram1d(fs, "visPlusEta",  50, -5.,  +5.);
+  TH1* histogram_tauMinusPt   = bookHistogram1d(fs, "tauMinusPt",  40,  0., 200.);
+  TH1* histogram_tauMinusEta  = bookHistogram1d(fs, "tauMinusEta", 50, -5.,  +5.);
+  TH1* histogram_visMinusPt   = bookHistogram1d(fs, "visMinusPt",  40,  0., 200.);
+  TH1* histogram_visMinusEta  = bookHistogram1d(fs, "visMinusEta", 50, -5.,  +5.);
+  TH1* histogram_mTauTau      = bookHistogram1d(fs, "mTauTau",     40,  0., 200.);
+  TH1* histogram_mVis         = bookHistogram1d(fs, "mVis",        40,  0., 200.);
+  TH1* histogram_cosTheta     = bookHistogram1d(fs, "cosTheta",    40, -1.,  +1.);
 
-  TH1* histogram_Bp_r            = bookHistogram1d(fs, "Bp_r",            40, -1.,  +1.);
-  TH1* histogram_Bp_n            = bookHistogram1d(fs, "Bp_n",            40, -1.,  +1.);
-  TH1* histogram_Bp_k            = bookHistogram1d(fs, "Bp_k",            40, -1.,  +1.);
-  TH1* histogram_Bm_r            = bookHistogram1d(fs, "Bm_r",            40, -1.,  +1.);
-  TH1* histogram_Bm_n            = bookHistogram1d(fs, "Bm_n",            40, -1.,  +1.);
-  TH1* histogram_Bm_k            = bookHistogram1d(fs, "Bm_k",            40, -1.,  +1.);
-  TH1* histogram_C_rr            = bookHistogram1d(fs, "C_rr",            72, -9.,  +9.);
-  TH1* histogram_C_nn            = bookHistogram1d(fs, "C_nn",            72, -9.,  +9.);
-  TH1* histogram_C_kk            = bookHistogram1d(fs, "C_kk",            72, -9.,  +9.);
+  TH1* histogram_Bp_r         = bookHistogram1d(fs, "Bp_r",        40, -1.,  +1.);
+  TH1* histogram_Bp_n         = bookHistogram1d(fs, "Bp_n",        40, -1.,  +1.);
+  TH1* histogram_Bp_k         = bookHistogram1d(fs, "Bp_k",        40, -1.,  +1.);
+  TH1* histogram_Bm_r         = bookHistogram1d(fs, "Bm_r",        40, -1.,  +1.);
+  TH1* histogram_Bm_n         = bookHistogram1d(fs, "Bm_n",        40, -1.,  +1.);
+  TH1* histogram_Bm_k         = bookHistogram1d(fs, "Bm_k",        40, -1.,  +1.);
+  TH1* histogram_C_rr         = bookHistogram1d(fs, "C_rr",        72, -9.,  +9.);
+  TH1* histogram_C_nn         = bookHistogram1d(fs, "C_nn",        72, -9.,  +9.);
+  TH1* histogram_C_kk         = bookHistogram1d(fs, "C_kk",        72, -9.,  +9.);
 
   TH2* histogram_zPlus_vs_zMinus = bookHistogram2d(fs, "zPlus_vs_zMinus", 20, 0., 1., 20, 0., 1.);
 
@@ -256,9 +139,9 @@ int main(int argc, char* argv[])
     Float_t tauPlus_pt, tauPlus_eta;
     inputTree->SetBranchAddress(Form("%s_tauPlus_pt", mode.c_str()), &tauPlus_pt);
     inputTree->SetBranchAddress(Form("%s_tauPlus_eta", mode.c_str()), &tauPlus_eta);
-    Float_t visTauPlus_pt, visTauPlus_eta;
-    inputTree->SetBranchAddress(Form("%s_visPlus_pt", mode.c_str()), &visTauPlus_pt);
-    inputTree->SetBranchAddress(Form("%s_visPlus_eta", mode.c_str()), &visTauPlus_eta);
+    Float_t visPlus_pt, visPlus_eta;
+    inputTree->SetBranchAddress(Form("%s_visPlus_pt", mode.c_str()), &visPlus_pt);
+    inputTree->SetBranchAddress(Form("%s_visPlus_eta", mode.c_str()), &visPlus_eta);
     Int_t tauPlus_nChargedKaons, tauPlus_nNeutralKaons, tauPlus_nPhotons;
     Float_t tauPlus_sumPhotonEn;
     inputTree->SetBranchAddress("gen_tauPlus_nChargedKaons", &tauPlus_nChargedKaons);
@@ -273,9 +156,9 @@ int main(int argc, char* argv[])
     Float_t tauMinus_pt, tauMinus_eta;
     inputTree->SetBranchAddress(Form("%s_tauMinus_pt", mode.c_str()), &tauMinus_pt);
     inputTree->SetBranchAddress(Form("%s_tauMinus_eta", mode.c_str()), &tauMinus_eta);
-    Float_t visTauMinus_pt, visTauMinus_eta;
-    inputTree->SetBranchAddress(Form("%s_visMinus_pt", mode.c_str()), &visTauMinus_pt);
-    inputTree->SetBranchAddress(Form("%s_visMinus_eta", mode.c_str()), &visTauMinus_eta);
+    Float_t visMinus_pt, visMinus_eta;
+    inputTree->SetBranchAddress(Form("%s_visMinus_pt", mode.c_str()), &visMinus_pt);
+    inputTree->SetBranchAddress(Form("%s_visMinus_eta", mode.c_str()), &visMinus_eta);
     Int_t tauMinus_nChargedKaons, tauMinus_nNeutralKaons, tauMinus_nPhotons;
     Float_t tauMinus_sumPhotonEn;
     inputTree->SetBranchAddress("gen_tauMinus_nChargedKaons", &tauMinus_nChargedKaons);
@@ -314,12 +197,12 @@ int main(int argc, char* argv[])
         std::cout << "processing Entry " << analyzedEntries << "\n";
       }
 
-      if ( !(visTauPlus_pt  > minVisTauPt && std::fabs(visTauPlus_eta)  < maxAbsVisTauEta) ) continue;
+      if ( !(visPlus_pt  > minVisTauPt && std::fabs(visPlus_eta)  < maxAbsVisTauEta) ) continue;
       if ( maxNumChargedKaons != -1  && tauPlus_nChargedKaons  > maxNumChargedKaons ) continue;
       if ( maxNumNeutralKaons != -1  && tauPlus_nNeutralKaons  > maxNumNeutralKaons ) continue;
       if ( maxNumPhotons      != -1  && tauPlus_nPhotons       > maxNumPhotons      ) continue;
       if ( maxSumPhotonEn     >=  0. && tauPlus_sumPhotonEn    > maxSumPhotonEn     ) continue;
-      if ( !(visTauMinus_pt > minVisTauPt && std::fabs(visTauMinus_eta) < maxAbsVisTauEta) ) continue;
+      if ( !(visMinus_pt > minVisTauPt && std::fabs(visMinus_eta) < maxAbsVisTauEta) ) continue;
       if ( maxNumChargedKaons != -1  && tauMinus_nChargedKaons > maxNumChargedKaons ) continue;
       if ( maxNumNeutralKaons != -1  && tauMinus_nNeutralKaons > maxNumNeutralKaons ) continue;
       if ( maxNumPhotons      != -1  && tauMinus_nPhotons      > maxNumPhotons      ) continue;
@@ -327,13 +210,13 @@ int main(int argc, char* argv[])
 
       histogram_tauPlusPt->Fill(tauPlus_pt, evtWeight);
       histogram_tauPlusEta->Fill(tauPlus_eta, evtWeight);
-      histogram_visTauPlusPt->Fill(visTauPlus_pt, evtWeight);
-      histogram_visTauPlusEta->Fill(visTauPlus_eta, evtWeight);
+      histogram_visPlusPt->Fill(visPlus_pt, evtWeight);
+      histogram_visPlusEta->Fill(visPlus_eta, evtWeight);
 
       histogram_tauMinusPt->Fill(tauMinus_pt, evtWeight);
       histogram_tauMinusEta->Fill(tauMinus_eta, evtWeight);
-      histogram_visTauMinusPt->Fill(visTauMinus_pt, evtWeight);
-      histogram_visTauMinusEta->Fill(visTauMinus_eta, evtWeight);
+      histogram_visMinusPt->Fill(visMinus_pt, evtWeight);
+      histogram_visMinusEta->Fill(visMinus_eta, evtWeight);
 
       histogram_mTauTau->Fill(mTauTau, evtWeight);
       histogram_mVis->Fill(mVis, evtWeight);
@@ -375,13 +258,13 @@ int main(int argc, char* argv[])
 
   showHistogram1d(histogram_tauPlusPt,       "#tau^{+} p_{T} [GeV]",     1.2, true, 1.e-3, 1.e0, "Events", 1.3, avEvtWeight, true,  outputFile.file());
   showHistogram1d(histogram_tauPlusEta,      "#tau^{+} #eta",            1.2, true, 1.e-3, 1.e0, "Events", 1.3, avEvtWeight, false, outputFile.file());
-  showHistogram1d(histogram_visTauPlusPt,    "#tau^{+}_{h} p_{T} [GeV]", 1.2, true, 1.e-3, 1.e0, "Events", 1.3, avEvtWeight, true,  outputFile.file());
-  showHistogram1d(histogram_visTauPlusEta,   "#tau^{+}_{h} #eta",        1.2, true, 1.e-3, 1.e0, "Events", 1.3, avEvtWeight, false, outputFile.file());
+  showHistogram1d(histogram_visPlusPt,       "#tau^{+}_{h} p_{T} [GeV]", 1.2, true, 1.e-3, 1.e0, "Events", 1.3, avEvtWeight, true,  outputFile.file());
+  showHistogram1d(histogram_visPlusEta,      "#tau^{+}_{h} #eta",        1.2, true, 1.e-3, 1.e0, "Events", 1.3, avEvtWeight, false, outputFile.file());
 
   showHistogram1d(histogram_tauMinusPt,      "#tau^{-} p_{T} [GeV]",     1.2, true, 1.e-3, 1.e0, "Events", 1.3, avEvtWeight, true,  outputFile.file());
   showHistogram1d(histogram_tauMinusEta,     "#tau^{-} #eta",            1.2, true, 1.e-3, 1.e0, "Events", 1.3, avEvtWeight, false, outputFile.file());
-  showHistogram1d(histogram_visTauMinusPt,   "#tau^{-}_{h} p_{T} [GeV]", 1.2, true, 1.e-3, 1.e0, "Events", 1.3, avEvtWeight, true,  outputFile.file());
-  showHistogram1d(histogram_visTauMinusEta,  "#tau^{-}_{h} #eta",        1.2, true, 1.e-3, 1.e0, "Events", 1.3, avEvtWeight, false, outputFile.file());
+  showHistogram1d(histogram_visMinusPt,      "#tau^{-}_{h} p_{T} [GeV]", 1.2, true, 1.e-3, 1.e0, "Events", 1.3, avEvtWeight, true,  outputFile.file());
+  showHistogram1d(histogram_visMinusEta,     "#tau^{-}_{h} #eta",        1.2, true, 1.e-3, 1.e0, "Events", 1.3, avEvtWeight, false, outputFile.file());
 
   showHistogram1d(histogram_mTauTau,         "m_{#tau#tau} [GeV]",       1.2, true, 1.e-3, 1.e0, "Events", 1.3, avEvtWeight, true,  outputFile.file());
   showHistogram1d(histogram_mVis,            "m_{vis} [GeV]",            1.2, true, 1.e-3, 1.e0, "Events", 1.3, avEvtWeight, true,  outputFile.file());

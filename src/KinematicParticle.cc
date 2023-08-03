@@ -6,7 +6,7 @@
 #include "TauAnalysis/Entanglement/interface/printPoint.h"         // printPoint()
 #include "TauAnalysis/Entanglement/interface/square.h"             // square()
 
-#include <cmath>                                                   // cos(), sin(), std::sqrt()
+#include <cmath>                                                   // std::cos(), std::sin(), std::sqrt()
 
 #include <cstdlib>                                                 // std::getenv()
 
@@ -58,14 +58,14 @@ KinematicParticle::set_params5(const math::Vector5& params5, const math::Matrix5
   double a = -0.2998*Bfield*charge_;
   double a_over_2c = a/(2.*c);
 
-  double px = a_over_2c*cos(phi0);
-  double py = a_over_2c*sin(phi0);
+  double px = a_over_2c*std::cos(phi0);
+  double py = a_over_2c*std::sin(phi0);
   double pz = a_over_2c*lambda;
   double E  = std::sqrt(square(a_over_2c)*(1. + square(lambda)) + square(pdgMass_));
   p4_ = reco::Candidate::LorentzVector(px, py, pz, E);
 
-  double x = xr - d0*sin(phi0);
-  double y = yr + d0*cos(phi0);
+  double x = xr - d0*std::sin(phi0);
+  double y = yr + d0*std::cos(phi0);
   double z = xr + z0;
   vertex_ = reco::Candidate::Point(x, y, z);
 
