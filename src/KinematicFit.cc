@@ -824,6 +824,14 @@ KinematicFit::operator()(const KinematicEvent& kineEvt)
       status = 1;
       hasConverged = true;
     }
+    if ( dalpha_mag > 1.e+6 || chi2 > 1.e+6 )
+    {
+      // CV: there is no hope that the KinematicFit may still converge;
+      //     give up to avoid that the neutrino momentum becomes "not-a-number" (NaN),
+      //     triggering the following assert statement:
+      //       cmsRun: /home/veelken/Entanglement/CMSSW_10_6_20/src/TauAnalysis/Entanglement/src/SpinAnalyzerOneProng1Pi0.cc:103: reco::Candidate::Vector {anonymous}::getPolarimetricVec_OneProng1PiZero(const LorentzVector&, const std::vector<KinematicParticle>&, const LorentzVector&, const ROOT::Math::Boost&, const Vector&, const Vector&, const Vector&, const ROOT::Math::Boost&, int, bool): Assertion `nuP4.energy() >= 0. && N.energy() >= 0.' failed.
+      break;
+    }
     ++iteration;
   }
   if ( !hasConverged )
