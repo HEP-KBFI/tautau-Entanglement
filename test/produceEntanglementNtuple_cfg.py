@@ -65,15 +65,46 @@ process.GlobalTag = GlobalTag(process.GlobalTag, '106X_dataRun2_v24', '')
 process.analysisSequence = cms.Sequence()
 
 #--------------------------------------------------------------------------------
-# CV: generator-level tau decay mode selection
-#     
-# Note that the KinematicFit will likely fail in case the event contains >= leptonic tau decay 
-# and the spin analyzer vectors will be zero,
-# so it is recommended to ALWAYS apply a tau decay mode selection 
-# and require that BOTH taus decay hadronically and to the selected decay modes
+# CV: Veto events in which the tau leptons radiate high pT photons,
+#     causing the mass of the tau pair to be significantly lower than the Higgs/Z boson mass.
+#
+#     The KinematicFit will likely fail for these events and may cause the neutrino momentum to become "not-a-number" (NaN),
+#     triggering the following assert statement:
+#       cmsRun: /home/veelken/Entanglement/CMSSW_10_6_20/src/TauAnalysis/Entanglement/src/SpinAnalyzerOneProng1Pi0.cc:103: reco::Candidate::Vector {anonymous}::getPolarimetricVec_OneProng1PiZero(const LorentzVector&, const std::vector<KinematicParticle>&, const LorentzVector&, const ROOT::Math::Boost&, const Vector&, const Vector&, const Vector&, const ROOT::Math::Boost&, int, bool): Assertion `nuP4.energy() >= 0. && N.energy() >= 0.' failed.
+#
+process.genTaus = cms.EDFilter("GenParticleSelector",
+    src = cms.InputTag('prunedGenParticles'),
+    cut = cms.string("abs(pdgId) = 15 & status = 2"),
+    filter = cms.bool(False)
+)
+process.analysisSequence += process.genTaus
+
+process.genTauPair = cms.EDProducer("CandViewShallowCloneCombiner",
+    decay = cms.string("genTaus@+ genTaus@-"),
+    cut = cms.string('mass > 120. & mass < 130.'),
+    filter = cms.bool(False)
+)
+process.analysisSequence += process.genTauPair
+
+process.selectedTauPairFilter = cms.EDFilter("CandViewCountFilter",
+    src = cms.InputTag('genTauPair'),
+    minNumber = cms.uint32(1)
+)
+process.analysisSequence += process.selectedTauPairFilter
+#--------------------------------------------------------------------------------
+
+#--------------------------------------------------------------------------------
+# CV: Require both generator-level tau leptons to decay into "oneProng0Pi0", "oneProng1Pi0", or "threeProng0Pi0".
+#     The tau decay mode strings are defined in:
+#       https://cmssdt.cern.ch/lxr/source/PhysicsTools/JetMCUtils/src/JetMCTag.cc
+# 
+#     Note that the KinematicFit will likely fail in case the event contains >= leptonic tau decay 
+#     and the spin analyzer vectors will be zero,
+#     so it is recommended to ALWAYS apply a tau decay mode selection 
+#     and require that BOTH taus decay hadronically and to the selected decay modes
 #
 process.load("PhysicsTools.JetMCAlgos.TauGenJets_cfi")
-process.tauGenJets.GenParticles = cms.InputTag('prunedGenParticles')
+process.tauGenJets.GenParticles = cms.InputTag('genTaus')
 process.analysisSequence += process.tauGenJets
 
 process.load("PhysicsTools.JetMCAlgos.TauGenJetsDecayModeSelectorAllHadrons_cfi")
@@ -124,13 +155,14 @@ process.ntupleProducer = cms.EDAnalyzer("EntanglementNtupleProducer",
     smearing = smearing.clone(
         rndSeed = cms.uint64(rndSeed)
     ),
-    applySmearing = cms.bool(False),
+    #applySmearing = cms.bool(False),
+    applySmearing = cms.bool(True),
     srcEvtWeights = cms.VInputTag('genWeight'),
     # CV: 0 = "regular" tau mass constraint, 1 = constraint on Gottfried-Jackson angle
     applyTauMassConstraint = cms.int32(0),
     applyLifetimeConstraint = cms.bool(False),
     verbosity = cms.untracked.int32(-1),
-    #verbosity = cms.untracked.int32(1),
+    #verbosity = cms.untracked.int32(2),
     cartesian = cms.untracked.bool(True)
 )
 process.analysisSequence += process.ntupleProducer

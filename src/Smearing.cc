@@ -17,7 +17,14 @@
 
 Smearing::Smearing(const edm::ParameterSet& cfg)
   : resolutions_(nullptr)
+  , verbosity_(cfg.getUntrackedParameter<int>("verbosity"))
+  , cartesian_(cfg.getUntrackedParameter<bool>("cartesian"))
 {
+  if ( verbosity_ >= 1 )
+  {
+    std::cout << "<Smearing::Smearing>:\n";
+  }
+
   edm::ParameterSet cfg_smearing = cfg.getParameterSet("smearing");
   applySmearing_recoil_px_     = cfg_smearing.getParameter<bool>("applySmearing_recoil_px");
   applySmearing_recoil_py_     = cfg_smearing.getParameter<bool>("applySmearing_recoil_py");
@@ -41,6 +48,34 @@ Smearing::Smearing(const edm::ParameterSet& cfg)
   applySmearing_tip_perp_      = cfg_smearing.getParameter<bool>("applySmearing_tip_perp");
 
   rndSeed_                     = cfg_smearing.getParameter<unsigned long long>("rndSeed");
+  rnd_.SetSeed(rndSeed_);
+
+  if ( verbosity_ >= 1 )
+  {
+    std::cout << "applySmearing_recoil:\n";
+    std::cout << "Recoil:" 
+              << " px = " << applySmearing_recoil_px_ << ","
+              << " py = " << applySmearing_recoil_py_ << ","
+              << " pz = " << applySmearing_recoil_pz_ << ","
+              << " energy = " << applySmearing_recoil_energy_ << "\n";
+    std::cout << "PV:" 
+              << " xy = " << applySmearing_pv_xy_ << ","
+              << " z = " << applySmearing_pv_z_ << "\n";
+    std::cout << "Track:" 
+              << " pt = " << applySmearing_track_pt_ << ","
+              << " theta = " << applySmearing_track_theta_ << ","
+              << " phi = " << applySmearing_track_phi_ << "\n";
+    std::cout << "ECAL:" 
+              << " energy = " << applySmearing_ecal_energy_ << ","
+              << " theta = " << applySmearing_ecal_theta_ << ","
+              << " phi = " << applySmearing_ecal_phi_ << "\n";
+    std::cout << "SV:" 
+              << " perp = " << applySmearing_sv_perp_ << ","
+              << " parl = " << applySmearing_sv_parl_ << "\n";
+    std::cout << "TIP:" 
+              << " perp = " << applySmearing_tip_perp_ << "\n";
+    std::cout << "rndSeed = " << rndSeed_ << "\n";
+  }
 
   edm::ParameterSet cfg_resolutions = cfg.getParameterSet("resolutions");
   resolutions_ = new Resolutions(cfg_resolutions);
@@ -54,6 +89,12 @@ Smearing::~Smearing()
 KinematicEvent
 Smearing::operator()(const KinematicEvent& kineEvt)
 {
+  //if ( verbosity_ >= 1 )
+  //{
+    std::cout << "<Smearing::operator()>:\n";
+    std::cout << " rndSeed = " << rnd_.GetSeed() << "\n";
+  //}
+
   KinematicEvent kineEvt_smeared(kineEvt);
 
   kineEvt_smeared.pv_ = smear_pv(kineEvt.pv());

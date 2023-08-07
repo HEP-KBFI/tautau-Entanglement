@@ -8,6 +8,10 @@ EntanglementNtuple::EntanglementNtuple(TTree* ntuple)
   , branches_KinematicEvent_kinFit_("kinFit")
   , evtWeight_(1.)
 {
+  ntuple_->Branch("run", &run_, "run/i");
+  ntuple_->Branch("lumi", &lumi_, "lumi/i");
+  ntuple_->Branch("event", &event_, "event/l");
+
   branches_KinematicEvent_gen_.initBranches(ntuple);
   createBranchI(ntuple_, "gen", "tauPlus_nChargedKaons", &tauPlus_nChargedKaons_gen_); 
   createBranchI(ntuple_, "gen", "tauPlus_nNeutralKaons", &tauPlus_nNeutralKaons_gen_);

@@ -1,32 +1,34 @@
 
-#include "DataFormats/FWLite/interface/InputSource.h"               // fwlite::InputSource
-#include "DataFormats/FWLite/interface/OutputFiles.h"               // fwlite::OutputFiles
-#include "FWCore/ParameterSet/interface/ParameterSet.h"             // edm::ParameterSet
-#include "FWCore/ParameterSetReader/interface/ParameterSetReader.h" // edm::readPSetsFrom()
-#include "FWCore/PluginManager/interface/PluginManager.h"           // edmplugin::PluginManager::configure()
-#include "FWCore/PluginManager/interface/standard.h"                // edmplugin::standard::config()
-#include "PhysicsTools/FWLite/interface/TFileService.h"             // fwlite::TFileService
+#include "DataFormats/FWLite/interface/InputSource.h"                 // fwlite::InputSource
+#include "DataFormats/FWLite/interface/OutputFiles.h"                 // fwlite::OutputFiles
+#include "FWCore/ParameterSet/interface/ParameterSet.h"               // edm::ParameterSet
+#include "FWCore/ParameterSetReader/interface/ParameterSetReader.h"   // edm::readPSetsFrom()
+#include "FWCore/PluginManager/interface/PluginManager.h"             // edmplugin::PluginManager::configure()
+#include "FWCore/PluginManager/interface/standard.h"                  // edmplugin::standard::config()
+#include "PhysicsTools/FWLite/interface/TFileService.h"               // fwlite::TFileService
 
-#include "TauAnalysis/Entanglement/interface/bookHistogram1d.h"     // bookHistogram1d()
-#include "TauAnalysis/Entanglement/interface/bookHistogram2d.h"     // bookHistogram2d()
-#include "TauAnalysis/Entanglement/interface/cmsException.h"        // cmsException
-#include "TauAnalysis/Entanglement/interface/showHistogram1d.h"     // showHistogram1d()
-#include "TauAnalysis/Entanglement/interface/showHistogram2d.h"     // showHistogram2d()
+#include "TauAnalysis/Entanglement/interface/bookHistogram1d.h"       // bookHistogram1d()
+#include "TauAnalysis/Entanglement/interface/bookHistogram2d.h"       // bookHistogram2d()
+#include "TauAnalysis/Entanglement/interface/cmsException.h"          // cmsException
+#include "TauAnalysis/Entanglement/interface/format_vT.h"             // format_vint(), vdouble, vint
+#include "TauAnalysis/Entanglement/interface/passesStatusSelection.h" // passesStatusSelection()
+#include "TauAnalysis/Entanglement/interface/showHistogram1d.h"       // showHistogram1d()
+#include "TauAnalysis/Entanglement/interface/showHistogram2d.h"       // showHistogram2d()
 
-#include <TBenchmark.h>                                             // TBenchmark
-#include <TError.h>                                                 // gErrorAbortLevel, kError
-#include <TH1.h>                                                    // TH1
-#include <TH2.h>                                                    // TH2
-#include <TString.h>                                                // Form()
-#include <TTree.h>                                                  // TTree
+#include <TBenchmark.h>                                               // TBenchmark
+#include <TError.h>                                                   // gErrorAbortLevel, kError
+#include <TH1.h>                                                      // TH1
+#include <TH2.h>                                                      // TH2
+#include <TString.h>                                                  // Form()
+#include <TTree.h>                                                    // TTree
 
-#include <assert.h>                                                 // assert()
-#include <cmath>                                                    // std::fabs()
-#include <cstdlib>                                                  // EXIT_SUCCESS, EXIT_FAILURE
-#include <fstream>                                                  // std::ofstream
-#include <iostream>                                                 // std::cout
-#include <string>                                                   // std::string
-#include <vector>                                                   // std::vector<>
+#include <assert.h>                                                   // assert()
+#include <cmath>                                                      // std::fabs()
+#include <cstdlib>                                                    // EXIT_SUCCESS, EXIT_FAILURE
+#include <fstream>                                                    // std::ofstream
+#include <iostream>                                                   // std::cout
+#include <string>                                                     // std::string
+#include <vector>                                                     // std::vector<>
 
 int main(int argc, char* argv[])
 {
@@ -72,6 +74,10 @@ int main(int argc, char* argv[])
   std::cout << " maxNumPhotons = " << maxNumPhotons << "\n";
   float maxSumPhotonEn = cfg_ctrlPlots.getParameter<double>("maxSumPhotonEn");
   std::cout << " maxSumPhotonEn = " << maxSumPhotonEn << "\n";
+  float maxChi2 = cfg_ctrlPlots.getParameter<double>("maxChi2");
+  std::cout << " maxChi2 = " << maxChi2 << "\n";
+  vint statusSelection = cfg_ctrlPlots.getParameter<vint>("statusSelection");
+  std::cout << " statusSelection = " << format_vint(statusSelection) << "\n";
   std::string branchName_evtWeight = cfg_ctrlPlots.getParameter<std::string>("branchName_evtWeight");
   std::cout << " branchName_evtWeight = " << branchName_evtWeight << "\n";
   //bool isDEBUG = cfg_analyze.getParameter<bool>("isDEBUG");
@@ -99,6 +105,7 @@ int main(int argc, char* argv[])
   TH1* histogram_mTauTau      = bookHistogram1d(fs, "mTauTau",     40,  0., 200.);
   TH1* histogram_mVis         = bookHistogram1d(fs, "mVis",        40,  0., 200.);
   TH1* histogram_cosTheta     = bookHistogram1d(fs, "cosTheta",    40, -1.,  +1.);
+  TH1* histogram_chi2         = bookHistogram1d(fs, "chi2",        50,  0.,  50.);
 
   TH1* histogram_Bp_r         = bookHistogram1d(fs, "Bp_r",        40, -1.,  +1.);
   TH1* histogram_Bp_n         = bookHistogram1d(fs, "Bp_n",        40, -1.,  +1.);
@@ -179,6 +186,11 @@ int main(int argc, char* argv[])
     inputTree->SetBranchAddress(Form("%s_zPlus", mode.c_str()), &zPlus);
     inputTree->SetBranchAddress(Form("%s_zMinus", mode.c_str()), &zMinus);
 
+    Float_t kinFit_chi2;
+    inputTree->SetBranchAddress("kinFit_chi2", &kinFit_chi2);
+    Int_t kinFit_status;
+    inputTree->SetBranchAddress("kinFit_status", &kinFit_status);
+
     Float_t evtWeight = 1.;
     if ( branchName_evtWeight != "" )
     {
@@ -198,15 +210,17 @@ int main(int argc, char* argv[])
       }
 
       if ( !(visPlus_pt  > minVisTauPt && std::fabs(visPlus_eta)  < maxAbsVisTauEta) ) continue;
-      if ( maxNumChargedKaons != -1  && tauPlus_nChargedKaons  > maxNumChargedKaons ) continue;
-      if ( maxNumNeutralKaons != -1  && tauPlus_nNeutralKaons  > maxNumNeutralKaons ) continue;
-      if ( maxNumPhotons      != -1  && tauPlus_nPhotons       > maxNumPhotons      ) continue;
-      if ( maxSumPhotonEn     >=  0. && tauPlus_sumPhotonEn    > maxSumPhotonEn     ) continue;
+      if ( maxNumChargedKaons     != -1  && tauPlus_nChargedKaons  > maxNumChargedKaons            ) continue;
+      if ( maxNumNeutralKaons     != -1  && tauPlus_nNeutralKaons  > maxNumNeutralKaons            ) continue;
+      if ( maxNumPhotons          != -1  && tauPlus_nPhotons       > maxNumPhotons                 ) continue;
+      if ( maxSumPhotonEn         >=  0. && tauPlus_sumPhotonEn    > maxSumPhotonEn                ) continue;
       if ( !(visMinus_pt > minVisTauPt && std::fabs(visMinus_eta) < maxAbsVisTauEta) ) continue;
-      if ( maxNumChargedKaons != -1  && tauMinus_nChargedKaons > maxNumChargedKaons ) continue;
-      if ( maxNumNeutralKaons != -1  && tauMinus_nNeutralKaons > maxNumNeutralKaons ) continue;
-      if ( maxNumPhotons      != -1  && tauMinus_nPhotons      > maxNumPhotons      ) continue;
-      if ( maxSumPhotonEn     >=  0. && tauMinus_sumPhotonEn   > maxSumPhotonEn     ) continue;
+      if ( maxNumChargedKaons     != -1  && tauMinus_nChargedKaons > maxNumChargedKaons            ) continue;
+      if ( maxNumNeutralKaons     != -1  && tauMinus_nNeutralKaons > maxNumNeutralKaons            ) continue;
+      if ( maxNumPhotons          != -1  && tauMinus_nPhotons      > maxNumPhotons                 ) continue;
+      if ( maxSumPhotonEn         >=  0. && tauMinus_sumPhotonEn   > maxSumPhotonEn                ) continue;
+      if ( maxChi2                != -1  && kinFit_chi2            > maxChi2                       ) continue;
+      if ( statusSelection.size() >   0  && !passesStatusSelection(kinFit_status, statusSelection) ) continue;
 
       histogram_tauPlusPt->Fill(tauPlus_pt, evtWeight);
       histogram_tauPlusEta->Fill(tauPlus_eta, evtWeight);
@@ -221,6 +235,8 @@ int main(int argc, char* argv[])
       histogram_mTauTau->Fill(mTauTau, evtWeight);
       histogram_mVis->Fill(mVis, evtWeight);
       histogram_cosTheta->Fill(cosTheta, evtWeight);
+
+      histogram_chi2->Fill(kinFit_chi2, evtWeight);
 
       histogram_Bp_r->Fill(hPlus_r, evtWeight);
       histogram_Bp_n->Fill(hPlus_n, evtWeight);

@@ -10,7 +10,9 @@
 
 #include "TauAnalysis/Entanglement/interface/bookHistogram1d.h"           // bookHistogram1d()
 #include "TauAnalysis/Entanglement/interface/cmsException.h"              // cmsException
+#include "TauAnalysis/Entanglement/interface/format_vT.h"                 // format_vint(), vdouble, vint
 #include "TauAnalysis/Entanglement/interface/get_localCoordinateSystem.h" // get_localCoordinateSystem()
+#include "TauAnalysis/Entanglement/interface/passesStatusSelection.h"     // passesStatusSelection()
 #include "TauAnalysis/Entanglement/interface/showHistogram1d.h"           // showHistogram1d()
 #include "TauAnalysis/Entanglement/interface/showHistogram1d.h"           // showHistogram1d()
 #include "TauAnalysis/Entanglement/interface/square.h"                    // square()
@@ -93,6 +95,10 @@ int main(int argc, char* argv[])
   std::cout << " maxNumPhotons = " << maxNumPhotons << "\n";
   float maxSumPhotonEn = cfg_resPlots.getParameter<double>("maxSumPhotonEn");
   std::cout << " maxSumPhotonEn = " << maxSumPhotonEn << "\n";
+  float maxChi2 = cfg_resPlots.getParameter<double>("maxChi2");
+  std::cout << " maxChi2 = " << maxChi2 << "\n";
+  vint statusSelection = cfg_resPlots.getParameter<vint>("statusSelection");
+  std::cout << " statusSelection = " << format_vint(statusSelection) << "\n";
   std::string branchName_evtWeight = cfg_resPlots.getParameter<std::string>("branchName_evtWeight");
   std::cout << " branchName_evtWeight = " << branchName_evtWeight << "\n";
   //bool isDEBUG = cfg_analyze.getParameter<bool>("isDEBUG");
@@ -109,56 +115,58 @@ int main(int argc, char* argv[])
   size_t numInputFiles = inputFileNames.size();
   std::cout << "Loaded " << numInputFiles << " file(s).\n";
 
-  TH1* histogram_res_pv_x         = bookHistogram1d(fs, "res_pv_x",         100,  -0.01, +0.01);
-  TH1* histogram_res_pv_y         = bookHistogram1d(fs, "res_pv_y",         100,  -0.01, +0.01);
-  TH1* histogram_res_pv_z         = bookHistogram1d(fs, "res_pv_z",         100,  -0.01, +0.01);
+  TH1* histogram_res_pv_x             = bookHistogram1d(fs, "res_pv_x",             100,  -0.01, +0.01);
+  TH1* histogram_res_pv_y             = bookHistogram1d(fs, "res_pv_y",             100,  -0.01, +0.01);
+  TH1* histogram_res_pv_z             = bookHistogram1d(fs, "res_pv_z",             100,  -0.01, +0.01);
 
-  TH1* histogram_res_tauPlus_pt   = bookHistogram1d(fs, "res_tauPlus_pt",   100, -50.,  +50.);
-  TH1* histogram_res_tauPlus_eta  = bookHistogram1d(fs, "res_tauPlus_eta",  100,  -0.5,  +0.5);
-  TH1* histogram_res_tauPlus_phi  = bookHistogram1d(fs, "res_tauPlus_phi",  100,  -0.5,  +0.5);
-  TH1* histogram_res_svPlus_r     = bookHistogram1d(fs, "res_svPlus_r",     100,  -0.01, +0.01);
-  TH1* histogram_res_svPlus_n     = bookHistogram1d(fs, "res_svPlus_n",     100,  -0.01, +0.01);
-  TH1* histogram_res_svPlus_k     = bookHistogram1d(fs, "res_svPlus_k",     100,  -0.25, +0.25);
-  TH1* histogram_res_visPlus_pt   = bookHistogram1d(fs, "res_visPlus_pt",   100, -50.,  +50.);
-  TH1* histogram_res_visPlus_eta  = bookHistogram1d(fs, "res_visPlus_eta",  100,  -0.5,  +0.5);
-  TH1* histogram_res_visPlus_phi  = bookHistogram1d(fs, "res_visPlus_phi",  100,  -0.5,  +0.5);
-  TH1* histogram_res_nuPlus_pt    = bookHistogram1d(fs, "res_nuPlus_pt",    100, -50. , +50.);
-  TH1* histogram_res_nuPlus_eta   = bookHistogram1d(fs, "res_nuPlus_eta",   100,  -0.5,  +0.5);
-  TH1* histogram_res_nuPlus_phi   = bookHistogram1d(fs, "res_nuPlus_phi",   100,  -0.5,  +0.5);
-  TH1* histogram_res_nuPlus_px    = bookHistogram1d(fs, "res_nuPlus_px",    100, -50.,  +50.);
-  TH1* histogram_res_nuPlus_py    = bookHistogram1d(fs, "res_nuPlus_py",    100, -50.,  +50.);
-  TH1* histogram_res_nuPlus_pz    = bookHistogram1d(fs, "res_nuPlus_pz",    100, -50.,  +50.);
-  TH1* histogram_res_hPlus_r      = bookHistogram1d(fs, "res_hPlus_r",      100,  -0.5,  +0.5);
-  TH1* histogram_res_hPlus_n      = bookHistogram1d(fs, "res_hPlus_n",      100,  -0.5,  +0.5);
-  TH1* histogram_res_hPlus_k      = bookHistogram1d(fs, "res_hPlus_k",      100,  -0.5,  +0.5);
-  TH1* histogram_res_hPlus_angle  = bookHistogram1d(fs, "res_hPlus_angle",  100,   0.,    0.5);
+  TH1* histogram_res_tauPlus_pt       = bookHistogram1d(fs, "res_tauPlus_pt",       100, -50.,  +50.);
+  TH1* histogram_res_tauPlus_eta      = bookHistogram1d(fs, "res_tauPlus_eta",      100,  -0.5,  +0.5);
+  TH1* histogram_res_tauPlus_phi      = bookHistogram1d(fs, "res_tauPlus_phi",      100,  -0.5,  +0.5);
+  TH1* histogram_res_svPlus_r         = bookHistogram1d(fs, "res_svPlus_r",         100,  -0.01, +0.01);
+  TH1* histogram_res_svPlus_n         = bookHistogram1d(fs, "res_svPlus_n",         100,  -0.01, +0.01);
+  TH1* histogram_res_svPlus_k         = bookHistogram1d(fs, "res_svPlus_k",         100,  -0.25, +0.25);
+  TH1* histogram_res_visPlus_pt       = bookHistogram1d(fs, "res_visPlus_pt",       100, -50.,  +50.);
+  TH1* histogram_res_visPlus_eta      = bookHistogram1d(fs, "res_visPlus_eta",      100,  -0.5,  +0.5);
+  TH1* histogram_res_visPlus_phi      = bookHistogram1d(fs, "res_visPlus_phi",      100,  -0.5,  +0.5);
+  TH1* histogram_res_nuPlus_pt        = bookHistogram1d(fs, "res_nuPlus_pt",        100, -50. , +50.);
+  TH1* histogram_res_nuPlus_eta       = bookHistogram1d(fs, "res_nuPlus_eta",       100,  -0.5,  +0.5);
+  TH1* histogram_res_nuPlus_phi       = bookHistogram1d(fs, "res_nuPlus_phi",       100,  -0.5,  +0.5);
+  TH1* histogram_res_nuPlus_px        = bookHistogram1d(fs, "res_nuPlus_px",        100, -50.,  +50.);
+  TH1* histogram_res_nuPlus_py        = bookHistogram1d(fs, "res_nuPlus_py",        100, -50.,  +50.);
+  TH1* histogram_res_nuPlus_pz        = bookHistogram1d(fs, "res_nuPlus_pz",        100, -50.,  +50.);
+  TH1* histogram_res_hPlus_r          = bookHistogram1d(fs, "res_hPlus_r",          100,  -0.5,  +0.5);
+  TH1* histogram_res_hPlus_n          = bookHistogram1d(fs, "res_hPlus_n",          100,  -0.5,  +0.5);
+  TH1* histogram_res_hPlus_k          = bookHistogram1d(fs, "res_hPlus_k",          100,  -0.5,  +0.5);
+  TH1* histogram_res_hPlus_angle      = bookHistogram1d(fs, "res_hPlus_angle",      100,   0.,    0.5);
 
-  TH1* histogram_res_tauMinus_pt  = bookHistogram1d(fs, "res_tauMinus_pt",  100, -50.,  +50.);
-  TH1* histogram_res_tauMinus_eta = bookHistogram1d(fs, "res_tauMinus_eta", 100,  -0.5,  +0.5);
-  TH1* histogram_res_tauMinus_phi = bookHistogram1d(fs, "res_tauMinus_phi", 100,  -0.5,  +0.5);
-  TH1* histogram_res_svMinus_r    = bookHistogram1d(fs, "res_svMinus_r",    100,  -0.01, +0.01);
-  TH1* histogram_res_svMinus_n    = bookHistogram1d(fs, "res_svMinus_n",    100,  -0.01, +0.01);
-  TH1* histogram_res_svMinus_k    = bookHistogram1d(fs, "res_svMinus_k",    100,  -0.25, +0.25);
-  TH1* histogram_res_nuMinus_pt   = bookHistogram1d(fs, "res_nuMinus_Pt",   100, -50.,  +50.);
-  TH1* histogram_res_nuMinus_eta  = bookHistogram1d(fs, "res_nuMinus_Eta",  100,  -0.5,  +0.5);
-  TH1* histogram_res_nuMinus_phi  = bookHistogram1d(fs, "res_nuMinus_Phi",  100,  -0.5,  +0.5);
-  TH1* histogram_res_nuMinus_px   = bookHistogram1d(fs, "res_nuMinus_Px",   100, -50.,  +50.);
-  TH1* histogram_res_nuMinus_py   = bookHistogram1d(fs, "res_nuMinus_Py",   100, -50.,  +50.);
-  TH1* histogram_res_nuMinus_pz   = bookHistogram1d(fs, "res_nuMinus_Pz",   100, -50.,  +50.);
-  TH1* histogram_res_visMinus_pt  = bookHistogram1d(fs, "res_visMinus_pt",  100, -50.,  +50.);
-  TH1* histogram_res_visMinus_eta = bookHistogram1d(fs, "res_visMinus_eta", 100,  -0.5,  +0.5);
-  TH1* histogram_res_visMinus_phi = bookHistogram1d(fs, "res_visMinus_phi", 100,  -0.5,  +0.5);
-  TH1* histogram_res_hMinus_r     = bookHistogram1d(fs, "res_hMinus_r",     100,  -0.5,  +0.5);
-  TH1* histogram_res_hMinus_n     = bookHistogram1d(fs, "res_hMinus_n",     100,  -0.5,  +0.5);
-  TH1* histogram_res_hMinus_k     = bookHistogram1d(fs, "res_hMinus_k",     100,  -0.5,  +0.5);
-  TH1* histogram_res_hMinus_angle = bookHistogram1d(fs, "res_hMinus_angle", 100,   0.,    0.5);
+  TH1* histogram_res_tauMinus_pt      = bookHistogram1d(fs, "res_tauMinus_pt",      100, -50.,  +50.);
+  TH1* histogram_res_tauMinus_eta     = bookHistogram1d(fs, "res_tauMinus_eta",     100,  -0.5,  +0.5);
+  TH1* histogram_res_tauMinus_phi     = bookHistogram1d(fs, "res_tauMinus_phi",     100,  -0.5,  +0.5);
+  TH1* histogram_res_svMinus_r        = bookHistogram1d(fs, "res_svMinus_r",        100,  -0.01, +0.01);
+  TH1* histogram_res_svMinus_n        = bookHistogram1d(fs, "res_svMinus_n",        100,  -0.01, +0.01);
+  TH1* histogram_res_svMinus_k        = bookHistogram1d(fs, "res_svMinus_k",        100,  -0.25, +0.25);
+  TH1* histogram_res_nuMinus_pt       = bookHistogram1d(fs, "res_nuMinus_pt",       100, -50.,  +50.);
+  TH1* histogram_res_nuMinus_eta      = bookHistogram1d(fs, "res_nuMinus_eta",      100,  -0.5,  +0.5);
+  TH1* histogram_res_nuMinus_phi      = bookHistogram1d(fs, "res_nuMinus_phi",      100,  -0.5,  +0.5);
+  TH1* histogram_res_nuMinus_px       = bookHistogram1d(fs, "res_nuMinus_px",       100, -50.,  +50.);
+  TH1* histogram_res_nuMinus_py       = bookHistogram1d(fs, "res_nuMinus_py",       100, -50.,  +50.);
+  TH1* histogram_res_nuMinus_pz       = bookHistogram1d(fs, "res_nuMinus_pz",       100, -50.,  +50.);
+  TH1* histogram_res_visMinus_pt      = bookHistogram1d(fs, "res_visMinus_pt",      100, -50.,  +50.);
+  TH1* histogram_res_visMinus_eta     = bookHistogram1d(fs, "res_visMinus_eta",     100,  -0.5,  +0.5);
+  TH1* histogram_res_visMinus_phi     = bookHistogram1d(fs, "res_visMinus_phi",     100,  -0.5,  +0.5);
+  TH1* histogram_res_hMinus_r         = bookHistogram1d(fs, "res_hMinus_r",         100,  -0.5,  +0.5);
+  TH1* histogram_res_hMinus_n         = bookHistogram1d(fs, "res_hMinus_n",         100,  -0.5,  +0.5);
+  TH1* histogram_res_hMinus_k         = bookHistogram1d(fs, "res_hMinus_k",         100,  -0.5,  +0.5);
+  TH1* histogram_res_hMinus_angle     = bookHistogram1d(fs, "res_hMinus_angle",     100,   0.,    0.5);
 
-  TH1* histogram_res_higgs_pt     = bookHistogram1d(fs, "res_higgs_pt",     100, -50.,  +50.);
-  TH1* histogram_res_higgs_eta    = bookHistogram1d(fs, "res_higgs_eta",    100,  -0.5,  +0.5);
-  TH1* histogram_res_higgs_phi    = bookHistogram1d(fs, "res_higgs_phi",    100,  -0.5,  +0.5);
-  TH1* histogram_res_higgs_px     = bookHistogram1d(fs, "res_higgs_px",     100, -50.,  +50.);
-  TH1* histogram_res_higgs_py     = bookHistogram1d(fs, "res_higgs_py",     100, -50.,  +50.);
-  TH1* histogram_res_higgs_pz     = bookHistogram1d(fs, "res_higgs_pz",     100, -50.,  +50.);
+  TH1* histogram_res_hPlus_dot_hMinus = bookHistogram1d(fs, "res_hPlus_dot_hMinus", 100,  -0.5,   0.5);
+
+  TH1* histogram_res_higgs_pt         = bookHistogram1d(fs, "res_higgs_pt",         100, -50.,  +50.);
+  TH1* histogram_res_higgs_eta        = bookHistogram1d(fs, "res_higgs_eta",        100,  -0.5,  +0.5);
+  TH1* histogram_res_higgs_phi        = bookHistogram1d(fs, "res_higgs_phi",        100,  -0.5,  +0.5);
+  TH1* histogram_res_higgs_px         = bookHistogram1d(fs, "res_higgs_px",         100, -50.,  +50.);
+  TH1* histogram_res_higgs_py         = bookHistogram1d(fs, "res_higgs_py",         100, -50.,  +50.);
+  TH1* histogram_res_higgs_pz         = bookHistogram1d(fs, "res_higgs_pz",         100, -50.,  +50.);
 
   int analyzedEntries = 0;
   double analyzedEntries_weighted = 0.;
@@ -183,6 +191,12 @@ int main(int argc, char* argv[])
     std::cout << "The file " << inputFileName << " contains " << inputTree->GetEntries() << " entries\n";
 
     ++processedInputFiles;
+
+    UInt_t run, lumi;
+    inputTree->SetBranchAddress("run", &run);
+    inputTree->SetBranchAddress("lumi", &lumi);
+    ULong64_t event;
+    inputTree->SetBranchAddress("event", &event);
 
     Float_t gen_pv_x, gen_pv_y, gen_pv_z;
     inputTree->SetBranchAddress("gen_pv_x", &gen_pv_x);
@@ -277,6 +291,13 @@ int main(int argc, char* argv[])
     inputTree->SetBranchAddress(Form("%s_hPlus_r", mode.c_str()), &rec_hPlus_r);
     inputTree->SetBranchAddress(Form("%s_hPlus_n", mode.c_str()), &rec_hPlus_n);
     inputTree->SetBranchAddress(Form("%s_hPlus_k", mode.c_str()), &rec_hPlus_k);
+    Float_t startPos_hPlus_r, startPos_hPlus_n, startPos_hPlus_k;
+    if ( mode == "kinFit" )
+    {
+      inputTree->SetBranchAddress("startPos_hPlus_r", &startPos_hPlus_r);
+      inputTree->SetBranchAddress("startPos_hPlus_n", &startPos_hPlus_n);
+      inputTree->SetBranchAddress("startPos_hPlus_k", &startPos_hPlus_k);
+    }
 
     Float_t rec_tauMinus_pt, rec_tauMinus_eta, rec_tauMinus_phi, rec_tauMinus_mass;
     inputTree->SetBranchAddress(Form("%s_tauMinus_pt", mode.c_str()), &rec_tauMinus_pt);
@@ -301,6 +322,18 @@ int main(int argc, char* argv[])
     inputTree->SetBranchAddress(Form("%s_hMinus_r", mode.c_str()), &rec_hMinus_r);
     inputTree->SetBranchAddress(Form("%s_hMinus_n", mode.c_str()), &rec_hMinus_n);
     inputTree->SetBranchAddress(Form("%s_hMinus_k", mode.c_str()), &rec_hMinus_k);
+    Float_t startPos_hMinus_r, startPos_hMinus_n, startPos_hMinus_k;
+    if ( mode == "kinFit" )
+    {
+      inputTree->SetBranchAddress("startPos_hMinus_r", &startPos_hMinus_r);
+      inputTree->SetBranchAddress("startPos_hMinus_n", &startPos_hMinus_n);
+      inputTree->SetBranchAddress("startPos_hMinus_k", &startPos_hMinus_k);
+    }
+
+    Float_t kinFit_chi2;
+    inputTree->SetBranchAddress("kinFit_chi2", &kinFit_chi2);
+    Int_t kinFit_status;
+    inputTree->SetBranchAddress("kinFit_status", &kinFit_status);
 
     Float_t evtWeight = 1.;
     if ( branchName_evtWeight != "" )
@@ -321,15 +354,17 @@ int main(int argc, char* argv[])
       }
 
       if ( !(gen_visPlus_pt  > minVisTauPt && std::fabs(gen_visPlus_eta)  < maxAbsVisTauEta) ) continue;
-      if ( maxNumChargedKaons != -1  && gen_tauPlus_nChargedKaons  > maxNumChargedKaons ) continue;
-      if ( maxNumNeutralKaons != -1  && gen_tauPlus_nNeutralKaons  > maxNumNeutralKaons ) continue;
-      if ( maxNumPhotons      != -1  && gen_tauPlus_nPhotons       > maxNumPhotons      ) continue;
-      if ( maxSumPhotonEn     >=  0. && gen_tauPlus_sumPhotonEn    > maxSumPhotonEn     ) continue;
+      if ( maxNumChargedKaons     != -1  && gen_tauPlus_nChargedKaons  > maxNumChargedKaons        ) continue;
+      if ( maxNumNeutralKaons     != -1  && gen_tauPlus_nNeutralKaons  > maxNumNeutralKaons        ) continue;
+      if ( maxNumPhotons          != -1  && gen_tauPlus_nPhotons       > maxNumPhotons             ) continue;
+      if ( maxSumPhotonEn         >=  0. && gen_tauPlus_sumPhotonEn    > maxSumPhotonEn            ) continue;
       if ( !(gen_visMinus_pt > minVisTauPt && std::fabs(gen_visMinus_eta) < maxAbsVisTauEta) ) continue;
-      if ( maxNumChargedKaons != -1  && gen_tauMinus_nChargedKaons > maxNumChargedKaons ) continue;
-      if ( maxNumNeutralKaons != -1  && gen_tauMinus_nNeutralKaons > maxNumNeutralKaons ) continue;
-      if ( maxNumPhotons      != -1  && gen_tauMinus_nPhotons      > maxNumPhotons      ) continue;
-      if ( maxSumPhotonEn     >=  0. && gen_tauMinus_sumPhotonEn   > maxSumPhotonEn     ) continue;
+      if ( maxNumChargedKaons     != -1  && gen_tauMinus_nChargedKaons > maxNumChargedKaons        ) continue;
+      if ( maxNumNeutralKaons     != -1  && gen_tauMinus_nNeutralKaons > maxNumNeutralKaons        ) continue;
+      if ( maxNumPhotons          != -1  && gen_tauMinus_nPhotons      > maxNumPhotons             ) continue;
+      if ( maxSumPhotonEn         >=  0. && gen_tauMinus_sumPhotonEn   > maxSumPhotonEn            ) continue;
+      if ( maxChi2                != -1  && kinFit_chi2                > maxChi2                   ) continue;
+      if ( statusSelection.size() >   0  && !passesStatusSelection(kinFit_status, statusSelection) ) continue;
 
       reco::Candidate::LorentzVector gen_tauPlus_p4  = build_p4(gen_tauPlus_pt,  gen_tauPlus_eta,  gen_tauPlus_phi,  gen_tauPlus_mass);
       reco::Candidate::Point         gen_svPlus      = build_point(gen_svPlus_x, gen_svPlus_y, gen_svPlus_z);
@@ -364,6 +399,9 @@ int main(int argc, char* argv[])
       reco::Candidate::LorentzVector rec_nuMinus_p4  = build_p4(rec_nuMinus_pt,  rec_nuMinus_eta,  rec_nuMinus_phi,  rec_nuMinus_mass);
       double hMinus_angle = std::acos(gen_hMinus_r*rec_hMinus_r + gen_hMinus_n*rec_hMinus_n + gen_hMinus_k*rec_hMinus_k); 
       reco::Candidate::LorentzVector rec_higgs_p4    = rec_tauPlus_p4 + rec_tauMinus_p4;
+
+      double gen_hPlus_dot_hMinus = gen_hPlus_r*gen_hMinus_r + gen_hPlus_n*gen_hMinus_n + gen_hPlus_k*gen_hMinus_k;
+      double rec_hPlus_dot_hMinus = rec_hPlus_r*rec_hMinus_r + rec_hPlus_n*rec_hMinus_n + rec_hPlus_k*rec_hMinus_k;
 
       histogram_res_pv_x->Fill(rec_pv_x - gen_pv_x, evtWeight);
       histogram_res_pv_y->Fill(rec_pv_y - gen_pv_y, evtWeight);
@@ -409,12 +447,33 @@ int main(int argc, char* argv[])
       histogram_res_hMinus_k->Fill(rec_hMinus_k - gen_hMinus_k, evtWeight);
       histogram_res_hMinus_angle->Fill(hMinus_angle, evtWeight);
 
+      histogram_res_hPlus_dot_hMinus->Fill(rec_hPlus_dot_hMinus - gen_hPlus_dot_hMinus, evtWeight);
+
       histogram_res_higgs_pt->Fill(rec_higgs_p4.pt() - gen_higgs_p4.pt(), evtWeight);
       histogram_res_higgs_eta->Fill(rec_higgs_p4.eta() - gen_higgs_p4.eta(), evtWeight);
       histogram_res_higgs_phi->Fill(rec_higgs_p4.phi() - gen_higgs_p4.phi(), evtWeight);
       histogram_res_higgs_px->Fill(rec_higgs_p4.px() - gen_higgs_p4.px(), evtWeight);
       histogram_res_higgs_py->Fill(rec_higgs_p4.py() - gen_higgs_p4.py(), evtWeight);
       histogram_res_higgs_pz->Fill(rec_higgs_p4.pz() - gen_higgs_p4.pz(), evtWeight);
+
+      if ( std::fabs(rec_hPlus_dot_hMinus - gen_hPlus_dot_hMinus) > 0.1 )
+      {
+        std::cout << "run = " << run << ", lumi = " << lumi << ", event = " << event << "\n";
+        std::cout << "hPlus (r,n,k):\n";
+        std::cout << "gen = (" << rec_hPlus_r << "," << rec_hPlus_n << "," << rec_hPlus_k << ")\n";
+        if ( mode == "kinFit" )
+        {
+          std::cout << "startPos = (" << startPos_hPlus_r << "," << startPos_hPlus_n << "," << startPos_hPlus_k << ")\n";
+        }
+        std::cout << mode << " = (" << rec_hPlus_r << "," << rec_hPlus_n << "," << rec_hPlus_k << ")\n";
+        std::cout << "hMinus (r,n,k):\n";
+        std::cout << "gen = (" << rec_hMinus_r << "," << rec_hMinus_n << "," << rec_hMinus_k << ")\n";
+        if ( mode == "kinFit" )
+        {
+          std::cout << "startPos = (" << startPos_hMinus_r << "," << startPos_hMinus_n << "," << startPos_hMinus_k << ")\n";
+        }
+        std::cout << mode << " = (" << rec_hMinus_r << "," << rec_hMinus_n << "," << rec_hMinus_k << ")\n";
+      }
 
       ++selectedEntries;
       selectedEntries_weighted += evtWeight;
@@ -478,6 +537,8 @@ int main(int argc, char* argv[])
   showHistogram1d(histogram_res_hMinus_n,     "h^{-} n^{rec} - n^{gen}",                          1.2, true, 1.e-3, 1.e0, "Events", 1.3, avEvtWeight, false, outputFile.file());
   showHistogram1d(histogram_res_hMinus_k,     "h^{-} k^{rec} - k^{gen}",                          1.2, true, 1.e-3, 1.e0, "Events", 1.3, avEvtWeight, false, outputFile.file());
   showHistogram1d(histogram_res_hMinus_angle, "angle(h^{-,rec},h^{-,gen})",                       1.2, true, 1.e-3, 1.e0, "Events", 1.3, avEvtWeight, false, outputFile.file());
+
+  showHistogram1d(histogram_res_hPlus_dot_hMinus, "h^{+,rec}*h^{-,rec} - h^{+,gen}*h^{-,gen}",    1.2, true, 1.e-3, 1.e0, "Events", 1.3, avEvtWeight, false, outputFile.file());
 
   showHistogram1d(histogram_res_higgs_pt,     "H p_{T}^{rec} - p_{T}^{gen} [GeV]",                1.2, true, 1.e-3, 1.e0, "Events", 1.3, avEvtWeight, true,  outputFile.file());
   showHistogram1d(histogram_res_higgs_eta,    "H #eta^{rec} - #eta^{gen}",                        1.2, true, 1.e-3, 1.e0, "Events", 1.3, avEvtWeight, true,  outputFile.file());

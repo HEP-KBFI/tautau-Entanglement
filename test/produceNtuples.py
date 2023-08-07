@@ -30,7 +30,7 @@ samples = {
 
 hAxes = [ "higgs" ]
 
-version = "2023Aug03"
+version = "2023Aug07_wSmearing"
 
 configDir  = os.path.join("/home",               getpass.getuser(), "Entanglement/ntuples/", version)
 outputDir  = os.path.join("/scratch/persistent", getpass.getuser(), "Entanglement/ntuples/", version)
@@ -93,8 +93,10 @@ for sampleName, sample in samples.items():
         outputFileName)
       logFileName = cfgFileName_modified.replace("_cfg.py", ".log")
       job_key = '%s_%s_%i' % (process, hAxis, jobId)
+      dependencies = [ cfgFileName_modified ]
+      dependencies.extend(inputFileNames_job)
       jobOptions[job_key] = {
-        'inputFileNames' : inputFileNames_job,
+        'inputFileNames' : dependencies,
         'cfgFileName'    : cfgFileName_modified,
         'outputFilePath' : outputDir,
         'outputFileName' : outputFileName,

@@ -6,6 +6,7 @@
 #include "TauAnalysis/Entanglement/interface/KinematicEvent.h" // KinematicEvent
 #include "TauAnalysis/Entanglement/interface/Resolutions.h"    // Resolutions
 
+#include <TRandom.h>                                           // TRandom
 #include <TRandom3.h>                                          // TRandom3
 
 class Smearing
@@ -33,7 +34,12 @@ class Smearing
   reco::Candidate::Point
   smear_tipPCA(const std::vector<KinematicParticle>& daughters, const reco::Candidate::Point& tipPCA);
 
-  TRandom3 rnd_;
+  //TRandom3 rnd_;
+  // CV: switch to TRandom, because TRandom3::GetSeed() does not change 
+  //     after each call to TRandom3::Uniform() and TRandom3::Gaus(),
+  //     hampering reproducibility/debugging
+  //    (TRandom is not affected by this problem)
+  TRandom rnd_;
   ULong_t rndSeed_;
 
   bool applySmearing_recoil_px_;
@@ -58,6 +64,9 @@ class Smearing
   bool applySmearing_tip_perp_;
 
   Resolutions* resolutions_;
+
+  int verbosity_;
+  bool cartesian_;
 };
 
 #endif // TauAnalysis_Entanglement_Smearing_h

@@ -27,6 +27,9 @@ process.makeResolutionPlots = cms.PSet(
     maxNumPhotons = cms.int32(-1),
     maxSumPhotonEn = cms.double(0.5),
 
+    maxChi2 = cms.double(1.e+2),
+    statusSelection = cms.vint32(+1),
+
     branchName_evtWeight = cms.string('evtWeight'),
 
     isDEBUG = cms.bool(False)

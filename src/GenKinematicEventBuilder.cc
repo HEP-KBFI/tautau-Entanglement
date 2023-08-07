@@ -285,6 +285,7 @@ GenKinematicEventBuilder::operator()(const reco::GenParticleCollection& genParti
   if ( verbosity_ >= 1 )
   {
     std::cout << "<GenKinematicEventBuilder::operator()>:\n";
+    std::cout << " applySmearing = " << applySmearing_ << "\n";
   }
 
   const reco::GenParticle* tauPlus  = nullptr;

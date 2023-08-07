@@ -12,7 +12,7 @@ modes = [ "gen", "gen_smeared", "startPos", "kinFit" ]
 #hAxes = [ "beam", "higgs" ]
 hAxes = [ "higgs" ]
 
-version = "2023Aug03"
+version = "2023Aug07_wSmearing"
 
 inputFilePath = os.path.join("/scratch/persistent", getpass.getuser(), "Entanglement/ntuples/", version)
 
@@ -70,8 +70,10 @@ for sample in samples:
         outputFileName_analysis)
       logFileName_analysis = cfgFileName_analysis_modified.replace("_cfg.py", ".log")
       job_key_analysis = '%s_%s_%s_analysis' % (sample, mode, hAxis)
+      dependencies_analysis = [ cfgFileName_analysis_modified ]
+      dependencies_analysis.extend(inputFileNames)
       jobOptions_analysis[job_key_analysis] = {
-        'inputFileNames' : inputFileNames,
+        'inputFileNames' : dependencies_analysis,
         'cfgFileName'    : cfgFileName_analysis_modified,
         'outputFilePath' : outputDir,
         'outputFileName' : outputFileName_analysis,
@@ -88,8 +90,10 @@ for sample in samples:
         outputFileName_ctrlPlots)
       logFileName_ctrlPlots = cfgFileName_ctrlPlots_modified.replace("_cfg.py", ".log")
       job_key_ctrlPlots = '%s_%s_%s_ctrlPlots' % (sample, mode, hAxis)
+      dependencies_ctrlPlots = [ cfgFileName_ctrlPlots_modified ]
+      dependencies_ctrlPlots.extend(inputFileNames) 
       jobOptions_ctrlPlots[job_key_ctrlPlots] = {
-        'inputFileNames' : inputFileNames,
+        'inputFileNames' : dependencies_ctrlPlots,
         'cfgFileName'    : cfgFileName_ctrlPlots_modified,
         'outputFilePath' : outputDir,
         'outputFileName' : outputFileName_ctrlPlots,
@@ -107,8 +111,10 @@ for sample in samples:
           outputFileName_resPlots)
         logFileName_resPlots = cfgFileName_resPlots_modified.replace("_cfg.py", ".log")
         job_key_resPlots = '%s_%s_%s_resPlots' % (sample, mode, hAxis)
+        dependencies_resPlots = [ cfgFileName_resPlots_modified ]
+        dependencies_resPlots.extend(inputFileNames)
         jobOptions_resPlots[job_key_resPlots] = {
-          'inputFileNames' : inputFileNames,
+          'inputFileNames' : dependencies_resPlots,
           'cfgFileName'    : cfgFileName_resPlots_modified,
           'outputFilePath' : outputDir,
           'outputFileName' : outputFileName_resPlots,

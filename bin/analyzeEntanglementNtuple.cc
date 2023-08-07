@@ -1,39 +1,39 @@
 
-#include "DataFormats/FWLite/interface/InputSource.h"                                           // fwlite::InputSource
-#include "DataFormats/FWLite/interface/OutputFiles.h"                                           // fwlite::OutputFiles
-#include "FWCore/ParameterSet/interface/ParameterSet.h"                                         // edm::ParameterSet
-#include "FWCore/ParameterSetReader/interface/ParameterSetReader.h"                             // edm::readPSetsFrom()
-#include "FWCore/PluginManager/interface/PluginManager.h"                                       // edmplugin::PluginManager::configure()
-#include "FWCore/PluginManager/interface/standard.h"                                            // edmplugin::standard::config()
-#include "PhysicsTools/FWLite/interface/TFileService.h"                                         // fwlite::TFileService
+#include "DataFormats/FWLite/interface/InputSource.h"                 // fwlite::InputSource
+#include "DataFormats/FWLite/interface/OutputFiles.h"                 // fwlite::OutputFiles
+#include "FWCore/ParameterSet/interface/ParameterSet.h"               // edm::ParameterSet
+#include "FWCore/ParameterSetReader/interface/ParameterSetReader.h"   // edm::readPSetsFrom()
+#include "FWCore/PluginManager/interface/PluginManager.h"             // edmplugin::PluginManager::configure()
+#include "FWCore/PluginManager/interface/standard.h"                  // edmplugin::standard::config()
+#include "PhysicsTools/FWLite/interface/TFileService.h"               // fwlite::TFileService
 
-#include "TauAnalysis/Entanglement/interface/cmsException.h"                                    // cmsException
+#include "TauAnalysis/Entanglement/interface/cmsException.h"          // cmsException
+#include "TauAnalysis/Entanglement/interface/format_vT.h"             // format_vint(), vdouble, vint
+#include "TauAnalysis/Entanglement/interface/passesStatusSelection.h" // passesStatusSelection()
 
-#include <TBenchmark.h>                                                                         // TBenchmark
-#include <TError.h>                                                                             // gErrorAbortLevel, kError
-#include <TTree.h>                                                                              // TTree
-#include <TMatrixD.h>                                                                           // TMatrixD
-#include <TVectorD.h>                                                                           // TVectorD
-#include <TObject.h>                                                                            // TObject
-#include <Minuit2/Minuit2Minimizer.h>                                                           // ROOT::Minuit2::Minuit2Minimizer
-#include <Math/Functor.h>                                                                       // ROOT::Math::Functor
-#include <TCanvas.h>                                                                            // TCanvas
-#include <TGraph.h>                                                                             // TGraph
-#include <TH1.h>                                                                                // TH1F
-#include <TLegend.h>                                                                            // TLegend
-#include <TString.h>                                                                            // Form()
+#include <TBenchmark.h>                                               // TBenchmark
+#include <TError.h>                                                   // gErrorAbortLevel, kError
+#include <TTree.h>                                                    // TTree
+#include <TMatrixD.h>                                                 // TMatrixD
+#include <TVectorD.h>                                                 // TVectorD
+#include <TObject.h>                                                  // TObject
+#include <Minuit2/Minuit2Minimizer.h>                                 // ROOT::Minuit2::Minuit2Minimizer
+#include <Math/Functor.h>                                             // ROOT::Math::Functor
+#include <TCanvas.h>                                                  // TCanvas
+#include <TGraph.h>                                                   // TGraph
+#include <TH1.h>                                                      // TH1F
+#include <TLegend.h>                                                  // TLegend
+#include <TString.h>                                                  // Form()
 
-#include <assert.h>                                                                             // assert()
-#include <cstdlib>                                                                              // EXIT_SUCCESS, EXIT_FAILURE
-#include <fstream>                                                                              // std::ofstream
-#include <iostream>                                                                             // std::cout
-#include <string>                                                                               // std::string
-#include <vector>                                                                               // std::vector<>
-#include <cmath>                                                                                // std::fabs()
+#include <assert.h>                                                   // assert()
+#include <cstdlib>                                                    // EXIT_SUCCESS, EXIT_FAILURE
+#include <fstream>                                                    // std::ofstream
+#include <iostream>                                                   // std::cout
+#include <string>                                                     // std::string
+#include <vector>                                                     // std::vector<>
+#include <cmath>                                                      // std::fabs()
 
 const size_t npar = 15;
-
-typedef std::vector<double> vdouble;
 
 class EntanglementData
 {
@@ -436,6 +436,10 @@ int main(int argc, char* argv[])
   std::cout << " maxNumPhotons = " << maxNumPhotons << "\n";
   float maxSumPhotonEn = cfg_analyze.getParameter<double>("maxSumPhotonEn");
   std::cout << " maxSumPhotonEn = " << maxSumPhotonEn << "\n";
+  float maxChi2 = cfg_analyze.getParameter<double>("maxChi2");
+  std::cout << " maxChi2 = " << maxChi2 << "\n";
+  vint statusSelection = cfg_analyze.getParameter<vint>("statusSelection");
+  std::cout << " statusSelection = " << format_vint(statusSelection) << "\n";
   std::string branchName_evtWeight = cfg_analyze.getParameter<std::string>("branchName_evtWeight");
   std::cout << " branchName_evtWeight = " << branchName_evtWeight << "\n";
   
@@ -502,9 +506,9 @@ int main(int argc, char* argv[])
     inputTree->SetBranchAddress(Form("%s_hPlus_r", mode.c_str()), &hPlus_r);
     inputTree->SetBranchAddress(Form("%s_hPlus_n", mode.c_str()), &hPlus_n);
     inputTree->SetBranchAddress(Form("%s_hPlus_k", mode.c_str()), &hPlus_k);
-    Float_t visTauPlus_pt, visTauPlus_eta;
-    inputTree->SetBranchAddress(Form("%s_visPlus_pt", mode.c_str()), &visTauPlus_pt);
-    inputTree->SetBranchAddress(Form("%s_visPlus_eta", mode.c_str()), &visTauPlus_eta);
+    Float_t visPlus_pt, visPlus_eta;
+    inputTree->SetBranchAddress(Form("%s_visPlus_pt", mode.c_str()), &visPlus_pt);
+    inputTree->SetBranchAddress(Form("%s_visPlus_eta", mode.c_str()), &visPlus_eta);
     Int_t tauPlus_nChargedKaons, tauPlus_nNeutralKaons, tauPlus_nPhotons;
     Float_t tauPlus_sumPhotonEn;
     inputTree->SetBranchAddress("gen_tauPlus_nChargedKaons", &tauPlus_nChargedKaons);
@@ -516,15 +520,20 @@ int main(int argc, char* argv[])
     inputTree->SetBranchAddress(Form("%s_hMinus_r", mode.c_str()), &hMinus_r);
     inputTree->SetBranchAddress(Form("%s_hMinus_n", mode.c_str()), &hMinus_n);
     inputTree->SetBranchAddress(Form("%s_hMinus_k", mode.c_str()), &hMinus_k);
-    Float_t visTauMinus_pt, visTauMinus_eta;
-    inputTree->SetBranchAddress(Form("%s_visMinus_pt", mode.c_str()), &visTauMinus_pt);
-    inputTree->SetBranchAddress(Form("%s_visMinus_eta", mode.c_str()), &visTauMinus_eta);
+    Float_t visMinus_pt, visMinus_eta;
+    inputTree->SetBranchAddress(Form("%s_visMinus_pt", mode.c_str()), &visMinus_pt);
+    inputTree->SetBranchAddress(Form("%s_visMinus_eta", mode.c_str()), &visMinus_eta);
     Int_t tauMinus_nChargedKaons, tauMinus_nNeutralKaons, tauMinus_nPhotons;
     Float_t tauMinus_sumPhotonEn;
     inputTree->SetBranchAddress("gen_tauMinus_nChargedKaons", &tauMinus_nChargedKaons);
     inputTree->SetBranchAddress("gen_tauMinus_nNeutralKaons", &tauMinus_nNeutralKaons);
     inputTree->SetBranchAddress("gen_tauMinus_nPhotons", &tauMinus_nPhotons);
     inputTree->SetBranchAddress("gen_tauMinus_sumPhotonEn", &tauMinus_sumPhotonEn);
+
+    Float_t kinFit_chi2;
+    inputTree->SetBranchAddress("kinFit_chi2", &kinFit_chi2);
+    Int_t kinFit_status;
+    inputTree->SetBranchAddress("kinFit_status", &kinFit_status);
 
     Float_t evtWeight = 1.;
     if ( branchName_evtWeight != "" )
@@ -544,16 +553,18 @@ int main(int argc, char* argv[])
         std::cout << "processing Entry " << analyzedEntries << "\n";
       }
 
-      if ( !(visTauPlus_pt  > minVisTauPt && std::fabs(visTauPlus_eta)  < maxAbsVisTauEta) ) continue;
-      if ( maxNumChargedKaons != -1  && tauPlus_nChargedKaons  > maxNumChargedKaons ) continue;
-      if ( maxNumNeutralKaons != -1  && tauPlus_nNeutralKaons  > maxNumNeutralKaons ) continue;
-      if ( maxNumPhotons      != -1  && tauPlus_nPhotons       > maxNumPhotons      ) continue;
-      if ( maxSumPhotonEn     >=  0. && tauPlus_sumPhotonEn    > maxSumPhotonEn     ) continue;
-      if ( !(visTauMinus_pt > minVisTauPt && std::fabs(visTauMinus_eta) < maxAbsVisTauEta) ) continue;
-      if ( maxNumChargedKaons != -1  && tauMinus_nChargedKaons > maxNumChargedKaons ) continue;
-      if ( maxNumNeutralKaons != -1  && tauMinus_nNeutralKaons > maxNumNeutralKaons ) continue;
-      if ( maxNumPhotons      != -1  && tauMinus_nPhotons      > maxNumPhotons      ) continue;
-      if ( maxSumPhotonEn     >=  0. && tauMinus_sumPhotonEn   > maxSumPhotonEn     ) continue;
+      if ( !(visPlus_pt  > minVisTauPt && std::fabs(visPlus_eta)  < maxAbsVisTauEta) ) continue;
+      if ( maxNumChargedKaons     != -1  && tauPlus_nChargedKaons  > maxNumChargedKaons            ) continue;
+      if ( maxNumNeutralKaons     != -1  && tauPlus_nNeutralKaons  > maxNumNeutralKaons            ) continue;
+      if ( maxNumPhotons          != -1  && tauPlus_nPhotons       > maxNumPhotons                 ) continue;
+      if ( maxSumPhotonEn         >=  0. && tauPlus_sumPhotonEn    > maxSumPhotonEn                ) continue;
+      if ( !(visMinus_pt > minVisTauPt && std::fabs(visMinus_eta) < maxAbsVisTauEta) ) continue;
+      if ( maxNumChargedKaons     != -1  && tauMinus_nChargedKaons > maxNumChargedKaons            ) continue;
+      if ( maxNumNeutralKaons     != -1  && tauMinus_nNeutralKaons > maxNumNeutralKaons            ) continue;
+      if ( maxNumPhotons          != -1  && tauMinus_nPhotons      > maxNumPhotons                 ) continue;
+      if ( maxSumPhotonEn         >=  0. && tauMinus_sumPhotonEn   > maxSumPhotonEn                ) continue;
+      if ( maxChi2                != -1  && kinFit_chi2            > maxChi2                       ) continue;
+      if ( statusSelection.size() >   0  && !passesStatusSelection(kinFit_status, statusSelection) ) continue;
 
       // CV: compute matrix C according to Eq. (25)
       //     in the paper arXiv:2211.10513
