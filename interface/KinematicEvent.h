@@ -142,7 +142,9 @@ class KinematicEvent
 
   friend class GenKinematicEventBuilder;
   friend class KinematicFit;
-  friend class KinematicFitStartPosFinder;
+  friend class StartPosFinder;
+  friend class StartPosFinder1;
+  friend class StartPosFinder2;
   friend class Smearing;
 
  private:

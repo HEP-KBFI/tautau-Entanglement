@@ -30,7 +30,7 @@ samples = {
 
 hAxes = [ "higgs" ]
 
-version = "2023Aug07_wSmearing"
+version = "2023Aug10_wSmearing"
 
 configDir  = os.path.join("/home",               getpass.getuser(), "Entanglement/ntuples/", version)
 outputDir  = os.path.join("/scratch/persistent", getpass.getuser(), "Entanglement/ntuples/", version)
@@ -82,7 +82,7 @@ for sampleName, sample in samples.items():
       inputFileNames_job = inputFileNames[idxFirstFile:idxLastFile + 1]
       cfgFileName_modified = os.path.join(configDir, "produceEntanglementNtuple_%s_%sAxis_%i_cfg.py" % \
         (sampleName, hAxis, jobId))
-      rndSeed = jobId
+      rndSeed = jobId + 1
       outputFileName = "entanglementNtuple_%s_%sAxis_%i.root" % \
         (sampleName, hAxis, jobId)
       build_cfgFile(

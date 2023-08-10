@@ -15,9 +15,11 @@ KinematicEvent::KinematicEvent()
   : tauPlusP4_isValid_(false)
   , nuTauPlusCov_isValid_(false)
   , svTauPlus_isValid_(false)
+  , hPlus_isValid_(false)
   , tauMinusP4_isValid_(false)
   , nuTauMinusCov_isValid_(false)
   , svTauMinus_isValid_(false)
+  , hMinus_isValid_(false)
   , kinFitStatus_(-1)
   , kinFitChi2_(-1.)
   , kinFit_isValid_(false)
@@ -368,5 +370,13 @@ printKinematicEvent(const std::string& label,
   else
   {
     std::cout << "hMinus: N/A\n";
+  }
+  if ( kineEvt.tauPlusP4_isValid() && kineEvt.tauMinusP4_isValid() )
+  {
+    std::cout << "mTauTau = " << (kineEvt.tauPlusP4() + kineEvt.tauMinusP4()).mass() << "\n";
+  }
+  else
+  {
+    std::cout << "mTauTau: N/A\n";
   }
 }

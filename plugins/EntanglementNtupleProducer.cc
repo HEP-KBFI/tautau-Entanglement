@@ -19,7 +19,7 @@ EntanglementNtupleProducer::EntanglementNtupleProducer(const edm::ParameterSet& 
   : moduleLabel_(cfg.getParameter<std::string>("@module_label"))
   , genKineEvtBuilder_woSmearing_(nullptr)
   , genKineEvtBuilder_wSmearing_(nullptr)
-  , kineFitStartPosFinder_(cfg)
+  , startPosFinder_(cfg)
   , kineFit_(cfg)
   , ntuple_piPlus_piMinus_(nullptr)
   , ntupleFiller_piPlus_piMinus_(nullptr)
@@ -157,7 +157,7 @@ void EntanglementNtupleProducer::analyze(const edm::Event& evt, const edm::Event
     printKinematicEvent("kineEvt_gen_smeared", kineEvt_gen_smeared, cartesian_);
   }
 
-  KinematicEvent kineEvt_startPos = kineFitStartPosFinder_(kineEvt_gen_smeared);
+  KinematicEvent kineEvt_startPos = startPosFinder_(kineEvt_gen_smeared);
   if ( verbosity_ >= 1 )
   {
     printKinematicEvent("kineEvt_startPos", kineEvt_startPos, cartesian_);

@@ -21,7 +21,7 @@ class Resolutions
   recoilResolution_pz() const;
 
   double
-  recoilResolution_energy() const;
+  recoilResolution_mass() const;
 
   double
   pvResolution_xy() const;
@@ -63,7 +63,7 @@ class Resolutions
   double recoilResolution_px_;     // [GeV]
   double recoilResolution_py_;     // [GeV]
   double recoilResolution_pz_;     // [GeV]
-  double recoilResolution_energy_; // [GeV]
+  double recoilResolution_mass_;   // [GeV]
 
   double pvResolution_xy_;         // [cm]
   double pvResolution_z_;          // [cm]

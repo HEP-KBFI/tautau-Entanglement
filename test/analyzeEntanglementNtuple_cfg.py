@@ -27,7 +27,7 @@ process.analyzeEntanglementNtuple = cms.PSet(
     maxSumPhotonEn = cms.double(0.5),
     
     maxChi2 = cms.double(1.e+2),
-    statusSelection = cms.vint32(+1),
+    statusSelection = cms.vint32(0,1),
 
     branchName_evtWeight = cms.string('evtWeight'),
 

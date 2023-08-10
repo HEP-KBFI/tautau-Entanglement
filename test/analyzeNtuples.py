@@ -12,7 +12,7 @@ modes = [ "gen", "gen_smeared", "startPos", "kinFit" ]
 #hAxes = [ "beam", "higgs" ]
 hAxes = [ "higgs" ]
 
-version = "2023Aug07_wSmearing"
+version = "2023Aug10_wSmearing"
 
 inputFilePath = os.path.join("/scratch/persistent", getpass.getuser(), "Entanglement/ntuples/", version)
 

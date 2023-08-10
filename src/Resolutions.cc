@@ -8,7 +8,7 @@ Resolutions::Resolutions(const edm::ParameterSet& cfg)
   : recoilResolution_px_(cfg.getParameter<double>("recoilResolution_px"))
   , recoilResolution_py_(cfg.getParameter<double>("recoilResolution_py"))
   , recoilResolution_pz_(cfg.getParameter<double>("recoilResolution_pz"))
-  , recoilResolution_energy_(cfg.getParameter<double>("recoilResolution_energy"))
+  , recoilResolution_mass_(cfg.getParameter<double>("recoilResolution_mass"))
   , pvResolution_xy_(cfg.getParameter<double>("pvResolution_xy"))
   , pvResolution_z_(cfg.getParameter<double>("pvResolution_z"))
   , trackResolution_pt_(cfg.getParameter<double>("trackResolution_pt"))
@@ -45,9 +45,9 @@ Resolutions::recoilResolution_pz() const
 }
 
 double
-Resolutions::recoilResolution_energy() const
+Resolutions::recoilResolution_mass() const
 {
-  return recoilResolution_energy_;
+  return recoilResolution_mass_;
 }
 
 double

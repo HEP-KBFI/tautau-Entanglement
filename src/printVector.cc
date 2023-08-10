@@ -1,5 +1,7 @@
 #include "TauAnalysis/Entanglement/interface/printVector.h"
 
+#include <cmath> // std::sqrt()
+
 void
 printVector(const std::string& label,
             const reco::Candidate::Vector& p3,
@@ -12,6 +14,6 @@ printVector(const std::string& label,
   }
   else
   {
-    std::cout << " pT = " << p3.r() << ", theta = " << p3.theta() << ", phi = " << p3.phi() << "\n";
+    std::cout << " p = " << p3.r() << ", pT = " << p3.rho() << ", theta = " << p3.theta() << ", phi = " << p3.phi() << "\n";
   }
 }

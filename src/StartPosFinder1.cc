@@ -1,4 +1,4 @@
-#include "TauAnalysis/Entanglement/interface/KinematicFitStartPosFinder.h"
+#include "TauAnalysis/Entanglement/interface/StartPosFinder1.h"
 
 #include "DataFormats/Candidate/interface/Candidate.h"             // reco::Candidate::LorentzVector
 #include "DataFormats/Math/interface/deltaR.h"                     // deltaR2()
@@ -6,16 +6,16 @@
 #include "DataFormats/Math/interface/Vector.h"                     // math::Vector
 #include "DataFormats/TauReco/interface/PFTau.h"                   // reco::PFTau::hadronicDecayMode
 
-#include "TauAnalysis/Entanglement/interface/constants.h"          // ct, mChargedPion, mTau
+#include "TauAnalysis/Entanglement/interface/comp_PCA_line2line.h" // comp_PCA_line2line()
+#include "TauAnalysis/Entanglement/interface/constants.h"          // mChargedPion, mHiggs, mTau
 #include "TauAnalysis/Entanglement/interface/cmsException.h"       // cmsException
+#include "TauAnalysis/Entanglement/interface/cube.h"               // cube()
 #include "TauAnalysis/Entanglement/interface/fixMass.h"            // fixNuMass(), fixTauMass()
 #include "TauAnalysis/Entanglement/interface/get_leadTrack.h"      // get_leadTrack()
-#include "TauAnalysis/Entanglement/interface/printDistance.h"      // printDistance()
 #include "TauAnalysis/Entanglement/interface/printLorentzVector.h" // printLorentzVector()
-#include "TauAnalysis/Entanglement/interface/printPoint.h"         // printPoint()
 #include "TauAnalysis/Entanglement/interface/square.h"             // square()
-#include "TauAnalysis/Entanglement/interface/SpinAnalyzerBase.h"   // SpinAnalyzerBase::kTauPlus, SpinAnalyzerBase::kTauMinus
 
+#include <cmath>                                                   // std::sqrt()
 #include <utility>                                                 // std::make_pair()
 #include <iostream>                                                // std::cout
 
@@ -25,17 +25,33 @@ namespace math
   typedef Vector<3>::type   Vector3;
 }
 
-KinematicFitStartPosFinder::KinematicFitStartPosFinder(const edm::ParameterSet& cfg)
-  : spinAnalyzer_(cfg)
-  , verbosity_(cfg.getUntrackedParameter<int>("verbosity"))
-  , cartesian_(cfg.getUntrackedParameter<bool>("cartesian"))
-{}
+StartPosFinder1::StartPosFinder1(const edm::ParameterSet& cfg)
+  : StartPosFinderBase(cfg)
+  , resolutions_(nullptr)
+  , applyHiggsMassConstraint_(cfg.getParameter<bool>("applyHiggsMassConstraint"))
+{
+  edm::ParameterSet cfg_resolutions = cfg.getParameterSet("resolutions");
+  resolutions_ = new Resolutions(cfg_resolutions);
+}
 
-KinematicFitStartPosFinder::~KinematicFitStartPosFinder()
-{}
+StartPosFinder1::~StartPosFinder1()
+{
+  delete resolutions_;
+}
 
 namespace
 {
+  reco::Candidate::LorentzVector
+  buildHiggsP4_corr(const reco::Candidate::LorentzVector& higgsP4, double sf)
+  {
+    double higgsPx_corr = sf*higgsP4.px();
+    double higgsPy_corr = sf*higgsP4.py();
+    double higgsPz_corr = sf*higgsP4.pz();
+    double higgsE_corr  = std::sqrt(square(higgsPx_corr) + square(higgsPy_corr) + square(higgsPz_corr) + square(mHiggs));
+    reco::Candidate::LorentzVector higgsP4_corr(higgsPx_corr, higgsPy_corr, higgsPz_corr, higgsE_corr);
+    return higgsP4_corr;
+  }
+
   double
   get_component(const reco::Candidate::LorentzVector& p4, int idx)
   {
@@ -231,86 +247,77 @@ namespace
 
     return std::make_pair(tauPlusP4_min_tipPerp, tauMinusP4_min_tipPerp);
   }
-
-  reco::Candidate::Point
-  comp_linearPCA(const reco::Candidate::Point& pv,
-                 const reco::Candidate::LorentzVector& tauP4,
-                 const reco::Candidate::Point& sv,
-                 const reco::Candidate::LorentzVector& visTauP4,
-                 int verbosity)
-  {
-    // CV: compute point of closest approach (PCA) between two straight lines in three dimensions;
-    //     code based on https://math.stackexchange.com/questions/1993953/closest-points-between-two-lines
-    if ( verbosity >= 2 )
-    {
-      std::cout << "<comp_linearPCA>:" << std::endl;
-    }
-    auto e_tau = tauP4.Vect().unit();
-    auto e_vis = visTauP4.Vect().unit();
-    reco::Candidate::Vector d = e_tau.Cross(e_vis).unit();
-    math::Matrix3x3 v;
-    v(0,0) =  e_tau.x();
-    v(0,1) = -e_vis.x();
-    v(0,2) =  d.x();
-    v(1,0) =  e_tau.y();
-    v(1,1) = -e_vis.y();
-    v(1,2) =  d.y();
-    v(2,0) =  e_tau.z();
-    v(2,1) = -e_vis.z();
-    v(2,2) =  d.z();
-    math::Vector3 r;
-    r(0) = -pv.x() + sv.x();
-    r(1) = -pv.y() + sv.y();
-    r(2) = -pv.z() + sv.z();
-    // CV: invert matrix x;
-    //     see Section "Linear algebra functions" of the ROOT documentation https://root.cern.ch/doc/v608/SMatrixDoc.html for the syntax
-    int errorFlag = 0;
-    math::Matrix3x3 vinv = v.Inverse(errorFlag);
-    if ( errorFlag != 0 )
-      throw cmsException("comp_linearPCA", __LINE__)
-         << "Failed to invert matrix v !!\n";
-    math::Vector3 lambda = vinv*r;
-    if ( verbosity >= 2 )
-    {
-      std::cout << "lambda:\n";
-      std::cout << lambda << "\n";
-      reco::Candidate::Point pca1 = pv + lambda(0)*e_tau;
-      printPoint("pca1", pca1);
-      printDistance("pca1 - pv", pca1 - pv, true);
-      printDistance("pca1 - pv", pca1 - pv, false);
-      reco::Candidate::Point pca2 = sv + lambda(1)*e_vis;
-      printPoint("pca2", pca2);
-      printDistance("pca2 - sv", pca2 - sv, true);
-      printDistance("pca2 - sv", pca2 - sv, false);
-      std::cout << "|d| = " << std::sqrt((lambda(2)*d).mag2()) << "\n";      
-    }
-    double min_lambda0 = 1.e-2*(tauP4.energy()/mTau)*ct;
-    double lambda0 = ( lambda(0) >= min_lambda0 ) ? lambda(0) : min_lambda0;
-    if ( verbosity >= 2 )
-    {
-      std::cout << "min_lambda0 = " << min_lambda0 << "\n";
-      std::cout << "lambda0 = " << lambda0 << "\n";
-    }
-    reco::Candidate::Point pca = pv + lambda0*e_tau;
-    if ( verbosity >= 2 )
-    {
-      printPoint("pca", pca);
-      printDistance("pca - pv", pca - pv, true);
-      printDistance("pca - pv", pca - pv, false);
-    }
-    return pca;
-  }
 }
 
 KinematicEvent
-KinematicFitStartPosFinder::operator()(const KinematicEvent& kineEvt)
+StartPosFinder1::operator()(const KinematicEvent& kineEvt)
 {
   if ( verbosity_ >= 1 )
   {
-    std::cout << "<KinematicFitStartPosFinder::operator()>:\n";
+    std::cout << "<StartPosFinder1::operator()>:\n";
   }
 
-  const reco::Candidate::LorentzVector& higgsP4       = kineEvt.recoilP4();
+  reco::Candidate::LorentzVector higgsP4 = kineEvt.recoilP4();
+  if ( applyHiggsMassConstraint_ )
+  {
+    //printLorentzVector("higgsP4", higgsP4);
+    double higgsP     = higgsP4.P();
+    double higgsP_2   = square(higgsP);
+    double higgsP_3   = higgsP_2*higgsP;
+    double higgsP_4   = higgsP_3*higgsP;
+    double sigmaP_2   = square(higgsP4.px()/higgsP)*square(resolutions_->recoilResolution_px())
+                       + square(higgsP4.py()/higgsP)*square(resolutions_->recoilResolution_py())
+                       + square(higgsP4.pz()/higgsP)*square(resolutions_->recoilResolution_pz());
+    double sigmaP_4   = square(sigmaP_2);
+    double higgsE     = higgsP4.energy();
+    double sigmaE_2   = square(higgsP4.px()/higgsE)*square(resolutions_->recoilResolution_px())
+                       + square(higgsP4.py()/higgsE)*square(resolutions_->recoilResolution_py())
+                       + square(higgsP4.pz()/higgsE)*square(resolutions_->recoilResolution_pz())
+                       + square(higgsP4.mass()/higgsE)*square(resolutions_->recoilResolution_mass());
+    double sigmaE_4   = square(sigmaE_2);
+    double mHiggs_2   = square(mHiggs);
+    double mHiggs_4   = square(mHiggs_2);
+    double higgsEc    = std::sqrt(higgsP_2 + mHiggs_2);
+    double higgsEc_3  = cube(higgsEc);
+    double higgsEc_5  = higgsEc_3*square(higgsEc);
+    double higgsEc_10 = square(higgsEc_5);
+    double term1 = higgsEc_5*sigmaE_2/(3.*higgsE*mHiggs_2*higgsP_2);
+    double term2 = -1./sigmaE_2 + 3.*higgsE*mHiggs_2*higgsP_2/(higgsEc_5*sigmaE_2) - higgsE*higgsP_2/(higgsEc_3*sigmaE_2) + higgsE/(higgsEc*sigmaE_2) - 1./sigmaP_2;
+    double term3 = 3.*higgsE*mHiggs_2*higgsP_2*sigmaP_2*(2.*higgsEc_5*sigmaE_2 - higgsE*mHiggs_2*higgsP_2*sigmaP_2 + 2.*higgsE*higgsP_4*sigmaP_2)
+                  + square(higgsEc_5*sigmaE_2 - higgsE*mHiggs_4*sigmaP_2 - 4.*higgsE*mHiggs_2*higgsP_2*sigmaP_2 + higgsEc_5*sigmaP_2);
+    double term4 = higgsEc_10*sigmaE_4*sigmaP_4;
+    double sf1 = term1*(term2 + std::sqrt(term3/term4));
+    double sf2 = term1*(term2 - std::sqrt(term3/term4));
+    double sf = -1.;
+    if ( sf1 > 0. && sf2 > 0. )
+    {
+      if ( std::fabs(sf1 - 1.) < std::fabs(sf2 - 1.) ) sf = sf1;
+      else                                             sf = sf2;
+    }
+    else if ( sf1 > 0. )
+    {
+      sf = sf1;
+    }
+    else if ( sf2 > 0. )
+    {
+      sf = sf2;
+    }
+    else 
+    {
+      std::cerr << "WARNING: Failed to correct four-vector of recoil system !!" << std::endl;
+      sf = 1.;
+    }
+    reco::Candidate::LorentzVector higgsP4_corr = buildHiggsP4_corr(higgsP4, sf);
+    if ( verbosity_ >= 1 )
+    {
+      std::cout << "correcting four-vector of recoil system:\n";
+      std::cout << "sf = " << sf << "\n";
+      printLorentzVector("higgsP4_corr", higgsP4_corr);
+      std::cout << " mass = " << higgsP4_corr.mass() << "\n";
+    }
+    higgsP4 = higgsP4_corr;
+  }
+
   const reco::Candidate::LorentzVector& visTauPlusP4  = kineEvt.visTauPlusP4();
   const reco::Candidate::LorentzVector& visTauMinusP4 = kineEvt.visTauMinusP4();
 
@@ -362,7 +369,7 @@ KinematicFitStartPosFinder::operator()(const KinematicEvent& kineEvt)
   int errorFlag = 0;
   math::Matrix3x3 Minv = M.Inverse(errorFlag);
   if ( errorFlag != 0 )
-    throw cmsException("KinematicFitStartPosFinder::operator()", __LINE__)
+    throw cmsException("StartPosFinder1::operator()", __LINE__)
       << "Failed to invert matrix M !!\n";
 
   math::Vector3 v = Minv*lambda;
@@ -436,6 +443,10 @@ KinematicFitStartPosFinder::operator()(const KinematicEvent& kineEvt)
     std::vector<double> d1 = comp_d(a1, b1, c1, x, y, z, higgsP4, visTauPlusP4, mVisTauPlus2, visTauMinusP4, mVisTauMinus2, q1P4, verbosity_, cartesian_);
     double tauMassFix1 = 0.;
     auto tau1P4 = comp_tauP4(a1, b1, c1, d1, higgsP4, visTauPlusP4, visTauMinusP4, q1P4, kineEvt, tauMassFix1, verbosity_, cartesian_);
+    if ( verbosity_ >= 1 )
+    {
+      std::cout << "tauMassFix1 = " << tauMassFix1 << " (tauMassFix0 = " << tauMassFix0 << ")\n";
+    }
 
     if ( tauMassFix1 < tauMassFix0 )
     {
@@ -455,7 +466,7 @@ KinematicFitStartPosFinder::operator()(const KinematicEvent& kineEvt)
   }
   if ( !hasConverged )
   {
-    std::cerr << "WARNING: KinematicFitStartPosFinder failed to converge !!" << std::endl;
+    std::cerr << "WARNING: StartPosFinder1 failed to converge !!" << std::endl;
   }
   if ( verbosity_ >= 1 )
   {
@@ -488,7 +499,7 @@ KinematicFitStartPosFinder::operator()(const KinematicEvent& kineEvt)
     const KinematicParticle* leadTrack = get_leadTrack(kineEvt_startpos.daughtersTauPlus());
     assert(leadTrack);
     const reco::Candidate::Point& tipPCA = kineEvt_startpos.tipPCATauPlus();
-    kineEvt_startpos.svTauPlus_ = comp_linearPCA(kineEvt_startpos.pv(), tauPlusP4, tipPCA, leadTrack->p4(), verbosity_);
+    kineEvt_startpos.svTauPlus_ = comp_PCA_line2line(kineEvt_startpos.pv(), tauPlusP4, tipPCA, leadTrack->p4(), verbosity_);
     kineEvt_startpos.svTauPlus_isValid_ = true;
   }
 
@@ -502,18 +513,9 @@ KinematicFitStartPosFinder::operator()(const KinematicEvent& kineEvt)
     const KinematicParticle* leadTrack = get_leadTrack(kineEvt_startpos.daughtersTauMinus());
     assert(leadTrack);
     const reco::Candidate::Point& tipPCA = kineEvt_startpos.tipPCATauMinus();
-    kineEvt_startpos.svTauMinus_ = comp_linearPCA(kineEvt_startpos.pv(), tauMinusP4, tipPCA, leadTrack->p4(), verbosity_);
+    kineEvt_startpos.svTauMinus_ = comp_PCA_line2line(kineEvt_startpos.pv(), tauMinusP4, tipPCA, leadTrack->p4(), verbosity_);
     kineEvt_startpos.svTauMinus_isValid_ = true;
   }
-
-  kineEvt_startpos.recoilP4_ = tauPlusP4 + tauMinusP4;
-
-  reco::Candidate::Vector hPlus = spinAnalyzer_(kineEvt_startpos, SpinAnalyzerBase::kTauPlus);
-  kineEvt_startpos.hPlus_ = hPlus;
-  kineEvt_startpos.hPlus_isValid_ = true;
-  reco::Candidate::Vector hMinus = spinAnalyzer_(kineEvt_startpos, SpinAnalyzerBase::kTauMinus);
-  kineEvt_startpos.hMinus_ = hMinus;
-  kineEvt_startpos.hMinus_isValid_ = true;
 
   return kineEvt_startpos;
 }

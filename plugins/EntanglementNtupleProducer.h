@@ -1,24 +1,24 @@
 #ifndef TauAnalysis_Entanglement_EntanglementNtupleProducer_h
 #define TauAnalysis_Entanglement_EntanglementNtupleProducer_h
 
-#include "FWCore/Framework/interface/EDAnalyzer.h"                         // edm::EDAnalyzer
-#include "FWCore/Framework/interface/Event.h"                              // edm::Event
-#include "FWCore/Framework/interface/EventSetup.h"                         // edm::EventSetup
-#include "FWCore/ParameterSet/interface/ParameterSet.h"                    // edm::ParameterSet
-#include "FWCore/Utilities/interface/InputTag.h"                           // edm::InputTag<>
+#include "FWCore/Framework/interface/EDAnalyzer.h"                       // edm::EDAnalyzer
+#include "FWCore/Framework/interface/Event.h"                            // edm::Event
+#include "FWCore/Framework/interface/EventSetup.h"                       // edm::EventSetup
+#include "FWCore/ParameterSet/interface/ParameterSet.h"                  // edm::ParameterSet
+#include "FWCore/Utilities/interface/InputTag.h"                         // edm::InputTag<>
 
-#include "DataFormats/HepMCCandidate/interface/GenParticle.h"              // reco::GenParticle
-#include "DataFormats/HepMCCandidate/interface/GenParticleFwd.h"           // reco::GenParticleCollection
+#include "DataFormats/HepMCCandidate/interface/GenParticle.h"            // reco::GenParticle
+#include "DataFormats/HepMCCandidate/interface/GenParticleFwd.h"         // reco::GenParticleCollection
 
-#include "TauAnalysis/Entanglement/interface/EntanglementNtuple.h"         // EntanglementNtuple
-#include "TauAnalysis/Entanglement/interface/GenKinematicEventBuilder.h"   // GenKinematicEventBuilder
-#include "TauAnalysis/Entanglement/interface/KinematicFit.h"               // KinematicFit
-#include "TauAnalysis/Entanglement/interface/KinematicFitStartPosFinder.h" // KinematicFitStartPosFinder
+#include "TauAnalysis/Entanglement/interface/EntanglementNtuple.h"       // EntanglementNtuple
+#include "TauAnalysis/Entanglement/interface/GenKinematicEventBuilder.h" // GenKinematicEventBuilder
+#include "TauAnalysis/Entanglement/interface/KinematicFit.h"             // KinematicFit
+#include "TauAnalysis/Entanglement/interface/StartPosFinder.h"           // StartPosFinder
 
-#include <TTree.h>                                                         // TTree
+#include <TTree.h>                                                       // TTree
 
-#include <vector>                                                          // std::vector<>
-#include <string>                                                          // std::string
+#include <vector>                                                        // std::vector<>
+#include <string>                                                        // std::string
 
 class EntanglementNtupleProducer : public edm::EDAnalyzer 
 {
@@ -39,7 +39,8 @@ class EntanglementNtupleProducer : public edm::EDAnalyzer
   GenKinematicEventBuilder* genKineEvtBuilder_woSmearing_;
   GenKinematicEventBuilder* genKineEvtBuilder_wSmearing_;
 
-  KinematicFitStartPosFinder kineFitStartPosFinder_;
+  StartPosFinder startPosFinder_;
+
   KinematicFit kineFit_;
 
   typedef std::vector<edm::InputTag> vInputTag;

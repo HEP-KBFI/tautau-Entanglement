@@ -152,13 +152,13 @@ SpinAnalyzerOneProng1Pi0::operator()(const KinematicEvent& evt, int tau)
     printLorentzVector("visTauP4", visTauP4);
     std::cout << " mass = " << visTauP4.mass() << "\n";
   } 
-  reco::Candidate::LorentzVector recoilP4 = evt.recoilP4();
+  reco::Candidate::LorentzVector higgsP4 = evt.tauPlusP4() + evt.tauMinusP4();
   if ( verbosity_ >= 2 )
   {
-    printLorentzVector("recoilP4", recoilP4);
-    std::cout << " mass = " << recoilP4.mass() << "\n";
+    printLorentzVector("higgsP4", higgsP4);
+    std::cout << " mass = " << higgsP4.mass() << "\n";
   }
-  ROOT::Math::Boost boost_ttrf = ROOT::Math::Boost(recoilP4.BoostToCM());
+  ROOT::Math::Boost boost_ttrf = ROOT::Math::Boost(higgsP4.BoostToCM());
   reco::Candidate::LorentzVector tauP4_ttrf = fixTauMass(getP4_rf(tauP4, boost_ttrf));
   if ( verbosity_ >= 2 )
   {
@@ -166,7 +166,7 @@ SpinAnalyzerOneProng1Pi0::operator()(const KinematicEvent& evt, int tau)
     std::cout << " mass = " << tauP4_ttrf.mass() << "\n";
   }
   reco::Candidate::Vector r, n, k;
-  get_localCoordinateSystem(evt.tauMinusP4(), &recoilP4, &boost_ttrf, hAxis_, r, n, k, verbosity_, cartesian_);
+  get_localCoordinateSystem(evt.tauMinusP4(), &higgsP4, &boost_ttrf, hAxis_, r, n, k, verbosity_, cartesian_);
   reco::Candidate::LorentzVector tauP4_hf = fixTauMass(getP4_hf(tauP4_ttrf, r, n, k));
   if ( verbosity_ >= 2 )
   {

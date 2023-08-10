@@ -1,6 +1,6 @@
 #include "TauAnalysis/Entanglement/interface/KinematicFit.h"
 
-#include "DataFormats/Math/interface/deltaR.h"                            // deltaR2()
+#include "DataFormats/Math/interface/deltaPhi.h"                          // deltaPhi()
 #include "DataFormats/Math/interface/Matrix.h"                            // math::Matrix
 #include "DataFormats/Math/interface/Vector.h"                            // math::Vector
 #include "DataFormats/TauReco/interface/PFTau.h"                          // reco::PFTau::kOneProng0PiZero
@@ -12,7 +12,6 @@
 #include "TauAnalysis/Entanglement/interface/cube.h"                      // cube()
 #include "TauAnalysis/Entanglement/interface/fixMass.h"                   // fixHiggsMass(), fixTauMass()
 #include "TauAnalysis/Entanglement/interface/getCov_hf.h"                 // getCov_hf()
-#include "TauAnalysis/Entanglement/interface/get_localCoordinateSystem.h" // get_localCoordinateSystem()
 #include "TauAnalysis/Entanglement/interface/Matrix_and_Vector.h"         // math::Matrix*, math::Vector*
 #include "TauAnalysis/Entanglement/interface/printCovMatrix.h"            // printCovMatrix()
 #include "TauAnalysis/Entanglement/interface/printLorentzVector.h"        // printLorentzVector()
@@ -20,8 +19,9 @@
 #include "TauAnalysis/Entanglement/interface/square.h"                    // square()
 
 #include "Math/Functions.h"                                               // ROOT::Math::Dot(), ROOT::Math::Similarity(), ROOT::Math::Transpose() 
+#include "TMath.h"                                                        // TMath::Pi() 
 
-#include <cmath>                                                          // std::abs(), std::exp(), std::fabs(), std::sin(), std::sqrt()
+#include <cmath>                                                          // std::abs(), std::exp(), std::fabs(), std::isnan(), std::sin(), std::sqrt()
 #include <iostream>                                                       // std::cout
 #include <string>                                                         // std::string
 
@@ -46,6 +46,134 @@ namespace
     double nuE = std::sqrt(square(nuPx) + square(nuPy) + square(nuPz));
     reco::Candidate::LorentzVector nuP4(nuPx, nuPy, nuPz, nuE);
     return nuP4;
+  }
+
+  bool
+  isNaN(const KinematicEvent& kineEvt, int verbosity = -1)
+  {
+    // CV: check if any parameters of kinematic fit are "not-a-number" (NaN)
+    if ( verbosity >= 1 )
+    {
+      std::cout << "<isNaN>:\n";
+    }
+    const reco::Candidate::Point& pv = kineEvt.pv();
+    if ( std::isnan(pv.X()) || std::isnan(pv.Y()) || std::isnan(pv.Z()) )
+    {
+      if ( verbosity >= 1 )
+      {
+        std::cout << "PV contains NaNs.\n";
+      }
+      return true;
+    }
+    const reco::Candidate::LorentzVector& nuTauPlusP4 = kineEvt.nuTauPlusP4();
+    if ( std::isnan(nuTauPlusP4.px()) || std::isnan(nuTauPlusP4.py()) || std::isnan(nuTauPlusP4.pz()) || std::isnan(nuTauPlusP4.energy()) )
+    {
+      if ( verbosity >= 1 )
+      {
+        std::cout << "neutrino from tau+ decay contains NaNs.\n";
+      }
+      return true;
+    }
+    const reco::Candidate::Point& svTauPlus = kineEvt.svTauPlus();
+    if ( std::isnan(svTauPlus.X()) || std::isnan(svTauPlus.Y()) || std::isnan(svTauPlus.Z()) )
+    { 
+      if ( verbosity >= 1 )
+      {
+        std::cout << "SV(tau+) contains NaNs.\n";
+      }
+      return true;
+    }
+    const reco::Candidate::LorentzVector& nuTauMinusP4 = kineEvt.nuTauMinusP4();
+    if ( std::isnan(nuTauMinusP4.px()) || std::isnan(nuTauMinusP4.py()) || std::isnan(nuTauMinusP4.pz()) || std::isnan(nuTauMinusP4.energy()) )
+    { 
+      if ( verbosity >= 1 )
+      {
+        std::cout << "neutrino from tau- decay contains NaNs.\n";
+      }
+      return true;
+    }
+    const reco::Candidate::Point& svTauMinus = kineEvt.svTauMinus();
+    if ( std::isnan(svTauMinus.X()) || std::isnan(svTauMinus.Y()) || std::isnan(svTauMinus.Z()) )
+    {
+      if ( verbosity >= 1 )
+      {
+        std::cout << "SV(tau-) contains NaNs.\n";
+      }
+      return true;
+    }
+    const reco::Candidate::LorentzVector& recoilP4 = kineEvt.recoilP4();
+    if ( std::isnan(recoilP4.px()) || std::isnan(recoilP4.py()) || std::isnan(recoilP4.pz()) || std::isnan(recoilP4.energy()) )
+    {
+      if ( verbosity >= 1 )
+      {
+        std::cout << "recoil contains NaNs.\n";
+      }
+      return true;
+    }
+    return false;
+  }
+
+  bool
+  isPhysicalSolution(const KinematicEvent& kineEvt, int verbosity = -1)
+  {
+    // CV: check that constraint equations are satisfied
+    //    (not just their linear approximation)
+    if ( verbosity >= 1 )
+    {
+      std::cout << "<isPhysicalSolution>:\n";
+    }
+    const double max_dphi = (10./180.)*TMath::Pi();
+    const double max_dtheta = (10./180.)*TMath::Pi();
+    reco::Candidate::LorentzVector higgsP4 = kineEvt.tauPlusP4() + kineEvt.tauMinusP4();
+    if ( std::fabs(higgsP4.mass() - mHiggs) > 10. )
+    {
+      if ( verbosity >= 1 )
+      {
+        std::cout << "fails Higgs mass constraint (mass = " << higgsP4.mass() << ").\n";
+      }
+      return false;
+    }
+    if ( std::fabs(kineEvt.tauPlusP4().mass() - mTau) > mTau )
+    { 
+      if ( verbosity >= 1 )
+      {
+        std::cout << "fails tau+ mass constraint (mass = " << kineEvt.tauPlusP4().mass() << ").\n";
+      }
+      return false;
+    }
+    auto tauPlusD3 = kineEvt.svTauPlus() - kineEvt.pv();
+    if ( std::fabs(reco::deltaPhi(kineEvt.tauPlusP4().phi(), tauPlusD3.phi())) > max_dphi   || 
+         std::fabs(kineEvt.tauPlusP4().theta() - tauPlusD3.theta())            > max_dtheta )
+    {
+      if ( verbosity >= 1 )
+      {
+        std::cout << "fails parallelism constraint for tau+.\n";
+        std::cout << " phi of tau+: four-vector = " << kineEvt.tauPlusP4().phi() << ", decay vertex = " << tauPlusD3.phi() << "\n";
+        std::cout << " theta of tau+: four-vector = " << kineEvt.tauPlusP4().theta() << ", decay vertex = " << tauPlusD3.theta() << "\n";
+      }
+      return false;
+    }
+    if ( std::fabs(kineEvt.tauMinusP4().mass() - mTau) > mTau )
+    { 
+      if ( verbosity >= 1 )
+      {
+        std::cout << "fails tau- mass constraint (mass = " << kineEvt.tauMinusP4().mass() << ").\n";
+      }
+      return false;
+    }
+    auto tauMinusD3 = kineEvt.svTauMinus() - kineEvt.pv();
+    if ( std::fabs(reco::deltaPhi(kineEvt.tauMinusP4().phi(), tauMinusD3.phi())) > max_dphi   || 
+         std::fabs(kineEvt.tauMinusP4().theta() - tauMinusD3.theta())            > max_dtheta )
+    {
+      if ( verbosity >= 1 )
+      {
+        std::cout << "fails parallelism constraint for tau-.\n";
+        std::cout << " phi of tau-: four-vector = " << kineEvt.tauMinusP4().phi() << ", decay vertex = " << tauMinusD3.phi() << "\n";
+        std::cout << " theta of tau-: four-vector = " << kineEvt.tauMinusP4().theta() << ", decay vertex = " << tauMinusD3.theta() << "\n";
+      }
+      return false;
+    }
+    return true;
   }
 }
 
@@ -92,7 +220,7 @@ KinematicFit::operator()(const KinematicEvent& kineEvt)
     const math::Matrix4x4& recoilCov = kineEvt.recoilCov();
 
     assert(kineEvtA.tauPlusP4_isValid());
-    reco::Candidate::LorentzVector tauPlusP4 = kineEvtA.tauPlusP4();
+    const reco::Candidate::LorentzVector& tauPlusP4 = kineEvtA.tauPlusP4();
     double tauPlusPx = tauPlusP4.px();
     double tauPlusPy = tauPlusP4.py();
     double tauPlusPz = tauPlusP4.pz();
@@ -112,7 +240,7 @@ KinematicFit::operator()(const KinematicEvent& kineEvt)
     double tauPlusDt = std::sqrt(tauPlusD3.Perp2());
     double tauPlusD  = std::sqrt(tauPlusD3.Mag2());
 
-    reco::Candidate::LorentzVector visTauPlusP4 = kineEvtA.visTauPlusP4();
+    const reco::Candidate::LorentzVector& visTauPlusP4 = kineEvtA.visTauPlusP4();
     double visTauPlusPx = visTauPlusP4.px();
     double visTauPlusPy = visTauPlusP4.py();
     double visTauPlusPz = visTauPlusP4.pz();
@@ -120,7 +248,7 @@ KinematicFit::operator()(const KinematicEvent& kineEvt)
     double visTauPlusE  = visTauPlusP4.energy();
 
     assert(kineEvtA.nuTauPlusP4_isValid());
-    reco::Candidate::LorentzVector nuTauPlusP4 = kineEvtA.nuTauPlusP4();
+    const reco::Candidate::LorentzVector& nuTauPlusP4 = kineEvtA.nuTauPlusP4();
     double nuTauPlusPx = nuTauPlusP4.px();
     double nuTauPlusPy = nuTauPlusP4.py();
     double nuTauPlusPz = nuTauPlusP4.pz();
@@ -128,7 +256,7 @@ KinematicFit::operator()(const KinematicEvent& kineEvt)
     const math::Matrix3x3& nuTauPlusCov = kineEvt.nuTauPlusCov();
 
     assert(kineEvtA.tauMinusP4_isValid());
-    reco::Candidate::LorentzVector tauMinusP4 = kineEvtA.tauMinusP4();
+    const reco::Candidate::LorentzVector& tauMinusP4 = kineEvtA.tauMinusP4();
     double tauMinusPx = tauMinusP4.px();
     double tauMinusPy = tauMinusP4.py();
     double tauMinusPz = tauMinusP4.pz();
@@ -148,7 +276,7 @@ KinematicFit::operator()(const KinematicEvent& kineEvt)
     double tauMinusDt = std::sqrt(tauMinusD3.Perp2());
     double tauMinusD  = std::sqrt(tauMinusD3.Mag2());
 
-    reco::Candidate::LorentzVector visTauMinusP4 = kineEvtA.visTauMinusP4();
+    const reco::Candidate::LorentzVector& visTauMinusP4 = kineEvtA.visTauMinusP4();
     double visTauMinusPx = visTauMinusP4.px();
     double visTauMinusPy = visTauMinusP4.py();
     double visTauMinusPz = visTauMinusP4.pz();
@@ -156,7 +284,7 @@ KinematicFit::operator()(const KinematicEvent& kineEvt)
     double visTauMinusE  = visTauMinusP4.energy();
 
     assert(kineEvtA.nuTauMinusP4_isValid());
-    reco::Candidate::LorentzVector nuTauMinusP4 = kineEvtA.nuTauMinusP4();
+    const reco::Candidate::LorentzVector& nuTauMinusP4 = kineEvtA.nuTauMinusP4();
     double nuTauMinusPx = nuTauMinusP4.px();
     double nuTauMinusPy = nuTauMinusP4.py();
     double nuTauMinusPz = nuTauMinusP4.pz();
@@ -722,6 +850,7 @@ KinematicFit::operator()(const KinematicEvent& kineEvt)
     {
       chi2 += 2.*tauPlusD*mTau/(ct*tauPlusP) + 2.*tauMinusD*mTau/(ct*tauMinusP);
     }
+    chi2 /= kinFit::numParameters;
     if ( verbosity_ >= 1 )
     {
       std::cout << "chi^2 = " << chi2 << "\n";
@@ -779,26 +908,26 @@ KinematicFit::operator()(const KinematicEvent& kineEvt)
     if ( verbosity_ >= 1 )
     {
       std::cout << "constraint equations:\n";
-      printPoint("PV", kineEvtA.pv_);
-      reco::Candidate::LorentzVector higgsP4 = kineEvtA.tauPlusP4_ + kineEvtA.tauMinusP4_;
+      printPoint("PV", kineEvtA.pv());
+      reco::Candidate::LorentzVector higgsP4 = kineEvtA.tauPlusP4() + kineEvtA.tauMinusP4();
       printLorentzVector("Higgs", higgsP4);
       std::cout << " mass = " << higgsP4.mass() << "\n";
-      printLorentzVector("tau+", kineEvtA.tauPlusP4_);
-      std::cout << " mass = " << kineEvtA.tauPlusP4_.mass() << "\n";
+      printLorentzVector("tau+", kineEvtA.tauPlusP4());
+      std::cout << " mass = " << kineEvtA.tauPlusP4().mass() << "\n";
       printLorentzVector("neutrino from tau+ decay", kineEvtA.nuTauPlusP4_);
-      std::cout << " mass = " << kineEvtA.nuTauPlusP4_.mass() << "\n";
-      printPoint("SV(tau+)", kineEvtA.svTauPlus_);
-      auto tauPlusD3 = kineEvtA.svTauPlus_ - kineEvtA.pv_;
-      std::cout << "phi of tau+: four-vector = " << kineEvtA.tauPlusP4_.phi() << ", decay vertex = " << tauPlusD3.phi() << "\n";
-      std::cout << "theta of tau+: four-vector = " << kineEvtA.tauPlusP4_.theta() << ", decay vertex = " << tauPlusD3.theta() << "\n";
-      printLorentzVector("tau-", kineEvtA.tauMinusP4_);
-      std::cout << " mass = " << kineEvtA.tauMinusP4_.mass() << "\n";
-      printLorentzVector("neutrino from tau- decay", kineEvtA.nuTauMinusP4_);
-      std::cout << " mass = " << kineEvtA.nuTauMinusP4_.mass() << "\n";
-      printPoint("SV(tau-)", kineEvtA.svTauMinus_);
-      auto tauMinusD3 = kineEvtA.svTauMinus_ - kineEvtA.pv_;
-      std::cout << "phi of tau-: four-vector = " << kineEvtA.tauMinusP4_.phi() << ", decay vertex = " << tauMinusD3.phi() << "\n";
-      std::cout << "theta of tau-: four-vector = " << kineEvtA.tauMinusP4_.theta() << ", decay vertex = " << tauMinusD3.theta() << "\n";
+      std::cout << " mass = " << kineEvtA.nuTauPlusP4().mass() << "\n";
+      printPoint("SV(tau+)", kineEvtA.svTauPlus());
+      auto tauPlusD3 = kineEvtA.svTauPlus() - kineEvtA.pv();
+      std::cout << "phi of tau+: four-vector = " << kineEvtA.tauPlusP4().phi() << ", decay vertex = " << tauPlusD3.phi() << "\n";
+      std::cout << "theta of tau+: four-vector = " << kineEvtA.tauPlusP4().theta() << ", decay vertex = " << tauPlusD3.theta() << "\n";
+      printLorentzVector("tau-", kineEvtA.tauMinusP4());
+      std::cout << " mass = " << kineEvtA.tauMinusP4().mass() << "\n";
+      printLorentzVector("neutrino from tau- decay", kineEvtA.nuTauMinusP4());
+      std::cout << " mass = " << kineEvtA.nuTauMinusP4().mass() << "\n";
+      printPoint("SV(tau-)", kineEvtA.svTauMinus());
+      auto tauMinusD3 = kineEvtA.svTauMinus() - kineEvtA.pv();
+      std::cout << "phi of tau-: four-vector = " << kineEvtA.tauMinusP4().phi() << ", decay vertex = " << tauMinusD3.phi() << "\n";
+      std::cout << "theta of tau-: four-vector = " << kineEvtA.tauMinusP4().theta() << ", decay vertex = " << tauMinusD3.theta() << "\n";
       reco::Candidate::LorentzVector recoilP4(alpha(15), alpha(16), alpha(17), alpha(18));
       printLorentzVector("recoil", recoilP4);
       std::cout << " mass = " << recoilP4.mass() << "\n";
@@ -809,30 +938,43 @@ KinematicFit::operator()(const KinematicEvent& kineEvt)
                 << " dPz = " << higgsP4.pz()     - recoilP4.pz()     << "\n";
     }
 
-    const double epsilon = 1.e-1;
-    if ( residuals_sum < epsilon && (status == -1 || chi2 < min_chi2) )
+    if ( verbosity_ >= 1 )
     {
-      kineEvt_kinfit = kineEvtA;
-      kineEvt_kinfit.kinFitCov_ = V_alpha;
-      kineEvt_kinfit.kinFitChi2_ = chi2;
-      kineEvt_kinfit.kinFit_isValid_ = true;
-      min_chi2 = chi2;
-      status = 0;
+      std::cout << "isNaN = " << isNaN(kineEvtA, verbosity_) << "\n";
+      std::cout << "isPhysicalSolution = " << isPhysicalSolution(kineEvtA, verbosity_) << "\n";
     }
-    if ( status == 0 && dalpha_mag < 1.e-1 )
+
+    if ( !isNaN(kineEvtA) && isPhysicalSolution(kineEvtA) )
     {
-      status = 1;
-      hasConverged = true;
+      if ( status == -1 || chi2 < min_chi2 )
+      {
+        kineEvt_kinfit = kineEvtA;
+        kineEvt_kinfit.kinFitCov_ = V_alpha;
+        kineEvt_kinfit.kinFitChi2_ = chi2;
+        kineEvt_kinfit.kinFit_isValid_ = true;
+        min_chi2 = chi2;
+        status = 0;
+      }
+      if ( status == 0 && dalpha_mag < 1.e-1 )
+      {
+        status = 1;
+        hasConverged = true;
+      }
     }
-    if ( dalpha_mag > 1.e+6 || chi2 > 1.e+6 )
+
+    if ( isNaN(kineEvtA) )
     {
-      // CV: there is no hope that the KinematicFit may still converge;
-      //     give up to avoid that the neutrino momentum becomes "not-a-number" (NaN),
-      //     triggering the following assert statement:
-      //       cmsRun: /home/veelken/Entanglement/CMSSW_10_6_20/src/TauAnalysis/Entanglement/src/SpinAnalyzerOneProng1Pi0.cc:103: reco::Candidate::Vector {anonymous}::getPolarimetricVec_OneProng1PiZero(const LorentzVector&, const std::vector<KinematicParticle>&, const LorentzVector&, const ROOT::Math::Boost&, const Vector&, const Vector&, const Vector&, const ROOT::Math::Boost&, int, bool): Assertion `nuP4.energy() >= 0. && N.energy() >= 0.' failed.
+      // CV: there is no hope that the KinematicFit may still converge,
+      //     once one of the paramaters becomes "not-a-number" (NaN)
+      std::cerr << "WARNING: Parameters contain NaNs -> aborting KinematicFit at iteration #" << iteration << " !!" << std::endl;
       break;
     }
+
     ++iteration;
+  }
+  if ( status == 0 && min_chi2 < 1.e+2 )
+  {
+    hasConverged = true;
   }
   if ( !hasConverged )
   {
@@ -841,16 +983,21 @@ KinematicFit::operator()(const KinematicEvent& kineEvt)
   if ( verbosity_ >= 1 )
   {
     std::cout << "#iterations = " << iteration << " (max_iterations = " << max_iterations << ")\n";
+    std::cout << " status = " << status << "\n";
+    std::cout << " min(chi^2) = " << min_chi2 << "\n";
   }
 
   kineEvt_kinfit.kinFitStatus_ = status;
-
-  reco::Candidate::Vector hPlus = spinAnalyzer_(kineEvt_kinfit, SpinAnalyzerBase::kTauPlus);
-  kineEvt_kinfit.hPlus_ = hPlus;
-  kineEvt_kinfit.hPlus_isValid_ = true;
-  reco::Candidate::Vector hMinus = spinAnalyzer_(kineEvt_kinfit, SpinAnalyzerBase::kTauMinus);
-  kineEvt_kinfit.hMinus_ = hMinus;
-  kineEvt_kinfit.hMinus_isValid_ = true;
+  kineEvt_kinfit.recoilP4_ = kineEvt_kinfit.tauPlusP4_ + kineEvt_kinfit.tauMinusP4_;
+  if ( hasConverged )
+  {
+    reco::Candidate::Vector hPlus = spinAnalyzer_(kineEvt_kinfit, SpinAnalyzerBase::kTauPlus);
+    kineEvt_kinfit.hPlus_ = hPlus;
+    kineEvt_kinfit.hPlus_isValid_ = true;
+    reco::Candidate::Vector hMinus = spinAnalyzer_(kineEvt_kinfit, SpinAnalyzerBase::kTauMinus);
+    kineEvt_kinfit.hMinus_ = hMinus;
+    kineEvt_kinfit.hMinus_isValid_ = true;
+  }
 
   return kineEvt_kinfit;
 }

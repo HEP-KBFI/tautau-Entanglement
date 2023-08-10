@@ -45,7 +45,7 @@ class Smearing
   bool applySmearing_recoil_px_;
   bool applySmearing_recoil_py_;
   bool applySmearing_recoil_pz_;
-  bool applySmearing_recoil_energy_;
+  bool applySmearing_recoil_mass_;
 
   bool applySmearing_pv_xy_;
   bool applySmearing_pv_z_;

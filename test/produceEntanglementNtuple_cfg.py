@@ -34,7 +34,7 @@ inputFilePath = '/store/mc/RunIISummer20UL18MiniAODv2/GluGluHToTauTau_M125_TuneC
 inputFileNames = None
 processName = "qqH_htt_pythia8"
 hAxis = "beam"
-rndSeed = 0
+rndSeed = 1
 outputFileName = "entanglementNtuple_%s_DEBUG.root" % processName
 
 ##inputFilePath = None
@@ -158,11 +158,13 @@ process.ntupleProducer = cms.EDAnalyzer("EntanglementNtupleProducer",
     #applySmearing = cms.bool(False),
     applySmearing = cms.bool(True),
     srcEvtWeights = cms.VInputTag('genWeight'),
+    startPosMode = cms.int32(2),
+    applyHiggsMassConstraint = cms.bool(True),
     # CV: 0 = "regular" tau mass constraint, 1 = constraint on Gottfried-Jackson angle
     applyTauMassConstraint = cms.int32(0),
     applyLifetimeConstraint = cms.bool(False),
     verbosity = cms.untracked.int32(-1),
-    #verbosity = cms.untracked.int32(2),
+    #verbosity = cms.untracked.int32(3),
     cartesian = cms.untracked.bool(True)
 )
 process.analysisSequence += process.ntupleProducer

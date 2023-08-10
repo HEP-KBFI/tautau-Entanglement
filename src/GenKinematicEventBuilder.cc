@@ -60,13 +60,26 @@ namespace
   }
 
   math::Matrix4x4
-  build_recoilCov(const Resolutions& resolutions)
+  build_recoilCov(const reco::Candidate::LorentzVector& recoilP4, const Resolutions& resolutions)
   {
+    double sigma2_px   = square(resolutions.recoilResolution_px());
+    double sigma2_py   = square(resolutions.recoilResolution_py());
+    double sigma2_pz   = square(resolutions.recoilResolution_pz());
+    double sigma2_mass = square(resolutions.recoilResolution_mass());
     math::Matrix4x4 recoilCov;
-    recoilCov(0,0) = square(resolutions.recoilResolution_px());
-    recoilCov(1,1) = square(resolutions.recoilResolution_py());
-    recoilCov(2,2) = square(resolutions.recoilResolution_pz());
-    recoilCov(3,3) = square(resolutions.recoilResolution_energy());
+    recoilCov(0,0) = sigma2_px;
+    recoilCov(0,3) = (recoilP4.px()/recoilP4.energy())*sigma2_px;
+    recoilCov(1,1) = sigma2_py;
+    recoilCov(1,3) = (recoilP4.py()/recoilP4.energy())*sigma2_py;
+    recoilCov(2,2) = sigma2_pz;
+    recoilCov(2,3) = (recoilP4.pz()/recoilP4.energy())*sigma2_pz;
+    recoilCov(3,0) = recoilCov(0,3);
+    recoilCov(3,1) = recoilCov(1,3);
+    recoilCov(3,2) = recoilCov(2,3);
+    recoilCov(3,3) = square(recoilP4.px()/recoilP4.energy())*sigma2_px
+                    + square(recoilP4.py()/recoilP4.energy())*sigma2_py
+                    + square(recoilP4.pz()/recoilP4.energy())*sigma2_pz
+                    + square(recoilP4.mass()/recoilP4.energy())*sigma2_mass;
     return recoilCov;
   }
 
@@ -116,12 +129,12 @@ namespace
   }
 
   reco::Candidate::Point
-  comp_tipPCA(const reco::Candidate::Point& pv, const reco::GenParticle* leadTrack, int verbosity)
+  comp_PCA_line2point(const reco::Candidate::Point& pv, const reco::GenParticle* leadTrack, int verbosity)
   {
     // CV: compute point of closest approach (PCA) between primary event vertex and track
     if ( verbosity >= 2 )
     {
-      std::cout << "<comp_tipPCA>:" << std::endl;
+      std::cout << "<comp_PCA_line2point>:" << std::endl;
     }
     reco::Candidate::Point sv = leadTrack->vertex();
     auto flightlength = sv - pv;
@@ -388,7 +401,7 @@ GenKinematicEventBuilder::operator()(const reco::GenParticleCollection& genParti
   }
 
   reco::Candidate::LorentzVector recoilP4 = tauPlusP4 + tauMinusP4;
-  math::Matrix4x4 recoilCov = build_recoilCov(*resolutions_);
+  math::Matrix4x4 recoilCov = build_recoilCov(recoilP4, *resolutions_);
   if ( verbosity_ >= 1 )
   {
     printLorentzVector("recoilP4", recoilP4, cartesian_);
@@ -450,7 +463,7 @@ GenKinematicEventBuilder::operator()(const reco::GenParticleCollection& genParti
   kineEvt.visTauPlusCov_ = comp_visTauCov(visTauPlusP4, daughtersTauPlus);
   kineEvt.tauPlus_decayMode_ = tauPlus_decayMode;
   kineEvt.daughtersTauPlus_ = daughtersTauPlus;
-  kineEvt.tipPCATauPlus_ = comp_tipPCA(pv, tauPlus_leadTrack, verbosity_);
+  kineEvt.tipPCATauPlus_ = comp_PCA_line2point(pv, tauPlus_leadTrack, verbosity_);
   kineEvt.svTauPlus_ = svTauPlus;
   kineEvt.svTauPlus_isValid_ = true;
   kineEvt.svTauPlusCov_ = svTauPlusCov;
@@ -468,7 +481,7 @@ GenKinematicEventBuilder::operator()(const reco::GenParticleCollection& genParti
   kineEvt.visTauMinusCov_ = comp_visTauCov(visTauMinusP4, daughtersTauMinus);
   kineEvt.tauMinus_decayMode_ = tauMinus_decayMode;
   kineEvt.daughtersTauMinus_ = daughtersTauMinus;
-  kineEvt.tipPCATauMinus_ = comp_tipPCA(pv, tauMinus_leadTrack, verbosity_);
+  kineEvt.tipPCATauMinus_ = comp_PCA_line2point(pv, tauMinus_leadTrack, verbosity_);
   kineEvt.svTauMinus_ = tauMinus_leadTrack->vertex();
   kineEvt.svTauMinus_isValid_ = true;
   kineEvt.svTauMinusCov_ = svTauMinusCov;

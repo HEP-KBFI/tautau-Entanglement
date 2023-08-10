@@ -29,7 +29,7 @@ Smearing::Smearing(const edm::ParameterSet& cfg)
   applySmearing_recoil_px_     = cfg_smearing.getParameter<bool>("applySmearing_recoil_px");
   applySmearing_recoil_py_     = cfg_smearing.getParameter<bool>("applySmearing_recoil_py");
   applySmearing_recoil_pz_     = cfg_smearing.getParameter<bool>("applySmearing_recoil_pz");
-  applySmearing_recoil_energy_ = cfg_smearing.getParameter<bool>("applySmearing_recoil_energy");
+  applySmearing_recoil_mass_   = cfg_smearing.getParameter<bool>("applySmearing_recoil_mass");
 
   applySmearing_pv_xy_         = cfg_smearing.getParameter<bool>("applySmearing_pv_xy");
   applySmearing_pv_z_          = cfg_smearing.getParameter<bool>("applySmearing_pv_z");
@@ -57,7 +57,7 @@ Smearing::Smearing(const edm::ParameterSet& cfg)
               << " px = " << applySmearing_recoil_px_ << ","
               << " py = " << applySmearing_recoil_py_ << ","
               << " pz = " << applySmearing_recoil_pz_ << ","
-              << " energy = " << applySmearing_recoil_energy_ << "\n";
+              << " mass = " << applySmearing_recoil_mass_ << "\n";
     std::cout << "PV:" 
               << " xy = " << applySmearing_pv_xy_ << ","
               << " z = " << applySmearing_pv_z_ << "\n";
@@ -189,7 +189,7 @@ Smearing::smear_recoil_p4(const reco::Candidate::LorentzVector& recoilP4)
   double smeared_recoilPx = recoilP4.px();
   double smeared_recoilPy = recoilP4.py();
   double smeared_recoilPz = recoilP4.pz();
-  double smeared_recoilE  = recoilP4.energy();
+  double smeared_recoilM  = recoilP4.mass();
   if ( applySmearing_recoil_px_ )
   {
     smeared_recoilPx += rnd_.Gaus(0., resolutions_->recoilResolution_px());
@@ -202,10 +202,12 @@ Smearing::smear_recoil_p4(const reco::Candidate::LorentzVector& recoilP4)
   {
     smeared_recoilPz += rnd_.Gaus(0., resolutions_->recoilResolution_pz());
   }
-  if ( applySmearing_recoil_energy_ )
+  if ( applySmearing_recoil_mass_ )
   {
-    smeared_recoilE  += rnd_.Gaus(0., resolutions_->recoilResolution_energy());
+    smeared_recoilM  += rnd_.Gaus(0., resolutions_->recoilResolution_mass());
+    if ( smeared_recoilM < 0. ) smeared_recoilM = 0.;
   }
+  double smeared_recoilE  = std::sqrt(square(smeared_recoilPx) + square(smeared_recoilPy) + square(smeared_recoilPz) + square(smeared_recoilM));
   return reco::Candidate::LorentzVector(smeared_recoilPx, smeared_recoilPy, smeared_recoilPz, smeared_recoilE);
 }
 
