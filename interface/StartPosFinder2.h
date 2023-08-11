@@ -17,8 +17,6 @@ class StartPosFinder2 : public StartPosFinderBase
 
  private:
   Resolutions* resolutions_;
-
-  bool applyHiggsMassConstraint_;
 };
 
 #endif // TauAnalysis_Entanglement_StartPosFinder2_h
