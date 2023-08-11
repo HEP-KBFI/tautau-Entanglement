@@ -122,8 +122,8 @@ namespace
     {
       std::cout << "<isPhysicalSolution>:\n";
     }
-    const double max_dphi = (10./180.)*TMath::Pi();
-    const double max_dtheta = (10./180.)*TMath::Pi();
+    const double max_dphi = (30./180.)*TMath::Pi();
+    const double max_dtheta = (30./180.)*TMath::Pi();
     reco::Candidate::LorentzVector higgsP4 = kineEvt.tauPlusP4() + kineEvt.tauMinusP4();
     if ( std::fabs(higgsP4.mass() - mHiggs) > 10. )
     {
@@ -133,7 +133,7 @@ namespace
       }
       return false;
     }
-    if ( std::fabs(kineEvt.tauPlusP4().mass() - mTau) > mTau )
+    if ( !(kineEvt.tauPlusP4().mass() >= 0. && kineEvt.tauPlusP4().mass() <= 5.) )
     { 
       if ( verbosity >= 1 )
       {
@@ -153,7 +153,7 @@ namespace
       }
       return false;
     }
-    if ( std::fabs(kineEvt.tauMinusP4().mass() - mTau) > mTau )
+    if ( !(kineEvt.tauMinusP4().mass() >= 0. && kineEvt.tauMinusP4().mass() <= 5.) )
     { 
       if ( verbosity >= 1 )
       {
@@ -368,9 +368,9 @@ KinematicFit::operator()(const KinematicEvent& kineEvt)
     // CV: add Higgs mass constraint
     //       H = sqrt(2*mTau^2 
     //              + 2*(visTauPlusE  + nuTauPlusE )*(visTauMinusE  + nuTauMinusE ) 
-    //              - 2*(visTauPlusPx + nuTauPlusPx)*(visTauMinusPx + nuTauminusPx)
-    //              - 2*(visTauPlusPy + nuTauPlusPy)*(visTauMinusPy + nuTauminusPy)
-    //              - 2*(visTauPlusPz + nuTauPlusPz)*(visTauMinusPz + nuTauminusPz)) - mHiggs = 0
+    //              - 2*(visTauPlusPx + nuTauPlusPx)*(visTauMinusPx + nuTauMinusPx)
+    //              - 2*(visTauPlusPy + nuTauPlusPy)*(visTauMinusPy + nuTauMinusPy)
+    //              - 2*(visTauPlusPz + nuTauPlusPz)*(visTauMinusPz + nuTauMinusPz)) - mHiggs = 0
     //     where
     //       nuTauPlusE  = sqrt(nuTauPlusPx^2  + nuTauPlusPy^2  + nuTauPlusPz^2 )
     //       nuTauMinusE = sqrt(nuTauMisusPx^2 + nuTauMinusPy^2 + nuTauMinusPz^2)

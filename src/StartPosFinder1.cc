@@ -494,28 +494,22 @@ StartPosFinder1::operator()(const KinematicEvent& kineEvt)
   //kineEvt_startpos.nuTauPlusP4_ = fixNuMass(tauPlusP4 - visTauPlusP4);
   kineEvt_startpos.nuTauPlusP4_ = tauPlusP4 - visTauPlusP4;
   kineEvt_startpos.nuTauPlusP4_isValid_ = true;
-  if ( !kineEvt_startpos.svTauPlus_isValid() )
-  {
-    const KinematicParticle* leadTrack = get_leadTrack(kineEvt_startpos.daughtersTauPlus());
-    assert(leadTrack);
-    const reco::Candidate::Point& tipPCA = kineEvt_startpos.tipPCATauPlus();
-    kineEvt_startpos.svTauPlus_ = comp_PCA_line2line(kineEvt_startpos.pv(), tauPlusP4, tipPCA, leadTrack->p4(), verbosity_);
-    kineEvt_startpos.svTauPlus_isValid_ = true;
-  }
+  const KinematicParticle* tauPlus_leadTrack = get_leadTrack(kineEvt_startpos.daughtersTauPlus());
+  assert(tauPlus_leadTrack);
+  const reco::Candidate::Point& tauPlus_tipPCA = kineEvt_startpos.tipPCATauPlus();
+  kineEvt_startpos.svTauPlus_ = comp_PCA_line2line(kineEvt_startpos.pv(), tauPlusP4, tauPlus_tipPCA, tauPlus_leadTrack->p4(), verbosity_);
+  kineEvt_startpos.svTauPlus_isValid_ = true;
 
   kineEvt_startpos.tauMinusP4_ = tauMinusP4;
   kineEvt_startpos.tauMinusP4_isValid_ = true;
   //kineEvt_startpos.nuTauMinusP4_ = fixNuMass(tauMinusP4 - visTauMinusP4);
   kineEvt_startpos.nuTauMinusP4_ = tauMinusP4 - visTauMinusP4;
   kineEvt_startpos.nuTauMinusP4_isValid_ = true;
-  if ( !kineEvt_startpos.svTauMinus_isValid() )
-  {
-    const KinematicParticle* leadTrack = get_leadTrack(kineEvt_startpos.daughtersTauMinus());
-    assert(leadTrack);
-    const reco::Candidate::Point& tipPCA = kineEvt_startpos.tipPCATauMinus();
-    kineEvt_startpos.svTauMinus_ = comp_PCA_line2line(kineEvt_startpos.pv(), tauMinusP4, tipPCA, leadTrack->p4(), verbosity_);
-    kineEvt_startpos.svTauMinus_isValid_ = true;
-  }
+  const KinematicParticle* tauMinus_leadTrack = get_leadTrack(kineEvt_startpos.daughtersTauMinus());
+  assert(tauMinus_leadTrack);
+  const reco::Candidate::Point& tauMinus_tipPCA = kineEvt_startpos.tipPCATauMinus();
+  kineEvt_startpos.svTauMinus_ = comp_PCA_line2line(kineEvt_startpos.pv(), tauMinusP4, tauMinus_tipPCA, tauMinus_leadTrack->p4(), verbosity_);
+  kineEvt_startpos.svTauMinus_isValid_ = true;
 
   return kineEvt_startpos;
 }

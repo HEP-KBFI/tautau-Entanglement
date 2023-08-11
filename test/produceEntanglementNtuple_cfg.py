@@ -103,6 +103,10 @@ process.analysisSequence += process.selectedTauPairFilter
 #     so it is recommended to ALWAYS apply a tau decay mode selection 
 #     and require that BOTH taus decay hadronically and to the selected decay modes
 #
+#     Similarly, it is recommended to ALWAYS apply the pT > 20 GeV and |eta| < 2.3 cuts,
+#     in order to remove pathological events in which one of the tau leptons have very high longitudinal momentum
+#     or the visible decay products have very low transverse momentum
+#
 process.load("PhysicsTools.JetMCAlgos.TauGenJets_cfi")
 process.tauGenJets.GenParticles = cms.InputTag('genTaus')
 process.analysisSequence += process.tauGenJets
@@ -128,8 +132,8 @@ process.selectedGenHadTaus = cms.EDFilter("GenJetSelector",
 process.analysisSequence += process.selectedGenHadTaus
 
 process.selectedGenHadTauFilter = cms.EDFilter("CandViewCountFilter",
-    ##src = cms.InputTag('selectedGenHadTaus'),
-    src = cms.InputTag('tauGenJetsSelectorAllHadrons'),
+    src = cms.InputTag('selectedGenHadTaus'),
+    ##src = cms.InputTag('tauGenJetsSelectorAllHadrons'),
     minNumber = cms.uint32(2)
 )
 process.analysisSequence += process.selectedGenHadTauFilter
@@ -160,6 +164,7 @@ process.ntupleProducer = cms.EDAnalyzer("EntanglementNtupleProducer",
     srcEvtWeights = cms.VInputTag('genWeight'),
     startPosMode = cms.int32(2),
     applyHiggsMassConstraint = cms.bool(True),
+    applyRecoilEnergy_and_PzConstraint = cms.bool(True),
     # CV: 0 = "regular" tau mass constraint, 1 = constraint on Gottfried-Jackson angle
     applyTauMassConstraint = cms.int32(0),
     applyLifetimeConstraint = cms.bool(False),

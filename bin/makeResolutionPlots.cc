@@ -499,8 +499,8 @@ int main(int argc, char* argv[])
   showHistogram1d(histogram_res_pv_z,         "PV z^{rec} - z^{gen} [cm]",                        1.2, true, 1.e-3, 1.e0, "Events", 1.3, avEvtWeight, true,  outputFile.file());
 
   showHistogram1d(histogram_res_tauPlus_pt,   "#tau^{+} p_{T}^{rec} - p_{T}^{gen} [GeV]",         1.2, true, 1.e-3, 1.e0, "Events", 1.3, avEvtWeight, true,  outputFile.file());
-  showHistogram1d(histogram_res_tauPlus_eta,  "#tau^{+} #eta^{rec} - #eta^{gen}",                 1.2, true, 1.e-3, 1.e0, "Events", 1.3, avEvtWeight, false, outputFile.file());
-  showHistogram1d(histogram_res_tauPlus_phi,  "#tau^{+} #phi^{rec} - #phi^{gen}",                 1.2, true, 1.e-3, 1.e0, "Events", 1.3, avEvtWeight, false, outputFile.file());
+  showHistogram1d(histogram_res_tauPlus_eta,  "#tau^{+} #eta^{rec} - #eta^{gen}",                 1.2, true, 1.e-3, 1.e0, "Events", 1.3, avEvtWeight, true,  outputFile.file());
+  showHistogram1d(histogram_res_tauPlus_phi,  "#tau^{+} #phi^{rec} - #phi^{gen}",                 1.2, true, 1.e-3, 1.e0, "Events", 1.3, avEvtWeight, true,  outputFile.file());
   showHistogram1d(histogram_res_svPlus_r,     "SV(#tau^{+}) r^{rec} - r^{gen} [cm]",              1.2, true, 1.e-3, 1.e0, "Events", 1.3, avEvtWeight, true,  outputFile.file());
   showHistogram1d(histogram_res_svPlus_n,     "SV(#tau^{+}) n^{rec} - n^{gen} [cm]",              1.2, true, 1.e-3, 1.e0, "Events", 1.3, avEvtWeight, true,  outputFile.file());
   showHistogram1d(histogram_res_svPlus_k,     "SV(#tau^{+}) k^{rec} - k^{gen} [cm]",              1.2, true, 1.e-3, 1.e0, "Events", 1.3, avEvtWeight, true,  outputFile.file());
@@ -513,14 +513,14 @@ int main(int argc, char* argv[])
   showHistogram1d(histogram_res_nuPlus_px,    "#bar{#nu}_{#tau} p_{x}^{rec} - p_{x}^{gen} [GeV]", 1.2, true, 1.e-3, 1.e0, "Events", 1.3, avEvtWeight, true,  outputFile.file());
   showHistogram1d(histogram_res_nuPlus_py,    "#bar{#nu}_{#tau} p_{y}^{rec} - p_{y}^{gen} [GeV]", 1.2, true, 1.e-3, 1.e0, "Events", 1.3, avEvtWeight, true,  outputFile.file());
   showHistogram1d(histogram_res_nuPlus_pz,    "#bar{#nu}_{#tau} p_{z}^{rec} - p_{z}^{gen} [GeV]", 1.2, true, 1.e-3, 1.e0, "Events", 1.3, avEvtWeight, true,  outputFile.file());
-  showHistogram1d(histogram_res_hPlus_r,      "h^{+} r^{rec} - r^{gen}",                          1.2, true, 1.e-3, 1.e0, "Events", 1.3, avEvtWeight, false, outputFile.file());
-  showHistogram1d(histogram_res_hPlus_n,      "h^{+} n^{rec} - n^{gen}",                          1.2, true, 1.e-3, 1.e0, "Events", 1.3, avEvtWeight, false, outputFile.file());
-  showHistogram1d(histogram_res_hPlus_k,      "h^{+} k^{rec} - k^{gen}",                          1.2, true, 1.e-3, 1.e0, "Events", 1.3, avEvtWeight, false, outputFile.file());
-  showHistogram1d(histogram_res_hPlus_angle,  "angle(h^{+,rec},h^{+,gen})",                       1.2, true, 1.e-3, 1.e0, "Events", 1.3, avEvtWeight, false, outputFile.file());
+  showHistogram1d(histogram_res_hPlus_r,      "h^{+} r^{rec} - r^{gen}",                          1.2, true, 1.e-3, 1.e0, "Events", 1.3, avEvtWeight, true,  outputFile.file());
+  showHistogram1d(histogram_res_hPlus_n,      "h^{+} n^{rec} - n^{gen}",                          1.2, true, 1.e-3, 1.e0, "Events", 1.3, avEvtWeight, true,  outputFile.file());
+  showHistogram1d(histogram_res_hPlus_k,      "h^{+} k^{rec} - k^{gen}",                          1.2, true, 1.e-3, 1.e0, "Events", 1.3, avEvtWeight, true,  outputFile.file());
+  showHistogram1d(histogram_res_hPlus_angle,  "angle(h^{+,rec},h^{+,gen})",                       1.2, true, 1.e-3, 1.e0, "Events", 1.3, avEvtWeight, true,  outputFile.file());
 
   showHistogram1d(histogram_res_tauMinus_pt,  "#tau^{-} p_{T}^{rec} - p_{T}^{gen} [GeV]",         1.2, true, 1.e-3, 1.e0, "Events", 1.3, avEvtWeight, true,  outputFile.file());
-  showHistogram1d(histogram_res_tauMinus_eta, "#tau^{-} #eta^{rec} - #eta^{gen}",                 1.2, true, 1.e-3, 1.e0, "Events", 1.3, avEvtWeight, false, outputFile.file());
-  showHistogram1d(histogram_res_tauMinus_phi, "#tau^{-} #phi^{rec} - #phi^{gen}",                 1.2, true, 1.e-3, 1.e0, "Events", 1.3, avEvtWeight, false, outputFile.file());
+  showHistogram1d(histogram_res_tauMinus_eta, "#tau^{-} #eta^{rec} - #eta^{gen}",                 1.2, true, 1.e-3, 1.e0, "Events", 1.3, avEvtWeight, true,  outputFile.file());
+  showHistogram1d(histogram_res_tauMinus_phi, "#tau^{-} #phi^{rec} - #phi^{gen}",                 1.2, true, 1.e-3, 1.e0, "Events", 1.3, avEvtWeight, true,  outputFile.file());
   showHistogram1d(histogram_res_svMinus_r,    "SV(#tau^{-}) r^{rec} - r^{gen} [cm]",              1.2, true, 1.e-3, 1.e0, "Events", 1.3, avEvtWeight, true,  outputFile.file());
   showHistogram1d(histogram_res_svMinus_n,    "SV(#tau^{-}) n^{rec} - n^{gen} [cm]",              1.2, true, 1.e-3, 1.e0, "Events", 1.3, avEvtWeight, true,  outputFile.file());
   showHistogram1d(histogram_res_svMinus_k,    "SV(#tau^{-}) k^{rec} - k^{gen} [cm]",              1.2, true, 1.e-3, 1.e0, "Events", 1.3, avEvtWeight, true,  outputFile.file());
@@ -533,12 +533,12 @@ int main(int argc, char* argv[])
   showHistogram1d(histogram_res_nuMinus_px,   "#bar{#nu}_{#tau} p_{x}^{rec} - p_{x}^{gen} [GeV]", 1.2, true, 1.e-3, 1.e0, "Events", 1.3, avEvtWeight, true,  outputFile.file());
   showHistogram1d(histogram_res_nuMinus_py,   "#bar{#nu}_{#tau} p_{y}^{rec} - p_{y}^{gen} [GeV]", 1.2, true, 1.e-3, 1.e0, "Events", 1.3, avEvtWeight, true,  outputFile.file());
   showHistogram1d(histogram_res_nuMinus_pz,   "#bar{#nu}_{#tau} p_{z}^{rec} - p_{z}^{gen} [GeV]", 1.2, true, 1.e-3, 1.e0, "Events", 1.3, avEvtWeight, true,  outputFile.file());
-  showHistogram1d(histogram_res_hMinus_r,     "h^{-} r^{rec} - r^{gen}",                          1.2, true, 1.e-3, 1.e0, "Events", 1.3, avEvtWeight, false, outputFile.file());
-  showHistogram1d(histogram_res_hMinus_n,     "h^{-} n^{rec} - n^{gen}",                          1.2, true, 1.e-3, 1.e0, "Events", 1.3, avEvtWeight, false, outputFile.file());
-  showHistogram1d(histogram_res_hMinus_k,     "h^{-} k^{rec} - k^{gen}",                          1.2, true, 1.e-3, 1.e0, "Events", 1.3, avEvtWeight, false, outputFile.file());
-  showHistogram1d(histogram_res_hMinus_angle, "angle(h^{-,rec},h^{-,gen})",                       1.2, true, 1.e-3, 1.e0, "Events", 1.3, avEvtWeight, false, outputFile.file());
+  showHistogram1d(histogram_res_hMinus_r,     "h^{-} r^{rec} - r^{gen}",                          1.2, true, 1.e-3, 1.e0, "Events", 1.3, avEvtWeight, true,  outputFile.file());
+  showHistogram1d(histogram_res_hMinus_n,     "h^{-} n^{rec} - n^{gen}",                          1.2, true, 1.e-3, 1.e0, "Events", 1.3, avEvtWeight, true,  outputFile.file());
+  showHistogram1d(histogram_res_hMinus_k,     "h^{-} k^{rec} - k^{gen}",                          1.2, true, 1.e-3, 1.e0, "Events", 1.3, avEvtWeight, true,  outputFile.file());
+  showHistogram1d(histogram_res_hMinus_angle, "angle(h^{-,rec},h^{-,gen})",                       1.2, true, 1.e-3, 1.e0, "Events", 1.3, avEvtWeight, true,  outputFile.file());
 
-  showHistogram1d(histogram_res_hPlus_dot_hMinus, "h^{+,rec}*h^{-,rec} - h^{+,gen}*h^{-,gen}",    1.2, true, 1.e-3, 1.e0, "Events", 1.3, avEvtWeight, false, outputFile.file());
+  showHistogram1d(histogram_res_hPlus_dot_hMinus, "h^{+,rec}*h^{-,rec} - h^{+,gen}*h^{-,gen}",    1.2, true, 1.e-3, 1.e0, "Events", 1.3, avEvtWeight, true,  outputFile.file());
 
   showHistogram1d(histogram_res_higgs_pt,     "H p_{T}^{rec} - p_{T}^{gen} [GeV]",                1.2, true, 1.e-3, 1.e0, "Events", 1.3, avEvtWeight, true,  outputFile.file());
   showHistogram1d(histogram_res_higgs_eta,    "H #eta^{rec} - #eta^{gen}",                        1.2, true, 1.e-3, 1.e0, "Events", 1.3, avEvtWeight, true,  outputFile.file());

@@ -279,6 +279,7 @@ printKinematicEvent(const std::string& label,
     printLorentzVector("tauPlusP4", kineEvt.tauPlusP4(), cartesian);
     std::cout << " mass = " << kineEvt.tauPlusP4().mass() << "\n";
     printLorentzVector("tauPlusP4", kineEvt.tauPlusP4(), false);
+    std::cout << "visible energy fraction = " << kineEvt.visTauPlusP4().energy()/kineEvt.tauPlusP4().energy() << "\n";
   }
   else
   {
@@ -309,6 +310,9 @@ printKinematicEvent(const std::string& label,
     printPoint("svTauPlus", kineEvt.svTauPlus());
     printDistance("svTauPlus - pv", kineEvt.svTauPlus() - kineEvt.pv(), cartesian);
     printDistance("svTauPlus - pv", kineEvt.svTauPlus() - kineEvt.pv(), false);
+    auto tauPlusD3 = kineEvt.svTauPlus() - kineEvt.pv();
+    std::cout << "phi of tau+: four-vector = " << kineEvt.tauPlusP4().phi() << ", decay vertex = " << tauPlusD3.phi() << "\n";
+    std::cout << "theta of tau+: four-vector = " << kineEvt.tauPlusP4().theta() << ", decay vertex = " << tauPlusD3.theta() << "\n";
   }
   else
   {
@@ -328,6 +332,7 @@ printKinematicEvent(const std::string& label,
     printLorentzVector("tauMinusP4", kineEvt.tauMinusP4(), cartesian);
     std::cout << " mass = " << kineEvt.tauMinusP4().mass() << "\n";
     printLorentzVector("tauMinusP4", kineEvt.tauMinusP4(), false);
+    std::cout << "visible energy fraction = " << kineEvt.visTauMinusP4().energy()/kineEvt.tauMinusP4().energy() << "\n";
   }
   else
   {
@@ -358,6 +363,9 @@ printKinematicEvent(const std::string& label,
     printPoint("svTauMinus", kineEvt.svTauMinus());
     printDistance("svTauMinus - pv", kineEvt.svTauMinus() - kineEvt.pv(), cartesian);
     printDistance("svTauMinus - pv", kineEvt.svTauMinus() - kineEvt.pv(), false);
+    auto tauMinusD3 = kineEvt.svTauMinus() - kineEvt.pv();
+    std::cout << "phi of tau-: four-vector = " << kineEvt.tauMinusP4().phi() << ", decay vertex = " << tauMinusD3.phi() << "\n";
+    std::cout << "theta of tau-: four-vector = " << kineEvt.tauMinusP4().theta() << ", decay vertex = " << tauMinusD3.theta() << "\n";
   }
   else
   {

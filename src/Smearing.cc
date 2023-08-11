@@ -54,19 +54,19 @@ Smearing::Smearing(const edm::ParameterSet& cfg)
   {
     std::cout << "applySmearing_recoil:\n";
     std::cout << "Recoil:" 
-              << " px = " << applySmearing_recoil_px_ << ","
-              << " py = " << applySmearing_recoil_py_ << ","
-              << " pz = " << applySmearing_recoil_pz_ << ","
+              << " Px = " << applySmearing_recoil_px_ << ","
+              << " Py = " << applySmearing_recoil_py_ << ","
+              << " Pz = " << applySmearing_recoil_pz_ << ","
               << " mass = " << applySmearing_recoil_mass_ << "\n";
     std::cout << "PV:" 
               << " xy = " << applySmearing_pv_xy_ << ","
               << " z = " << applySmearing_pv_z_ << "\n";
     std::cout << "Track:" 
-              << " pt = " << applySmearing_track_pt_ << ","
+              << " pT = " << applySmearing_track_pt_ << ","
               << " theta = " << applySmearing_track_theta_ << ","
               << " phi = " << applySmearing_track_phi_ << "\n";
     std::cout << "ECAL:" 
-              << " energy = " << applySmearing_ecal_energy_ << ","
+              << " E = " << applySmearing_ecal_energy_ << ","
               << " theta = " << applySmearing_ecal_theta_ << ","
               << " phi = " << applySmearing_ecal_phi_ << "\n";
     std::cout << "SV:" 
