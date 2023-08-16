@@ -66,6 +66,8 @@ int main(int argc, char* argv[])
   std::cout << " minVisTauPt = " << minVisTauPt << "\n";
   float maxAbsVisTauEta = cfg_ctrlPlots.getParameter<double>("maxAbsVisTauEta");
   std::cout << " maxAbsVisTauEta = " << maxAbsVisTauEta << "\n";
+  float minTauTIP = cfg_ctrlPlots.getParameter<double>("minTauTIP");
+  std::cout << " minTauTIP = " << minTauTIP << "\n";
   int maxNumChargedKaons = cfg_ctrlPlots.getParameter<int>("maxNumChargedKaons");
   std::cout << " maxNumChargedKaons = " << maxNumChargedKaons << "\n";
   int maxNumNeutralKaons = cfg_ctrlPlots.getParameter<int>("maxNumNeutralKaons");
@@ -96,10 +98,12 @@ int main(int argc, char* argv[])
 
   TH1* histogram_tauPlusPt    = bookHistogram1d(fs, "tauPlusPt",   40,  0., 200.);
   TH1* histogram_tauPlusEta   = bookHistogram1d(fs, "tauPlusEta",  50, -5.,  +5.);
+  TH1* histogram_tauPlusTIP   = bookHistogram1d(fs, "tauPlusTIP",  50,  0.,   0.025);
   TH1* histogram_visPlusPt    = bookHistogram1d(fs, "visPlusPt",   40,  0., 200.);
   TH1* histogram_visPlusEta   = bookHistogram1d(fs, "visPlusEta",  50, -5.,  +5.);
   TH1* histogram_tauMinusPt   = bookHistogram1d(fs, "tauMinusPt",  40,  0., 200.);
   TH1* histogram_tauMinusEta  = bookHistogram1d(fs, "tauMinusEta", 50, -5.,  +5.);
+  TH1* histogram_tauMinusTIP  = bookHistogram1d(fs, "tauMinusTIP", 50,  0.,   0.025);
   TH1* histogram_visMinusPt   = bookHistogram1d(fs, "visMinusPt",  40,  0., 200.);
   TH1* histogram_visMinusEta  = bookHistogram1d(fs, "visMinusEta", 50, -5.,  +5.);
   TH1* histogram_mTauTau      = bookHistogram1d(fs, "mTauTau",     40,  0., 200.);
@@ -143,9 +147,10 @@ int main(int argc, char* argv[])
 
     ++processedInputFiles;
 
-    Float_t tauPlus_pt, tauPlus_eta;
+    Float_t tauPlus_pt, tauPlus_eta, tauPlus_tip;
     inputTree->SetBranchAddress(Form("%s_tauPlus_pt", mode.c_str()), &tauPlus_pt);
     inputTree->SetBranchAddress(Form("%s_tauPlus_eta", mode.c_str()), &tauPlus_eta);
+    inputTree->SetBranchAddress(Form("%s_tauPlus_tip", mode.c_str()), &tauPlus_tip);
     Float_t visPlus_pt, visPlus_eta;
     inputTree->SetBranchAddress(Form("%s_visPlus_pt", mode.c_str()), &visPlus_pt);
     inputTree->SetBranchAddress(Form("%s_visPlus_eta", mode.c_str()), &visPlus_eta);
@@ -160,9 +165,10 @@ int main(int argc, char* argv[])
     inputTree->SetBranchAddress(Form("%s_hPlus_n", mode.c_str()), &hPlus_n);
     inputTree->SetBranchAddress(Form("%s_hPlus_k", mode.c_str()), &hPlus_k);
 
-    Float_t tauMinus_pt, tauMinus_eta;
+    Float_t tauMinus_pt, tauMinus_eta, tauMinus_tip;
     inputTree->SetBranchAddress(Form("%s_tauMinus_pt", mode.c_str()), &tauMinus_pt);
     inputTree->SetBranchAddress(Form("%s_tauMinus_eta", mode.c_str()), &tauMinus_eta);
+    inputTree->SetBranchAddress(Form("%s_tauMinus_tip", mode.c_str()), &tauMinus_tip);
     Float_t visMinus_pt, visMinus_eta;
     inputTree->SetBranchAddress(Form("%s_visMinus_pt", mode.c_str()), &visMinus_pt);
     inputTree->SetBranchAddress(Form("%s_visMinus_eta", mode.c_str()), &visMinus_eta);
@@ -210,11 +216,13 @@ int main(int argc, char* argv[])
       }
 
       if ( !(visPlus_pt  > minVisTauPt && std::fabs(visPlus_eta)  < maxAbsVisTauEta) ) continue;
+      if ( !(tauPlus_tip > minTauTIP) ) continue;
       if ( maxNumChargedKaons     != -1  && tauPlus_nChargedKaons  > maxNumChargedKaons            ) continue;
       if ( maxNumNeutralKaons     != -1  && tauPlus_nNeutralKaons  > maxNumNeutralKaons            ) continue;
       if ( maxNumPhotons          != -1  && tauPlus_nPhotons       > maxNumPhotons                 ) continue;
       if ( maxSumPhotonEn         >=  0. && tauPlus_sumPhotonEn    > maxSumPhotonEn                ) continue;
       if ( !(visMinus_pt > minVisTauPt && std::fabs(visMinus_eta) < maxAbsVisTauEta) ) continue;
+      if ( !(tauMinus_tip > minTauTIP) ) continue;
       if ( maxNumChargedKaons     != -1  && tauMinus_nChargedKaons > maxNumChargedKaons            ) continue;
       if ( maxNumNeutralKaons     != -1  && tauMinus_nNeutralKaons > maxNumNeutralKaons            ) continue;
       if ( maxNumPhotons          != -1  && tauMinus_nPhotons      > maxNumPhotons                 ) continue;
@@ -224,11 +232,13 @@ int main(int argc, char* argv[])
 
       histogram_tauPlusPt->Fill(tauPlus_pt, evtWeight);
       histogram_tauPlusEta->Fill(tauPlus_eta, evtWeight);
+      histogram_tauPlusTIP->Fill(tauPlus_tip, evtWeight);
       histogram_visPlusPt->Fill(visPlus_pt, evtWeight);
       histogram_visPlusEta->Fill(visPlus_eta, evtWeight);
 
       histogram_tauMinusPt->Fill(tauMinus_pt, evtWeight);
       histogram_tauMinusEta->Fill(tauMinus_eta, evtWeight);
+      histogram_tauMinusTIP->Fill(tauMinus_tip, evtWeight);
       histogram_visMinusPt->Fill(visMinus_pt, evtWeight);
       histogram_visMinusEta->Fill(visMinus_eta, evtWeight);
 
@@ -274,11 +284,13 @@ int main(int argc, char* argv[])
 
   showHistogram1d(histogram_tauPlusPt,       "#tau^{+} p_{T} [GeV]",     1.2, true, 1.e-3, 1.e0, "Events", 1.3, avEvtWeight, true,  outputFile.file());
   showHistogram1d(histogram_tauPlusEta,      "#tau^{+} #eta",            1.2, true, 1.e-3, 1.e0, "Events", 1.3, avEvtWeight, false, outputFile.file());
+  showHistogram1d(histogram_tauPlusTIP,      "#tau^{+} d_{IP} [cm]",     1.2, true, 1.e-3, 1.e0, "Events", 1.3, avEvtWeight, false, outputFile.file());
   showHistogram1d(histogram_visPlusPt,       "#tau^{+}_{h} p_{T} [GeV]", 1.2, true, 1.e-3, 1.e0, "Events", 1.3, avEvtWeight, true,  outputFile.file());
   showHistogram1d(histogram_visPlusEta,      "#tau^{+}_{h} #eta",        1.2, true, 1.e-3, 1.e0, "Events", 1.3, avEvtWeight, false, outputFile.file());
 
   showHistogram1d(histogram_tauMinusPt,      "#tau^{-} p_{T} [GeV]",     1.2, true, 1.e-3, 1.e0, "Events", 1.3, avEvtWeight, true,  outputFile.file());
   showHistogram1d(histogram_tauMinusEta,     "#tau^{-} #eta",            1.2, true, 1.e-3, 1.e0, "Events", 1.3, avEvtWeight, false, outputFile.file());
+  showHistogram1d(histogram_tauMinusTIP,     "#tau^{-} d_{IP} [cm]",     1.2, true, 1.e-3, 1.e0, "Events", 1.3, avEvtWeight, false, outputFile.file());
   showHistogram1d(histogram_visMinusPt,      "#tau^{-}_{h} p_{T} [GeV]", 1.2, true, 1.e-3, 1.e0, "Events", 1.3, avEvtWeight, true,  outputFile.file());
   showHistogram1d(histogram_visMinusEta,     "#tau^{-}_{h} #eta",        1.2, true, 1.e-3, 1.e0, "Events", 1.3, avEvtWeight, false, outputFile.file());
 

@@ -9,10 +9,12 @@ from TauAnalysis.Entanglement.tools.jobTools import getInputFileNames, build_Mak
 samples = [ 'ggH_htt_pythia8' ]
 
 modes = [ "gen", "gen_smeared", "startPos", "kinFit" ]
-#hAxes = [ "beam", "higgs" ]
+##hAxes = [ "beam", "higgs" ]
 hAxes = [ "higgs" ]
+##decayModes = [ "piPlus_piMinus", "piPlus_rhoMinus", "rhoPlus_piMinus", "rhoPlus_rhoMinus" ]
+decayModes = [ "piPlus_piMinus", "rhoPlus_rhoMinus" ]
 
-version = "2023Aug11_wSmearing"
+version = "2023Aug14_startPosMode1_wSmearing"
 
 inputFilePath = os.path.join("/scratch/persistent", getpass.getuser(), "Entanglement/ntuples/", version)
 
@@ -30,7 +32,7 @@ run_command('mkdir -p %s' % outputDir)
 
 def build_cfgFile(cfgFile_original, cfgFile_modified, 
                   inputFileNames, process,
-                  mode, hAxis,
+                  mode, hAxis, decayMode,
                   outputFileName):
   print("Building configFile = '%s'" % cfgFile_modified)
 
@@ -43,6 +45,7 @@ def build_cfgFile(cfgFile_original, cfgFile_modified,
   sedCommand += '  s/##processName/processName/; s/\$processName/%s/;' % process
   sedCommand += '  s/##mode/mode/; s/\$mode/%s/;' % mode
   sedCommand += '  s/##hAxis/hAxis/; s/\$hAxis/%s/;' % hAxis
+  sedCommand += '  s/##decayMode/decayMode/; s/\$decayMode/%s/;' % decayMode
   sedCommand += '  s/##outputFileName/outputFileName/; s/\$outputFileName/%s/"' % outputFileName
   sedCommand += ' %s > %s' % (cfgFile_original, cfgFile_modified)
   run_command(sedCommand)
@@ -53,73 +56,74 @@ jobOptions_resPlots  = {} # key = sample, mode, hAxis
 for sample in samples:
   for mode in modes:
     for hAxis in hAxes:
-      print("processing sample = '%s', mode = '%s', hAxis = '%s'" % (sample, mode, hAxis))
-      print(" inputFilePath = '%s'" % inputFilePath)
-      inputFile_regex = r"entanglementNtuple_%s_%sAxis_[0-9]+.root" % (sample, hAxis)
-      inputFileNames = getInputFileNames(inputFilePath, inputFile_regex)
-      numInputFiles = len(inputFileNames)
-      print("Found %i input files." % numInputFiles)
-      cfgFileName_analysis_modified = os.path.join(configDir, "analyzeEntanglementNtuple_%s_%sMode_%sAxis_cfg.py" % \
-        (sample, mode, hAxis))
-      outputFileName_analysis = "analyzeEntanglementNtuple_%s_%sMode_%sAxis.root" % \
-        (sample, mode, hAxis)
-      build_cfgFile(
-        "analyzeEntanglementNtuple_cfg.py", cfgFileName_analysis_modified, 
-        inputFileNames, sample,
-        mode, hAxis, 
-        outputFileName_analysis)
-      logFileName_analysis = cfgFileName_analysis_modified.replace("_cfg.py", ".log")
-      job_key_analysis = '%s_%s_%s_analysis' % (sample, mode, hAxis)
-      dependencies_analysis = [ cfgFileName_analysis_modified ]
-      dependencies_analysis.extend(inputFileNames)
-      jobOptions_analysis[job_key_analysis] = {
-        'inputFileNames' : dependencies_analysis,
-        'cfgFileName'    : cfgFileName_analysis_modified,
-        'outputFilePath' : outputDir,
-        'outputFileName' : outputFileName_analysis,
-        'logFileName'    : logFileName_analysis,
-      }
-      cfgFileName_ctrlPlots_modified = os.path.join(configDir, "makeControlPlots_%s_%sMode_%sAxis_cfg.py" % \
-        (sample, mode, hAxis))
-      outputFileName_ctrlPlots = "makeControlPlots_%s_%sMode_%sAxis.root" % \
-        (sample, mode, hAxis)
-      build_cfgFile(
-        "makeControlPlots_cfg.py", cfgFileName_ctrlPlots_modified, 
-        inputFileNames, sample,
-        mode, hAxis, 
-        outputFileName_ctrlPlots)
-      logFileName_ctrlPlots = cfgFileName_ctrlPlots_modified.replace("_cfg.py", ".log")
-      job_key_ctrlPlots = '%s_%s_%s_ctrlPlots' % (sample, mode, hAxis)
-      dependencies_ctrlPlots = [ cfgFileName_ctrlPlots_modified ]
-      dependencies_ctrlPlots.extend(inputFileNames) 
-      jobOptions_ctrlPlots[job_key_ctrlPlots] = {
-        'inputFileNames' : dependencies_ctrlPlots,
-        'cfgFileName'    : cfgFileName_ctrlPlots_modified,
-        'outputFilePath' : outputDir,
-        'outputFileName' : outputFileName_ctrlPlots,
-        'logFileName'    : logFileName_ctrlPlots,
-      }
-      if mode != "gen":
-        cfgFileName_resPlots_modified = os.path.join(configDir, "makeResolutionPlots_%s_%sMode_%sAxis_cfg.py" % \
-          (sample, mode, hAxis))
-        outputFileName_resPlots = "makeResolutionPlots_%s_%sMode_%sAxis.root" % \
-          (sample, mode, hAxis)
+      for decayMode in decayModes:
+        print("processing sample = '%s', mode = '%s', hAxis = '%s', decayMode = '%s'" % (sample, mode, hAxis, decayMode))
+        print(" inputFilePath = '%s'" % inputFilePath)
+        inputFile_regex = r"entanglementNtuple_%s_%sAxis_[0-9]+.root" % (sample, hAxis)
+        inputFileNames = getInputFileNames(inputFilePath, inputFile_regex)
+        numInputFiles = len(inputFileNames)
+        print("Found %i input files." % numInputFiles)
+        cfgFileName_analysis_modified = os.path.join(configDir, "analyzeEntanglementNtuple_%s_%sMode_%sAxis_%sDecayMode_cfg.py" % \
+          (sample, mode, hAxis, decayMode))
+        outputFileName_analysis = "analyzeEntanglementNtuple_%s_%sMode_%sAxis_%sDecayMode.root" % \
+          (sample, mode, hAxis, decayMode)
         build_cfgFile(
-          "makeResolutionPlots_cfg.py", cfgFileName_resPlots_modified, 
+          "analyzeEntanglementNtuple_cfg.py", cfgFileName_analysis_modified, 
           inputFileNames, sample,
-          mode, hAxis, 
-          outputFileName_resPlots)
-        logFileName_resPlots = cfgFileName_resPlots_modified.replace("_cfg.py", ".log")
-        job_key_resPlots = '%s_%s_%s_resPlots' % (sample, mode, hAxis)
-        dependencies_resPlots = [ cfgFileName_resPlots_modified ]
-        dependencies_resPlots.extend(inputFileNames)
-        jobOptions_resPlots[job_key_resPlots] = {
-          'inputFileNames' : dependencies_resPlots,
-          'cfgFileName'    : cfgFileName_resPlots_modified,
+          mode, hAxis, decayMode,
+          outputFileName_analysis)
+        logFileName_analysis = cfgFileName_analysis_modified.replace("_cfg.py", ".log")
+        job_key_analysis = '%s_%s_%s_%s_analysis' % (sample, mode, hAxis, decayMode)
+        dependencies_analysis = [ cfgFileName_analysis_modified ]
+        dependencies_analysis.extend(inputFileNames)
+        jobOptions_analysis[job_key_analysis] = {
+          'inputFileNames' : dependencies_analysis,
+          'cfgFileName'    : cfgFileName_analysis_modified,
           'outputFilePath' : outputDir,
-          'outputFileName' : outputFileName_resPlots,
-          'logFileName'    : logFileName_resPlots,
+          'outputFileName' : outputFileName_analysis,
+          'logFileName'    : logFileName_analysis,
         }
+        cfgFileName_ctrlPlots_modified = os.path.join(configDir, "makeControlPlots_%s_%sMode_%sAxis_%sDecayMode_cfg.py" % \
+          (sample, mode, hAxis, decayMode))
+        outputFileName_ctrlPlots = "makeControlPlots_%s_%sMode_%sAxis_%sDecayMode.root" % \
+          (sample, mode, hAxis, decayMode)
+        build_cfgFile(
+          "makeControlPlots_cfg.py", cfgFileName_ctrlPlots_modified, 
+          inputFileNames, sample,
+          mode, hAxis, decayMode, 
+          outputFileName_ctrlPlots)
+        logFileName_ctrlPlots = cfgFileName_ctrlPlots_modified.replace("_cfg.py", ".log")
+        job_key_ctrlPlots = '%s_%s_%s_%s_ctrlPlots' % (sample, mode, hAxis, decayMode)
+        dependencies_ctrlPlots = [ cfgFileName_ctrlPlots_modified ]
+        dependencies_ctrlPlots.extend(inputFileNames) 
+        jobOptions_ctrlPlots[job_key_ctrlPlots] = {
+          'inputFileNames' : dependencies_ctrlPlots,
+          'cfgFileName'    : cfgFileName_ctrlPlots_modified,
+          'outputFilePath' : outputDir,
+          'outputFileName' : outputFileName_ctrlPlots,
+          'logFileName'    : logFileName_ctrlPlots,
+        }
+        if mode != "gen":
+          cfgFileName_resPlots_modified = os.path.join(configDir, "makeResolutionPlots_%s_%sMode_%sAxis_%sDecayMode_cfg.py" % \
+            (sample, mode, hAxis, decayMode))
+          outputFileName_resPlots = "makeResolutionPlots_%s_%sMode_%sAxis_%sDecayMode.root" % \
+            (sample, mode, hAxis, decayMode)
+          build_cfgFile(
+            "makeResolutionPlots_cfg.py", cfgFileName_resPlots_modified, 
+            inputFileNames, sample,
+            mode, hAxis, decayMode, 
+            outputFileName_resPlots)
+          logFileName_resPlots = cfgFileName_resPlots_modified.replace("_cfg.py", ".log")
+          job_key_resPlots = '%s_%s_%s_%s_resPlots' % (sample, mode, hAxis, decayMode)
+          dependencies_resPlots = [ cfgFileName_resPlots_modified ]
+          dependencies_resPlots.extend(inputFileNames)
+          jobOptions_resPlots[job_key_resPlots] = {
+            'inputFileNames' : dependencies_resPlots,
+            'cfgFileName'    : cfgFileName_resPlots_modified,
+            'outputFilePath' : outputDir,
+            'outputFileName' : outputFileName_resPlots,
+            'logFileName'    : logFileName_resPlots,
+          }
 
 jobOptions_Makefile = []
 for job_key, job in jobOptions_analysis.items():

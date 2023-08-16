@@ -4,6 +4,7 @@
 #include "TauAnalysis/Entanglement/interface/comp_PCA_line2line.h"        // comp_PCA_line2line()
 #include "TauAnalysis/Entanglement/interface/constants.h"                 // mHiggs, mTau
 #include "TauAnalysis/Entanglement/interface/fixMass.h"                   // fixNuMass(), fixTauMass()
+#include "TauAnalysis/Entanglement/interface/get_decayMode.h"      // is1Prong()
 #include "TauAnalysis/Entanglement/interface/get_leadTrack.h"             // get_leadTrack()
 #include "TauAnalysis/Entanglement/interface/get_localCoordinateSystem.h" // get_localCoordinateSystem()
 #include "TauAnalysis/Entanglement/interface/printLorentzVector.h"        // printLorentzVector()
@@ -363,22 +364,28 @@ StartPosFinder2::operator()(const KinematicEvent& kineEvt)
   //kineEvt_startpos.nuTauPlusP4_ = fixNuMass(tauPlusP4_bestfit - visTauPlusP4);
   kineEvt_startpos.nuTauPlusP4_ = tauPlusP4_bestfit - visTauPlusP4;
   kineEvt_startpos.nuTauPlusP4_isValid_ = true;
-  const KinematicParticle* tauPlus_leadTrack = get_leadTrack(kineEvt_startpos.daughtersTauPlus());
-  assert(tauPlus_leadTrack);
-  const reco::Candidate::Point& tauPlus_tipPCA = kineEvt_startpos.tipPCATauPlus();
-  kineEvt_startpos.svTauPlus_ = comp_PCA_line2line(kineEvt_startpos.pv(), tauPlusP4_bestfit, tauPlus_tipPCA, tauPlus_leadTrack->p4(), verbosity_);
-  kineEvt_startpos.svTauPlus_isValid_ = true;
+  if ( is1Prong(kineEvt_startpos.tauPlus_decayMode()) )
+  {
+    const KinematicParticle* tauPlus_leadTrack = get_leadTrack(kineEvt_startpos.daughtersTauPlus());
+    assert(tauPlus_leadTrack);
+    const reco::Candidate::Point& tauPlus_tipPCA = kineEvt_startpos.tipPCATauPlus();
+    kineEvt_startpos.svTauPlus_ = comp_PCA_line2line(kineEvt_startpos.pv(), tauPlusP4_bestfit, tauPlus_tipPCA, tauPlus_leadTrack->p4(), verbosity_);
+    kineEvt_startpos.svTauPlus_isValid_ = true;
+  }
 
   kineEvt_startpos.tauMinusP4_ = tauMinusP4_bestfit;
   kineEvt_startpos.tauMinusP4_isValid_ = true;
   //kineEvt_startpos.nuTauMinusP4_ = fixNuMass(tauMinusP4_bestfit - visTauMinusP4);
   kineEvt_startpos.nuTauMinusP4_ = tauMinusP4_bestfit - visTauMinusP4;
   kineEvt_startpos.nuTauMinusP4_isValid_ = true;
-  const KinematicParticle* tauMinus_leadTrack = get_leadTrack(kineEvt_startpos.daughtersTauMinus());
-  assert(tauMinus_leadTrack);
-  const reco::Candidate::Point& tauMinus_tipPCA = kineEvt_startpos.tipPCATauMinus();
-  kineEvt_startpos.svTauMinus_ = comp_PCA_line2line(kineEvt_startpos.pv(), tauMinusP4_bestfit, tauMinus_tipPCA, tauMinus_leadTrack->p4(), verbosity_);
-  kineEvt_startpos.svTauMinus_isValid_ = true;
+  if ( is1Prong(kineEvt_startpos.tauMinus_decayMode()) )
+  {
+    const KinematicParticle* tauMinus_leadTrack = get_leadTrack(kineEvt_startpos.daughtersTauMinus());
+    assert(tauMinus_leadTrack);
+    const reco::Candidate::Point& tauMinus_tipPCA = kineEvt_startpos.tipPCATauMinus();
+    kineEvt_startpos.svTauMinus_ = comp_PCA_line2line(kineEvt_startpos.pv(), tauMinusP4_bestfit, tauMinus_tipPCA, tauMinus_leadTrack->p4(), verbosity_);
+    kineEvt_startpos.svTauMinus_isValid_ = true;
+  }
 
   return kineEvt_startpos;
 }

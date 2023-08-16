@@ -20,8 +20,10 @@ process.makeControlPlots = cms.PSet(
 
     #minVisTauPt = cms.double(20.),
     #maxAbsVisTauEta = cms.double(2.3),
-    minVisTauPt = cms.double(0.),
+    minVisTauPt = cms.double(-1.),
     maxAbsVisTauEta = cms.double(1.e+3),
+    #minTauTIP = cms.double(0.0030),
+    minTauTIP = cms.double(-1.),
     maxNumChargedKaons = cms.int32(0),
     maxNumNeutralKaons = cms.int32(0),
     maxNumPhotons = cms.int32(-1),
@@ -40,13 +42,15 @@ inputFileNames = None
 processName = "ggH_htt_pythia8"
 mode = 'gen'
 hAxis = "higgs"
+decayMode = "piPlus_piMinus"
 outputFileName = 'makeControlPlots_%s_%sMode_%sAxis.root' % (processName, mode, hAxis)
 
-treeName = 'ntupleProducer/piPlus_piMinus'
 #minVisTauPt = 20.
 #maxAbsVisTauEta = 2.3
-minVisTauPt = 0.
+minVisTauPt = -1.
 maxAbsVisTauEta = 1.e+3
+#minTauTIP = 0.0030
+minTauTIP = -1.
 maxNumChargedKaons = 0
 maxNumNeutralKaons = 0
 maxNumPhotons = -1
@@ -57,9 +61,9 @@ maxSumPhotonEn = 5.
 ##processName = "$processName"
 ##mode = "$mode"
 ##hAxis = "$hAxis"
+##decayMode = "$decayMode"
 ##outputFileName = "$outputFileName"
 
-##treeName = "$treeName"
 ##minVisTauPt = $minVisTauPt
 ##maxAbsVisTauEta = $maxAbsVisTauEta
 ##maxNumChargedKaons = $maxNumChargedKaons
@@ -84,10 +88,11 @@ process.fwliteInput.fileNames = cms.vstring(inputFileNames)
 
 process.fwliteOutput.fileName = cms.string(outputFileName)
 
-process.makeControlPlots.treeName = treeName
+process.makeControlPlots.treeName = 'ntupleProducer/%s' % decayMode
 process.makeControlPlots.mode = mode
 process.makeControlPlots.minVisTauPt = minVisTauPt
 process.makeControlPlots.maxAbsVisTauEta = maxAbsVisTauEta
+process.makeControlPlots.minTauTIP = minTauTIP
 process.makeControlPlots.maxNumChargedKaons = maxNumChargedKaons
 process.makeControlPlots.maxNumNeutralKaons = maxNumNeutralKaons
 process.makeControlPlots.maxNumPhotons = maxNumPhotons

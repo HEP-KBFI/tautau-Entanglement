@@ -19,8 +19,12 @@ process.analyzeEntanglementNtuple = cms.PSet(
 
     mode = cms.string('gen'),
 
-    minVisTauPt = cms.double(0.),
-    maxAbsVisTauEta = cms.double(1.e+3),
+    minVisTauPt = cms.double(20.),
+    maxAbsVisTauEta = cms.double(2.3),
+    #minVisTauPt = cms.double(-1.),
+    #maxAbsVisTauEta = cms.double(1.e+3),
+    #minTauTIP = cms.double(0.0030),
+    minTauTIP = cms.double(-1.),
     maxNumChargedKaons = cms.int32(0),
     maxNumNeutralKaons = cms.int32(0),
     maxNumPhotons = cms.int32(-1),
@@ -43,14 +47,16 @@ inputFileNames = None
 processName = "ggH_htt_pythia8"
 mode = 'gen'
 hAxis = "higgs"
+decayMode = "piPlus_piMinus"
 par_gen = [ 0., 0., 0., 0., 0., 0., +1., 0., 0., 0., +1., 0., 0., 0., -1. ]
 outputFileName = 'analyzeEntanglementNtuple_%s_%sMode_%sAxis.root' % (processName, mode, hAxis)
 
-treeName = 'ntupleProducer/piPlus_piMinus'
 minVisTauPt = 20.
 maxAbsVisTauEta = 2.3
-#minVisTauPt = 0.
+#minVisTauPt = -1.
 #maxAbsVisTauEta = 1.e+3
+#minTauTIP = 0.0030
+minTauTIP = -1.
 maxNumChargedKaons = 0
 maxNumNeutralKaons = 0
 maxNumPhotons = -1
@@ -61,10 +67,10 @@ maxSumPhotonEn = 5.
 ##processName = "$processName"
 ##mode = "$mode"
 ##hAxis = "$hAxis"
+##decayMode = "$decayMode"
 ##par_gen = $par_gen
 ##outputFileName = "$outputFileName"
 
-##treeName = "$treeName"
 ##minVisTauPt = $minVisTauPt
 ##maxAbsVisTauEta = $maxAbsVisTauEta
 ##maxNumChargedKaons = $maxNumChargedKaons
@@ -89,10 +95,11 @@ process.fwliteInput.fileNames = cms.vstring(inputFileNames)
 
 process.fwliteOutput.fileName = cms.string(outputFileName)
 
-process.analyzeEntanglementNtuple.treeName = treeName
+process.analyzeEntanglementNtuple.treeName = 'ntupleProducer/%s' % decayMode
 process.analyzeEntanglementNtuple.mode = mode
 process.analyzeEntanglementNtuple.minVisTauPt = minVisTauPt
 process.analyzeEntanglementNtuple.maxAbsVisTauEta = maxAbsVisTauEta
+process.analyzeEntanglementNtuple.minTauTIP = minTauTIP
 process.analyzeEntanglementNtuple.maxNumChargedKaons = maxNumChargedKaons
 process.analyzeEntanglementNtuple.maxNumNeutralKaons = maxNumNeutralKaons
 process.analyzeEntanglementNtuple.maxNumPhotons = maxNumPhotons

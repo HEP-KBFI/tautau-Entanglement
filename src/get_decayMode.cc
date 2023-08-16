@@ -19,3 +19,19 @@ get_decayMode(const std::vector<const reco::GenParticle*>& tau_ch,
   else if ( nch == 3 && npi0 == 0 && nnu == 1 ) return reco::PFTau::kThreeProng0PiZero;
   else                                          return reco::PFTau::kNull;
 }
+
+bool
+is1Prong(int decayMode)
+{
+  if ( decayMode == reco::PFTau::kOneProng0PiZero || 
+       decayMode == reco::PFTau::kOneProng1PiZero || 
+       decayMode == reco::PFTau::kOneProng2PiZero ) return true;
+  else                                              return false;
+}
+
+bool
+is3Prong(int decayMode)
+{
+  if ( decayMode == reco::PFTau::kThreeProng0PiZero ) return true;
+  else                                                return false;
+}

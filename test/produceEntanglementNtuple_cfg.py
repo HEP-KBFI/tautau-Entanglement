@@ -162,7 +162,7 @@ process.ntupleProducer = cms.EDAnalyzer("EntanglementNtupleProducer",
     #applySmearing = cms.bool(False),
     applySmearing = cms.bool(True),
     srcEvtWeights = cms.VInputTag('genWeight'),
-    startPosMode = cms.int32(2),
+    startPosMode = cms.int32(1),
     applyHiggsMassConstraint = cms.bool(True),
     applyRecoilEnergy_and_PzConstraint = cms.bool(True),
     # CV: 0 = "regular" tau mass constraint, 1 = constraint on Gottfried-Jackson angle

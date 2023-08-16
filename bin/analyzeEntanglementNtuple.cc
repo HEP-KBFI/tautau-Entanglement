@@ -428,6 +428,8 @@ int main(int argc, char* argv[])
   std::cout << " minVisTauPt = " << minVisTauPt << "\n";
   float maxAbsVisTauEta = cfg_analyze.getParameter<double>("maxAbsVisTauEta");
   std::cout << " maxAbsVisTauEta = " << maxAbsVisTauEta << "\n";
+  float minTauTIP = cfg_analyze.getParameter<double>("minTauTIP");
+  std::cout << " minTauTIP = " << minTauTIP << "\n";
   int maxNumChargedKaons = cfg_analyze.getParameter<int>("maxNumChargedKaons");
   std::cout << " maxNumChargedKaons = " << maxNumChargedKaons << "\n";
   int maxNumNeutralKaons = cfg_analyze.getParameter<int>("maxNumNeutralKaons");
@@ -509,13 +511,15 @@ int main(int argc, char* argv[])
     Float_t visPlus_pt, visPlus_eta;
     inputTree->SetBranchAddress(Form("%s_visPlus_pt", mode.c_str()), &visPlus_pt);
     inputTree->SetBranchAddress(Form("%s_visPlus_eta", mode.c_str()), &visPlus_eta);
+    Float_t tauPlus_tip;
+    inputTree->SetBranchAddress(Form("%s_tauPlus_tip", mode.c_str()), &tauPlus_tip);
     Int_t tauPlus_nChargedKaons, tauPlus_nNeutralKaons, tauPlus_nPhotons;
     Float_t tauPlus_sumPhotonEn;
     inputTree->SetBranchAddress("gen_tauPlus_nChargedKaons", &tauPlus_nChargedKaons);
     inputTree->SetBranchAddress("gen_tauPlus_nNeutralKaons", &tauPlus_nNeutralKaons);
     inputTree->SetBranchAddress("gen_tauPlus_nPhotons", &tauPlus_nPhotons);
     inputTree->SetBranchAddress("gen_tauPlus_sumPhotonEn", &tauPlus_sumPhotonEn);
-
+    
     Float_t hMinus_r, hMinus_n, hMinus_k;
     inputTree->SetBranchAddress(Form("%s_hMinus_r", mode.c_str()), &hMinus_r);
     inputTree->SetBranchAddress(Form("%s_hMinus_n", mode.c_str()), &hMinus_n);
@@ -523,6 +527,8 @@ int main(int argc, char* argv[])
     Float_t visMinus_pt, visMinus_eta;
     inputTree->SetBranchAddress(Form("%s_visMinus_pt", mode.c_str()), &visMinus_pt);
     inputTree->SetBranchAddress(Form("%s_visMinus_eta", mode.c_str()), &visMinus_eta);
+    Float_t tauMinus_tip;
+    inputTree->SetBranchAddress(Form("%s_tauMinus_tip", mode.c_str()), &tauMinus_tip);
     Int_t tauMinus_nChargedKaons, tauMinus_nNeutralKaons, tauMinus_nPhotons;
     Float_t tauMinus_sumPhotonEn;
     inputTree->SetBranchAddress("gen_tauMinus_nChargedKaons", &tauMinus_nChargedKaons);
@@ -554,11 +560,13 @@ int main(int argc, char* argv[])
       }
 
       if ( !(visPlus_pt  > minVisTauPt && std::fabs(visPlus_eta)  < maxAbsVisTauEta) ) continue;
+      if ( !(tauPlus_tip > minTauTIP) ) continue;
       if ( maxNumChargedKaons     != -1  && tauPlus_nChargedKaons  > maxNumChargedKaons            ) continue;
       if ( maxNumNeutralKaons     != -1  && tauPlus_nNeutralKaons  > maxNumNeutralKaons            ) continue;
       if ( maxNumPhotons          != -1  && tauPlus_nPhotons       > maxNumPhotons                 ) continue;
       if ( maxSumPhotonEn         >=  0. && tauPlus_sumPhotonEn    > maxSumPhotonEn                ) continue;
       if ( !(visMinus_pt > minVisTauPt && std::fabs(visMinus_eta) < maxAbsVisTauEta) ) continue;
+      if ( !(tauMinus_tip > minTauTIP) ) continue;
       if ( maxNumChargedKaons     != -1  && tauMinus_nChargedKaons > maxNumChargedKaons            ) continue;
       if ( maxNumNeutralKaons     != -1  && tauMinus_nNeutralKaons > maxNumNeutralKaons            ) continue;
       if ( maxNumPhotons          != -1  && tauMinus_nPhotons      > maxNumPhotons                 ) continue;

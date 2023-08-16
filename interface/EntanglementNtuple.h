@@ -92,6 +92,7 @@ class EntanglementNtuple
       , tauPlus_phi_(0.)
       , tauPlus_mass_(0.)
       , tauPlus_decayMode_(-1)
+      , tauPlus_tip_(0.)
       , svPlus_x_(0.)
       , svPlus_y_(0.)
       , svPlus_z_(0.)
@@ -112,6 +113,7 @@ class EntanglementNtuple
       , tauMinus_phi_(0.)
       , tauMinus_mass_(0.)
       , tauMinus_decayMode_(-1)
+      , tauMinus_tip_(0.)
       , svMinus_x_(0.)
       , svMinus_y_(0.)
       , svMinus_z_(0.)
@@ -151,6 +153,7 @@ class EntanglementNtuple
       createBranchF(ntuple, label_, "tauPlus_phi", &tauPlus_phi_);
       createBranchF(ntuple, label_, "tauPlus_mass", &tauPlus_mass_);
       createBranchI(ntuple, label_, "tauPlus_decayMode", &tauPlus_decayMode_);
+      createBranchF(ntuple, label_, "tauPlus_tip", &tauPlus_tip_);
       createBranchF(ntuple, label_, "svPlus_x", &svPlus_x_);
       createBranchF(ntuple, label_, "svPlus_y", &svPlus_y_);
       createBranchF(ntuple, label_, "svPlus_z", &svPlus_z_);
@@ -172,6 +175,7 @@ class EntanglementNtuple
       createBranchF(ntuple, label_, "tauMinus_phi", &tauMinus_phi_);
       createBranchF(ntuple, label_, "tauMinus_mass", &tauMinus_mass_);
       createBranchI(ntuple, label_, "tauMinus_decayMode", &tauMinus_decayMode_);
+      createBranchF(ntuple, label_, "tauMinus_tip", &tauMinus_tip_);
       createBranchF(ntuple, label_, "svMinus_x", &svMinus_x_);
       createBranchF(ntuple, label_, "svMinus_y", &svMinus_y_);
       createBranchF(ntuple, label_, "svMinus_z", &svMinus_z_);
@@ -235,6 +239,7 @@ class EntanglementNtuple
         tauPlus_mass_     = 0.;
       }
       tauPlus_decayMode_  = kineEvt.tauPlus_decayMode();
+      tauPlus_tip_        = std::sqrt((kineEvt.tipPCATauPlus() - kineEvt.pv()).mag2());
       if ( kineEvt.svTauPlus_isValid() )
       {
         const reco::Candidate::Point& svPlus = kineEvt.svTauPlus();
@@ -303,6 +308,7 @@ class EntanglementNtuple
         tauMinus_mass_    = 0.;
       }
       tauMinus_decayMode_ = kineEvt.tauMinus_decayMode();
+      tauMinus_tip_       = std::sqrt((kineEvt.tipPCATauMinus() - kineEvt.pv()).mag2());
       if ( kineEvt.svTauMinus_isValid() )
       {
         const reco::Candidate::Point& svMinus = kineEvt.svTauMinus();
@@ -374,6 +380,7 @@ class EntanglementNtuple
     Float_t tauPlus_phi_;            // azimuthal angle (in laboratory frame) of tau+
     Float_t tauPlus_mass_;           // mass component of tau+ four-vector
     Int_t tauPlus_decayMode_;        // tau+ decay mode
+    Float_t tauPlus_tip_;            // transverse impact parameter of "leading" (highest pT) track of tau+
     Float_t svPlus_x_;               // x coordinate of tau+ decay vertex (SV+)
     Float_t svPlus_y_;               // y coordinate of tau+ decay vertex (SV+)
     Float_t svPlus_z_;               // z coordinate of tau+ decay vertex (SV+)
@@ -395,6 +402,7 @@ class EntanglementNtuple
     Float_t tauMinus_phi_;           // azimuthal angle (in laboratory frame) of tau-
     Float_t tauMinus_mass_;          // mass component of tau- four-vector
     Int_t tauMinus_decayMode_;       // tau- decay mode
+    Float_t tauMinus_tip_;           // transverse impact parameter of "leading" (highest pT) track of tau-
     Float_t svMinus_x_;              // x coordinate of tau- decay vertex (SV-)
     Float_t svMinus_y_;              // y coordinate of tau- decay vertex (SV-)
     Float_t svMinus_z_;              // z coordinate of tau- decay vertex (SV-)

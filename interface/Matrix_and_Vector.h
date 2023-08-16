@@ -6,14 +6,14 @@
 
 namespace kinFit
 {
-  const int numParameters = 19;
+  const int numParameters = 17;
   // CV: the measured parameters are defined in the following order:
-  //       primary vertex                        (3)
-  //       momentum of neutrino from tau+        (3)
-  //       decay vertex of tau+                  (3)
-  //       momentum of neutrino from tau-        (3)
-  //       decay vertex of tau-                  (3)
-  //       recoil four-vector                    (4)
+  //       primary vertex position (x,y,z)       (3)
+  //       Px, Py of neutrino from tau+          (2)
+  //       decay vertex position (x,y,z) of tau+ (3)
+  //       Px, Py of neutrino from tau-          (2)
+  //       decay vertex position (x,y,z) of tau- (3)
+  //       recoil four-vector (Px,Py,Pz,E)       (4)
   // where:
   //     the energy and momentum components of four-vectors are given in the order:
   //      (px, py, pz, E)
@@ -25,12 +25,10 @@ namespace kinFit
   //     we use the "huge error method" described in Section 6 of https://www.phys.ufl.edu/~avery/fitting/fitting1.pdf
   //     and set their covariance matrix to diagonal matrix with large values on the diagonal
 
-  const int numConstraints  = 11;
+  const int numConstraints  = 9;
   // CV: constrains are defined in the following order:
   //       Higgs mass constraint                 (1)
-  //       neutrino mass constraint for tau+     (1)
   //       "parallelism" constraint for tau+ [1] (2)
-  //       neutrino mass constraint for tau-     (1)
   //       "parallelism" constraint for tau- [1] (2) 
   //       constraint that recoil = tau+ + tau-  (4)
   //  [1] cf. Section 4.1.3.3 of https://cds.cern.ch/record/1358627/files/CERN-THESIS-2011-028.pdf
@@ -38,6 +36,9 @@ namespace kinFit
 
 namespace math
 {
+  typedef Matrix<2,2>::type Matrix2x2;
+  typedef Vector<2>::type   Vector2;
+
   typedef Matrix<3,3>::type Matrix3x3;
   typedef Vector<3>::type   Vector3;
 
