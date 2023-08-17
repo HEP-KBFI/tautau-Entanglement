@@ -1,48 +1,23 @@
 #ifndef TauAnalysis_Entanglement_printEigenVectors_and_EigenValues_h
 #define TauAnalysis_Entanglement_printEigenVectors_and_EigenValues_h
 
-#include "FWCore/Utilities/interface/Exception.h" // edm::Exception
+#include "TauAnalysis/Entanglement/interface/comp_EigenVectors_and_EigenValues.h" // comp_EigenVectors_and_EigenValues()
 
-#include <TMatrixD.h>                             // TMatrixD
-#include <TVectorD.h>                             // TVectorD
+#include <TVectorD.h>                                                             // TVectorD
+
+#include <utility>                                                                // std::pair<>
+
+void
+printEigenVectors_and_EigenValues(const std::vector<std::pair<TVectorD, double>>& EigenVectors_and_EigenValues);
 
 template <typename T>
 void
-printEigenVectors_and_EigenValues(const T& cov)
+printEigenVectors_and_EigenValues(const T& symmMatrix)
 {
-  assert(T::kRows == T::kCols);
-  int dim =  T::kRows;
-
-  TMatrixD tmp(dim,dim);
-  for ( int idxRow = 0; idxRow < dim; ++idxRow )
-  {
-    for ( int idxColumn = 0; idxColumn < dim; ++idxColumn )
-    {
-      tmp(idxRow,idxColumn) = cov(idxRow,idxColumn);
-    }
-  }
-
-  TVectorD eigenValues(dim);
-  TMatrixD eigenVectors(dim,dim);
-  try
-  { 
-    eigenVectors = tmp.EigenVectors(eigenValues);
-  }
-  catch ( edm::Exception )
-  {
-    std::cerr << "Error in <printEigenVectors_and_EigenValues>: Failed to compute Eigenvectors and Eigenvalues !!\n";
-    return;
-  }
-  for ( int idxEigenVector = 0; idxEigenVector < dim; ++idxEigenVector )
-  {
-    TVectorD eigenVector(dim);
-    for ( int idxComponent = 0; idxComponent < dim; ++idxComponent )
-    {
-      eigenVector(idxComponent) = eigenVectors(idxComponent,idxEigenVector);
-    }
-    std::cout << "EigenVector #" << idxEigenVector << " (EigenValue = " << eigenValues(idxEigenVector) << "):\n";
-    eigenVector.Print();
-  }
+  // CV: matrix passed as function argument needs to be symmetric,
+  //     because ROOT can only handle the case that all EigenValues are real
+  std::vector<std::pair<TVectorD, double>> EigenVectors_and_EigenValues = comp_EigenVectors_and_EigenValues(symmMatrix);
+  printEigenVectors_and_EigenValues(EigenVectors_and_EigenValues);
 }
 
 #endif // TauAnalysis_Entanglement_printEigenVectors_and_EigenValues_h
