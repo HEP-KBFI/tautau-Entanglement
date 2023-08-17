@@ -192,6 +192,8 @@ build_bootstrap_sample(const EntanglementDataset& dataset, TRandom& rnd, int max
 double
 comp_Rchsh(const math::Matrix3x3& C, int verbosity = -1)
 {
+  // CV: compute observable Rchsh according to Eq. (10)
+  //     in the paper arXiv:2211.10513
   if ( verbosity >= 1 )
   {
     std::cout << "<comp_Rchsh>:\n";
@@ -204,7 +206,7 @@ comp_Rchsh(const math::Matrix3x3& C, int verbosity = -1)
     printEigenVectors_and_EigenValues(EigenVectors_and_EigenValues);
   }
   assert(EigenVectors_and_EigenValues.size() == 3);
-  double Rchsh = EigenVectors_and_EigenValues[0].second + EigenVectors_and_EigenValues[1].second;
+  double Rchsh = std::sqrt(EigenVectors_and_EigenValues[0].second + EigenVectors_and_EigenValues[1].second);
   if ( verbosity >= 1 )
   {
     std::cout << "Rchsh = " << Rchsh << "\n";
@@ -692,12 +694,16 @@ int main(int argc, char* argv[])
 
   if ( verbosity >= 1 )
   {
+    math::Matrix3x3 C_exp;
+    for ( int idxRow = 0; idxRow < 3; ++idxRow )
+    {
+      for ( int idxColumn = 0; idxColumn < 3; ++idxColumn )
+      {
+        C_exp(idxRow,idxColumn) = nominal_sample.get_par_gen(6 + 3*idxRow + idxColumn);
+      }
+    }
     std::cout << "Standard Model expectation (given by Eq. (69) of arXiv:2208:11723):\n";
-    TMatrixD C_exp(3,3);
-    C_exp[0][0] = +1.;
-    C_exp[1][1] = +1.;
-    C_exp[2][2] = -1.;
-    C_exp.Print();
+    std::cout << C_exp << "\n";
   }
 
   clock.Show("analyzeEntanglementNtuple");
