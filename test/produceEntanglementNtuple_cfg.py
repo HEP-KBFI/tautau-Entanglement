@@ -31,7 +31,8 @@ process.source = cms.Source("PoolSource",
 )
 
 inputFilePath = '/store/mc/RunIISummer20UL18MiniAODv2/GluGluHToTauTau_M125_TuneCP5_13TeV-powheg-pythia8/MINIAODSIM/106X_upgrade2018_realistic_v16_L1v1-v3/100000/'
-inputFileNames = None
+inputFilePath = None
+inputFileNames = [ "file:///home/karl/CMSSW_10_6_20/src/TauAnalysis/Entanglement/hepmc.root" ]
 processName = "qqH_htt_pythia8"
 hAxis = "beam"
 rndSeed = 1
@@ -73,7 +74,7 @@ process.analysisSequence = cms.Sequence()
 #       cmsRun: /home/veelken/Entanglement/CMSSW_10_6_20/src/TauAnalysis/Entanglement/src/SpinAnalyzerOneProng1Pi0.cc:103: reco::Candidate::Vector {anonymous}::getPolarimetricVec_OneProng1PiZero(const LorentzVector&, const std::vector<KinematicParticle>&, const LorentzVector&, const ROOT::Math::Boost&, const Vector&, const Vector&, const Vector&, const ROOT::Math::Boost&, int, bool): Assertion `nuP4.energy() >= 0. && N.energy() >= 0.' failed.
 #
 process.genTaus = cms.EDFilter("GenParticleSelector",
-    src = cms.InputTag('prunedGenParticles'),
+    src = cms.InputTag('genParticles'),
     cut = cms.string("abs(pdgId) = 15 & status = 2"),
     filter = cms.bool(False)
 )
@@ -109,7 +110,7 @@ process.analysisSequence += process.selectedTauPairFilter
 #
 process.load("PhysicsTools.JetMCAlgos.TauGenJets_cfi")
 process.tauGenJets.GenParticles = cms.InputTag('genTaus')
-process.analysisSequence += process.tauGenJets
+#process.analysisSequence += process.tauGenJets
 
 process.load("PhysicsTools.JetMCAlgos.TauGenJetsDecayModeSelectorAllHadrons_cfi")
 process.tauGenJetsSelectorAllHadrons.select = cms.vstring(
@@ -122,25 +123,25 @@ process.tauGenJetsSelectorAllHadrons.select = cms.vstring(
 ##    #'threeProngOther', 
 ##    #'rare'
 )
-process.analysisSequence += process.tauGenJetsSelectorAllHadrons
+#process.analysisSequence += process.tauGenJetsSelectorAllHadrons
 
 process.selectedGenHadTaus = cms.EDFilter("GenJetSelector",
     src = cms.InputTag('tauGenJetsSelectorAllHadrons'),
     cut = cms.string('pt > 20. & abs(eta) < 2.3'),
     filter = cms.bool(False)
 )
-process.analysisSequence += process.selectedGenHadTaus
+#process.analysisSequence += process.selectedGenHadTaus
 
 process.selectedGenHadTauFilter = cms.EDFilter("CandViewCountFilter",
     src = cms.InputTag('selectedGenHadTaus'),
     ##src = cms.InputTag('tauGenJetsSelectorAllHadrons'),
     minNumber = cms.uint32(2)
 )
-process.analysisSequence += process.selectedGenHadTauFilter
+#process.analysisSequence += process.selectedGenHadTauFilter
 #--------------------------------------------------------------------------------
 
 process.dumpGenParticles = cms.EDAnalyzer("ParticleListDrawer",
-    src = cms.InputTag('prunedGenParticles'),
+    src = cms.InputTag('genParticles'),
     maxEventsToPrint = cms.untracked.int32(10) 
 )
 #process.analysisSequence += process.dumpGenParticles
@@ -148,12 +149,12 @@ process.dumpGenParticles = cms.EDAnalyzer("ParticleListDrawer",
 process.genWeight = cms.EDProducer("GenWeightProducer",
     src = cms.InputTag('generator')
 )
-process.analysisSequence += process.genWeight
+#process.analysisSequence += process.genWeight
 
 from TauAnalysis.Entanglement.resolutions_cfi import resolutions
 from TauAnalysis.Entanglement.smearing_cfi import smearing
 process.ntupleProducer = cms.EDAnalyzer("EntanglementNtupleProducer",
-    src = cms.InputTag('prunedGenParticles'),
+    src = cms.InputTag('genParticles'),
     hAxis = cms.string(hAxis),
     resolutions = resolutions,
     smearing = smearing.clone(
