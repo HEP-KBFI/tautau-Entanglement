@@ -1,39 +1,49 @@
 
-#include "DataFormats/FWLite/interface/InputSource.h"                 // fwlite::InputSource
-#include "DataFormats/FWLite/interface/OutputFiles.h"                 // fwlite::OutputFiles
-#include "FWCore/ParameterSet/interface/ParameterSet.h"               // edm::ParameterSet
-#include "FWCore/ParameterSetReader/interface/ParameterSetReader.h"   // edm::readPSetsFrom()
-#include "FWCore/PluginManager/interface/PluginManager.h"             // edmplugin::PluginManager::configure()
-#include "FWCore/PluginManager/interface/standard.h"                  // edmplugin::standard::config()
-#include "PhysicsTools/FWLite/interface/TFileService.h"               // fwlite::TFileService
+#include "DataFormats/FWLite/interface/InputSource.h"                             // fwlite::InputSource
+#include "DataFormats/FWLite/interface/OutputFiles.h"                             // fwlite::OutputFiles
+#include "FWCore/ParameterSet/interface/ParameterSet.h"                           // edm::ParameterSet
+#include "FWCore/ParameterSetReader/interface/ParameterSetReader.h"               // edm::readPSetsFrom()
+#include "FWCore/PluginManager/interface/PluginManager.h"                         // edmplugin::PluginManager::configure()
+#include "FWCore/PluginManager/interface/standard.h"                              // edmplugin::standard::config()
+#include "PhysicsTools/FWLite/interface/TFileService.h"                           // fwlite::TFileService
 
-#include "TauAnalysis/Entanglement/interface/cmsException.h"          // cmsException
-#include "TauAnalysis/Entanglement/interface/format_vT.h"             // format_vint(), vdouble, vint
-#include "TauAnalysis/Entanglement/interface/passesStatusSelection.h" // passesStatusSelection()
+#include "TauAnalysis/Entanglement/interface/cmsException.h"                      // cmsException
+#include "TauAnalysis/Entanglement/interface/comp_EigenVectors_and_EigenValues.h" // comp_EigenVectors_and_EigenValues()
+#include "TauAnalysis/Entanglement/interface/format_vT.h"                         // format_vint(), vdouble, vint
+#include "TauAnalysis/Entanglement/interface/Matrix_and_Vector.h"                 // Matrix3x3, Vector3
+#include "TauAnalysis/Entanglement/interface/passesStatusSelection.h"             // passesStatusSelection()
+#include "TauAnalysis/Entanglement/interface/printEigenVectors_and_EigenValues.h" // printEigenVectors_and_EigenValues()
 
-#include <TBenchmark.h>                                               // TBenchmark
-#include <TError.h>                                                   // gErrorAbortLevel, kError
-#include <TTree.h>                                                    // TTree
-#include <TMatrixD.h>                                                 // TMatrixD
-#include <TVectorD.h>                                                 // TVectorD
-#include <TObject.h>                                                  // TObject
-#include <Minuit2/Minuit2Minimizer.h>                                 // ROOT::Minuit2::Minuit2Minimizer
-#include <Math/Functor.h>                                             // ROOT::Math::Functor
-#include <TCanvas.h>                                                  // TCanvas
-#include <TGraph.h>                                                   // TGraph
-#include <TH1.h>                                                      // TH1F
-#include <TLegend.h>                                                  // TLegend
-#include <TString.h>                                                  // Form()
+#include "Math/Functions.h"                                                       // ROOT::Math::Transpose() 
+#include <Math/Functor.h>                                                         // ROOT::Math::Functor
+#include <Minuit2/Minuit2Minimizer.h>                                             // ROOT::Minuit2::Minuit2Minimizer
+#include <TBenchmark.h>                                                           // TBenchmark
+#include <TCanvas.h>                                                              // TCanvas
+#include <TError.h>                                                               // gErrorAbortLevel, kError
+#include <TGraph.h>                                                               // TGraph
+#include <TH1.h>                                                                  // TH1F
+#include <TLegend.h>                                                              // TLegend
+#include <TMath.h>                                                                // TMath::Nint()
+#include <TObject.h>                                                              // TObject
+#include <TRandom3.h>                                                             // TRandom3
+#include <TString.h>                                                              // Form()
+#include <TTree.h>                                                                // TTree
 
-#include <assert.h>                                                   // assert()
-#include <cstdlib>                                                    // EXIT_SUCCESS, EXIT_FAILURE
-#include <fstream>                                                    // std::ofstream
-#include <iostream>                                                   // std::cout
-#include <string>                                                     // std::string
-#include <vector>                                                     // std::vector<>
-#include <cmath>                                                      // std::fabs()
+#include <algorithm>                                                              // std::sort()
+#include <assert.h>                                                               // assert()
+#include <cmath>                                                                  // std::fabs()
+#include <cstdlib>                                                                // EXIT_SUCCESS, EXIT_FAILURE
+#include <fstream>                                                                // std::ofstream
+#include <iostream>                                                               // std::cout
+#include <string>                                                                 // std::string
+#include <utility>                                                                // std::make_pair(), std::pair<>
+#include <vector>                                                                 // std::vector<>
 
 const size_t npar = 15;
+
+typedef std::vector<double> vdouble;
+typedef std::map<int, vdouble> map_vdouble;
+typedef std::map<int, map_vdouble> map2_vdouble;
 
 class EntanglementData
 {
@@ -113,18 +123,34 @@ class EntanglementDataset : public TObject
   EntanglementDataset(const std::vector<double>& par_gen)
     : par_gen_(par_gen)
   {}
+  EntanglementDataset(const EntanglementDataset& dataset, int maxEvents_afterCuts = -1)
+    : par_gen_(dataset.par_gen_)
+  {
+    // CV: If maxEvents_afterCuts == 0, an empty dataset will be created.
+    //     This is the intended behaviour and is used for building bootstrap samples. 
+    if ( maxEvents_afterCuts != 0 )
+    {
+      if ( maxEvents_afterCuts > 0 && maxEvents_afterCuts < (int)dataset.data_.size() )
+      {
+        size_t numEntries = dataset.data_.size();
+        for ( size_t idxEntry = 0; idxEntry < numEntries; ++idxEntry )
+        {
+          const EntanglementData& entry = dataset.data_.at(idxEntry);
+          data_.push_back(entry);
+        }
+      }
+      else
+      {
+        data_ = dataset.data_;
+      }
+    }
+  }
   ~EntanglementDataset()
   {}
 
   void
-  push_back(float hPlus_r, float hPlus_n, float hPlus_k, 
-            float hMinus_r, float hMinus_n, float hMinus_k,
-            float evtWeight = 1.)
+  push_back(const EntanglementData& entry)
   {
-    EntanglementData entry = EntanglementData(
-      hPlus_r, hPlus_n, hPlus_k, 
-      hMinus_r, hMinus_n, hMinus_k, 
-      evtWeight);
     data_.push_back(entry);
   }
 
@@ -142,6 +168,7 @@ class EntanglementDataset : public TObject
     return data_[idx];
   }
 
+  inline
   double
   get_par_gen(size_t idx) const
   {
@@ -154,7 +181,21 @@ class EntanglementDataset : public TObject
    std::vector<double> par_gen_;
 };
 
-static EntanglementDataset* gEntanglementDataset = nullptr;
+static const EntanglementDataset* gEntanglementDataset = nullptr;
+
+EntanglementDataset
+build_bootstrap_sample(const EntanglementDataset& dataset, TRandom& rnd, int maxEvents_afterCuts = -1)
+{
+  EntanglementDataset bootstrap_sample(dataset, 0);
+  size_t sampleSize = ( maxEvents_afterCuts > 0 ) ? maxEvents_afterCuts : dataset.size();
+  for ( size_t idxSample = 0; idxSample < sampleSize; ++idxSample )
+  {
+    size_t idxEntry = rnd.Integer(dataset.size());
+    const EntanglementData& entry = dataset.at(idxEntry);
+    bootstrap_sample.push_back(entry);
+  }
+  return bootstrap_sample;
+}
 
 double
 get_p(const double* par, const EntanglementData& entry)
@@ -228,6 +269,208 @@ mlfit_fcn(const double* par)
   }
 
   return logL;
+}
+
+double
+comp_Rchsh(const math::Matrix3x3& C, int verbosity = -1)
+{
+  if ( verbosity >= 1 )
+  {
+    std::cout << "<comp_Rchsh>:\n";
+  }
+  math::Matrix3x3 CT = ROOT::Math::Transpose(C);
+  math::Matrix3x3 CT_times_C = CT*C;
+  std::vector<std::pair<TVectorD, double>> EigenVectors_and_EigenValues = comp_EigenVectors_and_EigenValues(CT_times_C);
+  if ( verbosity >= 1 )
+  {
+    printEigenVectors_and_EigenValues(EigenVectors_and_EigenValues);
+  }
+  assert(EigenVectors_and_EigenValues.size() == 3);
+  double Rchsh = EigenVectors_and_EigenValues[0].second + EigenVectors_and_EigenValues[1].second;
+  if ( verbosity >= 1 )
+  {
+    std::cout << "Rchsh = " << Rchsh << "\n";
+  }
+  return Rchsh;
+}
+
+class Measurement
+{
+ public:
+  Measurement(const math::Vector3& Bp, const math::Vector3& BpErr,
+              const math::Vector3& Bm, const math::Vector3& BmErr,
+              const math::Matrix3x3& C, const math::Matrix3x3& CErr,
+              int verbosity = -1)
+    : Bp_(Bp)
+    , BpErr_(BpErr)
+    , Bm_(Bm)
+    , BmErr_(BmErr)
+    , C_(C)
+    , CErr_(CErr)
+    , Rchsh_(0.)
+  {
+    Rchsh_ = comp_Rchsh(C, verbosity);
+  }
+  ~Measurement()
+  {}
+
+  void
+  set_BpErr(const math::Vector3& BpErr)
+  {
+    BpErr_ = BpErr;
+  }
+  void
+  set_BmErr(const math::Vector3& BmErr)
+  {
+    BmErr_ = BmErr;
+  }
+  void
+  set_CErr(const math::Matrix3x3& CErr)
+  {
+    CErr_ = CErr;
+  }
+  void
+  set_RchshErr(double Rchsh)
+  {
+    Rchsh_ = Rchsh;
+  }
+
+  const math::Vector3&
+  get_Bp() const
+  {
+    return Bp_;
+  }
+  const math::Vector3&
+  get_BpErr() const
+  {
+    return BpErr_;
+  }
+  const math::Vector3&
+  get_Bm() const
+  {
+    return Bm_;
+  }
+  const math::Vector3&
+  get_BmErr() const
+  {
+    return BmErr_;
+  }
+
+  const math::Matrix3x3&
+  get_C() const
+  {
+    return C_;
+  }
+  const math::Matrix3x3&
+  get_CErr() const
+  {
+    return CErr_;
+  }
+
+  double
+  get_Rchsh() const
+  {
+    return Rchsh_;
+  }
+  double
+  get_RchshErr() const
+  {
+    return RchshErr_;
+  }
+
+ private:
+  math::Vector3 Bp_;
+  math::Vector3 BpErr_;
+  math::Vector3 Bm_;
+  math::Vector3 BmErr_;
+  math::Matrix3x3 C_;
+  math::Matrix3x3 CErr_;
+  double Rchsh_;
+  double RchshErr_;
+};
+
+Measurement
+comp_Bp_Bm_C_by_summation(const EntanglementDataset& dataset, 
+                          int verbosity = -1)
+{
+  math::Vector3 Bp;
+  math::Vector3 BpErr;
+  math::Vector3 Bm;
+  math::Vector3 BmErr;
+  math::Matrix3x3 C;
+  math::Matrix3x3 CErr;
+
+  double evtWeight_sum = 0.;
+
+  size_t numEntries = dataset.size();
+  for ( size_t idxEntry = 0; idxEntry < numEntries; ++idxEntry )
+  {
+    const EntanglementData& entry = dataset.at(idxEntry);
+
+    double hPlus_r = entry.get_hPlus_r();
+    double hPlus_n = entry.get_hPlus_n();
+    double hPlus_k = entry.get_hPlus_k();
+    
+    double hMinus_r = entry.get_hMinus_r();
+    double hMinus_n = entry.get_hMinus_n();
+    double hMinus_k = entry.get_hMinus_k();
+
+    double evtWeight = entry.get_evtWeight();
+
+    Bp(0) += evtWeight*hPlus_r;
+    Bp(1) += evtWeight*hPlus_n;
+    Bp(2) += evtWeight*hPlus_k;
+
+    Bm(0) += evtWeight*hMinus_r;
+    Bm(1) += evtWeight*hMinus_n;
+    Bm(2) += evtWeight*hMinus_k;
+    
+    // CV: compute matrix C according to Eq. (25)
+    //     in the paper arXiv:2211.10513
+    double c = -9.*evtWeight;
+    C(0,0) += c*hPlus_r*hMinus_r;
+    C(0,1) += c*hPlus_r*hMinus_n;
+    C(0,2) += c*hPlus_r*hMinus_k;
+    C(1,0) += c*hPlus_n*hMinus_r;
+    C(1,1) += c*hPlus_n*hMinus_n;
+    C(1,2) += c*hPlus_n*hMinus_k;
+    C(2,0) += c*hPlus_k*hMinus_r;
+    C(2,1) += c*hPlus_k*hMinus_n;
+    C(2,2) += c*hPlus_k*hMinus_k;
+
+    evtWeight_sum += evtWeight;
+  }
+
+  Bp *= (1./evtWeight_sum);
+  Bm *= (1./evtWeight_sum);
+
+  C *= (1./evtWeight_sum);
+
+  Measurement measurement(Bp, BpErr, Bm, BmErr, C, CErr, verbosity);
+  return measurement;
+}
+
+std::map<size_t, std::string>
+get_parNames()
+{
+  // define parameters for maximum-likelihood (ML) fit
+  std::map<size_t, std::string> parNames;
+  parNames[0]  = "Bp_r";
+  parNames[1]  = "Bp_n";
+  parNames[2]  = "Bp_k";
+  parNames[3]  = "Bm_r";
+  parNames[4]  = "Bm_n";
+  parNames[5]  = "Bm_k";
+  parNames[6]  = "C_rr";
+  parNames[7]  = "C_rn";
+  parNames[8]  = "C_rk";
+  parNames[9]  = "C_nr";
+  parNames[10] = "C_nn";
+  parNames[11] = "C_nk";
+  parNames[12] = "C_kr";
+  parNames[13] = "C_kn";
+  parNames[14] = "C_kk";
+  return parNames;
 }
 
 TGraph*
@@ -387,6 +630,212 @@ void showGraphs(double canvasSizeX, double canvasSizeY,
   delete canvas;  
 }
 
+Measurement
+comp_Bp_Bm_C_by_mlfit(const EntanglementDataset& dataset, ROOT::Math::Minimizer* mlfit, 
+                      bool scanLikelihood = false, const std::string& outputFileName = "", 
+                      int verbosity = -1)
+{
+  // initialize fit parameters
+  Measurement startpos = comp_Bp_Bm_C_by_summation(dataset);
+  const math::Matrix3x3& startpos_C = startpos.get_C();
+  std::map<size_t, std::string> parNames = get_parNames();
+  size_t npar = parNames.size();
+  for ( size_t idxPar = 0; idxPar < npar; ++idxPar )
+  {
+    double par0 = 0.;
+    if ( idxPar >= 6 && idxPar <= 14 )
+    {
+      size_t idxRow = (idxPar - 6) / 3;
+      size_t idxCol = (idxPar - 6) % 3;
+      par0 = startpos_C(idxRow,idxCol);
+    }
+    mlfit->SetLimitedVariable(idxPar, parNames[idxPar].c_str(), par0, 0.1, -2., +2.);
+  }
+
+  gEntanglementDataset = &dataset;
+
+  mlfit->Minimize();
+  mlfit->Hesse();
+
+  if ( verbosity >= 1 )
+  {
+    std::cout << "Fit Results:\n";
+    mlfit->PrintResults();
+  }
+
+  std::vector<double> parValues(npar);
+  std::vector<double> parErrors(npar);
+  for ( size_t idxPar = 0; idxPar < npar; ++idxPar )
+  {
+    const double* X = mlfit->X();
+    parValues[idxPar] = X[idxPar];
+    parErrors[idxPar] = sqrt(mlfit->CovMatrix(idxPar, idxPar));
+    if ( verbosity >= 1 )
+    {
+      std::cout << parNames[idxPar] << " = " << parValues[idxPar] << " +/- " << parErrors[idxPar] << "\n";
+    }
+  }
+
+  if ( scanLikelihood )
+  {
+    double mlfitMin = mlfit->MinValue();
+    std::map<size_t, std::string> parNames = get_parNames();
+    std::vector<size_t> parsToScan = { 6, 10, 14 };
+    for ( size_t i = 0; i < parsToScan.size(); ++i )
+    {
+      size_t parToScan = parsToScan[i];      
+      std::cout << "Scanning likelihood as function of parameter " << parNames[parToScan] << "...\n";
+      double xMin = parValues[parToScan] - std::max(0.01, 5.*parErrors[parToScan]);
+      double xMax = parValues[parToScan] + std::max(0.01, 5.*parErrors[parToScan]);
+      TGraph* mlfitScan_fixed = scan_mlfit_fixed(parValues, parToScan, parNames[parToScan], 100, xMin, xMax, mlfitMin);
+      TGraph* mlfitScan_profiled = scan_mlfit_profiled(mlfit, parValues, parToScan, parNames[parToScan], 100, xMin, xMax, mlfitMin);
+      std::string outputFileName_plot = (const char*)TString(outputFileName.c_str()).ReplaceAll(".root", Form("_mlfitScan_%s.png", parNames[parToScan].c_str()));
+      showGraphs(1150, 950,
+                 mlfitScan_fixed,    "Fixed",
+                 mlfitScan_profiled, "Profiled",
+                 0.040, 0.48, 0.78, 0.22, 0.14, 
+	         xMin, xMax, parNames[parToScan], 1.2,
+                 false, 0., 2.5e+1, "-2 log(L)", 1.4,
+                 outputFileName_plot);
+      std::cout << " Done.\n";
+    }
+  }
+
+  math::Vector3 Bp;
+  math::Vector3 BpErr;
+  math::Vector3 Bm;
+  math::Vector3 BmErr;
+  math::Matrix3x3 C;
+  math::Matrix3x3 CErr;
+  for ( size_t idxPar = 0; idxPar < npar; ++idxPar )
+  {
+    if ( idxPar <= 2 )
+    {
+      size_t idx = idxPar;
+      Bp[idx] = parValues[idxPar];
+      BpErr[idx] = parErrors[idxPar];
+    }
+    else if ( idxPar <= 5 )
+    {
+      size_t idx = idxPar - 3;
+      Bm[idx] = parValues[idxPar];
+      BmErr[idx] = parErrors[idxPar];
+    }
+    else if ( idxPar <= 14 )
+    {	
+      size_t idxRow = (idxPar - 6) / 3;
+      size_t idxCol = (idxPar - 6) % 3;
+      C[idxRow][idxCol] = parValues[idxPar];
+      CErr[idxRow][idxCol] = parErrors[idxPar];
+    } else assert(0);
+  }
+
+  Measurement measurement(Bp, BpErr, Bm, BmErr, C, CErr, verbosity);
+  return measurement;
+}
+
+std::pair<double, double>
+comp_median_and_Err(const std::vector<double>& measuredValues)
+{
+  std::vector<double> tmp = measuredValues;
+  // CV: sort measured values into ascending order
+  std::sort(tmp.begin(), tmp.end());
+  size_t numMeasurements = measuredValues.size();
+  int idxMedian = TMath::Nint(0.5*numMeasurements);
+  double median = tmp[idxMedian];
+  int idxPlus1Sigma = TMath::Nint(0.84*numMeasurements);
+  int idxMinus1Sigma = TMath::Nint(0.16*numMeasurements);
+  double Err = tmp[idxPlus1Sigma] - tmp[idxMinus1Sigma];
+  assert(Err >= 0.);
+  return std::make_pair(median, Err);
+}
+
+std::pair<math::Vector3, math::Vector3>
+comp_median_and_Err(const std::vector<math::Vector3>& measuredVectors)
+{
+  map_vdouble tmp;
+  size_t numMeasurements = measuredVectors.size();
+  for ( size_t idxMeasurement = 0; idxMeasurement < numMeasurements; ++idxMeasurement )
+  {
+    const math::Vector3& measuredVector = measuredVectors[idxMeasurement];
+    for ( int idxElement = 0; idxElement < 3; ++idxElement )
+    {
+      tmp[idxElement].push_back(measuredVector(idxElement));
+    }
+  }
+  math::Vector3 median;
+  math::Vector3 Err;
+  for ( size_t idxElement = 0; idxElement < 3; ++idxElement )
+  {
+    std::pair<double,double> median_and_Err = comp_median_and_Err(tmp[idxElement]);
+    median(idxElement) = median_and_Err.first;
+    Err(idxElement) = median_and_Err.second;
+  }
+  return std::make_pair(median, Err);
+}
+
+std::pair<math::Matrix3x3, math::Matrix3x3>
+comp_median_and_Err(const std::vector<math::Matrix3x3>& measuredMatrices)
+{
+  map2_vdouble tmp;
+  size_t numMeasurements = measuredMatrices.size();
+  for ( size_t idxMeasurement = 0; idxMeasurement < numMeasurements; ++idxMeasurement )
+  {
+    const math::Matrix3x3& measuredMatrix = measuredMatrices[idxMeasurement];
+    for ( int idxRow = 0; idxRow < 3; ++idxRow )
+    {
+      for ( int idxColumn = 0; idxColumn < 3; ++idxColumn )
+      {
+        tmp[idxRow][idxColumn].push_back(measuredMatrix(idxRow,idxColumn));
+      }
+    }
+  }
+  math::Matrix3x3 median;
+  math::Matrix3x3 Err;
+  for ( int idxRow = 0; idxRow < 3; ++idxRow )
+  {
+    for ( int idxColumn = 0; idxColumn < 3; ++idxColumn )
+    {
+      std::pair<double,double> median_and_Err = comp_median_and_Err(tmp[idxRow][idxColumn]);
+      median(idxRow,idxColumn) = median_and_Err.first;
+      Err(idxRow,idxColumn) = median_and_Err.second;
+    }
+  }
+  return std::make_pair(median, Err);
+}
+
+void
+comp_median_and_Err(const std::vector<Measurement>& measurements,
+                    math::Vector3& Bp_median, math::Vector3& BpErr,
+                    math::Vector3& Bm_median, math::Vector3& BmErr,
+                    math::Matrix3x3& C_median, math::Matrix3x3& CErr,
+                    double& Rchsh_median, double& RchshErr)
+{
+  std::vector<math::Vector3> measuredBp;
+  std::vector<math::Vector3> measuredBm;
+  std::vector<math::Matrix3x3> measuredC;
+  std::vector<double> measuredRchsh;
+  for ( const Measurement& measurement : measurements )
+  {
+    measuredBp.push_back(measurement.get_Bp());
+    measuredBm.push_back(measurement.get_Bm());
+    measuredC.push_back(measurement.get_C());
+    measuredRchsh.push_back(measurement.get_Rchsh());
+  }
+  std::pair<math::Vector3, math::Vector3> Bp_median_and_Err = comp_median_and_Err(measuredBp);
+  Bp_median = Bp_median_and_Err.first;
+  BpErr = Bp_median_and_Err.second;
+  std::pair<math::Vector3, math::Vector3> Bm_median_and_Err = comp_median_and_Err(measuredBm);
+  Bm_median = Bm_median_and_Err.first;
+  BmErr = Bm_median_and_Err.second;
+  std::pair<math::Matrix3x3, math::Matrix3x3> C_median_and_Err = comp_median_and_Err(measuredC);
+  C_median = C_median_and_Err.first;
+  CErr = C_median_and_Err.second;
+  std::pair<double, double> Rchsh_median_and_Err = comp_median_and_Err(measuredRchsh);
+  Rchsh_median = Rchsh_median_and_Err.first;
+  RchshErr = Rchsh_median_and_Err.second;
+}
+
 int main(int argc, char* argv[])
 {
 //--- throw an exception in case ROOT encounters an error
@@ -449,10 +898,13 @@ int main(int argc, char* argv[])
   if ( par_gen.size() != npar )
     throw cmsException("analyzeEntanglementNtuple", __LINE__) << "Invalid Configuration parameter 'par_gen' !!";
 
+  unsigned numBootstrapSamples = cfg_analyze.getParameter<unsigned>("numBootstrapSamples");
+  TRandom3 rnd;
+
   bool scanLikelihood = cfg_analyze.getParameter<bool>("scanLikelihood");
   std::cout << " scanLikelihood = " << scanLikelihood << "\n";
   
-  //bool isDEBUG = cfg_analyze.getParameter<bool>("isDEBUG");
+  int verbosity = cfg_analyze.getUntrackedParameter<int>("verbosity");
 
   fwlite::InputSource inputFiles(cfg);
   unsigned reportEvery = inputFiles.reportAfter();
@@ -463,23 +915,8 @@ int main(int argc, char* argv[])
   std::vector<std::string> inputFileNames = inputFiles.files();
   size_t numInputFiles = inputFileNames.size();
   std::cout << "Loaded " << numInputFiles << " file(s).\n";
-
-  TVectorD Bp(3);
-  TVectorD BpErr(3);
-  TVectorD Bm(3);
-  TVectorD BmErr(3);
-  TMatrixD C(3,3);
-  TMatrixD CErr(3,3);
   
-  TTree* fitResult = fs.make<TTree>("fitResult", "fitResult");
-  fitResult->Branch("Bp",    "TVectorD", &Bp);
-  fitResult->Branch("BpErr", "TVectorD", &BpErr);
-  fitResult->Branch("Bm",    "TVectorD", &Bm);
-  fitResult->Branch("BmErr", "TVectorD", &BmErr);
-  fitResult->Branch("C",     "TMatrixD", &C);
-  fitResult->Branch("CErr",  "TMatrixD", &CErr);
-
-  EntanglementDataset mlfitData(par_gen); 
+  EntanglementDataset dataset(par_gen); 
 
   int analyzedEntries = 0;
   double analyzedEntries_weighted = 0.;
@@ -574,82 +1011,29 @@ int main(int argc, char* argv[])
       if ( maxChi2                != -1  && kinFit_chi2            > maxChi2                       ) continue;
       if ( statusSelection.size() >   0  && !passesStatusSelection(kinFit_status, statusSelection) ) continue;
 
-      // CV: compute matrix C according to Eq. (25)
-      //     in the paper arXiv:2211.10513
-      double c = -9.*evtWeight;
-      C[0][0] += c*hPlus_r*hMinus_r;
-      C[0][1] += c*hPlus_r*hMinus_n;
-      C[0][2] += c*hPlus_r*hMinus_k;
-      C[1][0] += c*hPlus_n*hMinus_r;
-      C[1][1] += c*hPlus_n*hMinus_n;
-      C[1][2] += c*hPlus_n*hMinus_k;
-      C[2][0] += c*hPlus_k*hMinus_r;
-      C[2][1] += c*hPlus_k*hMinus_n;
-      C[2][2] += c*hPlus_k*hMinus_k;
-
-      mlfitData.push_back(hPlus_r, hPlus_n, hPlus_k, hMinus_r, hMinus_n, hMinus_k, evtWeight);
+      dataset.push_back(EntanglementData(hPlus_r, hPlus_n, hPlus_k, hMinus_r, hMinus_n, hMinus_k, evtWeight));
 
       ++selectedEntries;
       selectedEntries_weighted += evtWeight;
 
       if ( maxEvents_beforeCuts != -1 && analyzedEntries >= maxEvents_beforeCuts ) STOP = true;
-      if ( maxEvents_afterCuts  != -1 && selectedEntries >= maxEvents_afterCuts  ) STOP = true;
     }
 
     delete inputTree;
     delete inputFile;
   }
 
-  C *= (1./selectedEntries_weighted);
-
   std::cout << "Processing Summary:\n";
   std::cout << " processedInputFiles = " << processedInputFiles << " (out of " << numInputFiles << ")\n";
   std::cout << " analyzedEntries = " << analyzedEntries << " (weighted = " << analyzedEntries_weighted << ")\n";
   std::cout << " selectedEntries = " << selectedEntries << " (weighted = " << selectedEntries_weighted << ")\n";
 
-  std::cout << "Matrix C (measured using Eq. (25) in arXiv:2211.10513):\n";
-  C.Print();
+  EntanglementDataset nominal_sample(dataset, maxEvents_afterCuts);
 
-  std::cout << "Standard Model expectation (given by Eq. (69) in arXiv:2208:11723):\n";
-  TMatrixD C_exp(3,3);
-  C_exp[0][0] = +1.;
-  C_exp[1][1] = +1.;
-  C_exp[2][2] = -1.;
-  C_exp.Print();
-
-  // define parameters for maximum-likelihood (ML) fit
-  std::map<size_t, std::string> parNames;
-  parNames[0]  = "Bp_r";
-  parNames[1]  = "Bp_n";
-  parNames[2]  = "Bp_k";
-  parNames[3]  = "Bm_r";
-  parNames[4]  = "Bm_n";
-  parNames[5]  = "Bm_k";
-  parNames[6]  = "C_rr";
-  parNames[7]  = "C_rn";
-  parNames[8]  = "C_rk";
-  parNames[9]  = "C_nr";
-  parNames[10] = "C_nn";
-  parNames[11] = "C_nk";
-  parNames[12] = "C_kr";
-  parNames[13] = "C_kn";
-  parNames[14] = "C_kk";
-
+  Measurement nominal_measurement_by_summation = comp_Bp_Bm_C_by_summation(nominal_sample, verbosity);
+ 
   // initialize Minuit
   ROOT::Math::Minimizer* mlfit = new ROOT::Minuit2::Minuit2Minimizer();
-  for ( size_t idxPar = 0; idxPar < npar; ++idxPar )
-  {
-    double par0 = 0.;
-    if ( idxPar >= 6 && idxPar <= 14 )
-    {
-      size_t idxRow = (idxPar - 6) / 3;
-      size_t idxCol = (idxPar - 6) % 3;
-      par0 = C[idxRow][idxCol];
-      //par0 = C_exp[idxRow][idxCol];
-    }
-    mlfit->SetLimitedVariable(idxPar, parNames[idxPar].c_str(), par0, 0.1, -2., +2.);
-  }
-
   mlfit->SetMaxFunctionCalls(10000);
   mlfit->SetTolerance(1.e-3);
   mlfit->SetPrintLevel(-1);
@@ -658,70 +1042,64 @@ int main(int argc, char* argv[])
   ROOT::Math::Functor f(&mlfit_fcn, npar);
   mlfit->SetFunction(f);
 
-  gEntanglementDataset = &mlfitData;
+  Measurement nominal_measurement_by_mlfit = comp_Bp_Bm_C_by_mlfit(nominal_sample, mlfit, scanLikelihood, outputFile.file(), verbosity);
 
-  mlfit->Minimize();
-  mlfit->Hesse();
-
-  std::cout << "Fit Results:\n";
-  mlfit->PrintResults();
-
-  std::vector<double> parValues(npar);
-  std::vector<double> parErrors(npar);
-  for ( size_t idxPar = 0; idxPar < npar; ++idxPar )
+  // CV: estimate uncertainties on Bp and Bm vectors, on tau spin correlation matrix C,
+  //     and on Entanglement observables with bootstrap samples
+  std::vector<Measurement> bootstrap_measurements_by_summation;
+  std::vector<Measurement> bootstrap_measurements_by_mlfit;
+  for ( size_t idxBootstrapSample = 0; idxBootstrapSample < numBootstrapSamples; ++idxBootstrapSample )
   {
-    const double* X = mlfit->X();
-    parValues[idxPar] = X[idxPar];
-    parErrors[idxPar] = sqrt(mlfit->CovMatrix(idxPar, idxPar));
-    std::cout << parNames[idxPar] << " = " << parValues[idxPar] << " +/- " << parErrors[idxPar] << "\n";  
+    EntanglementDataset bootstrap_sample = build_bootstrap_sample(dataset, rnd, maxEvents_afterCuts);
+  
+    Measurement measurement_by_summation = comp_Bp_Bm_C_by_summation(bootstrap_sample, -1);
+    bootstrap_measurements_by_summation.push_back(measurement_by_summation);
+
+    Measurement measurement_by_mlfit = comp_Bp_Bm_C_by_mlfit(bootstrap_sample, mlfit, false, "", -1);
+    bootstrap_measurements_by_mlfit.push_back(measurement_by_mlfit);
   }
 
-  for ( size_t idxPar = 0; idxPar < npar; ++idxPar )
-  {
-    if ( idxPar <= 2 )
-    {
-      size_t idx = idxPar;
-      Bp[idx] = parValues[idxPar];
-      BpErr[idx] = parErrors[idxPar];
-    }
-    else if ( idxPar <= 5 )
-    {
-      size_t idx = idxPar - 3;
-      Bm[idx] = parValues[idxPar];
-      BmErr[idx] = parErrors[idxPar];
-    }
-    else if ( idxPar <= 14 )
-    {	
-      size_t idxRow = (idxPar - 6) / 3;
-      size_t idxCol = (idxPar - 6) % 3;
-      C[idxRow][idxCol] = parValues[idxPar];
-      CErr[idxRow][idxCol] = parErrors[idxPar];
-    } else assert(0);
-  }
-  fitResult->Fill();
+  math::Vector3 Bp_median_by_summation, BpErr_by_summation, Bm_median_by_summation, BmErr_by_summation;
+  math::Matrix3x3 C_median_by_summation, CErr_by_summation;
+  double Rchsh_median_by_summation, RchshErr_by_summation;
+  comp_median_and_Err(bootstrap_measurements_by_summation, 
+    Bp_median_by_summation, BpErr_by_summation,
+    Bm_median_by_summation, BmErr_by_summation,
+    C_median_by_summation, CErr_by_summation,
+    Rchsh_median_by_summation, RchshErr_by_summation);
+  std::cout << "Matrix C (measured using Eq. (25) of arXiv:2211.10513):\n";
+  std::cout << nominal_measurement_by_summation.get_C() << "\n";
+  std::cout << "+/-\n";
+  std::cout << CErr_by_summation << "\n";
+  std::cout << "Rchsh = " << nominal_measurement_by_summation.get_Rchsh() << " +/- " << RchshErr_by_summation << "\n";
 
-  if ( scanLikelihood )
+  math::Vector3 Bp_median_by_mlfit, BpErr_by_mlfit, Bm_median_by_mlfit, BmErr_by_mlfit;
+  math::Matrix3x3 C_median_by_mlfit, CErr_by_mlfit;
+  double Rchsh_median_by_mlfit, RchshErr_by_mlfit;
+  comp_median_and_Err(bootstrap_measurements_by_mlfit, 
+    Bp_median_by_mlfit, BpErr_by_mlfit,
+    Bm_median_by_mlfit, BmErr_by_mlfit,
+    C_median_by_mlfit, CErr_by_mlfit,
+    Rchsh_median_by_mlfit, RchshErr_by_mlfit);
+  std::cout << "Matrix C (measured using maximum-likelihood fit):\n";
+  std::cout << nominal_measurement_by_mlfit.get_C() << "\n";
+  std::cout << "+/-\n";
+  std::cout << CErr_by_mlfit << "\n";
+  if ( verbosity >= 1 )
   {
-    double mlfitMin = mlfit->MinValue();
-    std::vector<size_t> parsToScan = { 6, 10, 14 };
-    for ( size_t i = 0; i < parsToScan.size(); ++i )
-    {
-      size_t parToScan = parsToScan[i];
-      std::cout << "Scanning likelihood as function of parameter " << parNames[parToScan] << "...\n";
-      double xMin = parValues[parToScan] - std::max(0.01, 5.*parErrors[parToScan]);
-      double xMax = parValues[parToScan] + std::max(0.01, 5.*parErrors[parToScan]);
-      TGraph* mlfitScan_fixed = scan_mlfit_fixed(parValues, parToScan, parNames[parToScan], 100, xMin, xMax, mlfitMin);
-      TGraph* mlfitScan_profiled = scan_mlfit_profiled(mlfit, parValues, parToScan, parNames[parToScan], 100, xMin, xMax, mlfitMin);
-      std::string outputFileName = (const char*)TString(outputFile.file().c_str()).ReplaceAll(".root", Form("_mlfitScan_%s.png", parNames[parToScan].c_str()));
-      showGraphs(1150, 950,
-                 mlfitScan_fixed,    "Fixed",
-                 mlfitScan_profiled, "Profiled",
-                 0.040, 0.48, 0.78, 0.22, 0.14, 
-	         xMin, xMax, parNames[parToScan], 1.2,
-                 false, 0., 2.5e+1, "-2 log(L)", 1.4,
-                 outputFileName);
-      std::cout << " Done.\n";
-    }
+    std::cout << "Uncertainty estimated by maximum-likelihood fit (for comparison):\n";
+    std::cout << nominal_measurement_by_mlfit.get_CErr() << "\n";
+  }
+  std::cout << "Rchsh = " << nominal_measurement_by_mlfit.get_Rchsh() << " +/- " << RchshErr_by_mlfit << "\n";
+
+  if ( verbosity >= 1 )
+  {
+    std::cout << "Standard Model expectation (given by Eq. (69) of arXiv:2208:11723):\n";
+    TMatrixD C_exp(3,3);
+    C_exp[0][0] = +1.;
+    C_exp[1][1] = +1.;
+    C_exp[2][2] = -1.;
+    C_exp.Print();
   }
 
   delete mlfit;
