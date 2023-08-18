@@ -22,7 +22,7 @@
 #include "TauAnalysis/Entanglement/interface/printLorentzVector.h"                // printLorentzVector()
 #include "TauAnalysis/Entanglement/interface/printPoint.h"                        // printPoint()
 #include "TauAnalysis/Entanglement/interface/printVector.h"                       // printVector()
-#include "TauAnalysis/Entanglement/interface/SpinAnalyzerBase.h"                  // SpinAnalyzerBase::kTauPlus, SpinAnalyzerBase::kTauMinus
+#include "TauAnalysis/Entanglement/interface/PolarimetricVectorAlgoBase.h"        // ePolarimetricVector::kTauPlus, PolarimetricVector::kTauMinus
 #include "TauAnalysis/Entanglement/interface/square.h"                            // square()
 
 #include <TMath.h>                                                                // TMath::Pi()
@@ -34,7 +34,7 @@ GenKinematicEventBuilder::GenKinematicEventBuilder(const edm::ParameterSet& cfg)
   : resolutions_(nullptr)
   , smearing_(cfg)
   , applySmearing_(cfg.getParameter<bool>("applySmearing"))
-  , spinAnalyzer_(cfg)
+  , polarimetricVector_(cfg)
   , verbosity_(cfg.getUntrackedParameter<int>("verbosity"))
   , cartesian_(cfg.getUntrackedParameter<bool>("cartesian"))
 {
@@ -491,10 +491,10 @@ GenKinematicEventBuilder::operator()(const reco::GenParticleCollection& genParti
     kineEvt = smearing_(kineEvt);
   }
 
-  reco::Candidate::Vector hPlus = spinAnalyzer_(kineEvt, SpinAnalyzerBase::kTauPlus);
+  reco::Candidate::Vector hPlus = polarimetricVector_(kineEvt, pol::kTauPlus);
   kineEvt.hPlus_ = hPlus;
   kineEvt.hPlus_isValid_ = true;
-  reco::Candidate::Vector hMinus = spinAnalyzer_(kineEvt, SpinAnalyzerBase::kTauMinus);
+  reco::Candidate::Vector hMinus = polarimetricVector_(kineEvt, pol::kTauMinus);
   kineEvt.hMinus_ = hMinus;
   kineEvt.hMinus_isValid_ = true;
 

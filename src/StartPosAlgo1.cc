@@ -1,4 +1,4 @@
-#include "TauAnalysis/Entanglement/interface/StartPosFinder1.h"
+#include "TauAnalysis/Entanglement/interface/StartPosAlgo1.h"
 
 #include "DataFormats/Candidate/interface/Candidate.h"             // reco::Candidate::LorentzVector
 #include "DataFormats/Math/interface/deltaR.h"                     // deltaR2()
@@ -26,8 +26,8 @@ namespace math
   typedef Vector<3>::type   Vector3;
 }
 
-StartPosFinder1::StartPosFinder1(const edm::ParameterSet& cfg)
-  : StartPosFinderBase(cfg)
+StartPosAlgo1::StartPosAlgo1(const edm::ParameterSet& cfg)
+  : StartPosAlgoBase(cfg)
   , resolutions_(nullptr)
   , applyHiggsMassConstraint_(cfg.getParameter<bool>("applyHiggsMassConstraint"))
 {
@@ -35,7 +35,7 @@ StartPosFinder1::StartPosFinder1(const edm::ParameterSet& cfg)
   resolutions_ = new Resolutions(cfg_resolutions);
 }
 
-StartPosFinder1::~StartPosFinder1()
+StartPosAlgo1::~StartPosAlgo1()
 {
   delete resolutions_;
 }
@@ -251,11 +251,11 @@ namespace
 }
 
 KinematicEvent
-StartPosFinder1::operator()(const KinematicEvent& kineEvt)
+StartPosAlgo1::operator()(const KinematicEvent& kineEvt)
 {
   if ( verbosity_ >= 1 )
   {
-    std::cout << "<StartPosFinder1::operator()>:\n";
+    std::cout << "<StartPosAlgo1::operator()>:\n";
   }
 
   reco::Candidate::LorentzVector higgsP4 = kineEvt.recoilP4();
@@ -370,7 +370,7 @@ StartPosFinder1::operator()(const KinematicEvent& kineEvt)
   int errorFlag = 0;
   math::Matrix3x3 Minv = M.Inverse(errorFlag);
   if ( errorFlag != 0 )
-    throw cmsException("StartPosFinder1::operator()", __LINE__)
+    throw cmsException("StartPosAlgo1::operator()", __LINE__)
       << "Failed to invert matrix M !!\n";
 
   math::Vector3 v = Minv*lambda;
@@ -467,7 +467,7 @@ StartPosFinder1::operator()(const KinematicEvent& kineEvt)
   }
   if ( !hasConverged )
   {
-    std::cerr << "WARNING: StartPosFinder1 failed to converge !!" << std::endl;
+    std::cerr << "WARNING: StartPosAlgo1 failed to converge !!" << std::endl;
   }
   if ( verbosity_ >= 1 )
   {

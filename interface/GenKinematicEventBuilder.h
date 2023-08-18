@@ -1,13 +1,13 @@
 #ifndef TauAnalysis_Entanglement_GenKinematicEventBuilder_h
 #define TauAnalysis_Entanglement_GenKinematicEventBuilder_h
 
-#include "DataFormats/HepMCCandidate/interface/GenParticle.h"    // reco::GenParticle
-#include "DataFormats/HepMCCandidate/interface/GenParticleFwd.h" // reco::GenParticleCollection
+#include "DataFormats/HepMCCandidate/interface/GenParticle.h"      // reco::GenParticle
+#include "DataFormats/HepMCCandidate/interface/GenParticleFwd.h"   // reco::GenParticleCollection
 
-#include "TauAnalysis/Entanglement/interface/KinematicEvent.h"   // KinematicEvent
-#include "TauAnalysis/Entanglement/interface/Resolutions.h"      // Resolutions
-#include "TauAnalysis/Entanglement/interface/Smearing.h"         // Smearing
-#include "TauAnalysis/Entanglement/interface/SpinAnalyzer.h"     // SpinAnalyzer
+#include "TauAnalysis/Entanglement/interface/KinematicEvent.h"     // KinematicEvent
+#include "TauAnalysis/Entanglement/interface/Resolutions.h"        // Resolutions
+#include "TauAnalysis/Entanglement/interface/Smearing.h"           // Smearing
+#include "TauAnalysis/Entanglement/interface/PolarimetricVector.h" // PolarimetricVector
 
 class GenKinematicEventBuilder
 {
@@ -24,7 +24,7 @@ class GenKinematicEventBuilder
   Smearing smearing_;
   bool applySmearing_;
 
-  SpinAnalyzer spinAnalyzer_;
+  PolarimetricVector polarimetricVector_;
 
   int verbosity_;
   bool cartesian_;

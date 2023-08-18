@@ -1,4 +1,4 @@
-#include "TauAnalysis/Entanglement/interface/StartPosFinder2.h"
+#include "TauAnalysis/Entanglement/interface/StartPosAlgo2.h"
 
 #include "TauAnalysis/Entanglement/interface/comp_cosThetaGJ.h"           // comp_cosThetaGJ_solution()
 #include "TauAnalysis/Entanglement/interface/comp_PCA_line2line.h"        // comp_PCA_line2line()
@@ -15,8 +15,8 @@
 #include <cmath>                                                          // std::atan(), std::cos(), std::sin(), std::sqrt()
 #include <iostream>                                                       // std::cout
 
-StartPosFinder2::StartPosFinder2(const edm::ParameterSet& cfg)
-  : StartPosFinderBase(cfg)
+StartPosAlgo2::StartPosAlgo2(const edm::ParameterSet& cfg)
+  : StartPosAlgoBase(cfg)
   , resolutions_(nullptr)
   , applyRecoilEnergy_and_PzConstraint_(cfg.getParameter<bool>("applyRecoilEnergy_and_PzConstraint"))
 {
@@ -24,7 +24,7 @@ StartPosFinder2::StartPosFinder2(const edm::ParameterSet& cfg)
   resolutions_ = new Resolutions(cfg_resolutions);
 }
 
-StartPosFinder2::~StartPosFinder2()
+StartPosAlgo2::~StartPosAlgo2()
 {
   delete resolutions_;
 }
@@ -227,11 +227,11 @@ namespace
 }
 
 KinematicEvent
-StartPosFinder2::operator()(const KinematicEvent& kineEvt)
+StartPosAlgo2::operator()(const KinematicEvent& kineEvt)
 {
   if ( verbosity_ >= 1 )
   {
-    std::cout << "<StartPosFinder2::operator()>:\n";
+    std::cout << "<StartPosAlgo2::operator()>:\n";
   }
 
   const reco::Candidate::LorentzVector& visTauPlusP4 = kineEvt.visTauPlusP4();

@@ -1,15 +1,15 @@
-#ifndef TauAnalysis_Entanglement_StartPosFinderBase_h
-#define TauAnalysis_Entanglement_StartPosFinderBase_h
+#ifndef TauAnalysis_Entanglement_StartPosAlgoBase_h
+#define TauAnalysis_Entanglement_StartPosAlgoBase_h
 
 #include "FWCore/ParameterSet/interface/ParameterSet.h"        // edm::ParameterSet
 
 #include "TauAnalysis/Entanglement/interface/KinematicEvent.h" // KinematicEvent
 
-class StartPosFinderBase
+class StartPosAlgoBase
 {
  public:
-  explicit StartPosFinderBase(const edm::ParameterSet& cfg);
-  virtual ~StartPosFinderBase();
+  explicit StartPosAlgoBase(const edm::ParameterSet& cfg);
+  virtual ~StartPosAlgoBase();
    
   virtual
   KinematicEvent
@@ -20,4 +20,4 @@ class StartPosFinderBase
   bool cartesian_;
 };
 
-#endif // TauAnalysis_Entanglement_StartPosFinderBase_h
+#endif // TauAnalysis_Entanglement_StartPosAlgoBase_h

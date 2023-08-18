@@ -1,17 +1,20 @@
-#ifndef TauAnalysis_Entanglement_SpinAnalyzerBase_h
-#define TauAnalysis_Entanglement_SpinAnalyzerBase_h
+#ifndef TauAnalysis_Entanglement_PolarimetricVectorAlgoBase_h
+#define TauAnalysis_Entanglement_PolarimetricVectorAlgoBase_h
 
 #include "FWCore/ParameterSet/interface/ParameterSet.h"        // edm::ParameterSet
 
 #include "TauAnalysis/Entanglement/interface/KinematicEvent.h" // KinematicEvent
 
-class SpinAnalyzerBase
+namespace pol
+{
+  enum { kTauPlus, kTauMinus };
+}
+
+class PolarimetricVectorAlgoBase
 {
  public:
-  SpinAnalyzerBase(const edm::ParameterSet& cfg);
-  virtual ~SpinAnalyzerBase();
-
-  enum { kTauPlus, kTauMinus };
+  PolarimetricVectorAlgoBase(const edm::ParameterSet& cfg);
+  virtual ~PolarimetricVectorAlgoBase();
 
   virtual
   reco::Candidate::Vector
@@ -24,4 +27,4 @@ class SpinAnalyzerBase
   bool cartesian_;
 };
 
-#endif // TauAnalysis_Entanglement_SpinAnalyzerBase_h
+#endif // TauAnalysis_Entanglement_PolarimetricVectorAlgoBase_h

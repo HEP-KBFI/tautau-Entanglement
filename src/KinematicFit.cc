@@ -28,7 +28,7 @@
 using namespace kinFit;
 
 KinematicFit::KinematicFit(const edm::ParameterSet& cfg)
-  : spinAnalyzer_(cfg)
+  : polarimetricVector_(cfg)
   , applyTauMassConstraint_(cfg.getParameter<int>("applyTauMassConstraint"))
   , applyLifetimeConstraint_(cfg.getParameter<bool>("applyLifetimeConstraint"))
   , verbosity_(cfg.getUntrackedParameter<int>("verbosity"))
@@ -987,10 +987,10 @@ KinematicFit::operator()(const KinematicEvent& kineEvt)
   kineEvt_kinfit.recoilP4_ = kineEvt_kinfit.tauPlusP4_ + kineEvt_kinfit.tauMinusP4_;
   if ( hasConverged )
   {
-    reco::Candidate::Vector hPlus = spinAnalyzer_(kineEvt_kinfit, SpinAnalyzerBase::kTauPlus);
+    reco::Candidate::Vector hPlus = polarimetricVector_(kineEvt_kinfit, pol::kTauPlus);
     kineEvt_kinfit.hPlus_ = hPlus;
     kineEvt_kinfit.hPlus_isValid_ = true;
-    reco::Candidate::Vector hMinus = spinAnalyzer_(kineEvt_kinfit, SpinAnalyzerBase::kTauMinus);
+    reco::Candidate::Vector hMinus = polarimetricVector_(kineEvt_kinfit, pol::kTauMinus);
     kineEvt_kinfit.hMinus_ = hMinus;
     kineEvt_kinfit.hMinus_isValid_ = true;
   }

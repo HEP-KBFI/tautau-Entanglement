@@ -1,4 +1,4 @@
-#include "TauAnalysis/Entanglement/interface/SpinAnalyzerThreeProng0Pi0.h"
+#include "TauAnalysis/Entanglement/interface/PolarimetricVectorAlgoThreeProng0Pi0.h"
 
 #include "TauAnalysis/Entanglement/interface/cmsException.h"              // cmsException
 #include "TauAnalysis/Entanglement/interface/get_localCoordinateSystem.h" // get_localCoordinateSystem()
@@ -7,11 +7,11 @@
 
 #include <Math/Boost.h>                                                   // Boost
 
-SpinAnalyzerThreeProng0Pi0::SpinAnalyzerThreeProng0Pi0(const edm::ParameterSet& cfg)
-  : SpinAnalyzerBase(cfg)
+PolarimetricVectorAlgoThreeProng0Pi0::PolarimetricVectorAlgoThreeProng0Pi0(const edm::ParameterSet& cfg)
+  : PolarimetricVectorAlgoBase(cfg)
 {}
 
-SpinAnalyzerThreeProng0Pi0::~SpinAnalyzerThreeProng0Pi0()
+PolarimetricVectorAlgoThreeProng0Pi0::~PolarimetricVectorAlgoThreeProng0Pi0()
 {}
 
 namespace
@@ -29,7 +29,7 @@ namespace
       std::cout << "<getPolarimetricVec_ThreeProng0PiZero>:\n";
     }
 
-    throw cmsException("SpinAnalyzerThreeProng0Pi0", __LINE__)
+    throw cmsException("PolarimetricVectorAlgoThreeProng0Pi0", __LINE__)
       << "Function 'getPolarimetricVec_ThreeProng0PiZero' not implemented yet !!\n";
 
     return reco::Candidate::Vector(0., 0., 0.);
@@ -37,21 +37,21 @@ namespace
 }
 
 reco::Candidate::Vector
-SpinAnalyzerThreeProng0Pi0::operator()(const KinematicEvent& evt, int tau)
+PolarimetricVectorAlgoThreeProng0Pi0::operator()(const KinematicEvent& evt, int tau)
 {
   if ( verbosity_ >= 2 )
   {
-    std::cout << "<SpinAnalyzerThreeProng0Pi0::operator()>:\n";
+    std::cout << "<PolarimetricVectorAlgoThreeProng0Pi0::operator()>:\n";
   }
 
   reco::Candidate::LorentzVector tauP4;
   const std::vector<KinematicParticle>* daughters = nullptr;
-  if ( tau == SpinAnalyzerBase::kTauPlus )
+  if ( tau == PolarimetricVector::kTauPlus )
   {
     tauP4 = evt.tauPlusP4();
     daughters = &evt.daughtersTauPlus();
   }
-  else if ( tau == SpinAnalyzerBase::kTauMinus )
+  else if ( tau == PolarimetricVector::kTauMinus )
   {
     tauP4 = evt.tauMinusP4();
     daughters = &evt.daughtersTauMinus();

@@ -1,4 +1,4 @@
-#include "TauAnalysis/Entanglement/interface/SpinAnalyzerOneProng0Pi0.h"
+#include "TauAnalysis/Entanglement/interface/PolarimetricVectorAlgoOneProng0Pi0.h"
 
 #include "DataFormats/Candidate/interface/Candidate.h"                    // Candidate::LorentzVector, Candidate::Point
 
@@ -15,11 +15,11 @@
 
 #include <Math/Boost.h>                                                   // Boost
 
-SpinAnalyzerOneProng0Pi0::SpinAnalyzerOneProng0Pi0(const edm::ParameterSet& cfg)
-  : SpinAnalyzerBase(cfg)
+PolarimetricVectorAlgoOneProng0Pi0::PolarimetricVectorAlgoOneProng0Pi0(const edm::ParameterSet& cfg)
+  : PolarimetricVectorAlgoBase(cfg)
 {}
 
-SpinAnalyzerOneProng0Pi0::~SpinAnalyzerOneProng0Pi0()
+PolarimetricVectorAlgoOneProng0Pi0::~PolarimetricVectorAlgoOneProng0Pi0()
 {}
 
 namespace
@@ -74,21 +74,21 @@ namespace
 }
 
 reco::Candidate::Vector
-SpinAnalyzerOneProng0Pi0::operator()(const KinematicEvent& evt, int tau)
+PolarimetricVectorAlgoOneProng0Pi0::operator()(const KinematicEvent& evt, int tau)
 {
   if ( verbosity_ >= 2 )
   {
-    std::cout << "<SpinAnalyzerOneProng0Pi0::operator()>:\n";
+    std::cout << "<PolarimetricVectorAlgoOneProng0Pi0::operator()>:\n";
   }
 
   reco::Candidate::LorentzVector tauP4;
   const std::vector<KinematicParticle>* daughters = nullptr;
-  if ( tau == SpinAnalyzerBase::kTauPlus )
+  if ( tau == PolarimetricVector::kTauPlus )
   {
     tauP4 = evt.tauPlusP4();
     daughters = &evt.daughtersTauPlus();
   }
-  else if ( tau == SpinAnalyzerBase::kTauMinus )
+  else if ( tau == PolarimetricVector::kTauMinus )
   {
     tauP4 = evt.tauMinusP4();
     daughters = &evt.daughtersTauMinus();

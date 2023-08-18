@@ -4,8 +4,8 @@
 #include "FWCore/ParameterSet/interface/ParameterSet.h"            // edm::ParameterSet
 
 #include "TauAnalysis/Entanglement/interface/KinematicEvent.h"     // KinematicEvent
-#include "TauAnalysis/Entanglement/interface/SpinAnalyzer.h"       // SpinAnalyzer
-#include "TauAnalysis/Entanglement/interface/StartPosFinderBase.h" // StartPosFinderBase
+#include "TauAnalysis/Entanglement/interface/PolarimetricVector.h" // PolarimetricVector
+#include "TauAnalysis/Entanglement/interface/StartPosAlgoBase.h"   // StartPosAlgoBase
 
 class StartPosFinder
 {
@@ -17,11 +17,11 @@ class StartPosFinder
   operator()(const KinematicEvent& kineEvt);
  
  private:
-  StartPosFinderBase* algo_;
+  StartPosAlgoBase* algo_;
 
   int mode_;
 
-  SpinAnalyzer spinAnalyzer_;
+  PolarimetricVector polarimetricVector_;
 
   int verbosity_;
   bool cartesian_;
