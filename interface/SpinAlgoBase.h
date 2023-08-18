@@ -12,6 +12,9 @@ class SpinAlgoBase
   SpinAlgoBase(const edm::ParameterSet& cfg);
   virtual ~SpinAlgoBase();
 
+  void
+  set_verbosity(int verbosity);
+
   virtual
   spin::Measurement
   operator()(const EntanglementDataset& dataset) = 0;

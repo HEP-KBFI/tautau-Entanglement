@@ -23,7 +23,7 @@ class Measurement
   set_CErr(const math::Matrix3x3& CErr);
 
   void
-  set_RchshErr(double Rchsh);
+  set_RchshErr(double RchshErr);
 
   const math::Vector3&
   get_Bp() const;

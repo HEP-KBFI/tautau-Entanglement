@@ -15,7 +15,7 @@ hAxes = [ "higgs" ]
 decayModes = [ "piPlus_piMinus", "rhoPlus_rhoMinus" ]
 spinAnalyzers = [ "by_summation", "by_mlfit" ]
 
-version = "2023Aug16_startPosMode1_wSmearing"
+version = "2023Aug17_startPosMode1_woSmearing"
 
 inputFilePath = os.path.join("/scratch/persistent", getpass.getuser(), "Entanglement/ntuples/", version)
 
@@ -93,7 +93,7 @@ for sample in samples:
         build_cfgFile(
           "makeControlPlots_cfg.py", cfgFileName_ctrlPlots_modified, 
           inputFileNames, sample,
-          mode, hAxis, decayMode, 
+          mode, hAxis, decayMode, "", 
           outputFileName_ctrlPlots)
         logFileName_ctrlPlots = cfgFileName_ctrlPlots_modified.replace("_cfg.py", ".log")
         job_key_ctrlPlots = '%s_%s_%s_%s_ctrlPlots' % (sample, mode, hAxis, decayMode)
@@ -114,9 +114,9 @@ for sample in samples:
           build_cfgFile(
             "makeResolutionPlots_cfg.py", cfgFileName_resPlots_modified, 
             inputFileNames, sample,
-            mode, hAxis, decayMode, 
+            mode, hAxis, decayMode, "",
             outputFileName_resPlots)
-            logFileName_resPlots = cfgFileName_resPlots_modified.replace("_cfg.py", ".log")
+          logFileName_resPlots = cfgFileName_resPlots_modified.replace("_cfg.py", ".log")
           job_key_resPlots = '%s_%s_%s_%s_resPlots' % (sample, mode, hAxis, decayMode)
           dependencies_resPlots = [ cfgFileName_resPlots_modified ]
           dependencies_resPlots.extend(inputFileNames)

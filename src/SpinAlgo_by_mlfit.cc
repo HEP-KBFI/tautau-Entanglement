@@ -335,7 +335,7 @@ SpinAlgo_by_mlfit::operator()(const EntanglementDataset& dataset)
   mlfit_->Minimize();
   mlfit_->Hesse();
 
-  if ( verbosity_ >= 1 )
+  if ( verbosity_ >= 2 )
   {
     std::cout << "Fit Results:\n";
     mlfit_->PrintResults();
@@ -348,7 +348,7 @@ SpinAlgo_by_mlfit::operator()(const EntanglementDataset& dataset)
     const double* X = mlfit_->X();
     parValues[idxPar] = X[idxPar];
     parErrors[idxPar] = sqrt(mlfit_->CovMatrix(idxPar, idxPar));
-    if ( verbosity_ >= 1 )
+    if ( verbosity_ >= 2 )
     {
       std::cout << parNames[idxPar] << " = " << parValues[idxPar] << " +/- " << parErrors[idxPar] << "\n";
     }

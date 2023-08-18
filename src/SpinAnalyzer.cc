@@ -152,17 +152,25 @@ spin::Measurement
 SpinAnalyzer::operator()(const EntanglementDataset& dataset)
 {
   EntanglementDataset nominal_sample(dataset, maxEvents_afterCuts_);
+  algo_->set_verbosity(verbosity_);
   spin::Measurement nominal_measurement = (*algo_)(nominal_sample);
 
   // CV: estimate uncertainties on Bp and Bm vectors, on tau spin correlation matrix C,
   //     and on Entanglement observables with bootstrap samples
+  std::cout << "Generating bootstrap samples...\n";
   std::vector<spin::Measurement> bootstrap_measurements;
   for ( size_t idxBootstrapSample = 0; idxBootstrapSample < numBootstrapSamples_; ++idxBootstrapSample )
   {
+    if ( idxBootstrapSample > 0 && (idxBootstrapSample % 100) == 0 )
+    {
+      std::cout << " Processing " << idxBootstrapSample << "th sample.\n";
+    }
     EntanglementDataset bootstrap_sample = build_bootstrap_sample(dataset, rnd_, maxEvents_afterCuts_);
+    algo_->set_verbosity(-1);
     spin::Measurement bootstrap_measurement = (*algo_)(bootstrap_sample);
     bootstrap_measurements.push_back(bootstrap_measurement);
   }
+  std::cout << " Done.\n";
   math::Vector3 Bp_median, BpErr, Bm_median, BmErr;
   math::Matrix3x3 C_median, CErr;
   double Rchsh_median, RchshErr;

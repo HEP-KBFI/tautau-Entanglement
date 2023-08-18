@@ -19,10 +19,10 @@ process.analyzeEntanglementNtuple = cms.PSet(
 
     mode = cms.string('gen'),
 
-    minVisTauPt = cms.double(20.),
-    maxAbsVisTauEta = cms.double(2.3),
-    #minVisTauPt = cms.double(-1.),
-    #maxAbsVisTauEta = cms.double(1.e+3),
+    #minVisTauPt = cms.double(20.),
+    #maxAbsVisTauEta = cms.double(2.3),
+    minVisTauPt = cms.double(-1.),
+    maxAbsVisTauEta = cms.double(1.e+3),
     #minTauTIP = cms.double(0.0030),
     minTauTIP = cms.double(-1.),
     maxNumChargedKaons = cms.int32(0),
@@ -37,7 +37,7 @@ process.analyzeEntanglementNtuple = cms.PSet(
 
     par_gen = cms.vdouble(),
 
-    spinAnalyzer = cms.string('by_summation'); # CV: either 'by_summation' or by 'by_mlfit'
+    spinAnalyzer = cms.string('by_summation'), # CV: either 'by_summation' or 'by_mlfit'
     numBootstrapSamples = cms.uint32(1000),
 
     mlfit_outputFileName = cms.string(""),
@@ -58,10 +58,10 @@ par_gen = [ 0., 0., 0., 0., 0., 0., +1., 0., 0., 0., +1., 0., 0., 0., -1. ]
 spinAnalyzer = "by_summation"
 outputFileName = 'analyzeEntanglementNtuple_%s_%sMode_%sAxis.root' % (processName, mode, hAxis)
 
-minVisTauPt = 20.
-maxAbsVisTauEta = 2.3
-#minVisTauPt = -1.
-#maxAbsVisTauEta = 1.e+3
+#minVisTauPt = 20.
+#maxAbsVisTauEta = 2.3
+minVisTauPt = -1.
+maxAbsVisTauEta = 1.e+3
 #minTauTIP = 0.0030
 minTauTIP = -1.
 maxNumChargedKaons = 0

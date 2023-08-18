@@ -8,6 +8,7 @@ Measurement::Measurement(const math::Vector3& Bp, const math::Vector3& Bm, const
   , Bm_(Bm)
   , C_(C)
   , Rchsh_(Rchsh)
+  , RchshErr_(0.)
 {}
 
 Measurement::~Measurement()
@@ -32,9 +33,9 @@ Measurement::set_CErr(const math::Matrix3x3& CErr)
 }
 
 void
-Measurement::set_RchshErr(double Rchsh)
+Measurement::set_RchshErr(double RchshErr)
 {
-  Rchsh_ = Rchsh;
+  RchshErr_ = RchshErr;
 }
 
 const math::Vector3&

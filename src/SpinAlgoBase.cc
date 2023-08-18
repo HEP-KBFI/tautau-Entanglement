@@ -6,3 +6,9 @@ SpinAlgoBase::SpinAlgoBase(const edm::ParameterSet& cfg)
 
 SpinAlgoBase::~SpinAlgoBase()
 {}
+
+void
+SpinAlgoBase::set_verbosity(int verbosity)
+{
+  verbosity_ = verbosity;
+}
