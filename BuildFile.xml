@@ -7,6 +7,7 @@
 <use name="root"/>
 <use name="rooteg"/>
 <use name="rootmath"/>
+<use name="rootminuit2"/>
 <export>
   <lib name="1"/>
 </export>

@@ -30,7 +30,7 @@ samples = {
 
 hAxes = [ "beam", "higgs" ]
 
-version = "2023Aug14_startPosMode1_wSmearing"
+version = "2023Aug17_startPosMode1_woSmearing"
 
 configDir  = os.path.join("/home",               getpass.getuser(), "Entanglement/ntuples/", version)
 outputDir  = os.path.join("/scratch/persistent", getpass.getuser(), "Entanglement/ntuples/", version)

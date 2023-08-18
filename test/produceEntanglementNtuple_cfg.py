@@ -124,16 +124,18 @@ process.tauGenJetsSelectorAllHadrons.select = cms.vstring(
 )
 process.analysisSequence += process.tauGenJetsSelectorAllHadrons
 
-process.selectedGenHadTaus = cms.EDFilter("GenJetSelector",
-    src = cms.InputTag('tauGenJetsSelectorAllHadrons'),
-    cut = cms.string('pt > 20. & abs(eta) < 2.3'),
-    filter = cms.bool(False)
-)
-process.analysisSequence += process.selectedGenHadTaus
+## CV: disabled pT and eta cuts on visible tau decay products 
+##     to test analyzeEntanglementNtuples.cc code (17/08/2023)
+##process.selectedGenHadTaus = cms.EDFilter("GenJetSelector",
+##    src = cms.InputTag('tauGenJetsSelectorAllHadrons'),
+##    cut = cms.string('pt > 20. & abs(eta) < 2.3'),
+##    filter = cms.bool(False)
+##)
+##process.analysisSequence += process.selectedGenHadTaus
 
 process.selectedGenHadTauFilter = cms.EDFilter("CandViewCountFilter",
-    src = cms.InputTag('selectedGenHadTaus'),
-    ##src = cms.InputTag('tauGenJetsSelectorAllHadrons'),
+    ##src = cms.InputTag('selectedGenHadTaus'),
+    src = cms.InputTag('tauGenJetsSelectorAllHadrons'),
     minNumber = cms.uint32(2)
 )
 process.analysisSequence += process.selectedGenHadTauFilter
@@ -159,8 +161,8 @@ process.ntupleProducer = cms.EDAnalyzer("EntanglementNtupleProducer",
     smearing = smearing.clone(
         rndSeed = cms.uint64(rndSeed)
     ),
-    #applySmearing = cms.bool(False),
-    applySmearing = cms.bool(True),
+    applySmearing = cms.bool(False),
+    #applySmearing = cms.bool(True),
     srcEvtWeights = cms.VInputTag('genWeight'),
     startPosMode = cms.int32(1),
     applyHiggsMassConstraint = cms.bool(True),

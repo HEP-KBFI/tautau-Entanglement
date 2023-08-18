@@ -83,12 +83,12 @@ PolarimetricVectorAlgoOneProng0Pi0::operator()(const KinematicEvent& evt, int ta
 
   reco::Candidate::LorentzVector tauP4;
   const std::vector<KinematicParticle>* daughters = nullptr;
-  if ( tau == PolarimetricVector::kTauPlus )
+  if ( tau == pol::kTauPlus )
   {
     tauP4 = evt.tauPlusP4();
     daughters = &evt.daughtersTauPlus();
   }
-  else if ( tau == PolarimetricVector::kTauMinus )
+  else if ( tau == pol::kTauMinus )
   {
     tauP4 = evt.tauMinusP4();
     daughters = &evt.daughtersTauMinus();

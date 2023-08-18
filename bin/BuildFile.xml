@@ -6,7 +6,6 @@
   <use name="PhysicsTools/FWLite"/>
   <use name="TauAnalysis/Entanglement"/>
   <use name="root"/>
-  <use name="rootminuit2"/>
 </bin>
 <bin file="makeControlPlots.cc" name="makeControlPlots">
   <use name="DataFormats/FWLite"/>

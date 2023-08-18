@@ -5,8 +5,8 @@ process = cms.PSet()
 process.fwliteInput = cms.PSet(
     fileNames = cms.vstring(),
     maxEvents_beforeCuts = cms.int32(-1),
-    ##maxEvents_afterCuts = cms.int32(10000),
-    maxEvents_afterCuts = cms.int32(-1),
+    maxEvents_afterCuts = cms.int32(2000),
+    ##maxEvents_afterCuts = cms.int32(-1),
     outputEvery = cms.uint32(10000)
 )
 
@@ -37,9 +37,13 @@ process.analyzeEntanglementNtuple = cms.PSet(
 
     par_gen = cms.vdouble(),
 
-    scanLikelihood = cms.bool(False),
+    spinAnalyzer = cms.string('by_summation'); # CV: either 'by_summation' or by 'by_mlfit'
+    numBootstrapSamples = cms.uint32(1000),
 
-    isDEBUG = cms.bool(False)
+    mlfit_outputFileName = cms.string(""),
+    mlfit_scan_likelihood = cms.bool(False),
+
+    verbosity = cms.untracked.int32(1)
 )
 
 inputFilePath = '/scratch/persistent/veelken/Entanglement/ntuples/2023Aug02/'
@@ -48,7 +52,10 @@ processName = "ggH_htt_pythia8"
 mode = 'gen'
 hAxis = "higgs"
 decayMode = "piPlus_piMinus"
+# CV: define Standard Model expectation for matrix C, given by Eq. (69) of arXiv:2208:11723, 
+#     for comparison with measured matrix elements
 par_gen = [ 0., 0., 0., 0., 0., 0., +1., 0., 0., 0., +1., 0., 0., 0., -1. ]
+spinAnalyzer = "by_summation"
 outputFileName = 'analyzeEntanglementNtuple_%s_%sMode_%sAxis.root' % (processName, mode, hAxis)
 
 minVisTauPt = 20.
@@ -69,6 +76,7 @@ maxSumPhotonEn = 5.
 ##hAxis = "$hAxis"
 ##decayMode = "$decayMode"
 ##par_gen = $par_gen
+##spinAnalyzer = "$spinAnalyzer"
 ##outputFileName = "$outputFileName"
 
 ##minVisTauPt = $minVisTauPt
@@ -105,3 +113,5 @@ process.analyzeEntanglementNtuple.maxNumNeutralKaons = maxNumNeutralKaons
 process.analyzeEntanglementNtuple.maxNumPhotons = maxNumPhotons
 process.analyzeEntanglementNtuple.maxSumPhotonEn = maxSumPhotonEn
 process.analyzeEntanglementNtuple.par_gen = par_gen
+process.analyzeEntanglementNtuple.spinAnalyzer = spinAnalyzer
+process.analyzeEntanglementNtuple.mlfit_outputFileName = outputFileName

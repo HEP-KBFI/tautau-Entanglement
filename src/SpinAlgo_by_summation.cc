@@ -1,0 +1,66 @@
+#include "TauAnalysis/Entanglement/interface/SpinAlgo_by_summation.h"
+
+#include "TauAnalysis/Entanglement/interface/comp_Rchsh.h" // comp_Rchsh()
+
+SpinAlgo_by_summation::SpinAlgo_by_summation(const edm::ParameterSet& cfg)
+  : SpinAlgoBase(cfg)
+{}
+
+SpinAlgo_by_summation::~SpinAlgo_by_summation()
+{}
+
+spin::Measurement
+SpinAlgo_by_summation::operator()(const EntanglementDataset& dataset)
+{
+  math::Vector3 Bp, Bm;
+  math::Matrix3x3 C;
+  double evtWeight_sum = 0.;
+  size_t numEntries = dataset.size();
+  for ( size_t idxEntry = 0; idxEntry < numEntries; ++idxEntry )
+  {
+    const EntanglementData& entry = dataset.at(idxEntry);
+
+    double hPlus_r = entry.get_hPlus_r();
+    double hPlus_n = entry.get_hPlus_n();
+    double hPlus_k = entry.get_hPlus_k();
+    
+    double hMinus_r = entry.get_hMinus_r();
+    double hMinus_n = entry.get_hMinus_n();
+    double hMinus_k = entry.get_hMinus_k();
+
+    double evtWeight = entry.get_evtWeight();
+
+    Bp(0) += evtWeight*hPlus_r;
+    Bp(1) += evtWeight*hPlus_n;
+    Bp(2) += evtWeight*hPlus_k;
+
+    Bm(0) += evtWeight*hMinus_r;
+    Bm(1) += evtWeight*hMinus_n;
+    Bm(2) += evtWeight*hMinus_k;
+    
+    // CV: compute matrix C according to Eq. (25)
+    //     in the paper arXiv:2211.10513
+    double c = -9.*evtWeight;
+    C(0,0) += c*hPlus_r*hMinus_r;
+    C(0,1) += c*hPlus_r*hMinus_n;
+    C(0,2) += c*hPlus_r*hMinus_k;
+    C(1,0) += c*hPlus_n*hMinus_r;
+    C(1,1) += c*hPlus_n*hMinus_n;
+    C(1,2) += c*hPlus_n*hMinus_k;
+    C(2,0) += c*hPlus_k*hMinus_r;
+    C(2,1) += c*hPlus_k*hMinus_n;
+    C(2,2) += c*hPlus_k*hMinus_k;
+
+    evtWeight_sum += evtWeight;
+  }
+
+  Bp *= (1./evtWeight_sum);
+  Bm *= (1./evtWeight_sum);
+
+  C *= (1./evtWeight_sum);
+
+  double Rchsh = comp_Rchsh(C, verbosity_);
+
+  spin::Measurement measurement(Bp, Bm, C, Rchsh);
+  return measurement;
+}
