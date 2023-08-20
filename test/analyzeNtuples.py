@@ -13,9 +13,10 @@ modes = [ "gen", "gen_smeared", "startPos", "kinFit" ]
 hAxes = [ "higgs" ]
 ##decayModes = [ "piPlus_piMinus", "piPlus_rhoMinus", "rhoPlus_piMinus", "rhoPlus_rhoMinus" ]
 decayModes = [ "piPlus_piMinus", "rhoPlus_rhoMinus" ]
-spinAnalyzers = [ "by_summation", "by_mlfit" ]
+##spinAnalyzers = [ "by_summation", "by_mlfit" ]
+spinAnalyzers = [ "by_summation" ]
 
-version = "2023Aug17_startPosMode1_woSmearing"
+version = "2023Aug19_startPosMode1_woSmearing"
 
 inputFilePath = os.path.join("/scratch/persistent", getpass.getuser(), "Entanglement/ntuples/", version)
 

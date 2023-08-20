@@ -1,11 +1,14 @@
 #ifndef TauAnalysis_Entanglement_SpinAlgo_by_summation_h
 #define TauAnalysis_Entanglement_SpinAlgo_by_summation_h
 
-#include "FWCore/ParameterSet/interface/ParameterSet.h"             // edm::ParameterSet
+#include "FWCore/ParameterSet/interface/ParameterSet.h"      // edm::ParameterSet
 
-#include "TauAnalysis/Entanglement/interface/EntanglementDataset.h" // EntanglementDataset
-#include "TauAnalysis/Entanglement/interface/Measurement.h"         // spin::Measurement
-#include "TauAnalysis/Entanglement/interface/SpinAlgoBase.h"        // SpinAlgoBase
+#include "TauAnalysis/Entanglement/interface/Dataset.h"      // spin::Dataset
+#include "TauAnalysis/Entanglement/interface/Measurement.h"  // spin::Measurement
+#include "TauAnalysis/Entanglement/interface/SpinAlgoBase.h" // SpinAlgoBase
+
+namespace spin
+{
 
 class SpinAlgo_by_summation : public SpinAlgoBase
 {
@@ -14,7 +17,9 @@ class SpinAlgo_by_summation : public SpinAlgoBase
   ~SpinAlgo_by_summation();
 
   spin::Measurement
-  operator()(const EntanglementDataset& dataset);
+  operator()(const spin::Dataset& dataset);
 };
+
+}
 
 #endif // TauAnalysis_Entanglement_SpinAlgo_by_summation_h

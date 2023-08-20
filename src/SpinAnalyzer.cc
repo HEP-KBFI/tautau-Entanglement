@@ -8,8 +8,11 @@
 #include <TMath.h>                                                    // TMath::Nint()
 
 #include <algorithm>                                                  // std::sort()
+#include <map>                                                        // std::map<>
 #include <string>                                                     // std::string
 #include <utility>                                                    // std::make_pair(), std::pair<>
+
+using namespace spin;
 
 SpinAnalyzer::SpinAnalyzer(const edm::ParameterSet& cfg)
   : spinAnalyzer_(cfg.getParameter<std::string>("spinAnalyzer"))
@@ -31,15 +34,15 @@ SpinAnalyzer::~SpinAnalyzer()
 
 namespace
 {
-  EntanglementDataset
-  build_bootstrap_sample(const EntanglementDataset& dataset, TRandom& rnd, int maxEvents_afterCuts = -1)
+  spin::Dataset
+  build_bootstrap_sample(const spin::Dataset& dataset, TRandom& rnd, int maxEvents_afterCuts = -1)
   {
-    EntanglementDataset bootstrap_sample(dataset, 0);
+    spin::Dataset bootstrap_sample(dataset, 0);
     size_t sampleSize = ( maxEvents_afterCuts > 0 ) ? maxEvents_afterCuts : dataset.size();
     for ( size_t idxSample = 0; idxSample < sampleSize; ++idxSample )
     {
       size_t idxEntry = rnd.Integer(dataset.size());
-      const EntanglementData& entry = dataset.at(idxEntry);
+      const spin::Data& entry = dataset.at(idxEntry);
       bootstrap_sample.push_back(entry);
     }
     return bootstrap_sample;
@@ -149,28 +152,37 @@ namespace
 }
 
 spin::Measurement
-SpinAnalyzer::operator()(const EntanglementDataset& dataset)
+SpinAnalyzer::build_measurement(const spin::Dataset& dataset, int maxEvents_afterCuts, int verbosity)
 {
-  EntanglementDataset nominal_sample(dataset, maxEvents_afterCuts_);
-  algo_->set_verbosity(verbosity_);
+  spin::Dataset nominal_sample(dataset, maxEvents_afterCuts);
+  algo_->set_verbosity(verbosity);
   spin::Measurement nominal_measurement = (*algo_)(nominal_sample);
 
   // CV: estimate uncertainties on Bp and Bm vectors, on tau spin correlation matrix C,
   //     and on Entanglement observables with bootstrap samples
-  std::cout << "Generating bootstrap samples...\n";
+  if ( verbosity >= 1 )
+  {
+    std::cout << "Generating bootstrap samples...\n";
+  }
   std::vector<spin::Measurement> bootstrap_measurements;
   for ( size_t idxBootstrapSample = 0; idxBootstrapSample < numBootstrapSamples_; ++idxBootstrapSample )
   {
-    if ( idxBootstrapSample > 0 && (idxBootstrapSample % 100) == 0 )
+    if ( verbosity >= 1 )
     {
-      std::cout << " Processing " << idxBootstrapSample << "th sample.\n";
+      if ( idxBootstrapSample > 0 && (idxBootstrapSample % 100) == 0 )
+      {
+        std::cout << " Processing " << idxBootstrapSample << "th sample.\n";
+      }
     }
-    EntanglementDataset bootstrap_sample = build_bootstrap_sample(dataset, rnd_, maxEvents_afterCuts_);
+    spin::Dataset bootstrap_sample = build_bootstrap_sample(dataset, rnd_, maxEvents_afterCuts);
     algo_->set_verbosity(-1);
     spin::Measurement bootstrap_measurement = (*algo_)(bootstrap_sample);
     bootstrap_measurements.push_back(bootstrap_measurement);
   }
-  std::cout << " Done.\n";
+  if ( verbosity >= 1 )
+  {
+    std::cout << " Done.\n";
+  }
   math::Vector3 Bp_median, BpErr, Bm_median, BmErr;
   math::Matrix3x3 C_median, CErr;
   double Rchsh_median, RchshErr;
@@ -185,4 +197,106 @@ SpinAnalyzer::operator()(const EntanglementDataset& dataset)
   nominal_measurement.set_RchshErr(RchshErr);
   
   return nominal_measurement;
+}
+
+spin::Measurement
+SpinAnalyzer::operator()(const spin::Dataset& dataset)
+{
+  return build_measurement(dataset, maxEvents_afterCuts_, verbosity_);
+}
+
+spin::BinnedMeasurement1d
+SpinAnalyzer::operator()(const spin::BinnedDataset1d& dataset)
+{
+  if ( verbosity_ >= 2 )
+  {
+    std::cout << "<SpinAnalyzer::operator()>:\n";
+  }
+  spin::BinnedMeasurement1d measurement(dataset.name_, dataset.numBinsX_, dataset.xMin_, dataset.xMax_);
+  for ( int idxBinX = 1; idxBinX <= dataset.binning_->GetNbinsX(); ++idxBinX )
+  {
+    measurement.binning_->SetBinContent(idxBinX, dataset.binning_->GetBinContent(idxBinX));
+    measurement.binning_->SetBinError(idxBinX, dataset.binning_->GetBinError(idxBinX));
+  }
+  int numEntries_unallocated = dataset.numEntries_;
+  double prob_unallocated = 1.;
+  for ( const std::pair<int, spin::Dataset>& entry : dataset.entries_ )
+  {
+    double prob = entry.second.numEntries_/(double)dataset.numEntries_;
+    int maxEvents = 0;
+    if ( prob < prob_unallocated )
+    {
+      maxEvents = rnd_.Binomial(numEntries_unallocated, prob/prob_unallocated);
+      numEntries_unallocated -= maxEvents;
+      prob_unallocated -= prob;
+    }
+    else
+    {
+      maxEvents = numEntries_unallocated;
+      numEntries_unallocated = 0;
+      prob_unallocated = 0.;
+    }
+    if ( maxEvents > 0 ) measurement.entries_[entry.first] = build_measurement(entry.second, maxEvents, -1);
+    else                 measurement.entries_[entry.first] = Measurement();
+    if ( verbosity_ >= 2 )
+    {
+      int idxBinX, idxBinY, idxBinZ;
+      dataset.binning_->GetBinXYZ(entry.first, idxBinX, idxBinY, idxBinZ);
+      double x = dataset.binning_->GetXaxis()->GetBinCenter(idxBinX);
+      std::cout << " x = " << x << ":"
+                << " Rchsh = " << measurement.entries_[entry.first].get_Rchsh() 
+                << " +/- " << measurement.entries_[entry.first].get_RchshErr() << "\n";
+    }
+  }
+  return measurement;
+}
+
+spin::BinnedMeasurement2d
+SpinAnalyzer::operator()(const spin::BinnedDataset2d& dataset)
+{
+  if ( verbosity_ >= 2 )
+  {
+    std::cout << "<SpinAnalyzer::operator()>:\n";
+  }
+  spin::BinnedMeasurement2d measurement(dataset.name_, dataset.numBinsX_, dataset.xMin_, dataset.xMax_, dataset.numBinsY_, dataset.yMin_, dataset.yMax_);
+  for ( int idxBinX = 1; idxBinX <= dataset.binning_->GetNbinsX(); ++idxBinX )
+  {
+    for ( int idxBinY = 1; idxBinY <= dataset.binning_->GetNbinsY(); ++idxBinY )
+    {      
+      measurement.binning_->SetBinContent(idxBinX, idxBinY, dataset.binning_->GetBinContent(idxBinX, idxBinY));
+      measurement.binning_->SetBinError(idxBinX, idxBinY, dataset.binning_->GetBinError(idxBinX, idxBinY));
+    }
+  }
+  int numEntries_unallocated = dataset.numEntries_;
+  double prob_unallocated = 1.;
+  for ( const std::pair<int, spin::Dataset>& entry : dataset.entries_ )
+  {
+    double prob = entry.second.numEntries_/(double)dataset.numEntries_;
+    int maxEvents = 0;
+    if ( prob < prob_unallocated )
+    {
+      maxEvents = rnd_.Binomial(numEntries_unallocated, prob/prob_unallocated);
+      numEntries_unallocated -= maxEvents;
+      prob_unallocated -= prob;
+    }
+    else
+    {
+      maxEvents = numEntries_unallocated;
+      numEntries_unallocated = 0;
+      prob_unallocated = 0.;
+    }
+    if ( maxEvents > 0 ) measurement.entries_[entry.first] = build_measurement(entry.second, maxEvents, -1);
+    else                 measurement.entries_[entry.first] = Measurement();
+    if ( verbosity_ >= 2 )
+    {
+      int idxBinX, idxBinY, idxBinZ;
+      dataset.binning_->GetBinXYZ(entry.first, idxBinX, idxBinY, idxBinZ);
+      double x = dataset.binning_->GetXaxis()->GetBinCenter(idxBinX);
+      double y = dataset.binning_->GetYaxis()->GetBinCenter(idxBinY);
+      std::cout << " x = " << x << ", y = " << y << ":" 
+                << " Rchsh = " << measurement.entries_[entry.first].get_Rchsh() 
+                << " +/- " << measurement.entries_[entry.first].get_RchshErr() << "\n";
+    }
+  }
+  return measurement;
 }

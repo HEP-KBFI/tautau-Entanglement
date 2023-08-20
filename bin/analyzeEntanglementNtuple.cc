@@ -1,36 +1,80 @@
 
-#include "DataFormats/FWLite/interface/InputSource.h"                             // fwlite::InputSource
-#include "DataFormats/FWLite/interface/OutputFiles.h"                             // fwlite::OutputFiles
-#include "FWCore/ParameterSet/interface/ParameterSet.h"                           // edm::ParameterSet
-#include "FWCore/ParameterSetReader/interface/ParameterSetReader.h"               // edm::readPSetsFrom()
-#include "FWCore/PluginManager/interface/PluginManager.h"                         // edmplugin::PluginManager::configure()
-#include "FWCore/PluginManager/interface/standard.h"                              // edmplugin::standard::config()
-#include "PhysicsTools/FWLite/interface/TFileService.h"                           // fwlite::TFileService
+#include "DataFormats/FWLite/interface/InputSource.h"                 // fwlite::InputSource
+#include "DataFormats/FWLite/interface/OutputFiles.h"                 // fwlite::OutputFiles
+#include "FWCore/ParameterSet/interface/ParameterSet.h"               // edm::ParameterSet
+#include "FWCore/ParameterSetReader/interface/ParameterSetReader.h"   // edm::readPSetsFrom()
+#include "FWCore/PluginManager/interface/PluginManager.h"             // edmplugin::PluginManager::configure()
+#include "FWCore/PluginManager/interface/standard.h"                  // edmplugin::standard::config()
+#include "PhysicsTools/FWLite/interface/TFileService.h"               // fwlite::TFileService
 
-#include "TauAnalysis/Entanglement/interface/cmsException.h"                      // cmsException
-#include "TauAnalysis/Entanglement/interface/comp_Rchsh.h"                        // comp_Rchsh()
-#include "TauAnalysis/Entanglement/interface/EntanglementDataset.h"               // EntanglementDataset
-#include "TauAnalysis/Entanglement/interface/format_vT.h"                         // format_vint(), vdouble, vint
-#include "TauAnalysis/Entanglement/interface/Matrix_and_Vector.h"                 // math::Matrix3x3, math::Vector3
-#include "TauAnalysis/Entanglement/interface/Measurement.h"                       // spin::Measurement
-#include "TauAnalysis/Entanglement/interface/passesStatusSelection.h"             // passesStatusSelection()
-#include "TauAnalysis/Entanglement/interface/SpinAnalyzer.h"                      // SpinAnalyzer
+#include "TauAnalysis/Entanglement/interface/bookHistogram1d.h"       // bookHistogram1d()
+#include "TauAnalysis/Entanglement/interface/bookHistogram2d.h"       // bookHistogram2d()
+#include "TauAnalysis/Entanglement/interface/cmsException.h"          // cmsException
+#include "TauAnalysis/Entanglement/interface/comp_Rchsh.h"            // comp_Rchsh()
+#include "TauAnalysis/Entanglement/interface/BinnedDataset.h"         // spin::BinnedDataset
+#include "TauAnalysis/Entanglement/interface/BinnedMeasurement.h"     // spin::BinnedMeasurement
+#include "TauAnalysis/Entanglement/interface/Dataset.h"               // spin::Dataset
+#include "TauAnalysis/Entanglement/interface/format_vT.h"             // format_vint(), vdouble, vint
+#include "TauAnalysis/Entanglement/interface/Matrix_and_Vector.h"     // math::Matrix3x3, math::Vector3
+#include "TauAnalysis/Entanglement/interface/Measurement.h"           // spin::Measurement
+#include "TauAnalysis/Entanglement/interface/passesStatusSelection.h" // passesStatusSelection()
+#include "TauAnalysis/Entanglement/interface/SpinAnalyzer.h"          // spin::SpinAnalyzer
 
-#include "Math/Functions.h"                                                       // ROOT::Math::Transpose() 
-#include <TBenchmark.h>                                                           // TBenchmark
-#include <TError.h>                                                               // gErrorAbortLevel, kError
-#include <TString.h>                                                              // Form()
-#include <TTree.h>                                                                // TTree
+#include "Math/Functions.h"                                           // ROOT::Math::Transpose() 
+#include <TAxis.h>                                                    // TAxis
+#include <TBenchmark.h>                                               // TBenchmark
+#include <TError.h>                                                   // gErrorAbortLevel, kError
+#include <TH1.h>                                                      // TH1
+#include <TH2.h>                                                      // TH2
+#include <TString.h>                                                  // Form()
+#include <TTree.h>                                                    // TTree
 
-#include <algorithm>                                                              // std::sort()
-#include <assert.h>                                                               // assert()
-#include <cmath>                                                                  // std::fabs()
-#include <cstdlib>                                                                // EXIT_SUCCESS, EXIT_FAILURE
-#include <iostream>                                                               // std::cout
-#include <string>                                                                 // std::string
-#include <vector>                                                                 // std::vector<>
+#include <algorithm>                                                  // std::sort()
+#include <assert.h>                                                   // assert()
+#include <cmath>                                                      // std::fabs()
+#include <cstdlib>                                                    // EXIT_SUCCESS, EXIT_FAILURE
+#include <iostream>                                                   // std::cout
+#include <string>                                                     // std::string
+#include <vector>                                                     // std::vector<>
 
 const size_t npar = 15;
+
+void
+addToOutputFile(fwlite::TFileService& fs, const TH1* histogram)
+{
+  const TAxis* xAxis = histogram->GetXaxis();
+  int numBinsX = xAxis->GetNbins();
+  double xMin = xAxis->GetXmin();
+  double xMax = xAxis->GetXmax();
+  TH1* output = bookHistogram1d(fs, histogram->GetName(), numBinsX, xMin, xMax);
+  for ( int idxBinX = 1; idxBinX <= numBinsX; ++idxBinX )
+  {
+    output->SetBinContent(idxBinX, histogram->GetBinContent(idxBinX));
+    output->SetBinError(idxBinX, histogram->GetBinError(idxBinX));
+  }
+}
+
+void
+addToOutputFile(fwlite::TFileService& fs, const TH2* histogram)
+{
+  const TAxis* xAxis = histogram->GetXaxis();
+  int numBinsX = xAxis->GetNbins();
+  double xMin = xAxis->GetXmin();
+  double xMax = xAxis->GetXmax();
+  const TAxis* yAxis = histogram->GetYaxis();
+  int numBinsY = yAxis->GetNbins();
+  double yMin = yAxis->GetXmin();
+  double yMax = yAxis->GetXmax();
+  TH2* output = bookHistogram2d(fs, histogram->GetName(), numBinsX, xMin, xMax, numBinsY, yMin, yMax);
+  for ( int idxBinX = 1; idxBinX <= numBinsX; ++idxBinX )
+  {
+    for ( int idxBinY = 1; idxBinY <= numBinsY; ++idxBinY )
+    {
+      output->SetBinContent(idxBinX, idxBinY, histogram->GetBinContent(idxBinX, idxBinY));
+      output->SetBinError(idxBinX, idxBinY, histogram->GetBinError(idxBinX, idxBinY));
+    }
+  }
+}
 
 int main(int argc, char* argv[])
 {
@@ -96,7 +140,7 @@ int main(int argc, char* argv[])
       << "Invalid Configuration parameter 'par_gen' !!\n";
 
   cfg_analyze.addParameter<int>("maxEvents_afterCuts", maxEvents_afterCuts);
-  SpinAnalyzer spinAnalyzer(cfg_analyze);
+  spin::SpinAnalyzer spinAnalyzer(cfg_analyze);
   
   int verbosity = cfg_analyze.getUntrackedParameter<int>("verbosity");
 
@@ -110,7 +154,13 @@ int main(int argc, char* argv[])
   size_t numInputFiles = inputFileNames.size();
   std::cout << "Loaded " << numInputFiles << " file(s).\n";
   
-  EntanglementDataset dataset; 
+  spin::Dataset dataset;
+
+  spin::BinnedDataset1d binnedDataset_cosThetaStar("cosThetaStar", 20, -1., +1.);
+
+  //spin::BinnedDataset2d binnedDataset_zPlus_vs_cosThetaStar("zPlus_vs_cosThetaStar",   10, -1., +1., 10,  0.,  1.);
+  //spin::BinnedDataset2d binnedDataset_zMinus_vs_cosThetaStar("zMinus_vs_cosThetaStar", 10, -1., +1., 10,  0.,  1.);
+  //spin::BinnedDataset2d binnedDataset_zPlus_vs_zMinus("zPlus_vs_zMinus",               10,  0.,  1., 10,  0.,  1.);
 
   int analyzedEntries = 0;
   double analyzedEntries_weighted = 0.;
@@ -172,6 +222,12 @@ int main(int argc, char* argv[])
     Int_t kinFit_status;
     inputTree->SetBranchAddress("kinFit_status", &kinFit_status);
 
+    Float_t zPlus, zMinus, cosThetaStar;
+    inputTree->SetBranchAddress(Form("%s_zPlus", mode.c_str()), &zPlus);
+    inputTree->SetBranchAddress(Form("%s_zMinus", mode.c_str()), &zMinus);
+    //inputTree->SetBranchAddress(Form("%s_cosThetaStar", mode.c_str()), &cosThetaStar);
+    inputTree->SetBranchAddress(Form("%s_cosTheta", mode.c_str()), &cosThetaStar);
+
     Float_t evtWeight = 1.;
     if ( branchName_evtWeight != "" )
     {
@@ -205,7 +261,14 @@ int main(int argc, char* argv[])
       if ( maxChi2                != -1  && kinFit_chi2            > maxChi2                       ) continue;
       if ( statusSelection.size() >   0  && !passesStatusSelection(kinFit_status, statusSelection) ) continue;
 
-      dataset.push_back(EntanglementData(hPlus_r, hPlus_n, hPlus_k, hMinus_r, hMinus_n, hMinus_k, evtWeight));
+      spin::Data entry(hPlus_r, hPlus_n, hPlus_k, hMinus_r, hMinus_n, hMinus_k, evtWeight);
+      dataset.push_back(entry);
+
+      binnedDataset_cosThetaStar.push_back(cosThetaStar, entry);
+
+      //binnedDataset_zPlus_vs_cosThetaStar.push_back(cosThetaStar,  zPlus,  entry);
+      //binnedDataset_zMinus_vs_cosThetaStar.push_back(cosThetaStar, zMinus, entry);
+      //binnedDataset_zPlus_vs_zMinus.push_back(zMinus,              zPlus,  entry);
 
       ++selectedEntries;
       selectedEntries_weighted += evtWeight;
@@ -245,6 +308,28 @@ int main(int argc, char* argv[])
     double Rchsh_exp = comp_Rchsh(C_exp);
     std::cout << "Rchsh = " << Rchsh_exp << "\n";
   }
+
+  std::cout << "Processing binned measurement as function of cosThetaStar...\n";
+  spin::BinnedMeasurement1d binnedMeasurement_cosThetaStar = spinAnalyzer(binnedDataset_cosThetaStar);
+  TH1* histogram_Rchsh_vs_cosThetaStar = binnedMeasurement_cosThetaStar.get_histogram("Rchsh");
+  addToOutputFile(fs, histogram_Rchsh_vs_cosThetaStar);
+  std::cout << " Done.\n";
+
+  //std::cout << "Processing binned measurement as function of zPlus and cosThetaStar...\n";
+  //spin::BinnedMeasurement2d binnedMeasurement_zPlus_vs_cosThetaStar = spinAnalyzer(binnedDataset_zPlus_vs_cosThetaStar);
+  //TH2* histogram_Rchsh_vs_zPlus_and_cosThetaStar = binnedMeasurement_zPlus_vs_cosThetaStar.get_histogram("Rchsh");
+  //addToOutputFile(fs, histogram_Rchsh_vs_zPlus_and_cosThetaStar);
+  //std::cout << " Done.\n";
+  //std::cout << "Processing binned measurement as function of zMinus and cosThetaStar...\n";
+  //spin::BinnedMeasurement2d binnedMeasurement_zMinus_vs_cosThetaStar = spinAnalyzer(binnedDataset_zMinus_vs_cosThetaStar);
+  //TH2* histogram_Rchsh_vs_zMinus_vs_cosThetaStar = binnedMeasurement_zMinus_vs_cosThetaStar.get_histogram("Rchsh");
+  //addToOutputFile(fs, histogram_Rchsh_vs_zMinus_vs_cosThetaStar);
+  //std::cout << " Done.\n";
+  //std::cout << "Processing binned measurement as function of zPlus and zMinus...\n";
+  //spin::BinnedMeasurement2d binnedMeasurement_zPlus_vs_zMinus = spinAnalyzer(binnedDataset_zPlus_vs_zMinus);
+  //TH2* histogram_Rchsh_vs_zPlus_vs_zMinus = binnedMeasurement_zPlus_vs_zMinus.get_histogram("Rchsh");
+  //addToOutputFile(fs, histogram_Rchsh_vs_zPlus_vs_zMinus);
+  //std::cout << " Done.\n";
 
   clock.Show("analyzeEntanglementNtuple");
 

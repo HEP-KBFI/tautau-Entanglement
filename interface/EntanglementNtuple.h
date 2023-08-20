@@ -128,7 +128,7 @@ class EntanglementNtuple
       , zMinus_(0.)
       , mTauTau_(0.)
       , mVis_(0.)
-      , cosTheta_(0.)
+      , cosThetaStar_(0.)
     {}
     ~branchType_KinematicEvent()
     {}
@@ -191,7 +191,7 @@ class EntanglementNtuple
 
       createBranchF(ntuple, label_, "mTauTau", &mTauTau_);
       createBranchF(ntuple, label_, "mVis", &mVis_);
-      createBranchF(ntuple, label_, "cosTheta", &cosTheta_);
+      createBranchF(ntuple, label_, "cosThetaStar", &cosThetaStar_);
     }
 
     void
@@ -351,12 +351,12 @@ class EntanglementNtuple
       {
         mTauTau_          = (tauPlusP4 + tauMinusP4).mass();
         reco::Candidate::LorentzVector tauMinusP4_ttrf = getP4_rf(tauMinusP4, boost_ttrf);
-        cosTheta_         = cos(tauMinusP4_ttrf.theta());
+        cosThetaStar_     = cos(tauMinusP4_ttrf.theta());
       }
       else
       {
         mTauTau_          = 0.;
-        cosTheta_         = 0.;
+        cosThetaStar_     = 0.;
       }
       mVis_               = (visPlusP4 + visMinusP4).mass();
     }
@@ -418,7 +418,7 @@ class EntanglementNtuple
 
     Float_t mTauTau_;                // mass of tau pair
     Float_t mVis_;                   // mass of visible decay products of tau pair
-    Float_t cosTheta_;               // polar angle of tau- in tau-pair restframe
+    Float_t cosThetaStar_;           // polar angle of tau- in tau-pair restframe
   };
 
   branchType_KinematicEvent branches_KinematicEvent_gen_;

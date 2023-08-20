@@ -9,6 +9,7 @@ namespace spin
 class Measurement
 {
  public:
+  Measurement();
   Measurement(const math::Vector3& Bp, const math::Vector3& Bm, const math::Matrix3x3& C, 
               double Rchsh);
   ~Measurement();
@@ -63,4 +64,3 @@ class Measurement
 }
 
 #endif // TauAnalysis_Entanglement_Measurement_h
-

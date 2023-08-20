@@ -11,11 +11,14 @@
 #include <TString.h>                                         // Form()
 
 #include <assert.h>                                          // assert()
+#include <map>                                               // std::map<>
 
 const size_t npar = 15;
 
-static const EntanglementDataset* gEntanglementDataset = nullptr;
+static const spin::Dataset* gDataset = nullptr;
 static const std::vector<double>* gpar_gen = nullptr;
+
+using namespace spin;
 
 SpinAlgo_by_mlfit::SpinAlgo_by_mlfit(const edm::ParameterSet& cfg)
   : SpinAlgoBase(cfg)
@@ -73,7 +76,7 @@ namespace
   }
 
   double
-  get_p(const double* par, const EntanglementData& entry)
+  get_p(const double* par, const spin::Data& entry)
   {
     double Bp_r = par[0];
     double Bp_n = par[1];
@@ -112,8 +115,8 @@ namespace
   double
   mlfit_fcn(const double* par)
   {
-    assert(gEntanglementDataset);
-    const EntanglementDataset* mlfitData = gEntanglementDataset;
+    assert(gDataset);
+    const spin::Dataset* mlfitData = gDataset;
 
     size_t numEntries = mlfitData->size();
 
@@ -127,7 +130,7 @@ namespace
     double norm = 0.;
     for ( size_t idxEntry = 0; idxEntry < numEntries; ++idxEntry )
     {
-      const EntanglementData& entry = mlfitData->at(idxEntry);
+      const spin::Data& entry = mlfitData->at(idxEntry);
 
       norm += entry.get_evtWeight()*get_p(par, entry)/get_p(par_gen, entry);
       //norm += get_p(par, entry)/get_p(par_gen, entry);
@@ -136,7 +139,7 @@ namespace
     double logL = 0.;
     for ( size_t idxEntry = 0; idxEntry < numEntries; ++idxEntry )
     {
-      const EntanglementData& entry = mlfitData->at(idxEntry);
+      const spin::Data& entry = mlfitData->at(idxEntry);
 
       double p = get_p(par, entry);
 
@@ -306,7 +309,7 @@ namespace
 }
 
 spin::Measurement
-SpinAlgo_by_mlfit::operator()(const EntanglementDataset& dataset)
+SpinAlgo_by_mlfit::operator()(const spin::Dataset& dataset)
 {
   // initialize fit parameters
   spin::Measurement startpos = (*algo_by_summation_)(dataset);
@@ -329,7 +332,7 @@ SpinAlgo_by_mlfit::operator()(const EntanglementDataset& dataset)
   ROOT::Math::Functor f(&mlfit_fcn, npar);
   mlfit_->SetFunction(f);
 
-  gEntanglementDataset = &dataset;
+  gDataset = &dataset;
   gpar_gen = &par_gen_;
 
   mlfit_->Minimize();

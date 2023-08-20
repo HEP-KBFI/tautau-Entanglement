@@ -1,9 +1,12 @@
-#include "TauAnalysis/Entanglement/interface/EntanglementDataset.h"
+#include "TauAnalysis/Entanglement/interface/Dataset.h"
 
-EntanglementDataset::EntanglementDataset()
+using namespace spin;
+
+Dataset::Dataset()
+  : numEntries_(0)
 {}
 
-EntanglementDataset::EntanglementDataset(const EntanglementDataset& dataset, int maxEvents_afterCuts)
+Dataset::Dataset(const Dataset& dataset, int maxEvents_afterCuts)
 {
   // CV: If maxEvents_afterCuts == 0, an empty dataset will be created.
   //     This is the intended behaviour and is used for building bootstrap samples. 
@@ -14,7 +17,7 @@ EntanglementDataset::EntanglementDataset(const EntanglementDataset& dataset, int
       size_t numEntries = dataset.data_.size();
       for ( size_t idxEntry = 0; idxEntry < numEntries; ++idxEntry )
       {
-        const EntanglementData& entry = dataset.data_.at(idxEntry);
+        const Data& entry = dataset.data_.at(idxEntry);
         data_.push_back(entry);
       }
     }
@@ -22,14 +25,16 @@ EntanglementDataset::EntanglementDataset(const EntanglementDataset& dataset, int
     {
       data_ = dataset.data_;
     }
+    numEntries_ = data_.size();
   }
 }
 
-EntanglementDataset::~EntanglementDataset()
+Dataset::~Dataset()
 {}
 
 void
-EntanglementDataset::push_back(const EntanglementData& entry)
+Dataset::push_back(const Data& entry)
 {
   data_.push_back(entry);
+  ++numEntries_;
 }

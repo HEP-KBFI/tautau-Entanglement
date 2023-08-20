@@ -1,13 +1,16 @@
-#ifndef TauAnalysis_Entanglement_EntanglementData_h
-#define TauAnalysis_Entanglement_EntanglementData_h
+#ifndef TauAnalysis_Entanglement_Data_h
+#define TauAnalysis_Entanglement_Data_h
 
-class EntanglementData
+namespace spin
+{
+
+class Data
 {
  public:
-  EntanglementData(float hPlus_r, float hPlus_n, float hPlus_k, 
-                   float hMinus_r, float hMinus_n, float hMinus_k,
-                   float evtWeight);
-  ~EntanglementData();
+  Data(float hPlus_r, float hPlus_n, float hPlus_k, 
+       float hMinus_r, float hMinus_n, float hMinus_k,
+       float evtWeight);
+  ~Data();
 
   inline
   float
@@ -64,4 +67,6 @@ class EntanglementData
   float evtWeight_;
 };
 
-#endif // TauAnalysis_Entanglement_EntanglementData_h
+}
+
+#endif // TauAnalysis_Entanglement_Data_h

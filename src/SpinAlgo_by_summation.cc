@@ -2,6 +2,8 @@
 
 #include "TauAnalysis/Entanglement/interface/comp_Rchsh.h" // comp_Rchsh()
 
+using namespace spin;
+
 SpinAlgo_by_summation::SpinAlgo_by_summation(const edm::ParameterSet& cfg)
   : SpinAlgoBase(cfg)
 {}
@@ -10,7 +12,7 @@ SpinAlgo_by_summation::~SpinAlgo_by_summation()
 {}
 
 spin::Measurement
-SpinAlgo_by_summation::operator()(const EntanglementDataset& dataset)
+SpinAlgo_by_summation::operator()(const spin::Dataset& dataset)
 {
   math::Vector3 Bp, Bm;
   math::Matrix3x3 C;
@@ -18,7 +20,7 @@ SpinAlgo_by_summation::operator()(const EntanglementDataset& dataset)
   size_t numEntries = dataset.size();
   for ( size_t idxEntry = 0; idxEntry < numEntries; ++idxEntry )
   {
-    const EntanglementData& entry = dataset.at(idxEntry);
+    const spin::Data& entry = dataset.at(idxEntry);
 
     double hPlus_r = entry.get_hPlus_r();
     double hPlus_n = entry.get_hPlus_n();

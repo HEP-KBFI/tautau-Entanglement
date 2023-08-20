@@ -1,10 +1,13 @@
 #ifndef TauAnalysis_Entanglement_SpinAlgoBase_h
 #define TauAnalysis_Entanglement_SpinAlgoBase_h
 
-#include "FWCore/ParameterSet/interface/ParameterSet.h"             // edm::ParameterSet
+#include "FWCore/ParameterSet/interface/ParameterSet.h"     // edm::ParameterSet
 
-#include "TauAnalysis/Entanglement/interface/EntanglementDataset.h" // EntanglementDataset
-#include "TauAnalysis/Entanglement/interface/Measurement.h"         // spin::Measurement
+#include "TauAnalysis/Entanglement/interface/Dataset.h"     // spin::Dataset
+#include "TauAnalysis/Entanglement/interface/Measurement.h" // spin::Measurement
+
+namespace spin
+{
 
 class SpinAlgoBase
 {
@@ -17,10 +20,12 @@ class SpinAlgoBase
 
   virtual
   spin::Measurement
-  operator()(const EntanglementDataset& dataset) = 0;
+  operator()(const spin::Dataset& dataset) = 0;
 
  protected:
   int verbosity_;
 };
+
+}
 
 #endif // TauAnalysis_Entanglement_SpinAlgoBase_h

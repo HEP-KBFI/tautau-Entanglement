@@ -3,12 +3,15 @@
 
 #include "FWCore/ParameterSet/interface/ParameterSet.h"               // edm::ParameterSet
 
-#include "TauAnalysis/Entanglement/interface/EntanglementDataset.h"   // EntanglementDataset
+#include "TauAnalysis/Entanglement/interface/Dataset.h"               // spin::Dataset
 #include "TauAnalysis/Entanglement/interface/Measurement.h"           // spin::Measurement
 #include "TauAnalysis/Entanglement/interface/SpinAlgoBase.h"          // SpinAlgoBase
 #include "TauAnalysis/Entanglement/interface/SpinAlgo_by_summation.h" // SpinAlgo_by_summation
 
 #include <Minuit2/Minuit2Minimizer.h>                                 // ROOT::Minuit2::Minuit2Minimizer
+
+namespace spin
+{
 
 class SpinAlgo_by_mlfit : public SpinAlgoBase
 {
@@ -17,7 +20,7 @@ class SpinAlgo_by_mlfit : public SpinAlgoBase
   ~SpinAlgo_by_mlfit();
 
   spin::Measurement
-  operator()(const EntanglementDataset& dataset);
+  operator()(const spin::Dataset& dataset);
 
  private:
   ROOT::Math::Minimizer* mlfit_;
@@ -27,5 +30,7 @@ class SpinAlgo_by_mlfit : public SpinAlgoBase
 
   SpinAlgo_by_summation* algo_by_summation_;
 };
+
+}
 
 #endif // TauAnalysis_Entanglement_SpinAlgo_by_mlfit_h

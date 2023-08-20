@@ -2,6 +2,11 @@
 
 using namespace spin;
 
+Measurement::Measurement()
+  : Rchsh_(0.)
+  , RchshErr_(0.)
+{}
+
 Measurement::Measurement(const math::Vector3& Bp, const math::Vector3& Bm, const math::Matrix3x3& C,
                          double Rchsh)
   : Bp_(Bp)
