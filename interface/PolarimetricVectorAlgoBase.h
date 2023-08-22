@@ -23,6 +23,8 @@ class PolarimetricVectorAlgoBase
  protected:
   int hAxis_;
 
+  int collider_;
+
   int verbosity_;
   bool cartesian_;
 };

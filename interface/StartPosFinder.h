@@ -19,8 +19,6 @@ class StartPosFinder
  private:
   StartPosAlgoBase* algo_;
 
-  int mode_;
-
   PolarimetricVector polarimetricVector_;
 
   int verbosity_;

@@ -141,6 +141,7 @@ int main(int argc, char* argv[])
 
   cfg_analyze.addParameter<int>("maxEvents_afterCuts", maxEvents_afterCuts);
   spin::SpinAnalyzer spinAnalyzer(cfg_analyze);
+  std::string spinAnalyzer_algo = cfg_analyze.getParameter<std::string>("spinAnalyzer");
   
   int verbosity = cfg_analyze.getUntrackedParameter<int>("verbosity");
 
@@ -225,8 +226,7 @@ int main(int argc, char* argv[])
     Float_t zPlus, zMinus, cosThetaStar;
     inputTree->SetBranchAddress(Form("%s_zPlus", mode.c_str()), &zPlus);
     inputTree->SetBranchAddress(Form("%s_zMinus", mode.c_str()), &zMinus);
-    //inputTree->SetBranchAddress(Form("%s_cosThetaStar", mode.c_str()), &cosThetaStar);
-    inputTree->SetBranchAddress(Form("%s_cosTheta", mode.c_str()), &cosThetaStar);
+    inputTree->SetBranchAddress(Form("%s_cosThetaStar", mode.c_str()), &cosThetaStar);
 
     Float_t evtWeight = 1.;
     if ( branchName_evtWeight != "" )
@@ -248,18 +248,21 @@ int main(int argc, char* argv[])
 
       if ( !(visPlus_pt  > minVisTauPt && std::fabs(visPlus_eta)  < maxAbsVisTauEta) ) continue;
       if ( !(tauPlus_tip > minTauTIP) ) continue;
-      if ( maxNumChargedKaons     != -1  && tauPlus_nChargedKaons  > maxNumChargedKaons            ) continue;
-      if ( maxNumNeutralKaons     != -1  && tauPlus_nNeutralKaons  > maxNumNeutralKaons            ) continue;
-      if ( maxNumPhotons          != -1  && tauPlus_nPhotons       > maxNumPhotons                 ) continue;
-      if ( maxSumPhotonEn         >=  0. && tauPlus_sumPhotonEn    > maxSumPhotonEn                ) continue;
+      if ( maxNumChargedKaons       != -1  && tauPlus_nChargedKaons  > maxNumChargedKaons            ) continue;
+      if ( maxNumNeutralKaons       != -1  && tauPlus_nNeutralKaons  > maxNumNeutralKaons            ) continue;
+      if ( maxNumPhotons            != -1  && tauPlus_nPhotons       > maxNumPhotons                 ) continue;
+      if ( maxSumPhotonEn           >=  0. && tauPlus_sumPhotonEn    > maxSumPhotonEn                ) continue;
       if ( !(visMinus_pt > minVisTauPt && std::fabs(visMinus_eta) < maxAbsVisTauEta) ) continue;
       if ( !(tauMinus_tip > minTauTIP) ) continue;
-      if ( maxNumChargedKaons     != -1  && tauMinus_nChargedKaons > maxNumChargedKaons            ) continue;
-      if ( maxNumNeutralKaons     != -1  && tauMinus_nNeutralKaons > maxNumNeutralKaons            ) continue;
-      if ( maxNumPhotons          != -1  && tauMinus_nPhotons      > maxNumPhotons                 ) continue;
-      if ( maxSumPhotonEn         >=  0. && tauMinus_sumPhotonEn   > maxSumPhotonEn                ) continue;
-      if ( maxChi2                != -1  && kinFit_chi2            > maxChi2                       ) continue;
-      if ( statusSelection.size() >   0  && !passesStatusSelection(kinFit_status, statusSelection) ) continue;
+      if ( maxNumChargedKaons       != -1  && tauMinus_nChargedKaons > maxNumChargedKaons            ) continue;
+      if ( maxNumNeutralKaons       != -1  && tauMinus_nNeutralKaons > maxNumNeutralKaons            ) continue;
+      if ( maxNumPhotons            != -1  && tauMinus_nPhotons      > maxNumPhotons                 ) continue;
+      if ( maxSumPhotonEn           >=  0. && tauMinus_sumPhotonEn   > maxSumPhotonEn                ) continue;
+      if ( mode == "startPos" || mode == "kinFit" )
+      {
+        if ( maxChi2                != -1  && kinFit_chi2            > maxChi2                       ) continue;
+        if ( statusSelection.size() >   0  && !passesStatusSelection(kinFit_status, statusSelection) ) continue;
+      }
 
       spin::Data entry(hPlus_r, hPlus_n, hPlus_k, hMinus_r, hMinus_n, hMinus_k, evtWeight);
       dataset.push_back(entry);
@@ -309,27 +312,33 @@ int main(int argc, char* argv[])
     std::cout << "Rchsh = " << Rchsh_exp << "\n";
   }
 
-  std::cout << "Processing binned measurement as function of cosThetaStar...\n";
-  spin::BinnedMeasurement1d binnedMeasurement_cosThetaStar = spinAnalyzer(binnedDataset_cosThetaStar);
-  TH1* histogram_Rchsh_vs_cosThetaStar = binnedMeasurement_cosThetaStar.get_histogram("Rchsh");
-  addToOutputFile(fs, histogram_Rchsh_vs_cosThetaStar);
-  std::cout << " Done.\n";
+  if ( spinAnalyzer_algo == "by_summation" )
+  {
+    // CV: compute binned measurements only if spinAnalyzer is set to 'by_summation' mode,
+    //     as 'by_mlfit' mode is too time-consuming
 
-  //std::cout << "Processing binned measurement as function of zPlus and cosThetaStar...\n";
-  //spin::BinnedMeasurement2d binnedMeasurement_zPlus_vs_cosThetaStar = spinAnalyzer(binnedDataset_zPlus_vs_cosThetaStar);
-  //TH2* histogram_Rchsh_vs_zPlus_and_cosThetaStar = binnedMeasurement_zPlus_vs_cosThetaStar.get_histogram("Rchsh");
-  //addToOutputFile(fs, histogram_Rchsh_vs_zPlus_and_cosThetaStar);
-  //std::cout << " Done.\n";
-  //std::cout << "Processing binned measurement as function of zMinus and cosThetaStar...\n";
-  //spin::BinnedMeasurement2d binnedMeasurement_zMinus_vs_cosThetaStar = spinAnalyzer(binnedDataset_zMinus_vs_cosThetaStar);
-  //TH2* histogram_Rchsh_vs_zMinus_vs_cosThetaStar = binnedMeasurement_zMinus_vs_cosThetaStar.get_histogram("Rchsh");
-  //addToOutputFile(fs, histogram_Rchsh_vs_zMinus_vs_cosThetaStar);
-  //std::cout << " Done.\n";
-  //std::cout << "Processing binned measurement as function of zPlus and zMinus...\n";
-  //spin::BinnedMeasurement2d binnedMeasurement_zPlus_vs_zMinus = spinAnalyzer(binnedDataset_zPlus_vs_zMinus);
-  //TH2* histogram_Rchsh_vs_zPlus_vs_zMinus = binnedMeasurement_zPlus_vs_zMinus.get_histogram("Rchsh");
-  //addToOutputFile(fs, histogram_Rchsh_vs_zPlus_vs_zMinus);
-  //std::cout << " Done.\n";
+    std::cout << "Processing binned measurement as function of cosThetaStar...\n";
+    spin::BinnedMeasurement1d binnedMeasurement_cosThetaStar = spinAnalyzer(binnedDataset_cosThetaStar);
+    TH1* histogram_Rchsh_vs_cosThetaStar = binnedMeasurement_cosThetaStar.get_histogram("Rchsh");
+    addToOutputFile(fs, histogram_Rchsh_vs_cosThetaStar);
+    std::cout << " Done.\n";
+
+    //std::cout << "Processing binned measurement as function of zPlus and cosThetaStar...\n";
+    //spin::BinnedMeasurement2d binnedMeasurement_zPlus_vs_cosThetaStar = spinAnalyzer(binnedDataset_zPlus_vs_cosThetaStar);
+    //TH2* histogram_Rchsh_vs_zPlus_and_cosThetaStar = binnedMeasurement_zPlus_vs_cosThetaStar.get_histogram("Rchsh");
+    //addToOutputFile(fs, histogram_Rchsh_vs_zPlus_and_cosThetaStar);
+    //std::cout << " Done.\n";
+    //std::cout << "Processing binned measurement as function of zMinus and cosThetaStar...\n";
+    //spin::BinnedMeasurement2d binnedMeasurement_zMinus_vs_cosThetaStar = spinAnalyzer(binnedDataset_zMinus_vs_cosThetaStar);
+    //TH2* histogram_Rchsh_vs_zMinus_vs_cosThetaStar = binnedMeasurement_zMinus_vs_cosThetaStar.get_histogram("Rchsh");
+    //addToOutputFile(fs, histogram_Rchsh_vs_zMinus_vs_cosThetaStar);
+    //std::cout << " Done.\n";
+    //std::cout << "Processing binned measurement as function of zPlus and zMinus...\n";
+    //spin::BinnedMeasurement2d binnedMeasurement_zPlus_vs_zMinus = spinAnalyzer(binnedDataset_zPlus_vs_zMinus);
+    //TH2* histogram_Rchsh_vs_zPlus_vs_zMinus = binnedMeasurement_zPlus_vs_zMinus.get_histogram("Rchsh");
+    //addToOutputFile(fs, histogram_Rchsh_vs_zPlus_vs_zMinus);
+    //std::cout << " Done.\n";
+  }
 
   clock.Show("analyzeEntanglementNtuple");
 

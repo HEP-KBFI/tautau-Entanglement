@@ -9,15 +9,15 @@
 
 StartPosFinder::StartPosFinder(const edm::ParameterSet& cfg)
   : algo_(nullptr)
-  , mode_(cfg.getParameter<int>("startPosMode"))
   , polarimetricVector_(cfg)
   , verbosity_(cfg.getUntrackedParameter<int>("verbosity"))
   , cartesian_(cfg.getUntrackedParameter<bool>("cartesian"))
 {
-  if      ( mode_ == 1 ) algo_ = new StartPosAlgo1(cfg);
-  else if ( mode_ == 2 ) algo_ = new StartPosAlgo2(cfg);
+  int algo = cfg.getParameter<int>("algo");
+  if      ( algo == 1 ) algo_ = new StartPosAlgo1(cfg);
+  else if ( algo == 2 ) algo_ = new StartPosAlgo2(cfg);
   else throw cmsException("StartPosFinder::StartPosFinder", __LINE__) 
-    << "Invalid Configuration parameter 'mode' = " << mode_ << " !!\n";
+    << "Invalid Configuration parameter 'algo' = " << algo << " !!\n";
 }
 
 StartPosFinder::~StartPosFinder()

@@ -9,11 +9,11 @@ mkdir Entanglement
 
 cd Entanglement
 
-export SCRAM_ARCH=slc7_amd64_gcc700
+export SCRAM_ARCH=slc7_amd64_gcc10
 
-cmsrel CMSSW_10_6_20
+cmsrel CMSSW_12_4_8
 
-cd CMSSW_10_6_20/src/
+cd CMSSW_12_4_8/src/
 
 cmsenv
 
@@ -28,7 +28,7 @@ scram b -j 8
 # To produce Ntuples:
 source /cvmfs/cms.cern.ch/cmsset_default.sh
 
-cd Entanglement/CMSSW_10_6_20/src/TauAnalysis/Entanglement/test
+cd Entanglement/CMSSW_12_4_8/src/TauAnalysis/Entanglement/test
 
 ./produceNtuples.py
 
@@ -37,7 +37,7 @@ Execute make command as instructed in terminal window
 # To run the analysis code on these Ntuples:
 source /cvmfs/cms.cern.ch/cmsset_default.sh
 
-cd Entanglement/CMSSW_10_6_20/src/TauAnalysis/Entanglement/test
+cd Entanglement/CMSSW_12_4_8/src/TauAnalysis/Entanglement/test
 
 ./analyzeNtuples.py
 

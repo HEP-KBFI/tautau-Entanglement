@@ -65,6 +65,8 @@ class Smearing
 
   Resolutions* resolutions_;
 
+  int collider_;
+
   int verbosity_;
   bool cartesian_;
 };

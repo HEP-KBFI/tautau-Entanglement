@@ -26,6 +26,8 @@ class GenKinematicEventBuilder
 
   PolarimetricVector polarimetricVector_;
 
+  int collider_;
+
   int verbosity_;
   bool cartesian_;
 };

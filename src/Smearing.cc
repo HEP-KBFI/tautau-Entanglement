@@ -3,7 +3,7 @@
 #include "DataFormats/Candidate/interface/Candidate.h"                    // Candidate::LorentzVector, Candidate::Point, Candidate::Vector
 
 #include "TauAnalysis/Entanglement/interface/cmsException.h"              // cmsException
-#include "TauAnalysis/Entanglement/interface/constants.h"                 // mChargedPion
+#include "TauAnalysis/Entanglement/interface/constants.h"                 // kLHC, kSuperKEKB, mChargedPion
 #include "TauAnalysis/Entanglement/interface/fixMass.h"                   // fixTauMass()
 #include "TauAnalysis/Entanglement/interface/get_leadTrack.h"             // get_leadTrack()
 #include "TauAnalysis/Entanglement/interface/get_localCoordinateSystem.h" // get_localCoordinateSystem()
@@ -79,6 +79,12 @@ Smearing::Smearing(const edm::ParameterSet& cfg)
 
   edm::ParameterSet cfg_resolutions = cfg.getParameterSet("resolutions");
   resolutions_ = new Resolutions(cfg_resolutions);
+
+  std::string collider = cfg.getParameter<std::string>("collider");
+  if      ( collider == "LHC"       ) collider_ = kLHC;
+  else if ( collider == "SuperKEKB" ) collider_ = kSuperKEKB;
+  else throw cmsException("Smearing", __LINE__)
+    << "Invalid Configuration parameter 'collider' = " << collider << " !!\n";
 }
 
 Smearing::~Smearing()
@@ -215,7 +221,7 @@ reco::Candidate::Point
 Smearing::smear_sv(const reco::Candidate::LorentzVector& p4, const reco::Candidate::Point& sv)
 {
   reco::Candidate::Vector r, n, k;
-  get_localCoordinateSystem(p4, nullptr, nullptr, kBeam, r, n, k);
+  get_localCoordinateSystem(p4, nullptr, nullptr, kBeam, collider_, r, n, k);
   double dr = rnd_.Gaus(0., resolutions_->svResolution_perp());
   double dn = rnd_.Gaus(0., resolutions_->svResolution_perp());
   double dk = rnd_.Gaus(0., resolutions_->svResolution_parl());
@@ -277,7 +283,7 @@ Smearing::smear_tipPCA(const std::vector<KinematicParticle>& daughters, const re
     return reco::Candidate::Point(0.,0.,0.);
   }
   reco::Candidate::Vector r, n, k;
-  get_localCoordinateSystem(leadTrack->p4(), nullptr, nullptr, kBeam, r, n, k);
+  get_localCoordinateSystem(leadTrack->p4(), nullptr, nullptr, kBeam, collider_, r, n, k);
   double dr = rnd_.Gaus(0., resolutions_->tipResolution_perp());
   double dn = rnd_.Gaus(0., resolutions_->tipResolution_perp());
   double smeared_pcaX = tipPCA.x();

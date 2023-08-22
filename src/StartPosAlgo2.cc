@@ -1,10 +1,11 @@
 #include "TauAnalysis/Entanglement/interface/StartPosAlgo2.h"
 
+#include "TauAnalysis/Entanglement/interface/cmsException.h"              // cmsException
 #include "TauAnalysis/Entanglement/interface/comp_cosThetaGJ.h"           // comp_cosThetaGJ_solution()
 #include "TauAnalysis/Entanglement/interface/comp_PCA_line2line.h"        // comp_PCA_line2line()
-#include "TauAnalysis/Entanglement/interface/constants.h"                 // mHiggs, mTau
+#include "TauAnalysis/Entanglement/interface/constants.h"                 // kLHC, kSuperKEKB, mHiggs, mTau
 #include "TauAnalysis/Entanglement/interface/fixMass.h"                   // fixNuMass(), fixTauMass()
-#include "TauAnalysis/Entanglement/interface/get_decayMode.h"      // is1Prong()
+#include "TauAnalysis/Entanglement/interface/get_decayMode.h"             // is1Prong()
 #include "TauAnalysis/Entanglement/interface/get_leadTrack.h"             // get_leadTrack()
 #include "TauAnalysis/Entanglement/interface/get_localCoordinateSystem.h" // get_localCoordinateSystem()
 #include "TauAnalysis/Entanglement/interface/printLorentzVector.h"        // printLorentzVector()
@@ -22,6 +23,12 @@ StartPosAlgo2::StartPosAlgo2(const edm::ParameterSet& cfg)
 {
   edm::ParameterSet cfg_resolutions = cfg.getParameterSet("resolutions");
   resolutions_ = new Resolutions(cfg_resolutions);
+
+  std::string collider = cfg.getParameter<std::string>("collider");
+  if      ( collider == "LHC"       ) collider_ = kLHC;
+  else if ( collider == "SuperKEKB" ) collider_ = kSuperKEKB;
+  else throw cmsException("StartPosAlgo2", __LINE__)
+    << "Invalid Configuration parameter 'collider' = " << collider << " !!\n";
 }
 
 StartPosAlgo2::~StartPosAlgo2()
@@ -35,6 +42,7 @@ namespace
   comp_tauP4(double tauP, 
              const reco::Candidate::LorentzVector& visTauP4, 
              const reco::Candidate::Point& pv, const reco::Candidate::Point& tipPCA,
+             int collider,
              bool& errorFlag,
              int verbosity, bool cartesian = true)
   {
@@ -44,7 +52,7 @@ namespace
     }
 
     reco::Candidate::Vector r, n, k; 
-    get_localCoordinateSystem(visTauP4, nullptr, nullptr, kBeam, r, n, k);
+    get_localCoordinateSystem(visTauP4, nullptr, nullptr, kBeam, collider, r, n, k);
     if ( verbosity >= 4 )
     {
       printVector("r", r, false);
@@ -93,11 +101,12 @@ namespace
   double
   comp_higgsMass(const reco::Candidate::LorentzVector& tauPlusP4,
                  const reco::Candidate::LorentzVector& visTauMinusP4, const reco::Candidate::Point& pv, const reco::Candidate::Point& tipPCATauMinus, double xMinus,
+                 int collider,
                  bool& errorFlag,
                  int verbosity = 0, bool cartesian = true)
   {
     double tauMinusP = visTauMinusP4.P()/xMinus;
-    reco::Candidate::LorentzVector tauMinusP4 = comp_tauP4(tauMinusP, visTauMinusP4, pv, tipPCATauMinus, errorFlag, verbosity, cartesian);
+    reco::Candidate::LorentzVector tauMinusP4 = comp_tauP4(tauMinusP, visTauMinusP4, pv, tipPCATauMinus, collider, errorFlag, verbosity, cartesian);
     if ( errorFlag )
     {
       return 0.;
@@ -125,6 +134,7 @@ namespace
   double
   comp_xMinus(const reco::Candidate::LorentzVector& tauPlusP4, const reco::Candidate::LorentzVector& visTauPlusP4, double xPlus,
               const reco::Candidate::LorentzVector& visTauMinusP4, const reco::Candidate::Point& pv, const reco::Candidate::Point& tipPCATauMinus,
+              int collider,
               bool& errorFlag,
               int verbosity, bool cartesian = true)
   {
@@ -152,20 +162,20 @@ namespace
       }
 
       bool higgsMass_errorFlag = false;
-      double higgsMass = comp_higgsMass(tauPlusP4, visTauMinusP4, pv, tipPCATauMinus, xMinus, higgsMass_errorFlag, verbosity, cartesian);
+      double higgsMass = comp_higgsMass(tauPlusP4, visTauMinusP4, pv, tipPCATauMinus, xMinus, collider, higgsMass_errorFlag, verbosity, cartesian);
       if ( higgsMass_errorFlag )
       {
         higgsMass = comp_higgsMass_CA(tauPlusP4, visTauMinusP4, xMinus);
       }
       // CV: high visible energy fraction means low Higgs mass and vice versa
       bool higgsMass_lo_errorFlag = false;
-      double higgsMass_lo = comp_higgsMass(tauPlusP4, visTauMinusP4, pv, tipPCATauMinus, xMinus_hi, higgsMass_lo_errorFlag, verbosity, cartesian);
+      double higgsMass_lo = comp_higgsMass(tauPlusP4, visTauMinusP4, pv, tipPCATauMinus, xMinus_hi, collider, higgsMass_lo_errorFlag, verbosity, cartesian);
       if ( higgsMass_lo_errorFlag )
       {
         higgsMass_lo = comp_higgsMass_CA(tauPlusP4, visTauMinusP4, xMinus_hi);
       }
       bool higgsMass_hi_errorFlag = false;
-      double higgsMass_hi = comp_higgsMass(tauPlusP4, visTauMinusP4, pv, tipPCATauMinus, xMinus_lo, higgsMass_hi_errorFlag, verbosity, cartesian);
+      double higgsMass_hi = comp_higgsMass(tauPlusP4, visTauMinusP4, pv, tipPCATauMinus, xMinus_lo, collider, higgsMass_hi_errorFlag, verbosity, cartesian);
       if ( higgsMass_hi_errorFlag )
       {
         higgsMass_hi = comp_higgsMass_CA(tauPlusP4, visTauMinusP4, xMinus_lo);
@@ -282,7 +292,9 @@ StartPosAlgo2::operator()(const KinematicEvent& kineEvt)
     assert(xPlus >= 0. && xPlus <= 1.);
     double tauPlusP = visTauPlusP4.P()/xPlus;
     bool tauPlus_errorFlag = false;
-    reco::Candidate::LorentzVector tauPlusP4 = comp_tauP4(tauPlusP, visTauPlusP4, kineEvt.pv(), kineEvt.tipPCATauPlus(), tauPlus_errorFlag, verbosity_, cartesian_);
+    reco::Candidate::LorentzVector tauPlusP4 = comp_tauP4(tauPlusP, visTauPlusP4, kineEvt.pv(), kineEvt.tipPCATauPlus(), 
+                                                          collider_, 
+                                                          tauPlus_errorFlag, verbosity_, cartesian_);
     if ( tauPlus_errorFlag )
     {
       if ( verbosity_ >= 1 )
@@ -293,13 +305,17 @@ StartPosAlgo2::operator()(const KinematicEvent& kineEvt)
     }
     
     bool tauMinus_errorFlag = false;
-    double xMinus = comp_xMinus(tauPlusP4, visTauPlusP4, xPlus, visTauMinusP4, kineEvt.pv(), kineEvt.tipPCATauMinus(), tauMinus_errorFlag, verbosity_, cartesian_);
+    double xMinus = comp_xMinus(tauPlusP4, visTauPlusP4, xPlus, visTauMinusP4, kineEvt.pv(), kineEvt.tipPCATauMinus(), 
+                                collider_,
+                                tauMinus_errorFlag, verbosity_, cartesian_);
     reco::Candidate::LorentzVector tauMinusP4;
     if ( !tauMinus_errorFlag )
     {
       assert(xMinus >= 0. && xMinus <= 1.);
       double tauMinusP = visTauMinusP4.P()/xMinus;
-      tauMinusP4 = comp_tauP4(tauMinusP, visTauMinusP4, kineEvt.pv(), kineEvt.tipPCATauMinus(), tauMinus_errorFlag, verbosity_, cartesian_);
+      tauMinusP4 = comp_tauP4(tauMinusP, visTauMinusP4, kineEvt.pv(), kineEvt.tipPCATauMinus(), 
+                              collider_, 
+                              tauMinus_errorFlag, verbosity_, cartesian_);
     }
     if ( tauMinus_errorFlag )
     {

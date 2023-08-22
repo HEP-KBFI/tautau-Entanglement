@@ -36,7 +36,7 @@ comp_EigenVectors_and_EigenValues(const T& symmMatrix)
   { 
     EigenVectors = tmp.EigenVectors(EigenValues);
   }
-  catch ( edm::Exception )
+  catch ( const edm::Exception& )
   {
     std::cerr << "Error in <comp_EigenVectors_and_EigenValues>: Failed to compute Eigenvectors and Eigenvalues !!\n";
     return std::vector<std::pair<TVectorD, double>>();

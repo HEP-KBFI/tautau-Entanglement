@@ -10,6 +10,7 @@
 
 #include "TauAnalysis/Entanglement/interface/bookHistogram1d.h"           // bookHistogram1d()
 #include "TauAnalysis/Entanglement/interface/cmsException.h"              // cmsException
+#include "TauAnalysis/Entanglement/interface/constants.h"                 // kLHC, kSuperKEKB
 #include "TauAnalysis/Entanglement/interface/format_vT.h"                 // format_vint(), vdouble, vint
 #include "TauAnalysis/Entanglement/interface/get_localCoordinateSystem.h" // get_localCoordinateSystem()
 #include "TauAnalysis/Entanglement/interface/passesStatusSelection.h"     // passesStatusSelection()
@@ -103,7 +104,14 @@ int main(int argc, char* argv[])
   std::cout << " statusSelection = " << format_vint(statusSelection) << "\n";
   std::string branchName_evtWeight = cfg_resPlots.getParameter<std::string>("branchName_evtWeight");
   std::cout << " branchName_evtWeight = " << branchName_evtWeight << "\n";
-  //bool isDEBUG = cfg_analyze.getParameter<bool>("isDEBUG");
+  //bool isDEBUG = cfg_resPlots.getParameter<bool>("isDEBUG");
+
+  std::string collider_string = cfg_resPlots.getParameter<std::string>("collider");
+  int collider = -1;
+  if      ( collider_string == "LHC"       ) collider = kLHC;
+  else if ( collider_string == "SuperKEKB" ) collider = kSuperKEKB;
+  else throw cmsException("makeResolutionPlots", __LINE__)
+    << "Invalid Configuration parameter 'collider' = " << collider_string << " !!\n";
 
   fwlite::InputSource inputFiles(cfg);
   int maxEvents = inputFiles.maxEvents();
@@ -392,7 +400,7 @@ int main(int argc, char* argv[])
       reco::Candidate::LorentzVector gen_tauPlus_p4  = build_p4(gen_tauPlus_pt,  gen_tauPlus_eta,  gen_tauPlus_phi,  gen_tauPlus_mass);
       reco::Candidate::Point         gen_svPlus      = build_point(gen_svPlus_x, gen_svPlus_y, gen_svPlus_z);
       reco::Candidate::Vector tauPlus_r, tauPlus_n, tauPlus_k;
-      get_localCoordinateSystem(gen_tauPlus_p4, nullptr, nullptr, kBeam, tauPlus_r, tauPlus_n, tauPlus_k);
+      get_localCoordinateSystem(gen_tauPlus_p4, nullptr, nullptr, kBeam, collider, tauPlus_r, tauPlus_n, tauPlus_k);
       double gen_svPlus_r = gen_svPlus.x()*tauPlus_r.x() + gen_svPlus.y()*tauPlus_r.y() + gen_svPlus.z()*tauPlus_r.z();
       double gen_svPlus_n = gen_svPlus.x()*tauPlus_n.x() + gen_svPlus.y()*tauPlus_n.y() + gen_svPlus.z()*tauPlus_n.z();
       double gen_svPlus_k = gen_svPlus.x()*tauPlus_k.x() + gen_svPlus.y()*tauPlus_k.y() + gen_svPlus.z()*tauPlus_k.z();
@@ -400,7 +408,7 @@ int main(int argc, char* argv[])
       reco::Candidate::LorentzVector gen_tauMinus_p4 = build_p4(gen_tauMinus_pt, gen_tauMinus_eta, gen_tauMinus_phi, gen_tauMinus_mass);
       reco::Candidate::Point         gen_svMinus     = build_point(gen_svMinus_x, gen_svMinus_y, gen_svMinus_z); 
       reco::Candidate::Vector tauMinus_r, tauMinus_n, tauMinus_k;
-      get_localCoordinateSystem(gen_tauMinus_p4, nullptr, nullptr, kBeam, tauMinus_r, tauMinus_n, tauMinus_k);
+      get_localCoordinateSystem(gen_tauMinus_p4, nullptr, nullptr, kBeam, collider, tauMinus_r, tauMinus_n, tauMinus_k);
       double gen_svMinus_r = gen_svMinus.x()*tauMinus_r.x() + gen_svMinus.y()*tauMinus_r.y() + gen_svMinus.z()*tauMinus_r.z();
       double gen_svMinus_n = gen_svMinus.x()*tauMinus_n.x() + gen_svMinus.y()*tauMinus_n.y() + gen_svMinus.z()*tauMinus_n.z();
       double gen_svMinus_k = gen_svMinus.x()*tauMinus_k.x() + gen_svMinus.y()*tauMinus_k.y() + gen_svMinus.z()*tauMinus_k.z();

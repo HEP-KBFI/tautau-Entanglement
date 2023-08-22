@@ -18,6 +18,8 @@ class StartPosAlgo2 : public StartPosAlgoBase
  private:
   Resolutions* resolutions_;
 
+  int collider_;
+
   bool applyRecoilEnergy_and_PzConstraint_;
 };
 

@@ -1,7 +1,7 @@
 #ifndef TauAnalysis_Entanglement_EntanglementNtupleProducer_h
 #define TauAnalysis_Entanglement_EntanglementNtupleProducer_h
 
-#include "FWCore/Framework/interface/EDAnalyzer.h"                       // edm::EDAnalyzer
+#include "FWCore/Framework/interface/one/EDAnalyzer.h"                   // edm::one::EDAnalyzer<>
 #include "FWCore/Framework/interface/Event.h"                            // edm::Event
 #include "FWCore/Framework/interface/EventSetup.h"                       // edm::EventSetup
 #include "FWCore/ParameterSet/interface/ParameterSet.h"                  // edm::ParameterSet
@@ -20,7 +20,7 @@
 #include <vector>                                                        // std::vector<>
 #include <string>                                                        // std::string
 
-class EntanglementNtupleProducer : public edm::EDAnalyzer 
+class EntanglementNtupleProducer : public edm::one::EDAnalyzer<>
 {
  public:
   explicit EntanglementNtupleProducer(const edm::ParameterSet&);
@@ -39,9 +39,11 @@ class EntanglementNtupleProducer : public edm::EDAnalyzer
   GenKinematicEventBuilder* genKineEvtBuilder_woSmearing_;
   GenKinematicEventBuilder* genKineEvtBuilder_wSmearing_;
 
-  StartPosFinder startPosFinder_;
+  StartPosFinder* startPosFinder_;
 
-  KinematicFit kineFit_;
+  KinematicFit* kinematicFit_;
+
+  int collider_;
 
   typedef std::vector<edm::InputTag> vInputTag;
   vInputTag srcWeights_;

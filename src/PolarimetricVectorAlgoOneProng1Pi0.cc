@@ -166,7 +166,7 @@ PolarimetricVectorAlgoOneProng1Pi0::operator()(const KinematicEvent& evt, int ta
     std::cout << " mass = " << tauP4_ttrf.mass() << "\n";
   }
   reco::Candidate::Vector r, n, k;
-  get_localCoordinateSystem(evt.tauMinusP4(), &higgsP4, &boost_ttrf, hAxis_, r, n, k, verbosity_, cartesian_);
+  get_localCoordinateSystem(evt.tauMinusP4(), &higgsP4, &boost_ttrf, hAxis_, collider_, r, n, k, verbosity_, cartesian_);
   reco::Candidate::LorentzVector tauP4_hf = fixTauMass(getP4_hf(tauP4_ttrf, r, n, k));
   if ( verbosity_ >= 2 )
   {

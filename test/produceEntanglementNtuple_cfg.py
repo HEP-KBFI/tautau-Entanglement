@@ -18,15 +18,11 @@ process.maxEvents = cms.untracked.PSet(
 
 process.source = cms.Source("PoolSource",
     fileNames = cms.untracked.vstring(
-        'file:/store/mc/RunIISummer20UL18MiniAODv2/GluGluHToTauTau_M125_TuneCP5_13TeV-powheg-pythia8/MINIAODSIM/106X_upgrade2018_realistic_v16_L1v1-v3/100000/4FC3731A-E9C4-DD47-B222-83083ECF5684.root' 
+        #'file:/store/mc/RunIISummer20UL18MiniAODv2/GluGluHToTauTau_M125_TuneCP5_13TeV-powheg-pythia8/MINIAODSIM/106X_upgrade2018_realistic_v16_L1v1-v3/100000/4FC3731A-E9C4-DD47-B222-83083ECF5684.root'
+        'file:/local/karl/ee2tt_aod/aodsim_1.root'
     ),
     #eventsToProcess = cms.untracked.VEventRange(
-    # tau+ tau- -> pi- nu pi+ nu event for synchronization with Luca
     #    '1:97:96091' 
-    # tau+ -> pi+ pi0 nu event in which Px of neutrino is 3 GeV off when running in 'rec' mode
-    #    '1:97:96038'
-    # tau+ -> pi+ pi0 nu event in which kinematic fit modifies svTauPlus by large amount and fails to converge
-    #    '1:97:96065'
     #)
 )
 
@@ -36,15 +32,28 @@ processName = "qqH_htt_pythia8"
 hAxis = "beam"
 rndSeed = 1
 outputFileName = "entanglementNtuple_%s_DEBUG.root" % processName
+collider = "LHC"
 
 ##inputFilePath = None
 ##inputFileNames = $inputFileNames
 ##processName = "$processName"
+##collider = "$collider"
 ##hAxis = "$hAxis"
 ##rndSeed = $rndSeed
 ##outputFileName = "$outputFileName"
 
 inputFile_regex = r"[a-zA-Z0-9-_]+.root"
+
+srcGenParticles = None
+tauPairMassCut = None
+if collider == "LHC":
+    srcGenParticles = 'prunedGenParticles'
+    tauPairMassCut = 'mass > 120. & mass < 130.'
+elif collider == "Belle":
+    srcGenParticles = 'genParticles'
+    tauPairMassCut = 'mass > 0.'
+else:
+    raise ValueError("Invalid Configuration parameter 'collider' = '%s' !!" % collider)
 
 #--------------------------------------------------------------------------------
 # set input files
@@ -60,9 +69,15 @@ else:
 #--------------------------------------------------------------------------------
 
 from Configuration.AlCa.GlobalTag import GlobalTag
-process.GlobalTag = GlobalTag(process.GlobalTag, '106X_dataRun2_v24', '')
+process.GlobalTag = GlobalTag(process.GlobalTag, '124X_dataRun2_v2', '')
 
 process.analysisSequence = cms.Sequence()
+
+process.dumpGenParticles = cms.EDAnalyzer("ParticleListDrawer",
+    src = cms.InputTag(srcGenParticles),
+    maxEventsToPrint = cms.untracked.int32(10) 
+)
+process.analysisSequence += process.dumpGenParticles
 
 #--------------------------------------------------------------------------------
 # CV: Veto events in which the tau leptons radiate high pT photons,
@@ -70,10 +85,10 @@ process.analysisSequence = cms.Sequence()
 #
 #     The KinematicFit will likely fail for these events and may cause the neutrino momentum to become "not-a-number" (NaN),
 #     triggering the following assert statement:
-#       cmsRun: /home/veelken/Entanglement/CMSSW_10_6_20/src/TauAnalysis/Entanglement/src/SpinAnalyzerOneProng1Pi0.cc:103: reco::Candidate::Vector {anonymous}::getPolarimetricVec_OneProng1PiZero(const LorentzVector&, const std::vector<KinematicParticle>&, const LorentzVector&, const ROOT::Math::Boost&, const Vector&, const Vector&, const Vector&, const ROOT::Math::Boost&, int, bool): Assertion `nuP4.energy() >= 0. && N.energy() >= 0.' failed.
+#       cmsRun: /home/veelken/Entanglement/CMSSW_12_4_8/src/TauAnalysis/Entanglement/src/SpinAnalyzerOneProng1Pi0.cc:103: reco::Candidate::Vector {anonymous}::getPolarimetricVec_OneProng1PiZero(const LorentzVector&, const std::vector<KinematicParticle>&, const LorentzVector&, const ROOT::Math::Boost&, const Vector&, const Vector&, const Vector&, const ROOT::Math::Boost&, int, bool): Assertion `nuP4.energy() >= 0. && N.energy() >= 0.' failed.
 #
 process.genTaus = cms.EDFilter("GenParticleSelector",
-    src = cms.InputTag('prunedGenParticles'),
+    src = cms.InputTag(srcGenParticles),
     cut = cms.string("abs(pdgId) = 15 & status = 2"),
     filter = cms.bool(False)
 )
@@ -81,7 +96,7 @@ process.analysisSequence += process.genTaus
 
 process.genTauPair = cms.EDProducer("CandViewShallowCloneCombiner",
     decay = cms.string("genTaus@+ genTaus@-"),
-    cut = cms.string('mass > 120. & mass < 130.'),
+    cut = cms.string(tauPairMassCut),
     filter = cms.bool(False)
 )
 process.analysisSequence += process.genTauPair
@@ -141,12 +156,6 @@ process.selectedGenHadTauFilter = cms.EDFilter("CandViewCountFilter",
 process.analysisSequence += process.selectedGenHadTauFilter
 #--------------------------------------------------------------------------------
 
-process.dumpGenParticles = cms.EDAnalyzer("ParticleListDrawer",
-    src = cms.InputTag('prunedGenParticles'),
-    maxEventsToPrint = cms.untracked.int32(10) 
-)
-#process.analysisSequence += process.dumpGenParticles
-
 process.genWeight = cms.EDProducer("GenWeightProducer",
     src = cms.InputTag('generator')
 )
@@ -155,7 +164,7 @@ process.analysisSequence += process.genWeight
 from TauAnalysis.Entanglement.resolutions_cfi import resolutions
 from TauAnalysis.Entanglement.smearing_cfi import smearing
 process.ntupleProducer = cms.EDAnalyzer("EntanglementNtupleProducer",
-    src = cms.InputTag('prunedGenParticles'),
+    src = cms.InputTag(srcGenParticles),
     hAxis = cms.string(hAxis),
     resolutions = resolutions,
     smearing = smearing.clone(
@@ -163,13 +172,15 @@ process.ntupleProducer = cms.EDAnalyzer("EntanglementNtupleProducer",
     ),
     applySmearing = cms.bool(False),
     #applySmearing = cms.bool(True),
+    startPosFinder = cms.PSet(
+        algo = cms.int32(1),
+        applyHiggsMassConstraint = cms.bool(True),
+        applyRecoilEnergy_and_PzConstraint = cms.bool(True)
+    ),
+    kinematicFit = cms.PSet(
+        applyLifetimeConstraint = cms.bool(False)
+    ),
     srcEvtWeights = cms.VInputTag('genWeight'),
-    startPosMode = cms.int32(1),
-    applyHiggsMassConstraint = cms.bool(True),
-    applyRecoilEnergy_and_PzConstraint = cms.bool(True),
-    # CV: 0 = "regular" tau mass constraint, 1 = constraint on Gottfried-Jackson angle
-    applyTauMassConstraint = cms.int32(0),
-    applyLifetimeConstraint = cms.bool(False),
     verbosity = cms.untracked.int32(-1),
     #verbosity = cms.untracked.int32(3),
     cartesian = cms.untracked.bool(True)
@@ -184,5 +195,5 @@ process.TFileService = cms.Service("TFileService",
 process.p = cms.Path(process.analysisSequence)
 
 process.options = cms.untracked.PSet(
-    wantSummary = cms.untracked.bool(False)
+    wantSummary = cms.untracked.bool(True)
 )

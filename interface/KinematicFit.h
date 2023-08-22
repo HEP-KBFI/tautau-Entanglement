@@ -18,8 +18,9 @@ class KinematicFit
  private:
   PolarimetricVector polarimetricVector_;
 
-  int applyTauMassConstraint_;
   bool applyLifetimeConstraint_;
+
+  int collider_;
 
   int verbosity_;
   bool cartesian_;

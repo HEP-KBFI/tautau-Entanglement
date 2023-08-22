@@ -12,7 +12,7 @@ enum { kBeam, kHiggs };
 void
 get_localCoordinateSystem(const reco::Candidate::LorentzVector& p4,
                           const reco::Candidate::LorentzVector* recoilP4, const ROOT::Math::Boost* boost_ttrf,
-                          int hAxis,
+                          int hAxis, int collider,
                           reco::Candidate::Vector& r, reco::Candidate::Vector& n, reco::Candidate::Vector& k,
                           int verbosity = 0, bool cartesian = true);
 

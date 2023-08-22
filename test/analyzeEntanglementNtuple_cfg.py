@@ -19,6 +19,8 @@ process.analyzeEntanglementNtuple = cms.PSet(
 
     mode = cms.string('gen'),
 
+    collider = cms.string(''),
+
     #minVisTauPt = cms.double(20.),
     #maxAbsVisTauEta = cms.double(2.3),
     minVisTauPt = cms.double(-1.),
@@ -29,7 +31,7 @@ process.analyzeEntanglementNtuple = cms.PSet(
     maxNumNeutralKaons = cms.int32(0),
     maxNumPhotons = cms.int32(-1),
     maxSumPhotonEn = cms.double(0.5),
-    
+
     maxChi2 = cms.double(1.e+2),
     statusSelection = cms.vint32(0,1),
 
@@ -50,6 +52,7 @@ inputFilePath = '/scratch/persistent/veelken/Entanglement/ntuples/2023Aug02/'
 inputFileNames = None
 processName = "ggH_htt_pythia8"
 mode = 'gen'
+collider = "LHC"
 hAxis = "higgs"
 decayMode = "piPlus_piMinus"
 # CV: define Standard Model expectation for matrix C, given by Eq. (69) of arXiv:2208:11723, 
@@ -73,6 +76,7 @@ maxSumPhotonEn = 5.
 ##inputFileNames = $inputFileNames
 ##processName = "$processName"
 ##mode = "$mode"
+##collider = "$collider"
 ##hAxis = "$hAxis"
 ##decayMode = "$decayMode"
 ##par_gen = $par_gen
@@ -105,6 +109,7 @@ process.fwliteOutput.fileName = cms.string(outputFileName)
 
 process.analyzeEntanglementNtuple.treeName = 'ntupleProducer/%s' % decayMode
 process.analyzeEntanglementNtuple.mode = mode
+process.analyzeEntanglementNtuple.collider = collider
 process.analyzeEntanglementNtuple.minVisTauPt = minVisTauPt
 process.analyzeEntanglementNtuple.maxAbsVisTauEta = maxAbsVisTauEta
 process.analyzeEntanglementNtuple.minTauTIP = minTauTIP

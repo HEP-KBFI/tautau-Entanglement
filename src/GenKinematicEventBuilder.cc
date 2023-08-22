@@ -3,8 +3,10 @@
 #include "DataFormats/Candidate/interface/Candidate.h"                            // reco::Candidate::LorentzVector, reco::Candidate::Vector
 #include "DataFormats/TauReco/interface/PFTau.h"                                  // reco::PFTau::hadronicDecayMode
 
+#include "TauAnalysis/Entanglement/interface/cmsException.h"                      // cmsException
 #include "TauAnalysis/Entanglement/interface/comp_nuP4.h"                         // comp_nuP4()
 #include "TauAnalysis/Entanglement/interface/comp_visP4.h"                        // comp_visP4()
+#include "TauAnalysis/Entanglement/interface/constants.h"                         // kLHC, kSuperKEKB
 #include "TauAnalysis/Entanglement/interface/findDecayProducts.h"                 // findDecayProducts()
 #include "TauAnalysis/Entanglement/interface/findLastTau.h"                       // findLastTau()
 #include "TauAnalysis/Entanglement/interface/getCov_hf.h"                         // getCov_hf()
@@ -40,6 +42,12 @@ GenKinematicEventBuilder::GenKinematicEventBuilder(const edm::ParameterSet& cfg)
 {
   edm::ParameterSet cfg_resolutions = cfg.getParameterSet("resolutions");
   resolutions_ = new Resolutions(cfg_resolutions);
+
+  std::string collider = cfg.getParameter<std::string>("collider");
+  if      ( collider == "LHC"       ) collider_ = kLHC;
+  else if ( collider == "SuperKEKB" ) collider_ = kSuperKEKB;
+  else throw cmsException("GenKinematicEventBuilder", __LINE__)
+    << "Invalid Configuration parameter 'collider' = " << collider << " !!\n";
 }
 
 GenKinematicEventBuilder::~GenKinematicEventBuilder()
@@ -154,7 +162,7 @@ namespace
 
   std::vector<KinematicParticle>
   build_kineDaughters(const reco::Candidate::LorentzVector& visTauP4, int tau_decayMode, const std::vector<const reco::GenParticle*>& tau_decayProducts,
-                      const Resolutions& resolutions,
+                      const Resolutions& resolutions, int collider,
                       int verbosity)
   {
     if ( verbosity >= 3 )
@@ -163,7 +171,7 @@ namespace
     }
 
     reco::Candidate::Vector r, n, k; 
-    get_localCoordinateSystem(visTauP4, nullptr, nullptr, kBeam, r, n, k);
+    get_localCoordinateSystem(visTauP4, nullptr, nullptr, kBeam, collider, r, n, k);
     if ( verbosity >= 3 )
     {
       printVector("r", r);
@@ -269,7 +277,7 @@ namespace
   }
  
   math::Matrix3x3
-  comp_nuCov(const reco::Candidate::LorentzVector& visTauP4, int verbosity)
+  comp_nuCov(const reco::Candidate::LorentzVector& visTauP4, int collider, int verbosity)
   {
     // CV: the four-vectors of tau+ and tau- are not really "measured";
     //     we acccount for this by setting their covariance matrix to an ellipsoid.
@@ -283,7 +291,7 @@ namespace
     //     and is not affected by the Lorentz boost in tau direction.
     //     We enlarge the uncertainty somewhat to allow for more flexibility in the fit.
     reco::Candidate::Vector r, n, k; 
-    get_localCoordinateSystem(visTauP4, nullptr, nullptr, kBeam, r, n, k);
+    get_localCoordinateSystem(visTauP4, nullptr, nullptr, kBeam, collider, r, n, k);
     double dk = 2.5e+2;
     double dr = 2.e0;
     double dn = dr;
@@ -320,7 +328,7 @@ GenKinematicEventBuilder::operator()(const reco::GenParticleCollection& genParti
   findDecayProducts(tauPlus, tauPlus_daughters);
   reco::Candidate::LorentzVector visTauPlusP4 = comp_visP4(tauPlus_daughters);
   reco::Candidate::LorentzVector nuTauPlusP4 = comp_nuP4(tauPlus_daughters);  
-  math::Matrix3x3 nuTauPlusCov = comp_nuCov(visTauPlusP4, verbosity_);
+  math::Matrix3x3 nuTauPlusCov = comp_nuCov(visTauPlusP4, collider_, verbosity_);
   std::vector<const reco::GenParticle*> tauPlus_ch = get_chargedHadrons(tauPlus_daughters);
   std::vector<const reco::GenParticle*> tauPlus_pi0 = get_neutralPions(tauPlus_daughters);
   std::vector<const reco::GenParticle*> tauPlus_nu = get_neutrinos(tauPlus_daughters);
@@ -347,13 +355,16 @@ GenKinematicEventBuilder::operator()(const reco::GenParticleCollection& genParti
     }
     printInverseCovMatrix("nuTauPlusCov", nuTauPlusCov);
   }
-  std::vector<KinematicParticle> daughtersTauPlus = build_kineDaughters(visTauPlusP4, tauPlus_decayMode, tauPlus_daughters, *resolutions_, verbosity_);
+  std::vector<KinematicParticle> daughtersTauPlus = build_kineDaughters(
+    visTauPlusP4, tauPlus_decayMode, tauPlus_daughters, 
+    *resolutions_, collider_,
+    verbosity_);
 
   std::vector<const reco::GenParticle*> tauMinus_daughters;
   findDecayProducts(tauMinus, tauMinus_daughters);
   reco::Candidate::LorentzVector visTauMinusP4 = comp_visP4(tauMinus_daughters);
   reco::Candidate::LorentzVector nuTauMinusP4 = comp_nuP4(tauMinus_daughters);
-  math::Matrix3x3 nuTauMinusCov = comp_nuCov(visTauMinusP4, verbosity_);
+  math::Matrix3x3 nuTauMinusCov = comp_nuCov(visTauMinusP4, collider_, verbosity_);
   std::vector<const reco::GenParticle*> tauMinus_ch = get_chargedHadrons(tauMinus_daughters);
   std::vector<const reco::GenParticle*> tauMinus_pi0 = get_neutralPions(tauMinus_daughters);
   std::vector<const reco::GenParticle*> tauMinus_nu = get_neutrinos(tauMinus_daughters);
@@ -380,7 +391,10 @@ GenKinematicEventBuilder::operator()(const reco::GenParticleCollection& genParti
     }
     printInverseCovMatrix("nuTauMinusCov", nuTauMinusCov);
   }
-  std::vector<KinematicParticle> daughtersTauMinus = build_kineDaughters(visTauMinusP4, tauMinus_decayMode, tauMinus_daughters, *resolutions_, verbosity_);
+  std::vector<KinematicParticle> daughtersTauMinus = build_kineDaughters(
+    visTauMinusP4, tauMinus_decayMode, tauMinus_daughters, 
+    *resolutions_, collider_,
+    verbosity_);
  
   if ( !(std::fabs(tauPlus->vertex().x() - tauMinus->vertex().x()) < 1.e-3 &&
          std::fabs(tauPlus->vertex().y() - tauMinus->vertex().y()) < 1.e-3 &&

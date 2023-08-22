@@ -1,7 +1,7 @@
 #include "TauAnalysis/Entanglement/interface/get_localCoordinateSystem.h"
 
 #include "TauAnalysis/Entanglement/interface/cmsException.h" // cmsException
-#include "TauAnalysis/Entanglement/interface/constants.h"    // mProton
+#include "TauAnalysis/Entanglement/interface/constants.h"    // kLHC, kSuperKEKB, mElectron, mProton
 #include "TauAnalysis/Entanglement/interface/getP4_rf.h"     // getP4_rf()
 #include "TauAnalysis/Entanglement/interface/printVector.h"  // printVector()
 #include "TauAnalysis/Entanglement/interface/square.h"       // square()
@@ -29,12 +29,24 @@ namespace
   }
 
   reco::Candidate::Vector
-  get_h_beamAxis(const ROOT::Math::Boost* boost_ttrf, int verbosity, bool cartesian)
+  get_h_beamAxis(const ROOT::Math::Boost* boost_ttrf, int collider, int verbosity, bool cartesian)
   {
-    const double beamE  = 7.e+3;
+    double beamE, mBeamParticle;
+    if ( collider == kLHC )
+    {
+      beamE = beamEnergy_LHC;
+      mBeamParticle = mProton;
+    }
+    else if ( collider == kSuperKEKB )
+    {
+      // CV: electron beam defines +z direction
+      beamE = beamEnergy_SuperKEKB_eMinus;
+      mBeamParticle = mElectron;
+    } else throw cmsException("get_h_beamAxis", __LINE__)
+        << "Invalid function argument 'collider' = " << collider << " !!\n";
     const double beamPx = 0.;
     const double beamPy = 0.;
-    const double beamPz = std::sqrt(square(beamE) - square(mProton));
+    const double beamPz = std::sqrt(square(beamE) - square(mBeamParticle));
     reco::Candidate::LorentzVector beamP4(beamPx, beamPy, beamPz, beamE);
     reco::Candidate::Vector h;
     if ( boost_ttrf )
@@ -109,7 +121,7 @@ namespace
 void
 get_localCoordinateSystem(const reco::Candidate::LorentzVector& p4,
                           const reco::Candidate::LorentzVector* recoilP4, const ROOT::Math::Boost* boost_ttrf,
-                          int hAxis,
+                          int hAxis, int collider,
                           reco::Candidate::Vector& r, reco::Candidate::Vector& n, reco::Candidate::Vector& k,
                           int verbosity, bool cartesian)
 {
@@ -123,7 +135,7 @@ get_localCoordinateSystem(const reco::Candidate::LorentzVector& p4,
   reco::Candidate::Vector h;
   if ( hAxis == kBeam )
   {
-    h = get_h_beamAxis(boost_ttrf, verbosity, cartesian);
+    h = get_h_beamAxis(boost_ttrf, collider, verbosity, cartesian);
   }
   else if ( hAxis == kHiggs )
   {

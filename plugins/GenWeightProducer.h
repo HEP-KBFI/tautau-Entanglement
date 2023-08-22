@@ -1,15 +1,15 @@
 #ifndef TauAnalysis_Entanglement_GenWeightProducer_h
 #define TauAnalysis_Entanglement_GenWeightProducer_h
 
-#include "FWCore/Framework/interface/EDProducer.h"
-#include "FWCore/Framework/interface/Event.h"
-#include "FWCore/Framework/interface/EventSetup.h"
-#include "FWCore/ParameterSet/interface/ParameterSet.h"
+#include "FWCore/Framework/interface/stream/EDProducer.h"                   // edm::stream::EDProducer<>
+#include "FWCore/Framework/interface/Event.h"                               // edm::Event
+#include "FWCore/Framework/interface/EventSetup.h"                          // edm::EventSetup
+#include "FWCore/ParameterSet/interface/ParameterSet.h"                     // edm::ParameterSet
 #include "FWCore/Framework/interface/Frameworkfwd.h"
 
 #include "SimDataFormats/GeneratorProducts/interface/GenEventInfoProduct.h" // GenEventInfoProduct
 
-class GenWeightProducer : public edm::EDProducer 
+class GenWeightProducer : public edm::stream::EDProducer<>
 {
  public:
   explicit GenWeightProducer(const edm::ParameterSet& cfg);

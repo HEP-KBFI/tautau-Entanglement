@@ -24,14 +24,6 @@ namespace kinFit
   //     The four-vectors of tau+ and tau- are not really "measured";
   //     we use the "huge error method" described in Section 6 of https://www.phys.ufl.edu/~avery/fitting/fitting1.pdf
   //     and set their covariance matrix to diagonal matrix with large values on the diagonal
-
-  const int numConstraints  = 9;
-  // CV: constrains are defined in the following order:
-  //       Higgs mass constraint                 (1)
-  //       "parallelism" constraint for tau+ [1] (2)
-  //       "parallelism" constraint for tau- [1] (2) 
-  //       constraint that recoil = tau+ + tau-  (4)
-  //  [1] cf. Section 4.1.3.3 of https://cds.cern.ch/record/1358627/files/CERN-THESIS-2011-028.pdf
 }
 
 namespace math
@@ -55,14 +47,9 @@ namespace math
   typedef Vector<7>::type   Vector7;
 
   const int P = kinFit::numParameters;
-  const int C = kinFit::numConstraints;
 
   typedef Matrix<P,P>::type MatrixPxP;
-  typedef Matrix<C,P>::type MatrixCxP;
-  typedef Matrix<P,C>::type MatrixPxC;
-  typedef Matrix<C,C>::type MatrixCxC;
   typedef Vector<P>::type   VectorP;
-  typedef Vector<C>::type   VectorC;
 }
 
 #endif // TauAnalysis_Entanglement_Matrix_and_Vector_h

@@ -7,7 +7,9 @@
 
 #include "DataFormats/TauReco/interface/PFTau.h"                      // reco::PFTau::hadronicDecayMode
 
+#include "TauAnalysis/Entanglement/interface/cmsException.h"          // cmsException
 #include "TauAnalysis/Entanglement/interface/comp_visP4.h"            // comp_visP4()
+#include "TauAnalysis/Entanglement/interface/constants.h"             // kLHC, kSuperKEKB
 #include "TauAnalysis/Entanglement/interface/findDecayProducts.h"     // findDecayProducts()
 #include "TauAnalysis/Entanglement/interface/findLastTau.h"           // findLastTau()
 #include "TauAnalysis/Entanglement/interface/get_decayMode.h"         // get_decayMode()
@@ -19,8 +21,8 @@ EntanglementNtupleProducer::EntanglementNtupleProducer(const edm::ParameterSet& 
   : moduleLabel_(cfg.getParameter<std::string>("@module_label"))
   , genKineEvtBuilder_woSmearing_(nullptr)
   , genKineEvtBuilder_wSmearing_(nullptr)
-  , startPosFinder_(cfg)
-  , kineFit_(cfg)
+  , startPosFinder_(nullptr)
+  , kinematicFit_(nullptr)
   , ntuple_piPlus_piMinus_(nullptr)
   , ntupleFiller_piPlus_piMinus_(nullptr)
   , ntuple_piPlus_rhoMinus_(nullptr)
@@ -46,6 +48,28 @@ EntanglementNtupleProducer::EntanglementNtupleProducer(const edm::ParameterSet& 
   edm::ParameterSet cfg_wSmearing = cfg;
   cfg_wSmearing.addParameter<bool>("applySmearing", applySmearing);
   genKineEvtBuilder_wSmearing_ = new GenKinematicEventBuilder(cfg_wSmearing);
+  
+  std::string hAxis = cfg.getParameter<std::string>("hAxis");
+
+  std::string collider = cfg.getParameter<std::string>("collider");
+  if      ( collider == "LHC"       ) collider_ = kLHC;
+  else if ( collider == "SuperKEKB" ) collider_ = kSuperKEKB;
+  else throw cmsException("EntanglementNtupleProducer", __LINE__)
+    << "Invalid Configuration parameter 'collider' = " << collider << " !!\n";
+
+  edm::ParameterSet cfg_startPosFinder = cfg.getParameter<edm::ParameterSet>("startPosFinder");
+  cfg_startPosFinder.addParameter<std::string>("hAxis", hAxis);
+  cfg_startPosFinder.addParameter<std::string>("collider", collider);
+  cfg_startPosFinder.addParameter<int>("verbosity", verbosity_);
+  cfg_startPosFinder.addParameter<bool>("cartesian", cartesian_);
+  startPosFinder_ = new StartPosFinder(cfg_startPosFinder);
+
+  edm::ParameterSet cfg_kinematicFit = cfg.getParameter<edm::ParameterSet>("kinematicFit");
+  cfg_kinematicFit.addParameter<std::string>("hAxis", hAxis);
+  cfg_kinematicFit.addParameter<std::string>("collider", collider);
+  cfg_kinematicFit.addParameter<int>("verbosity", verbosity_);
+  cfg_kinematicFit.addParameter<bool>("cartesian", cartesian_);
+  kinematicFit_ = new KinematicFit(cfg_kinematicFit);
 
   srcWeights_ = cfg.getParameter<vInputTag>("srcEvtWeights");
   for ( const edm::InputTag& srcWeight : srcWeights_ )
@@ -58,6 +82,10 @@ EntanglementNtupleProducer::~EntanglementNtupleProducer()
 {
   delete genKineEvtBuilder_woSmearing_;
   delete genKineEvtBuilder_wSmearing_;
+
+  delete startPosFinder_;
+
+  delete kinematicFit_;
 
   // CV: don't delete TTree objects, as these are handled by TFileService
 
@@ -157,13 +185,13 @@ void EntanglementNtupleProducer::analyze(const edm::Event& evt, const edm::Event
     printKinematicEvent("kineEvt_gen_smeared", kineEvt_gen_smeared, cartesian_);
   }
 
-  KinematicEvent kineEvt_startPos = startPosFinder_(kineEvt_gen_smeared);
+  KinematicEvent kineEvt_startPos = (*startPosFinder_)(kineEvt_gen_smeared);
   if ( verbosity_ >= 1 )
   {
     printKinematicEvent("kineEvt_startPos", kineEvt_startPos, cartesian_);
   }
 
-  KinematicEvent kineEvt_kinFit = kineFit_(kineEvt_startPos);
+  KinematicEvent kineEvt_kinFit = (*kinematicFit_)(kineEvt_startPos);
   if ( verbosity_ >= 1 )
   {
     printKinematicEvent("kineEvt_kinFit", kineEvt_kinFit, cartesian_);
