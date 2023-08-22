@@ -39,13 +39,17 @@ EntanglementNtupleProducer::EntanglementNtupleProducer(const edm::ParameterSet& 
   src_ = cfg.getParameter<edm::InputTag>("src");
   token_ = consumes<reco::GenParticleCollection>(src_);
 
+  edm::ParameterSet cfg_resolutions = cfg.getParameter<edm::ParameterSet>("resolutions");
+
   bool applySmearing = cfg.getParameter<bool>("applySmearing");
 
   edm::ParameterSet cfg_woSmearing = cfg;
+  cfg_woSmearing.addParameter<edm::ParameterSet>("resolutions", cfg_resolutions);
   cfg_woSmearing.addParameter<bool>("applySmearing", false);
   genKineEvtBuilder_woSmearing_ = new GenKinematicEventBuilder(cfg_woSmearing);
 
   edm::ParameterSet cfg_wSmearing = cfg;
+  cfg_wSmearing.addParameter<edm::ParameterSet>("resolutions", cfg_resolutions);
   cfg_wSmearing.addParameter<bool>("applySmearing", applySmearing);
   genKineEvtBuilder_wSmearing_ = new GenKinematicEventBuilder(cfg_wSmearing);
   
@@ -58,17 +62,19 @@ EntanglementNtupleProducer::EntanglementNtupleProducer(const edm::ParameterSet& 
     << "Invalid Configuration parameter 'collider' = " << collider << " !!\n";
 
   edm::ParameterSet cfg_startPosFinder = cfg.getParameter<edm::ParameterSet>("startPosFinder");
+  cfg_startPosFinder.addParameter<edm::ParameterSet>("resolutions", cfg_resolutions);
   cfg_startPosFinder.addParameter<std::string>("hAxis", hAxis);
   cfg_startPosFinder.addParameter<std::string>("collider", collider);
-  cfg_startPosFinder.addParameter<int>("verbosity", verbosity_);
-  cfg_startPosFinder.addParameter<bool>("cartesian", cartesian_);
+  cfg_startPosFinder.addUntrackedParameter<int>("verbosity", verbosity_);
+  cfg_startPosFinder.addUntrackedParameter<bool>("cartesian", cartesian_);
   startPosFinder_ = new StartPosFinder(cfg_startPosFinder);
 
   edm::ParameterSet cfg_kinematicFit = cfg.getParameter<edm::ParameterSet>("kinematicFit");
+  cfg_kinematicFit.addParameter<edm::ParameterSet>("resolutions", cfg_resolutions);
   cfg_kinematicFit.addParameter<std::string>("hAxis", hAxis);
   cfg_kinematicFit.addParameter<std::string>("collider", collider);
-  cfg_kinematicFit.addParameter<int>("verbosity", verbosity_);
-  cfg_kinematicFit.addParameter<bool>("cartesian", cartesian_);
+  cfg_kinematicFit.addUntrackedParameter<int>("verbosity", verbosity_);
+  cfg_kinematicFit.addUntrackedParameter<bool>("cartesian", cartesian_);
   kinematicFit_ = new KinematicFit(cfg_kinematicFit);
 
   srcWeights_ = cfg.getParameter<vInputTag>("srcEvtWeights");

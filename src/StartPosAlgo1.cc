@@ -28,17 +28,11 @@ namespace math
 
 StartPosAlgo1::StartPosAlgo1(const edm::ParameterSet& cfg)
   : StartPosAlgoBase(cfg)
-  , resolutions_(nullptr)
   , applyHiggsMassConstraint_(cfg.getParameter<bool>("applyHiggsMassConstraint"))
-{
-  edm::ParameterSet cfg_resolutions = cfg.getParameterSet("resolutions");
-  resolutions_ = new Resolutions(cfg_resolutions);
-}
+{}
 
 StartPosAlgo1::~StartPosAlgo1()
-{
-  delete resolutions_;
-}
+{}
 
 namespace
 {

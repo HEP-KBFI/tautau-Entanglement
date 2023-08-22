@@ -1,9 +1,8 @@
 #include "TauAnalysis/Entanglement/interface/StartPosAlgo2.h"
 
-#include "TauAnalysis/Entanglement/interface/cmsException.h"              // cmsException
 #include "TauAnalysis/Entanglement/interface/comp_cosThetaGJ.h"           // comp_cosThetaGJ_solution()
 #include "TauAnalysis/Entanglement/interface/comp_PCA_line2line.h"        // comp_PCA_line2line()
-#include "TauAnalysis/Entanglement/interface/constants.h"                 // kLHC, kSuperKEKB, mHiggs, mTau
+#include "TauAnalysis/Entanglement/interface/constants.h"                 // mHiggs, mTau
 #include "TauAnalysis/Entanglement/interface/fixMass.h"                   // fixNuMass(), fixTauMass()
 #include "TauAnalysis/Entanglement/interface/get_decayMode.h"             // is1Prong()
 #include "TauAnalysis/Entanglement/interface/get_leadTrack.h"             // get_leadTrack()
@@ -18,23 +17,11 @@
 
 StartPosAlgo2::StartPosAlgo2(const edm::ParameterSet& cfg)
   : StartPosAlgoBase(cfg)
-  , resolutions_(nullptr)
   , applyRecoilEnergy_and_PzConstraint_(cfg.getParameter<bool>("applyRecoilEnergy_and_PzConstraint"))
-{
-  edm::ParameterSet cfg_resolutions = cfg.getParameterSet("resolutions");
-  resolutions_ = new Resolutions(cfg_resolutions);
-
-  std::string collider = cfg.getParameter<std::string>("collider");
-  if      ( collider == "LHC"       ) collider_ = kLHC;
-  else if ( collider == "SuperKEKB" ) collider_ = kSuperKEKB;
-  else throw cmsException("StartPosAlgo2", __LINE__)
-    << "Invalid Configuration parameter 'collider' = " << collider << " !!\n";
-}
+{}
 
 StartPosAlgo2::~StartPosAlgo2()
-{
-  delete resolutions_;
-}
+{}
 
 namespace
 {

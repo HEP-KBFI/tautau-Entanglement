@@ -17,14 +17,11 @@ process.maxEvents = cms.untracked.PSet(
 )
 
 process.source = cms.Source("PoolSource",
-    fileNames = cms.untracked.vstring(
-        #'file:/store/mc/RunIISummer20UL18MiniAODv2/GluGluHToTauTau_M125_TuneCP5_13TeV-powheg-pythia8/MINIAODSIM/106X_upgrade2018_realistic_v16_L1v1-v3/100000/4FC3731A-E9C4-DD47-B222-83083ECF5684.root'
-        'file:/local/karl/ee2tt_aod/aodsim_1.root'
-    ),
-    #eventsToProcess = cms.untracked.VEventRange(
-    #    '1:97:96091' 
-    #)
+    fileNames = cms.untracked.vstring()
 )
+#process.source.eventsToProcess = cms.untracked.VEventRange(
+#    '1:97:96091' 
+#)
 
 inputFilePath = '/store/mc/RunIISummer20UL18MiniAODv2/GluGluHToTauTau_M125_TuneCP5_13TeV-powheg-pythia8/MINIAODSIM/106X_upgrade2018_realistic_v16_L1v1-v3/100000/'
 inputFileNames = None
@@ -32,7 +29,8 @@ processName = "qqH_htt_pythia8"
 hAxis = "beam"
 rndSeed = 1
 outputFileName = "entanglementNtuple_%s_DEBUG.root" % processName
-collider = "LHC"
+#collider = "LHC"
+collider = "SuperKEKB"
 
 ##inputFilePath = None
 ##inputFileNames = $inputFileNames
@@ -46,12 +44,21 @@ inputFile_regex = r"[a-zA-Z0-9-_]+.root"
 
 srcGenParticles = None
 tauPairMassCut = None
+applyHiggsMassConstraint = None
 if collider == "LHC":
+    process.source.fileNames = cms.untracked.vstring(
+        'file:/store/mc/RunIISummer20UL18MiniAODv2/GluGluHToTauTau_M125_TuneCP5_13TeV-powheg-pythia8/MINIAODSIM/106X_upgrade2018_realistic_v16_L1v1-v3/100000/4FC3731A-E9C4-DD47-B222-83083ECF5684.root'
+    )
     srcGenParticles = 'prunedGenParticles'
     tauPairMassCut = 'mass > 120. & mass < 130.'
-elif collider == "Belle":
+    applyHiggsMassConstraint = True
+elif collider == "SuperKEKB":
+    process.source.fileNames = cms.untracked.vstring(
+        'file:/local/karl/ee2tt_aod/aodsim_1.root'
+    )
     srcGenParticles = 'genParticles'
     tauPairMassCut = 'mass > 0.'
+    applyHiggsMassConstraint = False
 else:
     raise ValueError("Invalid Configuration parameter 'collider' = '%s' !!" % collider)
 
@@ -165,6 +172,7 @@ from TauAnalysis.Entanglement.resolutions_cfi import resolutions
 from TauAnalysis.Entanglement.smearing_cfi import smearing
 process.ntupleProducer = cms.EDAnalyzer("EntanglementNtupleProducer",
     src = cms.InputTag(srcGenParticles),
+    collider = cms.string(collider),
     hAxis = cms.string(hAxis),
     resolutions = resolutions,
     smearing = smearing.clone(
@@ -174,7 +182,7 @@ process.ntupleProducer = cms.EDAnalyzer("EntanglementNtupleProducer",
     #applySmearing = cms.bool(True),
     startPosFinder = cms.PSet(
         algo = cms.int32(1),
-        applyHiggsMassConstraint = cms.bool(True),
+        applyHiggsMassConstraint = cms.bool(applyHiggsMassConstraint),
         applyRecoilEnergy_and_PzConstraint = cms.bool(True)
     ),
     kinematicFit = cms.PSet(

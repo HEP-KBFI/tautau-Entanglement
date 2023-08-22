@@ -3,7 +3,6 @@
 
 #include "FWCore/ParameterSet/interface/ParameterSet.h"          // edm::ParameterSet
 
-#include "TauAnalysis/Entanglement/interface/Resolutions.h"      // Resolutions
 #include "TauAnalysis/Entanglement/interface/StartPosAlgoBase.h" // StartPosAlgoBase
 
 class StartPosAlgo1 : public StartPosAlgoBase
@@ -16,8 +15,6 @@ class StartPosAlgo1 : public StartPosAlgoBase
   operator()(const KinematicEvent& kineEvt);
  
  private:
-  Resolutions* resolutions_;
-
   bool applyHiggsMassConstraint_;
 };
 

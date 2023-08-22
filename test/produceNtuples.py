@@ -4,7 +4,7 @@ import getpass
 import os
 
 from TauAnalysis.Entanglement.tools.jobTools import getInputFileNames, build_Makefile
-from TauAnalysis.Entanglement.samples import samples_LHC, samples_Belle
+from TauAnalysis.Entanglement.samples import samples_LHC, samples_SuperKEKB
 
 hAxes = [ "beam", "higgs" ]
 #collider = "LHC"
