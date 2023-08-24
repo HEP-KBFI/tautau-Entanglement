@@ -39,7 +39,6 @@ namespace
       std::cout << "<comp_tauP4>:\n";
       std::cout << "tauP = " << tauP << "\n";
       printLorentzVector("visTauP4", visTauP4);
-      printDistance("tipPCA - pv", tipPCA - pv);
     }
 
     reco::Candidate::Vector r, n, k; 
@@ -52,9 +51,6 @@ namespace
       printVector("n", n, false);
       printVector("k", k, true);
       printVector("k", k, false);
-      std::cout << "r*n = " << r.Dot(n) << "\n";
-      std::cout << "r*k = " << r.Dot(k) << "\n";
-      std::cout << "n*k = " << n.Dot(k) << "\n";
     }
 
     // CV: assume angle between tau lepton and visible decay products to be negligible, 
@@ -73,19 +69,13 @@ namespace
 
     auto tmp = tipPCA - pv;
     reco::Candidate::Vector flightlength(tmp.x(), tmp.y(), tmp.z());
-    printDistance("flightlength", flightlength, true);
-    printDistance("flightlength", flightlength, false);
+    if ( verbosity >= 3 )
+    {
+      printDistance("flightlength", flightlength, true);
+      printDistance("flightlength", flightlength, false);
+    }
     double flightlength_r = flightlength.Dot(r);
     double flightlength_n = flightlength.Dot(n);
-    std::cout << "flightlength: r = " << flightlength_r/std::sqrt(flightlength.mag2()) << ", n = " << flightlength_n/std::sqrt(flightlength.mag2()) << "\n";
-
-    //----------
-    // ONLY FOR TESTING !!
-    reco::Candidate::LorentzVector genTauP4(4.59743, 0.319873, -2.71578, 5.63666);
-    double genTauP4_r = genTauP4.Vect().Dot(r);
-    double genTauP4_n = genTauP4.Vect().Dot(n);
-    std::cout << "genTauP4: r = " << genTauP4_r/std::sqrt(genTauP4.Vect().mag2()) << ", n = " << genTauP4_n/std::sqrt(genTauP4.Vect().mag2()) << "\n";
-    //----------
 
     double alpha = std::atan2(flightlength_n, flightlength_r);
     double beta  = std::acos(cosThetaGJ);
@@ -94,21 +84,6 @@ namespace
       std::cout << "alpha = " << alpha << ": cos(alpha) = " << cos(alpha) << ", sin(alpha) = " << sin(alpha) << "\n";
       std::cout << "beta = " << beta << ": cos(beta) = " << cos(beta) << ", sin(beta) = " << sin(beta) << "\n";
     }
-    //----------
-    // ONLY FOR TESTING !!
-    double alpha_DEBUG = std::atan2(genTauP4_n, genTauP4_r);
-    double beta_DEBUG = std::acos((visTauP4.px()*genTauP4.px() + visTauP4.py()*genTauP4.py() + visTauP4.pz()*genTauP4.pz())/(visTauP4.P()*genTauP4.P()));
-    std::cout << "genTauP4: alpha = " << alpha_DEBUG << ", beta = " << beta_DEBUG << "\n";
-    reco::Candidate::Vector tauP3_DEBUG1 = genTauP4.P()*(std::cos(alpha_DEBUG)*std::sin(beta_DEBUG)*r + std::sin(alpha_DEBUG)*std::sin(beta_DEBUG)*n + std::cos(beta_DEBUG)*k);
-    printVector("tauP3_DEBUG1", tauP3_DEBUG1, cartesian);
-    double genTauP4_k = genTauP4.Vect().Dot(k);
-    reco::Candidate::Vector tauP3_DEBUG2 = genTauP4_r*r + genTauP4_n*n + genTauP4_k*k;
-    printVector("tauP3_DEBUG2", tauP3_DEBUG2, cartesian);
-    std::cout << "projections:\n";
-    std::cout << " r = " << genTauP4_r << ", genTauP4.P()*std::cos(alpha)*std::sin(beta) = " << genTauP4.P()*std::cos(alpha_DEBUG)*std::sin(beta_DEBUG) << "\n";
-    std::cout << " n = " << genTauP4_n << ", genTauP4.P()*std::sin(alpha)*std::sin(beta) = " << genTauP4.P()*std::sin(alpha_DEBUG)*std::sin(beta_DEBUG) << "\n";
-    std::cout << " k = " << genTauP4_k << ", genTauP4.P()*std::cos(beta) = " << genTauP4.P()*std::cos(beta_DEBUG) << "\n";    
-    //----------
 
     reco::Candidate::Vector tauP3 = tauP*(std::cos(alpha)*std::sin(beta)*r + std::sin(alpha)*std::sin(beta)*n + std::cos(beta)*k);
     reco::Candidate::LorentzVector tauP4(tauP3.x(), tauP3.y(), tauP3.z(), tauE);
@@ -219,7 +194,7 @@ namespace
         return 0.;
       }
     
-      if ( std::fabs(higgsMass - mTauTau_target) < 1.e-2 )
+      if ( std::fabs(higgsMass - mTauTau_target) < 1.e-4*mTauTau_target )
       {
         if ( !higgsMass_errorFlag )
         {
