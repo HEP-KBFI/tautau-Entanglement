@@ -7,13 +7,18 @@
 #include "TauAnalysis/Entanglement/interface/PolarimetricVector.h" // PolarimetricVector
 #include "TauAnalysis/Entanglement/interface/StartPosAlgoBase.h"   // StartPosAlgoBase
 
+#include <vector>                                                  // std::vector<>
+
 class StartPosFinder
 {
  public:
   explicit StartPosFinder(const edm::ParameterSet&);
   ~StartPosFinder();
    
-  KinematicEvent
+  int
+  get_algo() const;
+
+  std::vector<KinematicEvent>
   operator()(const KinematicEvent& kineEvt);
  
  private:

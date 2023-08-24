@@ -104,7 +104,8 @@ int main(int argc, char* argv[])
   std::cout << " statusSelection = " << format_vint(statusSelection) << "\n";
   std::string branchName_evtWeight = cfg_resPlots.getParameter<std::string>("branchName_evtWeight");
   std::cout << " branchName_evtWeight = " << branchName_evtWeight << "\n";
-  //bool isDEBUG = cfg_resPlots.getParameter<bool>("isDEBUG");
+
+  bool apply_evtWeight = cfg_resPlots.getParameter<bool>("apply_evtWeight");
 
   std::string collider_string = cfg_resPlots.getParameter<std::string>("collider");
   int collider = -1;
@@ -365,7 +366,7 @@ int main(int argc, char* argv[])
     inputTree->SetBranchAddress("kinFit_status", &kinFit_status);
 
     Float_t evtWeight = 1.;
-    if ( branchName_evtWeight != "" )
+    if ( branchName_evtWeight != "" && apply_evtWeight )
     {
       inputTree->SetBranchAddress(branchName_evtWeight.c_str(), &evtWeight);
     }

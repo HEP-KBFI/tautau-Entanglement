@@ -7,10 +7,11 @@ from TauAnalysis.Entanglement.tools.jobTools import getInputFileNames, build_Mak
 from TauAnalysis.Entanglement.samples import samples_LHC, samples_SuperKEKB
 
 hAxes = [ "beam", "higgs" ]
+#hAxes = [ "beam" ]
 #collider = "LHC"
 collider = "SuperKEKB"
 
-version = "2023Aug22_startPosMode1_woSmearing"
+version = "2023Aug24_woSmearing"
 
 samples = None
 if collider == "LHC":

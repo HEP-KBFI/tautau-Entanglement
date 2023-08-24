@@ -4,8 +4,7 @@ import getpass
 import os
 
 from TauAnalysis.Entanglement.tools.jobTools import getInputFileNames, build_Makefile
-
-samples = [ 'dy_lo_pythia8_Belle' ]
+from TauAnalysis.Entanglement.samples import samples_LHC, samples_SuperKEKB
 
 modes = [ "gen", "gen_smeared", "startPos", "kinFit" ]
 hAxes = [ "beam", "higgs" ]
@@ -17,7 +16,15 @@ decayModes = [ "piPlus_piMinus", "rhoPlus_rhoMinus" ]
 spinAnalyzers = [ "by_summation", "by_mlfit" ]
 #spinAnalyzers = [ "by_summation" ]
 
-version = "2023Aug22_startPosMode1_woSmearing"
+version = "2023Aug24_woSmearing"
+
+samples = None
+if collider == "LHC":
+    samples = samples_LHC
+elif collider == "SuperKEKB":
+    samples = samples_SuperKEKB
+else:
+    raise ValueError("Invalid Configuration parameter 'collider' = '%s' !!" % collider)
 
 inputFilePath = os.path.join("/scratch/persistent", getpass.getuser(), "Entanglement/ntuples/", collider, version)
 
@@ -35,7 +42,7 @@ run_command('mkdir -p %s' % outputDir)
 
 def build_cfgFile(cfgFile_original, cfgFile_modified, 
                   inputFileNames, process,
-                  mode, collider, hAxis, decayMode, spinAnalyzer,
+                  mode, collider, hAxis, decayMode, apply_evtWeight, spinAnalyzer,
                   outputFileName):
   print("Building configFile = '%s'" % cfgFile_modified)
 
@@ -50,6 +57,7 @@ def build_cfgFile(cfgFile_original, cfgFile_modified,
   sedCommand += '  s/##collider/collider/; s/\$collider/%s/;' % collider
   sedCommand += '  s/##hAxis/hAxis/; s/\$hAxis/%s/;' % hAxis
   sedCommand += '  s/##decayMode/decayMode/; s/\$decayMode/%s/;' % decayMode
+  sedCommand += '  s/##apply_evtWeight/apply_evtWeight/; s/\$apply_evtWeight/%s/;' % apply_evtWeight
   sedCommand += '  s/##spinAnalyzer/spinAnalyzer/; s/\$spinAnalyzer/%s/;' % spinAnalyzer
   sedCommand += '  s/##outputFileName/outputFileName/; s/\$outputFileName/%s/"' % outputFileName
   sedCommand += ' %s > %s' % (cfgFile_original, cfgFile_modified)
@@ -58,11 +66,11 @@ def build_cfgFile(cfgFile_original, cfgFile_modified,
 jobOptions_analysis  = {} # key = sample, mode, hAxis
 jobOptions_ctrlPlots = {} # key = sample, mode, hAxis
 jobOptions_resPlots  = {} # key = sample, mode, hAxis
-for sample in samples:
+for sampleName, sample in samples.items():
   for hAxis in hAxes:
-    print("processing sample = '%s', hAxis = '%s'" % (sample, hAxis))
+    print("processing sample = '%s', hAxis = '%s'" % (sampleName, hAxis))
     print(" inputFilePath = '%s'" % inputFilePath)
-    inputFile_regex = r"entanglementNtuple_%s_%sAxis_[0-9]+.root" % (sample, hAxis)
+    inputFile_regex = r"entanglementNtuple_%s_%sAxis_[0-9]+.root" % (sampleName, hAxis)
     inputFileNames = getInputFileNames(inputFilePath, inputFile_regex)
     numInputFiles = len(inputFileNames)
     print("Found %i input files." % numInputFiles)
@@ -70,16 +78,16 @@ for sample in samples:
       for decayMode in decayModes:
         for spinAnalyzer in spinAnalyzers:
           cfgFileName_analysis_modified = os.path.join(configDir, "analyzeEntanglementNtuple_%s_%sMode_%sAxis_%sDecayMode_%s_cfg.py" % \
-            (sample, mode, hAxis, decayMode, spinAnalyzer))
+            (sampleName, mode, hAxis, decayMode, spinAnalyzer))
           outputFileName_analysis = "analyzeEntanglementNtuple_%s_%sMode_%sAxis_%sDecayMode_%s.root" % \
-            (sample, mode, hAxis, decayMode, spinAnalyzer)
+            (sampleName, mode, hAxis, decayMode, spinAnalyzer)
           build_cfgFile(
             "analyzeEntanglementNtuple_cfg.py", cfgFileName_analysis_modified, 
-            inputFileNames, sample,
-            mode, collider, hAxis, decayMode, spinAnalyzer,
+            inputFileNames, sample['process'],
+            mode, collider, hAxis, decayMode, sample['apply_evtWeight'], spinAnalyzer, 
             outputFileName_analysis)
           logFileName_analysis = cfgFileName_analysis_modified.replace("_cfg.py", ".log")
-          job_key_analysis = '%s_%s_%s_%s_%s_analysis' % (sample, mode, hAxis, decayMode, spinAnalyzer)
+          job_key_analysis = '%s_%s_%s_%s_%s_analysis' % (sampleName, mode, hAxis, decayMode, spinAnalyzer)
           dependencies_analysis = [ cfgFileName_analysis_modified ]
           dependencies_analysis.extend(inputFileNames)
           jobOptions_analysis[job_key_analysis] = {
@@ -90,16 +98,16 @@ for sample in samples:
             'logFileName'    : logFileName_analysis,
           }
         cfgFileName_ctrlPlots_modified = os.path.join(configDir, "makeControlPlots_%s_%sMode_%sAxis_%sDecayMode_cfg.py" % \
-          (sample, mode, hAxis, decayMode))
+          (sampleName, mode, hAxis, decayMode))
         outputFileName_ctrlPlots = "makeControlPlots_%s_%sMode_%sAxis_%sDecayMode.root" % \
-          (sample, mode, hAxis, decayMode)
+          (sampleName, mode, hAxis, decayMode)
         build_cfgFile(
           "makeControlPlots_cfg.py", cfgFileName_ctrlPlots_modified, 
-          inputFileNames, sample,
-          mode, collider, hAxis, decayMode, "", 
+          inputFileNames, sample['process'],
+          mode, collider, hAxis, decayMode, sample['apply_evtWeight'], "",
           outputFileName_ctrlPlots)
         logFileName_ctrlPlots = cfgFileName_ctrlPlots_modified.replace("_cfg.py", ".log")
-        job_key_ctrlPlots = '%s_%s_%s_%s_ctrlPlots' % (sample, mode, hAxis, decayMode)
+        job_key_ctrlPlots = '%s_%s_%s_%s_ctrlPlots' % (sampleName, mode, hAxis, decayMode)
         dependencies_ctrlPlots = [ cfgFileName_ctrlPlots_modified ]
         dependencies_ctrlPlots.extend(inputFileNames) 
         jobOptions_ctrlPlots[job_key_ctrlPlots] = {
@@ -111,16 +119,16 @@ for sample in samples:
         }
         if mode != "gen":
           cfgFileName_resPlots_modified = os.path.join(configDir, "makeResolutionPlots_%s_%sMode_%sAxis_%sDecayMode_cfg.py" % \
-            (sample, mode, hAxis, decayMode))
+            (sampleName, mode, hAxis, decayMode))
           outputFileName_resPlots = "makeResolutionPlots_%s_%sMode_%sAxis_%sDecayMode.root" % \
-            (sample, mode, hAxis, decayMode)
+            (sampleName, mode, hAxis, decayMode)
           build_cfgFile(
             "makeResolutionPlots_cfg.py", cfgFileName_resPlots_modified, 
-            inputFileNames, sample,
-            mode, collider, hAxis, decayMode, "",
+            inputFileNames, sample['process'],
+            mode, collider, hAxis, decayMode, sample['apply_evtWeight'], "", 
             outputFileName_resPlots)
           logFileName_resPlots = cfgFileName_resPlots_modified.replace("_cfg.py", ".log")
-          job_key_resPlots = '%s_%s_%s_%s_resPlots' % (sample, mode, hAxis, decayMode)
+          job_key_resPlots = '%s_%s_%s_%s_resPlots' % (sampleName, mode, hAxis, decayMode)
           dependencies_resPlots = [ cfgFileName_resPlots_modified ]
           dependencies_resPlots.extend(inputFileNames)
           jobOptions_resPlots[job_key_resPlots] = {

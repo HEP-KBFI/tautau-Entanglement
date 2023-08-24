@@ -176,7 +176,7 @@ namespace kinFit
   }
 
   bool
-  isPhysicalSolution(const KinematicEvent& kineEvt, int verbosity = -1)
+  isPhysicalSolution(const KinematicEvent& kineEvt, int collider, int verbosity = -1)
   {
     // CV: check that constraint equations are satisfied
     //    (not just their linear approximation)
@@ -186,14 +186,17 @@ namespace kinFit
     }
     const double max_dphi = (30./180.)*TMath::Pi();
     const double max_dtheta = (30./180.)*TMath::Pi();
-    reco::Candidate::LorentzVector higgsP4 = kineEvt.tauPlusP4() + kineEvt.tauMinusP4();
-    if ( std::fabs(higgsP4.mass() - mHiggs) > 10. )
+    if ( collider != kSuperKEKB )
     {
-      if ( verbosity >= 1 )
+      reco::Candidate::LorentzVector higgsP4 = kineEvt.tauPlusP4() + kineEvt.tauMinusP4();
+      if ( std::fabs(higgsP4.mass() - mHiggs) > 10. )
       {
-        std::cout << "fails Higgs mass constraint (mass = " << higgsP4.mass() << ").\n";
+        if ( verbosity >= 1 )
+        {
+          std::cout << "fails Higgs mass constraint (mass = " << higgsP4.mass() << ").\n";
+        }
+        return false;
       }
-      return false;
     }
     if ( !(kineEvt.tauPlusP4().mass() >= 0. && kineEvt.tauPlusP4().mass() <= 5.) )
     { 
@@ -241,7 +244,7 @@ namespace kinFit
   template <unsigned int numParameters, unsigned int numConstraints>
   void
   fit(const KinematicEvent& kineEvt, double signTauPlus, double signTauMinus, bool applyLifetimeConstraint, int collider,
-      KinematicEvent& kineEvt_kinfit, int& status, double& min_chi2, int& iteration_bestfit, int max_iterations, bool& hasConverged,
+      KinematicEvent& kineEvt_kinFit, int& status, double& min_chi2, int& iteration_bestfit, int max_iterations, bool& hasConverged,
       int verbosity)
   {
     const int C = numConstraints;  
@@ -361,10 +364,25 @@ namespace kinFit
         printLorentzVector("tauMinusP4", tauMinusP4);
       }
 
+      // CV: Check that chosen signs for tau+ and tau- reproduce neutrino Pz of start position; skip sign combination if not.
+      //     Skipping these sign combinations saves computing time and avoids running into unphysical solutions.
+      if ( iteration == 0 )
+      {
+        if ( std::fabs(nuTauPlusPz  - kineEvt.nuTauPlusP4().pz())  > std::max(1., 0.10*kineEvt.nuTauPlusP4().pz())  ||
+             std::fabs(nuTauMinusPz - kineEvt.nuTauMinusP4().pz()) > std::max(1., 0.10*kineEvt.nuTauMinusP4().pz()) )
+        {
+          if ( verbosity >= 1 )
+          {
+            std::cout << "--> skipping this sign combination, because it does not reproduce the neutrino Pz of the start position !!\n";
+          }
+          return;
+        }
+      }
+
       //-----------------------------------------------------------------------------------------------
       // CV: The nomenclature of the different matrices and vectors used for the kinematic fit
       //     follows the one introduced in Section 3 of https://www.phys.ufl.edu/~avery/fitting/kinematic.pdf
-      //     For the first iteration, the vector alpha0 refers to the starting-point of the kinematic fit,
+      //     For the first iteration, the vector alpha0 refers to the starting point of the kinematic fit,
       //     computed by the function KinematicFitStartPosFinder::operator()
       //     For subsequent iterations, the vector alpha0 refers to the result alpha obtained by the previous iteration
       //     The symbol H in the comments refers to the constraint equations,
@@ -495,22 +513,22 @@ namespace kinFit
         std::cout << D0_2 << "\n";
         std::cout << " mag = " << D0_2_mag << "\n";
       }
-      if ( D0_1_mag < D0_2_mag )
-      {
+      //if ( D0_1_mag < D0_2_mag )
+      //{
         for ( int idx = 0; idx < kinFit::numParameters; ++idx )
         {
           D(0,idx) = D0_1(idx);
         }
         d(0) = (tauPlusDt - tauPlusDx)/tauPlusDy + (tauPlusPx - tauPlusPt)/tauPlusPy;
-      }
-      else
-      {
-        for ( int idx = 0; idx < kinFit::numParameters; ++idx )
-        {
-          D(0,idx) = D0_2(idx);
-        }
-        d(0) = (tauPlusDt - tauPlusDy)/tauPlusDx + (tauPlusPy - tauPlusPt)/tauPlusPx;
-      }
+      //}
+      //else
+      //{
+      //  for ( int idx = 0; idx < kinFit::numParameters; ++idx )
+      //  {
+      //    D(0,idx) = D0_2(idx);
+      //  }
+      //  d(0) = (tauPlusDt - tauPlusDy)/tauPlusDx + (tauPlusPy - tauPlusPt)/tauPlusPx;
+      //}
       VectorP D1_1;
       D1_1(0) =  (tauPlusDx/tauPlusDz)*(1./tauPlusDt - 1./tauPlusD);                                                                       // dH_Ptheta/dpvX
       D1_1(1) =  (tauPlusDy/tauPlusDz)*(1./tauPlusDt - 1./tauPlusD);                                                                       // dH_Ptheta/dpvY
@@ -544,22 +562,22 @@ namespace kinFit
         std::cout << D1_2 << "\n";
         std::cout << " mag = " << D1_2_mag << "\n";
       }
-      if ( D1_1_mag < D1_2_mag )
-      {
+      //if ( D1_1_mag < D1_2_mag )
+      //{
         for ( int idx = 0; idx < kinFit::numParameters; ++idx )
         {
           D(1,idx) = D1_1(idx);
         }
         d(1) = (tauPlusD - tauPlusDt)/tauPlusDz + (tauPlusPt - tauPlusP)/tauPlusPz;
-      }
-      else
-      {
-        for ( int idx = 0; idx < kinFit::numParameters; ++idx )
-        {
-           D(1,idx) = D1_2(idx);
-        }
-        d(1) = (tauPlusD - tauPlusDz)/tauPlusDt + (tauPlusPz - tauPlusP)/tauPlusPt;
-      }
+      //}
+      //else
+      //{
+      //  for ( int idx = 0; idx < kinFit::numParameters; ++idx )
+      //  {
+      //     D(1,idx) = D1_2(idx);
+      //  }
+      //  d(1) = (tauPlusD - tauPlusDz)/tauPlusDt + (tauPlusPz - tauPlusP)/tauPlusPt;
+      //}
       // CV: add "parallelism" constraint for tau-
       //     The constraint equations H_Pphi and H_Ptheta are given by Eqs. (4.10) and (4.11)
       //     in Section 4.1.3.3 of [1].
@@ -594,22 +612,22 @@ namespace kinFit
         std::cout << D2_2 << "\n";
         std::cout << " mag = " << D2_2_mag << "\n";
       }
-      if ( D2_1_mag < D2_2_mag )
-      {
+      //if ( D2_1_mag < D2_2_mag )
+      //{
         for ( int idx = 0; idx < kinFit::numParameters; ++idx )
         {
           D(2,idx) = D2_1(idx);
         }
         d(2) =  (tauMinusDt - tauMinusDx)/tauMinusDy + (tauMinusPx - tauMinusPt)/tauMinusPy;
-      }
-      else
-      {
-        for ( int idx = 0; idx < kinFit::numParameters; ++idx )
-        {
-          D(2,idx) = D2_2(idx);
-        }
-        d(2) =  (tauMinusDt - tauMinusDy)/tauMinusDx + (tauMinusPy - tauMinusPt)/tauMinusPx;
-      }
+      //}
+      //else
+      //{
+      //  for ( int idx = 0; idx < kinFit::numParameters; ++idx )
+      //  {
+      //    D(2,idx) = D2_2(idx);
+      //  }
+      //  d(2) =  (tauMinusDt - tauMinusDy)/tauMinusDx + (tauMinusPy - tauMinusPt)/tauMinusPx;
+      //}
       VectorP D3_1;
       D3_1( 0) =  (tauMinusDx/tauMinusDz)*(1./tauMinusDt - 1./tauMinusD);                                                                  // dH_Ptheta/dpvX
       D3_1( 1) =  (tauMinusDy/tauMinusDz)*(1./tauMinusDt - 1./tauMinusD);                                                                  // dH_Ptheta/dpvY
@@ -643,22 +661,22 @@ namespace kinFit
         std::cout << D3_2 << "\n";
         std::cout << " mag = " << D3_2_mag << "\n";
       }
-      if ( D3_1_mag < D3_2_mag )
-      {
+      //if ( D3_1_mag < D3_2_mag )
+      //{
         for ( int idx = 0; idx < kinFit::numParameters; ++idx )
         {
           D(3,idx) = D3_1(idx);
         }
         d(3) =  (tauMinusD - tauMinusDt)/tauMinusDz + (tauMinusPt - tauMinusP)/tauMinusPz;
-      }
-      else
-      {
-        for ( int idx = 0; idx < kinFit::numParameters; ++idx )
-        {
-          D(3,idx) = D3_2(idx);
-        }
-        d(3) =  (tauMinusD - tauMinusDz)/tauMinusDt + (tauMinusPz - tauMinusP)/tauMinusPt;
-      }
+      //}
+      //else
+      //{
+      //  for ( int idx = 0; idx < kinFit::numParameters; ++idx )
+      //  {
+      //    D(3,idx) = D3_2(idx);
+      //  }
+      //  d(3) =  (tauMinusD - tauMinusDz)/tauMinusDt + (tauMinusPz - tauMinusP)/tauMinusPt;
+      //}
       // CV: add constraint that recoil = tau+ + tau-
       //       H_px     = nuTauPlusPx + visTauPlusPx + nuTauMinusPx + visTauMinusPx - recoilPx = 0
       //       H_py     = nuTauPlusPy + visTauPlusPy + nuTauMinusPy + visTauMinusPy - recoilPy = 0
@@ -959,17 +977,17 @@ namespace kinFit
       if ( verbosity >= 1 )
       {
         std::cout << "isNaN = " << isNaN(kineEvtA, verbosity) << "\n";
-        std::cout << "isPhysicalSolution = " << isPhysicalSolution(kineEvtA, verbosity) << "\n";
+        std::cout << "isPhysicalSolution = " << isPhysicalSolution(kineEvtA, collider, verbosity) << "\n";
       }
 
-      if ( !isNaN(kineEvtA) && isPhysicalSolution(kineEvtA) )
+      if ( !isNaN(kineEvtA) && isPhysicalSolution(kineEvtA, collider) )
       {
         if ( status == -1 || chi2 < min_chi2 )
         {
-          kineEvt_kinfit = kineEvtA;
-          kineEvt_kinfit.kinFitCov_ = V_alpha;
-          kineEvt_kinfit.kinFitChi2_ = chi2;
-          kineEvt_kinfit.kinFit_isValid_ = true;
+          kineEvt_kinFit = kineEvtA;
+          kineEvt_kinFit.kinFitCov_ = V_alpha;
+          kineEvt_kinFit.kinFitChi2_ = chi2;
+          kineEvt_kinFit.kinFit_isValid_ = true;
           min_chi2 = chi2;
           status = 0;
           iteration_bestfit = iteration;
@@ -1006,7 +1024,7 @@ KinematicFit::operator()(const KinematicEvent& kineEvt)
     std::cout << "<KinematicFit::operator()>:\n"; 
   }
 
-  KinematicEvent kineEvt_kinfit = kineEvt;
+  KinematicEvent kineEvt_kinFit = kineEvt;
 
   double min_chi2 = -1.;
   int status = -1;
@@ -1030,14 +1048,14 @@ KinematicFit::operator()(const KinematicEvent& kineEvt)
       {
         fit<numParameters,numConstraints_LHC>(
           kineEvt, signTauPlus, signTauMinus, applyLifetimeConstraint_, collider_,
-          kineEvt_kinfit, status, min_chi2, iteration_bestfit, max_iterations, hasConverged,
+          kineEvt_kinFit, status, min_chi2, iteration_bestfit, max_iterations, hasConverged,
           verbosity_);
       }
       else if ( collider_ == kSuperKEKB )
       {
         fit<numParameters,numConstraints_SuperKEKB>(
           kineEvt, signTauPlus, signTauMinus, applyLifetimeConstraint_, collider_,
-          kineEvt_kinfit, status, min_chi2, iteration_bestfit, max_iterations, hasConverged,
+          kineEvt_kinFit, status, min_chi2, iteration_bestfit, max_iterations, hasConverged,
           verbosity_);
       }
       else assert(0);
@@ -1059,18 +1077,18 @@ KinematicFit::operator()(const KinematicEvent& kineEvt)
     std::cout << " min(chi^2) = " << min_chi2 << "\n";
   }
 
-  kineEvt_kinfit.kinFitStatus_ = status;
-  kineEvt_kinfit.recoilP4_ = kineEvt_kinfit.tauPlusP4_ + kineEvt_kinfit.tauMinusP4_;
+  kineEvt_kinFit.kinFitStatus_ = status;
+  kineEvt_kinFit.recoilP4_ = kineEvt_kinFit.tauPlusP4_ + kineEvt_kinFit.tauMinusP4_;
   if ( hasConverged )
   {
-    reco::Candidate::Vector hPlus = polarimetricVector_(kineEvt_kinfit, pol::kTauPlus);
-    kineEvt_kinfit.hPlus_ = hPlus;
-    kineEvt_kinfit.hPlus_isValid_ = true;
-    reco::Candidate::Vector hMinus = polarimetricVector_(kineEvt_kinfit, pol::kTauMinus);
-    kineEvt_kinfit.hMinus_ = hMinus;
-    kineEvt_kinfit.hMinus_isValid_ = true;
+    reco::Candidate::Vector hPlus = polarimetricVector_(kineEvt_kinFit, pol::kTauPlus);
+    kineEvt_kinFit.hPlus_ = hPlus;
+    kineEvt_kinFit.hPlus_isValid_ = true;
+    reco::Candidate::Vector hMinus = polarimetricVector_(kineEvt_kinFit, pol::kTauMinus);
+    kineEvt_kinFit.hMinus_ = hMinus;
+    kineEvt_kinFit.hMinus_isValid_ = true;
   }
 
-  return kineEvt_kinfit;
+  return kineEvt_kinFit;
 }
 

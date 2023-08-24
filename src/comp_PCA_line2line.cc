@@ -40,16 +40,28 @@ comp_PCA_line2line(const reco::Candidate::Point& pv,
   v(2,0) =  e_tau.z();
   v(2,1) = -e_vis.z();
   v(2,2) =  d.z();
+  if ( verbosity >= 2 )
+  {
+    std::cout << "v:\n";
+    std::cout << v << "\n";
+
+  }
   math::Vector3 r;
   r(0) = -pv.x() + sv.x();
   r(1) = -pv.y() + sv.y();
   r(2) = -pv.z() + sv.z();
+  if ( verbosity >= 2 )
+  {
+    std::cout << "r:\n";
+    std::cout << r << "\n";
+
+  }
   // CV: invert matrix x;
   //     see Section "Linear algebra functions" of the ROOT documentation https://root.cern.ch/doc/v608/SMatrixDoc.html for the syntax
   int errorFlag = 0;
   math::Matrix3x3 vinv = v.Inverse(errorFlag);
   if ( errorFlag != 0 )
-    throw cmsException("comp_linearPCA", __LINE__)
+    throw cmsException("comp_PCA_line2line", __LINE__)
        << "Failed to invert matrix v !!\n";
   math::Vector3 lambda = vinv*r;
   if ( verbosity >= 2 )

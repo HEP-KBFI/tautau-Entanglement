@@ -39,7 +39,7 @@ class EntanglementNtupleProducer : public edm::one::EDAnalyzer<>
   GenKinematicEventBuilder* genKineEvtBuilder_woSmearing_;
   GenKinematicEventBuilder* genKineEvtBuilder_wSmearing_;
 
-  StartPosFinder* startPosFinder_;
+  std::vector<StartPosFinder*> startPosFinders_;
 
   KinematicFit* kinematicFit_;
 

@@ -6,17 +6,24 @@
 #include "TauAnalysis/Entanglement/interface/KinematicEvent.h" // KinematicEvent
 #include "TauAnalysis/Entanglement/interface/Resolutions.h"    // Resolutions
 
+#include <vector>                                              // std::vector<>
+
 class StartPosAlgoBase
 {
  public:
   explicit StartPosAlgoBase(const edm::ParameterSet& cfg);
   virtual ~StartPosAlgoBase();
    
+  int
+  get_algo() const;
+
   virtual
-  KinematicEvent
+  std::vector<KinematicEvent>
   operator()(const KinematicEvent& kineEvt) = 0;
  
  protected:
+  int algo_;
+
   Resolutions* resolutions_;
 
   int collider_;

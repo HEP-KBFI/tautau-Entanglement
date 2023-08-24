@@ -4,11 +4,14 @@
 #include "TauAnalysis/Entanglement/interface/square.h"       // square()
 
 double
-comp_cosThetaGJ(const reco::Candidate::LorentzVector& tauP4, const reco::Candidate::LorentzVector& visP4, bool* errorFlag)
+comp_cosThetaGJ(const reco::Candidate::LorentzVector& tauP4, const reco::Candidate::LorentzVector& visP4, bool* errorFlag, int verbosity)
 {
-  //std::cout << "<comp_cosThetaGJ>:\n";
-  //std::cout << " tauP4: P = " << tauP4.P() << "\n";
-  //std::cout << " visP4: P = " << visP4.P() << "\n";
+  if ( verbosity >= 3 )
+  {
+    std::cout << "<comp_cosThetaGJ>:\n";
+    std::cout << " tauP4: P = " << tauP4.P() << "\n";
+    std::cout << " visP4: P = " << visP4.P() << "\n";
+  }
   double cosThetaGJ = 0.;
   if ( errorFlag ) 
   {
@@ -34,16 +37,22 @@ comp_cosThetaGJ(const reco::Candidate::LorentzVector& tauP4, const reco::Candida
     if ( cosThetaGJ < -1. ) cosThetaGJ = -1.;
     if ( cosThetaGJ > +1. ) cosThetaGJ = +1.;
   }
-  //std::cout << "cosThetaGJ = " << cosThetaGJ << "\n";
+  if ( verbosity >= 3 )
+  {
+    std::cout << "cosThetaGJ = " << cosThetaGJ << "\n";
+  }
   return cosThetaGJ;
 }
 
 double
-comp_cosThetaGJ_solution(const reco::Candidate::LorentzVector& tauP4, const reco::Candidate::LorentzVector& visP4, bool* errorFlag)
+comp_cosThetaGJ_solution(const reco::Candidate::LorentzVector& tauP4, const reco::Candidate::LorentzVector& visP4, bool* errorFlag, int verbosity)
 {
-  //std::cout << "<comp_cosThetaGJ_solution>:\n";
-  //std::cout << " tauP4: energy = " << tauP4.energy() << ", P = " << tauP4.P() << " (mass = " << tauP4.mass() << ")\n";
-  //std::cout << " visP4: energy = " << visP4.energy() << ", P = " << visP4.P() << " (mass = " << visP4.mass() << ")\n";
+  if ( verbosity >= 3 )
+  {
+    std::cout << "<comp_cosThetaGJ_solution>:\n";
+    std::cout << " tauP4: energy = " << tauP4.energy() << ", P = " << tauP4.P() << " (mass = " << tauP4.mass() << ")\n";
+    std::cout << " visP4: energy = " << visP4.energy() << ", P = " << visP4.P() << " (mass = " << visP4.mass() << ")\n";
+  }
   double cosThetaGJ_solution = 0.;
   if ( errorFlag ) 
   {
@@ -69,7 +78,10 @@ comp_cosThetaGJ_solution(const reco::Candidate::LorentzVector& tauP4, const reco
     if ( cosThetaGJ_solution < -1. ) cosThetaGJ_solution = -1.;
     if ( cosThetaGJ_solution > +1. ) cosThetaGJ_solution = +1.;
   }
-  //std::cout << "cosThetaGJ_solution = " << cosThetaGJ_solution << "\n";
+  if ( verbosity >= 3 )
+  {
+    std::cout << "cosThetaGJ_solution = " << cosThetaGJ_solution << "\n";
+  }
   return cosThetaGJ_solution;
 }
 

@@ -265,7 +265,7 @@ KinematicEvent::kinFit_isValid() const
 void
 printKinematicEvent(const std::string& label,
                     const KinematicEvent& kineEvt,
-                    bool cartesian)
+                    int verbosity, bool cartesian)
 {
   std::cout << label << ":\n";
 
@@ -299,9 +299,9 @@ printKinematicEvent(const std::string& label,
     std::string label = Form("#%i", (int)idx);
     printKinematicParticle(label, daughter, cartesian);
   }
-  double tauPlus_cosThetaGJ = comp_cosThetaGJ(kineEvt.tauPlusP4(), kineEvt.visTauPlusP4());
+  double tauPlus_cosThetaGJ = comp_cosThetaGJ(kineEvt.tauPlusP4(), kineEvt.visTauPlusP4(), nullptr, verbosity);
   std::cout << "Gottfied-Jackson angle = " << std::acos(tauPlus_cosThetaGJ) << " "
-            << "(expected = " << std::acos(comp_cosThetaGJ_solution(kineEvt.tauPlusP4(), kineEvt.visTauPlusP4())) << ")\n";
+            << "(expected = " << std::acos(comp_cosThetaGJ_solution(kineEvt.tauPlusP4(), kineEvt.visTauPlusP4(), nullptr, verbosity)) << ")\n";
   printPoint("tipPCATauPlus", kineEvt.tipPCATauPlus());
   printDistance("tipPCATauPlus - pv", kineEvt.tipPCATauPlus() - kineEvt.pv(), cartesian);
   printDistance("tipPCATauPlus - pv", kineEvt.tipPCATauPlus() - kineEvt.pv(), false);
@@ -352,9 +352,9 @@ printKinematicEvent(const std::string& label,
     std::string label = Form("#%i", (int)idx);
     printKinematicParticle(label, daughter, cartesian);
   }
-  double tauMinus_cosThetaGJ = comp_cosThetaGJ(kineEvt.tauMinusP4(), kineEvt.visTauMinusP4());
+  double tauMinus_cosThetaGJ = comp_cosThetaGJ(kineEvt.tauMinusP4(), kineEvt.visTauMinusP4(), nullptr, verbosity);
   std::cout << "Gottfied-Jackson angle = " << std::acos(tauMinus_cosThetaGJ) << " "
-            << "(expected = " << std::acos(comp_cosThetaGJ_solution(kineEvt.tauMinusP4(), kineEvt.visTauMinusP4())) << ")\n";
+            << "(expected = " << std::acos(comp_cosThetaGJ_solution(kineEvt.tauMinusP4(), kineEvt.visTauMinusP4(), nullptr, verbosity)) << ")\n";
   printPoint("tipPCATauMinus", kineEvt.tipPCATauMinus());
   printDistance("tipPCATauMinus - pv", kineEvt.tipPCATauMinus() - kineEvt.pv(), cartesian);
   printDistance("tipPCATauMinus - pv", kineEvt.tipPCATauMinus() - kineEvt.pv(), false);
@@ -386,5 +386,15 @@ printKinematicEvent(const std::string& label,
   else
   {
     std::cout << "mTauTau: N/A\n";
+  }
+  if ( kineEvt.kinFit_isValid() )
+  {
+    std::cout << "kinFit:\n";
+    std::cout << " status = " << kineEvt.kinFitStatus() << "\n";
+    std::cout << " chi^2 = " << kineEvt.kinFitChi2() << "\n";
+  }
+  else
+  {
+    std::cout << "kinFit: N/A\n";
   }
 }

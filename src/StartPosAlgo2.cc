@@ -121,19 +121,19 @@ namespace
   double
   comp_xMinus(const reco::Candidate::LorentzVector& tauPlusP4, const reco::Candidate::LorentzVector& visTauPlusP4, double xPlus,
               const reco::Candidate::LorentzVector& visTauMinusP4, const reco::Candidate::Point& pv, const reco::Candidate::Point& tipPCATauMinus,
-              int collider,
+              int collider, double mTauTau_target,
               bool& errorFlag,
               int verbosity, bool cartesian = true)
   {
     if ( verbosity >= 3 )
     {
       std::cout << "<comp_xMinus>:\n";
-      std::cout << " xPlus = " << xPlus << "\n";
+      std::cout << " xPlus = " << xPlus << ", mTauTau_target = " << mTauTau_target << "\n";
     }
 
     double mVis = (visTauPlusP4 + visTauMinusP4).mass();
 
-    double xMinus = square(mVis/mHiggs)/xPlus;
+    double xMinus = square(mVis/mTauTau_target)/xPlus;
     double xMinus_lo = 1.e-6;
     double xMinus_hi = 1.;
 
@@ -173,17 +173,17 @@ namespace
         std::cout << " lo = " << xMinus_lo << ": higgsMass = " << higgsMass_hi << "\n";
         std::cout << " hi = " << xMinus_hi << ": higgsMass = " << higgsMass_lo << "\n";
       }
-      if ( !(higgsMass_lo <= mHiggs && higgsMass_hi >= mHiggs) )
+      if ( !(higgsMass_lo <= mTauTau_target && higgsMass_hi >= mTauTau_target) )
       {
         if ( verbosity >= 3 )
         {
-          std::cout << "Higgs mass not within low and high bounds --> returning error !!\n";
+          std::cout << "Target Higgs mass not within low and high bounds --> returning error !!\n";
         }
         errorFlag = true;
         return 0.;
       }
     
-      if ( std::fabs(higgsMass - mHiggs) < 1.e-2 )
+      if ( std::fabs(higgsMass - mTauTau_target) < 1.e-2 )
       {
         if ( !higgsMass_errorFlag )
         {
@@ -203,7 +203,7 @@ namespace
 
       // CV: "Intervallhalbierungsverfahren";
       //     note again that high visible energy fraction means low Higgs mass and vice versa
-      if ( higgsMass > mHiggs )
+      if ( higgsMass > mTauTau_target )
       {
         xMinus_lo = xMinus;
         xMinus = 0.5*(xMinus + xMinus_hi);
@@ -223,7 +223,7 @@ namespace
   }
 }
 
-KinematicEvent
+std::vector<KinematicEvent>
 StartPosAlgo2::operator()(const KinematicEvent& kineEvt)
 {
   if ( verbosity_ >= 1 )
@@ -260,13 +260,18 @@ StartPosAlgo2::operator()(const KinematicEvent& kineEvt)
     }
   }
 
+  double mTauTau_target = 0.;
+  if      ( collider_ == kLHC       ) mTauTau_target = mHiggs;
+  else if ( collider_ == kSuperKEKB ) mTauTau_target = recoilM;
+  else assert(0);
+
   double xPlus_bestfit = -1.;
   reco::Candidate::LorentzVector tauPlusP4_bestfit;
   double xMinus_bestfit = -1.;
   reco::Candidate::LorentzVector tauMinusP4_bestfit;
   double min_chi2 = -1.;
   const int numSteps = ( verbosity_ >= 2 ) ? 100 : 10000;
-  double min_xPlus = square(mVis/mHiggs);
+  double min_xPlus = square(mVis/mTauTau_target);
   double max_xPlus = 1.;
   for ( int idxStep = 0; idxStep < numSteps; ++idxStep )
   {
@@ -293,7 +298,7 @@ StartPosAlgo2::operator()(const KinematicEvent& kineEvt)
     
     bool tauMinus_errorFlag = false;
     double xMinus = comp_xMinus(tauPlusP4, visTauPlusP4, xPlus, visTauMinusP4, kineEvt.pv(), kineEvt.tipPCATauMinus(), 
-                                collider_,
+                                collider_, mTauTau_target,
                                 tauMinus_errorFlag, verbosity_, cartesian_);
     reco::Candidate::LorentzVector tauMinusP4;
     if ( !tauMinus_errorFlag )
@@ -390,5 +395,8 @@ StartPosAlgo2::operator()(const KinematicEvent& kineEvt)
     kineEvt_startpos.svTauMinus_isValid_ = true;
   }
 
-  return kineEvt_startpos;
+  std::vector<KinematicEvent> kineEvts_startpos;
+  kineEvts_startpos.push_back(kineEvt_startpos);
+
+  return kineEvts_startpos;
 }

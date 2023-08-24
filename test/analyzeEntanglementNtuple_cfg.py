@@ -36,6 +36,7 @@ process.analyzeEntanglementNtuple = cms.PSet(
     statusSelection = cms.vint32(0,1),
 
     branchName_evtWeight = cms.string('evtWeight'),
+    apply_evtWeight = cms.bool(True),
 
     par_gen = cms.vdouble(),
 
@@ -55,6 +56,7 @@ mode = 'gen'
 collider = "LHC"
 hAxis = "higgs"
 decayMode = "piPlus_piMinus"
+apply_evtWeight = True
 # CV: define Standard Model expectation for matrix C, given by Eq. (69) of arXiv:2208:11723, 
 #     for comparison with measured matrix elements
 par_gen = [ 0., 0., 0., 0., 0., 0., +1., 0., 0., 0., +1., 0., 0., 0., -1. ]
@@ -79,6 +81,7 @@ maxSumPhotonEn = 5.
 ##collider = "$collider"
 ##hAxis = "$hAxis"
 ##decayMode = "$decayMode"
+##apply_evtWeight = $apply_evtWeight
 ##par_gen = $par_gen
 ##spinAnalyzer = "$spinAnalyzer"
 ##outputFileName = "$outputFileName"
@@ -117,6 +120,7 @@ process.analyzeEntanglementNtuple.maxNumChargedKaons = maxNumChargedKaons
 process.analyzeEntanglementNtuple.maxNumNeutralKaons = maxNumNeutralKaons
 process.analyzeEntanglementNtuple.maxNumPhotons = maxNumPhotons
 process.analyzeEntanglementNtuple.maxSumPhotonEn = maxSumPhotonEn
+process.analyzeEntanglementNtuple.apply_evtWeight = apply_evtWeight
 process.analyzeEntanglementNtuple.par_gen = par_gen
 process.analyzeEntanglementNtuple.spinAnalyzer = spinAnalyzer
 process.analyzeEntanglementNtuple.mlfit_outputFileName = outputFileName

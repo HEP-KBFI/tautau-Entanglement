@@ -5,13 +5,15 @@
 
 #include "TauAnalysis/Entanglement/interface/StartPosAlgoBase.h" // StartPosAlgoBase
 
+#include <vector>                                                // std::vector<>
+
 class StartPosAlgo2 : public StartPosAlgoBase
 {
  public:
   explicit StartPosAlgo2(const edm::ParameterSet&);
   ~StartPosAlgo2();
    
-  KinematicEvent
+  std::vector<KinematicEvent>
   operator()(const KinematicEvent& kineEvt);
 
  private:

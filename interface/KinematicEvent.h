@@ -208,6 +208,6 @@ class KinematicEvent
 void
 printKinematicEvent(const std::string& label,
                     const KinematicEvent& kineEvt,
-                    bool cartesian = true);
+                    int verbosity = -1, bool cartesian = true);
 
 #endif // TauAnalysis_Entanglement_KinematicEvent_h

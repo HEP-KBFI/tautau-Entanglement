@@ -20,7 +20,7 @@ process.source = cms.Source("PoolSource",
     fileNames = cms.untracked.vstring()
 )
 #process.source.eventsToProcess = cms.untracked.VEventRange(
-#    '1:97:96091' 
+#    '1:1:10' 
 #)
 
 inputFilePath = '/store/mc/RunIISummer20UL18MiniAODv2/GluGluHToTauTau_M125_TuneCP5_13TeV-powheg-pythia8/MINIAODSIM/106X_upgrade2018_realistic_v16_L1v1-v3/100000/'
@@ -44,6 +44,8 @@ inputFile_regex = r"[a-zA-Z0-9-_]+.root"
 
 srcGenParticles = None
 tauPairMassCut = None
+from TauAnalysis.Entanglement.resolutions_cfi import resolutions_LHC, resolutions_SuperKEKB
+resolutions = None
 applyHiggsMassConstraint = None
 if collider == "LHC":
     process.source.fileNames = cms.untracked.vstring(
@@ -51,6 +53,7 @@ if collider == "LHC":
     )
     srcGenParticles = 'prunedGenParticles'
     tauPairMassCut = 'mass > 120. & mass < 130.'
+    resolutions = resolutions_LHC
     applyHiggsMassConstraint = True
 elif collider == "SuperKEKB":
     process.source.fileNames = cms.untracked.vstring(
@@ -58,6 +61,7 @@ elif collider == "SuperKEKB":
     )
     srcGenParticles = 'genParticles'
     tauPairMassCut = 'mass > 0.'
+    resolutions = resolutions_SuperKEKB
     applyHiggsMassConstraint = False
 else:
     raise ValueError("Invalid Configuration parameter 'collider' = '%s' !!" % collider)
@@ -167,8 +171,7 @@ process.genWeight = cms.EDProducer("GenWeightProducer",
     src = cms.InputTag('generator')
 )
 process.analysisSequence += process.genWeight
-
-from TauAnalysis.Entanglement.resolutions_cfi import resolutions
+ 
 from TauAnalysis.Entanglement.smearing_cfi import smearing
 process.ntupleProducer = cms.EDAnalyzer("EntanglementNtupleProducer",
     src = cms.InputTag(srcGenParticles),
@@ -181,7 +184,7 @@ process.ntupleProducer = cms.EDAnalyzer("EntanglementNtupleProducer",
     applySmearing = cms.bool(False),
     #applySmearing = cms.bool(True),
     startPosFinder = cms.PSet(
-        algo = cms.int32(1),
+        algos = cms.vint32(1),
         applyHiggsMassConstraint = cms.bool(applyHiggsMassConstraint),
         applyRecoilEnergy_and_PzConstraint = cms.bool(True)
     ),

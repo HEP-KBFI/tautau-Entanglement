@@ -25,7 +25,13 @@ StartPosFinder::~StartPosFinder()
   delete algo_;
 }
 
-KinematicEvent
+int
+StartPosFinder::get_algo() const
+{
+  return algo_->get_algo();
+}
+
+std::vector<KinematicEvent>
 StartPosFinder::operator()(const KinematicEvent& kineEvt)
 {
   if ( verbosity_ >= 1 )
@@ -33,14 +39,16 @@ StartPosFinder::operator()(const KinematicEvent& kineEvt)
     std::cout << "<StartPosFinder::operator()>:\n";
   }
 
-  KinematicEvent kineEvt_startpos = (*algo_)(kineEvt);
+  std::vector<KinematicEvent> kineEvts_startPos = (*algo_)(kineEvt);
+  for ( KinematicEvent& kineEvt_startPos : kineEvts_startPos )
+  {
+    reco::Candidate::Vector hPlus = polarimetricVector_(kineEvt_startPos, pol::kTauPlus);
+    kineEvt_startPos.hPlus_ = hPlus;
+    kineEvt_startPos.hPlus_isValid_ = true;
+    reco::Candidate::Vector hMinus = polarimetricVector_(kineEvt_startPos, pol::kTauMinus);
+    kineEvt_startPos.hMinus_ = hMinus;
+    kineEvt_startPos.hMinus_isValid_ = true;
+  }
 
-  reco::Candidate::Vector hPlus = polarimetricVector_(kineEvt_startpos, pol::kTauPlus);
-  kineEvt_startpos.hPlus_ = hPlus;
-  kineEvt_startpos.hPlus_isValid_ = true;
-  reco::Candidate::Vector hMinus = polarimetricVector_(kineEvt_startpos, pol::kTauMinus);
-  kineEvt_startpos.hMinus_ = hMinus;
-  kineEvt_startpos.hMinus_isValid_ = true;
-
-  return kineEvt_startpos;
+  return kineEvts_startPos;
 }

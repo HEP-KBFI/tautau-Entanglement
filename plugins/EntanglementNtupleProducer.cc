@@ -21,7 +21,6 @@ EntanglementNtupleProducer::EntanglementNtupleProducer(const edm::ParameterSet& 
   : moduleLabel_(cfg.getParameter<std::string>("@module_label"))
   , genKineEvtBuilder_woSmearing_(nullptr)
   , genKineEvtBuilder_wSmearing_(nullptr)
-  , startPosFinder_(nullptr)
   , kinematicFit_(nullptr)
   , ntuple_piPlus_piMinus_(nullptr)
   , ntupleFiller_piPlus_piMinus_(nullptr)
@@ -67,7 +66,13 @@ EntanglementNtupleProducer::EntanglementNtupleProducer(const edm::ParameterSet& 
   cfg_startPosFinder.addParameter<std::string>("collider", collider);
   cfg_startPosFinder.addUntrackedParameter<int>("verbosity", verbosity_);
   cfg_startPosFinder.addUntrackedParameter<bool>("cartesian", cartesian_);
-  startPosFinder_ = new StartPosFinder(cfg_startPosFinder);
+  std::vector<int> startPos_algos = cfg_startPosFinder.getParameter<std::vector<int>>("algos");
+  for ( int startPos_algo : startPos_algos )
+  {
+    edm::ParameterSet cfg_startPosFinder_algo = cfg_startPosFinder;
+    cfg_startPosFinder_algo.addParameter<int>("algo", startPos_algo);
+    startPosFinders_.push_back(new StartPosFinder(cfg_startPosFinder_algo));
+  }
 
   edm::ParameterSet cfg_kinematicFit = cfg.getParameter<edm::ParameterSet>("kinematicFit");
   cfg_kinematicFit.addParameter<edm::ParameterSet>("resolutions", cfg_resolutions);
@@ -89,7 +94,10 @@ EntanglementNtupleProducer::~EntanglementNtupleProducer()
   delete genKineEvtBuilder_woSmearing_;
   delete genKineEvtBuilder_wSmearing_;
 
-  delete startPosFinder_;
+  for ( StartPosFinder* startPosFinder : startPosFinders_ )
+  {
+    delete startPosFinder;
+  }
 
   delete kinematicFit_;
 
@@ -145,7 +153,7 @@ void EntanglementNtupleProducer::analyze(const edm::Event& evt, const edm::Event
   KinematicEvent kineEvt_gen = (*genKineEvtBuilder_woSmearing_)(*genParticles);
   if ( verbosity_ >= 1 )
   {
-    printKinematicEvent("kineEvt_gen", kineEvt_gen, cartesian_);
+    printKinematicEvent("kineEvt_gen", kineEvt_gen, verbosity_, cartesian_);
   }
 
   const reco::GenParticle* tauPlus  = nullptr;
@@ -188,19 +196,65 @@ void EntanglementNtupleProducer::analyze(const edm::Event& evt, const edm::Event
   KinematicEvent kineEvt_gen_smeared = (*genKineEvtBuilder_wSmearing_)(*genParticles);
   if ( verbosity_ >= 1 )
   {
-    printKinematicEvent("kineEvt_gen_smeared", kineEvt_gen_smeared, cartesian_);
+    printKinematicEvent("kineEvt_gen_smeared", kineEvt_gen_smeared, verbosity_, cartesian_);
   }
 
-  KinematicEvent kineEvt_startPos = (*startPosFinder_)(kineEvt_gen_smeared);
-  if ( verbosity_ >= 1 )
+  KinematicEvent kineEvt_startPos_bestfit;
+  KinematicEvent kineEvt_kinFit_bestfit;
+  double kinFitChi2_bestfit = -1.;
+  int kinFitStatus_bestfit = -1;
+  bool isFirst = true;
+  for ( StartPosFinder* startPosFinder : startPosFinders_ )
   {
-    printKinematicEvent("kineEvt_startPos", kineEvt_startPos, cartesian_);
-  }
+    if ( verbosity_ >= 1 )
+    {
+      std::cout << "executing startPosFinder algo #" << startPosFinder->get_algo() << "...";
+    }
+    std::vector<KinematicEvent> kineEvts_startPos = (*startPosFinder)(kineEvt_gen_smeared);
 
-  KinematicEvent kineEvt_kinFit = (*kinematicFit_)(kineEvt_startPos);
+    size_t numSolutions = kineEvts_startPos.size();
+    if ( verbosity_ >= 1 )
+    {
+      std::cout << "#solutions = " << numSolutions<< "\n";
+    }
+    for ( size_t idxSolution = 0; idxSolution < numSolutions; ++idxSolution )
+    {
+      const KinematicEvent& kineEvt_startPos = kineEvts_startPos.at(idxSolution);
+
+      if ( verbosity_ >= 1 )
+      {
+        std::cout << "executing KinematicFit for startPosFinder algo #" << startPosFinder->get_algo() << ", solution #" << idxSolution << "...\n";
+      }
+      KinematicEvent kineEvt_kinFit = (*kinematicFit_)(kineEvt_startPos);
+
+      if ( verbosity_ >= 1 )
+      {
+        std::cout << "startPosFinder algo #" << startPosFinder->get_algo() << ", solution #" << idxSolution << ":\n";
+        printKinematicEvent("kineEvt_startPos", kineEvt_startPos, verbosity_, cartesian_);
+        printKinematicEvent("kineEvt_kinFit", kineEvt_kinFit, verbosity_, cartesian_);
+      }
+ 
+      bool isBetterFit = kineEvt_kinFit.kinFitStatus() >  kinFitStatus_bestfit || 
+                        (kineEvt_kinFit.kinFitStatus() == kinFitStatus_bestfit && kineEvt_kinFit.kinFitChi2() < kinFitChi2_bestfit);
+      if ( verbosity_ >= 1 )
+      {
+        std::cout << "isBetterFit = " << isBetterFit << "\n";
+      }
+      if ( isFirst || isBetterFit )
+      {
+        kineEvt_startPos_bestfit = kineEvt_startPos;
+        kineEvt_kinFit_bestfit = kineEvt_kinFit;
+        kinFitChi2_bestfit = kineEvt_kinFit.kinFitChi2();
+        kinFitStatus_bestfit = kineEvt_kinFit.kinFitStatus();
+        isFirst = false;
+      }
+    }
+  }
   if ( verbosity_ >= 1 )
   {
-    printKinematicEvent("kineEvt_kinFit", kineEvt_kinFit, cartesian_);
+    std::cout << "best fit:\n";
+    printKinematicEvent("kineEvt_startPos", kineEvt_startPos_bestfit, verbosity_, cartesian_);
+    printKinematicEvent("kineEvt_kinFit", kineEvt_kinFit_bestfit, verbosity_, cartesian_);
   }
 
   EntanglementNtuple* ntupleFiller = nullptr;
@@ -227,7 +281,7 @@ void EntanglementNtupleProducer::analyze(const edm::Event& evt, const edm::Event
       &kineEvt_gen,
       tauPlus_nChargedKaons, tauPlus_nNeutralKaons, tauPlus_nPhotons, tauPlus_sumPhotonEn,
       tauMinus_nChargedKaons, tauMinus_nNeutralKaons, tauMinus_nPhotons, tauMinus_sumPhotonEn,
-      &kineEvt_gen_smeared, &kineEvt_startPos, &kineEvt_kinFit,
+      &kineEvt_gen_smeared, &kineEvt_startPos_bestfit, &kineEvt_kinFit_bestfit,
       evtWeight);
   }
   ntupleFiller_had_had_->fillBranches(
@@ -235,7 +289,7 @@ void EntanglementNtupleProducer::analyze(const edm::Event& evt, const edm::Event
     &kineEvt_gen,
     tauPlus_nChargedKaons, tauPlus_nNeutralKaons, tauPlus_nPhotons, tauPlus_sumPhotonEn,
     tauMinus_nChargedKaons, tauMinus_nNeutralKaons, tauMinus_nPhotons, tauMinus_sumPhotonEn,
-    &kineEvt_gen_smeared, &kineEvt_startPos, &kineEvt_kinFit,
+    &kineEvt_gen_smeared, &kineEvt_startPos_bestfit, &kineEvt_kinFit_bestfit,
     evtWeight);
 }
 

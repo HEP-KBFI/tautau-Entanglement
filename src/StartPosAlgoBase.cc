@@ -4,7 +4,8 @@
 #include "TauAnalysis/Entanglement/interface/constants.h"    // kLHC, kSuperKEKB
 
 StartPosAlgoBase::StartPosAlgoBase(const edm::ParameterSet& cfg)
-  : resolutions_(nullptr)
+  : algo_(cfg.getParameter<int>("algo")) 
+  , resolutions_(nullptr)
   , verbosity_(cfg.getUntrackedParameter<int>("verbosity"))
   , cartesian_(cfg.getUntrackedParameter<bool>("cartesian"))
 {
@@ -21,4 +22,10 @@ StartPosAlgoBase::StartPosAlgoBase(const edm::ParameterSet& cfg)
 StartPosAlgoBase::~StartPosAlgoBase()
 {
   delete resolutions_;
+}
+
+int
+StartPosAlgoBase::get_algo() const
+{
+  return algo_;
 }

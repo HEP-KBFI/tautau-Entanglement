@@ -82,7 +82,8 @@ int main(int argc, char* argv[])
   std::cout << " statusSelection = " << format_vint(statusSelection) << "\n";
   std::string branchName_evtWeight = cfg_ctrlPlots.getParameter<std::string>("branchName_evtWeight");
   std::cout << " branchName_evtWeight = " << branchName_evtWeight << "\n";
-  //bool isDEBUG = cfg_analyze.getParameter<bool>("isDEBUG");
+
+  bool apply_evtWeight = cfg_ctrlPlots.getParameter<bool>("apply_evtWeight");
 
   fwlite::InputSource inputFiles(cfg);
   int maxEvents = inputFiles.maxEvents();
@@ -198,7 +199,7 @@ int main(int argc, char* argv[])
     inputTree->SetBranchAddress("kinFit_status", &kinFit_status);
 
     Float_t evtWeight = 1.;
-    if ( branchName_evtWeight != "" )
+    if ( branchName_evtWeight != "" && apply_evtWeight )
     {
       inputTree->SetBranchAddress(branchName_evtWeight.c_str(), &evtWeight);
     }
