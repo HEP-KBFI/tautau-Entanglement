@@ -19,9 +19,9 @@ process.maxEvents = cms.untracked.PSet(
 process.source = cms.Source("PoolSource",
     fileNames = cms.untracked.vstring()
 )
-#process.source.eventsToProcess = cms.untracked.VEventRange(
-#    '1:1:10' 
-#)
+process.source.eventsToProcess = cms.untracked.VEventRange(
+    '1:1:10' 
+)
 
 inputFilePath = '/store/mc/RunIISummer20UL18MiniAODv2/GluGluHToTauTau_M125_TuneCP5_13TeV-powheg-pythia8/MINIAODSIM/106X_upgrade2018_realistic_v16_L1v1-v3/100000/'
 inputFileNames = None

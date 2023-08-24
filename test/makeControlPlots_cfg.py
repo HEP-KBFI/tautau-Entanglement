@@ -35,6 +35,7 @@ process.makeControlPlots = cms.PSet(
     statusSelection = cms.vint32(0,1),
 
     branchName_evtWeight = cms.string('evtWeight'),
+    apply_evtWeight = cms.bool(True),
 
     isDEBUG = cms.bool(False)
 )
@@ -46,6 +47,7 @@ mode = 'gen'
 collider = "LHC"
 hAxis = "higgs"
 decayMode = "piPlus_piMinus"
+apply_evtWeight = True
 outputFileName = 'makeControlPlots_%s_%sMode_%sAxis.root' % (processName, mode, hAxis)
 
 #minVisTauPt = 20.
@@ -66,6 +68,7 @@ maxSumPhotonEn = 5.
 ##collider = "$collider"
 ##hAxis = "$hAxis"
 ##decayMode = "$decayMode"
+##apply_evtWeight = $apply_evtWeight
 ##outputFileName = "$outputFileName"
 
 ##minVisTauPt = $minVisTauPt
@@ -102,4 +105,4 @@ process.makeControlPlots.maxNumChargedKaons = maxNumChargedKaons
 process.makeControlPlots.maxNumNeutralKaons = maxNumNeutralKaons
 process.makeControlPlots.maxNumPhotons = maxNumPhotons
 process.makeControlPlots.maxSumPhotonEn = maxSumPhotonEn
-
+process.makeControlPlots.apply_evtWeight = apply_evtWeight

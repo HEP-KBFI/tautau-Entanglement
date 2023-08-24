@@ -97,30 +97,30 @@ int main(int argc, char* argv[])
   size_t numInputFiles = inputFileNames.size();
   std::cout << "Loaded " << numInputFiles << " file(s).\n";
 
-  TH1* histogram_tauPlusPt    = bookHistogram1d(fs, "tauPlusPt",   40,  0., 200.);
-  TH1* histogram_tauPlusEta   = bookHistogram1d(fs, "tauPlusEta",  50, -5.,  +5.);
-  TH1* histogram_tauPlusTIP   = bookHistogram1d(fs, "tauPlusTIP",  50,  0.,   0.025);
-  TH1* histogram_visPlusPt    = bookHistogram1d(fs, "visPlusPt",   40,  0., 200.);
-  TH1* histogram_visPlusEta   = bookHistogram1d(fs, "visPlusEta",  50, -5.,  +5.);
-  TH1* histogram_tauMinusPt   = bookHistogram1d(fs, "tauMinusPt",  40,  0., 200.);
-  TH1* histogram_tauMinusEta  = bookHistogram1d(fs, "tauMinusEta", 50, -5.,  +5.);
-  TH1* histogram_tauMinusTIP  = bookHistogram1d(fs, "tauMinusTIP", 50,  0.,   0.025);
-  TH1* histogram_visMinusPt   = bookHistogram1d(fs, "visMinusPt",  40,  0., 200.);
-  TH1* histogram_visMinusEta  = bookHistogram1d(fs, "visMinusEta", 50, -5.,  +5.);
-  TH1* histogram_mTauTau      = bookHistogram1d(fs, "mTauTau",     40,  0., 200.);
-  TH1* histogram_mVis         = bookHistogram1d(fs, "mVis",        40,  0., 200.);
-  TH1* histogram_cosTheta     = bookHistogram1d(fs, "cosTheta",    40, -1.,  +1.);
-  TH1* histogram_chi2         = bookHistogram1d(fs, "chi2",        50,  0.,  50.);
+  TH1* histogram_tauPlusPt     = bookHistogram1d(fs, "tauPlusPt",    40,  0., 200.);
+  TH1* histogram_tauPlusEta    = bookHistogram1d(fs, "tauPlusEta",   50, -5.,  +5.);
+  TH1* histogram_tauPlusTIP    = bookHistogram1d(fs, "tauPlusTIP",   50,  0.,   0.025);
+  TH1* histogram_visPlusPt     = bookHistogram1d(fs, "visPlusPt",    40,  0., 200.);
+  TH1* histogram_visPlusEta    = bookHistogram1d(fs, "visPlusEta",   50, -5.,  +5.);
+  TH1* histogram_tauMinusPt    = bookHistogram1d(fs, "tauMinusPt",   40,  0., 200.);
+  TH1* histogram_tauMinusEta   = bookHistogram1d(fs, "tauMinusEta",  50, -5.,  +5.);
+  TH1* histogram_tauMinusTIP   = bookHistogram1d(fs, "tauMinusTIP",  50,  0.,   0.025);
+  TH1* histogram_visMinusPt    = bookHistogram1d(fs, "visMinusPt",   40,  0., 200.);
+  TH1* histogram_visMinusEta   = bookHistogram1d(fs, "visMinusEta",  50, -5.,  +5.);
+  TH1* histogram_mTauTau       = bookHistogram1d(fs, "mTauTau",      40,  0., 200.);
+  TH1* histogram_mVis          = bookHistogram1d(fs, "mVis",         40,  0., 200.);
+  TH1* histogram_cosThetaStar  = bookHistogram1d(fs, "cosThetaStar", 40, -1.,  +1.);
+  TH1* histogram_chi2          = bookHistogram1d(fs, "chi2",         50,  0.,  50.);
 
-  TH1* histogram_Bp_r         = bookHistogram1d(fs, "Bp_r",        40, -1.,  +1.);
-  TH1* histogram_Bp_n         = bookHistogram1d(fs, "Bp_n",        40, -1.,  +1.);
-  TH1* histogram_Bp_k         = bookHistogram1d(fs, "Bp_k",        40, -1.,  +1.);
-  TH1* histogram_Bm_r         = bookHistogram1d(fs, "Bm_r",        40, -1.,  +1.);
-  TH1* histogram_Bm_n         = bookHistogram1d(fs, "Bm_n",        40, -1.,  +1.);
-  TH1* histogram_Bm_k         = bookHistogram1d(fs, "Bm_k",        40, -1.,  +1.);
-  TH1* histogram_C_rr         = bookHistogram1d(fs, "C_rr",        72, -9.,  +9.);
-  TH1* histogram_C_nn         = bookHistogram1d(fs, "C_nn",        72, -9.,  +9.);
-  TH1* histogram_C_kk         = bookHistogram1d(fs, "C_kk",        72, -9.,  +9.);
+  TH1* histogram_Bp_r          = bookHistogram1d(fs, "Bp_r",         40, -1.,  +1.);
+  TH1* histogram_Bp_n          = bookHistogram1d(fs, "Bp_n",         40, -1.,  +1.);
+  TH1* histogram_Bp_k          = bookHistogram1d(fs, "Bp_k",         40, -1.,  +1.);
+  TH1* histogram_Bm_r          = bookHistogram1d(fs, "Bm_r",         40, -1.,  +1.);
+  TH1* histogram_Bm_n          = bookHistogram1d(fs, "Bm_n",         40, -1.,  +1.);
+  TH1* histogram_Bm_k          = bookHistogram1d(fs, "Bm_k",         40, -1.,  +1.);
+  TH1* histogram_C_rr          = bookHistogram1d(fs, "C_rr",         72, -9.,  +9.);
+  TH1* histogram_C_nn          = bookHistogram1d(fs, "C_nn",         72, -9.,  +9.);
+  TH1* histogram_C_kk          = bookHistogram1d(fs, "C_kk",         72, -9.,  +9.);
 
   TH2* histogram_zPlus_vs_zMinus = bookHistogram2d(fs, "zPlus_vs_zMinus", 20, 0., 1., 20, 0., 1.);
 
@@ -184,10 +184,10 @@ int main(int argc, char* argv[])
     inputTree->SetBranchAddress(Form("%s_hMinus_n", mode.c_str()), &hMinus_n);
     inputTree->SetBranchAddress(Form("%s_hMinus_k", mode.c_str()), &hMinus_k);
 
-    Float_t mTauTau, mVis, cosTheta;
+    Float_t mTauTau, mVis, cosThetaStar;
     inputTree->SetBranchAddress(Form("%s_mTauTau", mode.c_str()), &mTauTau);
     inputTree->SetBranchAddress(Form("%s_mVis", mode.c_str()), &mVis);
-    inputTree->SetBranchAddress(Form("%s_cosTheta", mode.c_str()), &cosTheta);
+    inputTree->SetBranchAddress(Form("%s_cosThetaStar", mode.c_str()), &cosThetaStar);
 
     Float_t zPlus, zMinus;
     inputTree->SetBranchAddress(Form("%s_zPlus", mode.c_str()), &zPlus);
@@ -245,7 +245,7 @@ int main(int argc, char* argv[])
 
       histogram_mTauTau->Fill(mTauTau, evtWeight);
       histogram_mVis->Fill(mVis, evtWeight);
-      histogram_cosTheta->Fill(cosTheta, evtWeight);
+      histogram_cosThetaStar->Fill(cosThetaStar, evtWeight);
 
       histogram_chi2->Fill(kinFit_chi2, evtWeight);
 
@@ -297,7 +297,7 @@ int main(int argc, char* argv[])
 
   showHistogram1d(histogram_mTauTau,         "m_{#tau#tau} [GeV]",       1.2, true, 1.e-3, 1.e0, "Events", 1.3, avEvtWeight, true,  outputFile.file());
   showHistogram1d(histogram_mVis,            "m_{vis} [GeV]",            1.2, true, 1.e-3, 1.e0, "Events", 1.3, avEvtWeight, true,  outputFile.file());
-  showHistogram1d(histogram_cosTheta,        "cos(#theta)",              1.2, true, 1.e-3, 1.e0, "Events", 1.3, avEvtWeight, false, outputFile.file());
+  showHistogram1d(histogram_cosThetaStar,    "cos(#theta^{*})",          1.2, true, 1.e-3, 1.e0, "Events", 1.3, avEvtWeight, false, outputFile.file());
 
   showHistogram1d(histogram_Bp_r,            "Bp_r",                     1.2, true, 1.e-3, 1.e0, "Events", 1.3, avEvtWeight, true,  outputFile.file());
   showHistogram1d(histogram_Bp_n,            "Bp_n",                     1.2, true, 1.e-3, 1.e0, "Events", 1.3, avEvtWeight, true,  outputFile.file());
