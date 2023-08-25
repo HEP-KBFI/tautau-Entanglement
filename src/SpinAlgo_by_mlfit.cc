@@ -349,18 +349,29 @@ SpinAlgo_by_mlfit::operator()(const spin::Dataset& dataset)
   {
     std::cout << "Fit Results:\n";
     mlfit_->PrintResults();
-  }
 
-  TMatrixD cov(npar,npar);
-  for ( size_t idxRow = 0; idxRow < npar; ++idxRow )
-  {
-    for ( size_t idxColumn = 0; idxColumn < npar; ++idxColumn )
+    TMatrixD cov(npar,npar);
+    for ( size_t idxRow = 0; idxRow < npar; ++idxRow )
     {
-      cov(idxRow,idxColumn) = mlfit_->CovMatrix(idxRow, idxColumn);
+      for ( size_t idxColumn = 0; idxColumn < npar; ++idxColumn )
+      {
+        cov(idxRow,idxColumn) = mlfit_->CovMatrix(idxRow, idxColumn);
+      }
     }
+    std::cout << "Covariance Matrix:\n";
+    cov.Print();
+
+    TMatrixD corr(npar,npar);
+    for ( size_t idxRow = 0; idxRow < npar; ++idxRow )
+    {
+      for ( size_t idxColumn = 0; idxColumn < npar; ++idxColumn )
+      {
+        corr(idxRow,idxColumn) = cov(idxRow,idxColumn)/(std::sqrt(cov(idxRow,idxRow))*std::sqrt(cov(idxColumn,idxColumn)));
+      }
+    }
+    std::cout << "Correlation Matrix:\n";
+    corr.Print();
   }
-  std::cout << "Covariance Matrix:\n";
-  cov.Print();
 
   std::vector<double> parValues(npar);
   std::vector<double> parErrors(npar);

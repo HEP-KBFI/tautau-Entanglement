@@ -159,6 +159,8 @@ int main(int argc, char* argv[])
   
   spin::Dataset dataset;
 
+  spin::BinnedDataset1d binnedDataset_zPlus("zPlus",               20,  0.,  1.);
+  spin::BinnedDataset1d binnedDataset_zMinus("zMinus",             20,  0.,  1.);
   spin::BinnedDataset1d binnedDataset_cosThetaStar("cosThetaStar", 20, -1., +1.);
 
   spin::BinnedDataset2d binnedDataset_zPlus_vs_cosThetaStar("zPlus_vs_cosThetaStar",   10, -1., +1., 10,  0.,  1.);
@@ -269,11 +271,13 @@ int main(int argc, char* argv[])
       spin::Data entry(hPlus_r, hPlus_n, hPlus_k, hMinus_r, hMinus_n, hMinus_k, evtWeight);
       dataset.push_back(entry);
 
+      binnedDataset_zPlus.push_back(zPlus, entry);
+      binnedDataset_zMinus.push_back(zMinus, entry);
       binnedDataset_cosThetaStar.push_back(cosThetaStar, entry);
 
-      binnedDataset_zPlus_vs_cosThetaStar.push_back(cosThetaStar,  zPlus,  entry);
+      binnedDataset_zPlus_vs_cosThetaStar.push_back(cosThetaStar, zPlus, entry);
       binnedDataset_zMinus_vs_cosThetaStar.push_back(cosThetaStar, zMinus, entry);
-      binnedDataset_zPlus_vs_zMinus.push_back(zMinus,              zPlus,  entry);
+      binnedDataset_zPlus_vs_zMinus.push_back(zMinus, zPlus,  entry);
 
       ++selectedEntries;
       selectedEntries_weighted += evtWeight;
@@ -320,6 +324,12 @@ int main(int argc, char* argv[])
     //     as 'by_mlfit' mode is too time-consuming
 
     std::cout << "Processing binned measurement as function of cosThetaStar...\n";
+    spin::BinnedMeasurement1d binnedMeasurement_zPlus = spinAnalyzer(binnedDataset_zPlus);
+    TH1* histogram_Rchsh_vs_zPlus = binnedMeasurement_zPlus.get_histogram("Rchsh");
+    addToOutputFile(fs, histogram_Rchsh_vs_zPlus);
+    spin::BinnedMeasurement1d binnedMeasurement_zMinus = spinAnalyzer(binnedDataset_zMinus);
+    TH1* histogram_Rchsh_vs_zMinus = binnedMeasurement_zMinus.get_histogram("Rchsh");
+    addToOutputFile(fs, histogram_Rchsh_vs_zMinus);
     spin::BinnedMeasurement1d binnedMeasurement_cosThetaStar = spinAnalyzer(binnedDataset_cosThetaStar);
     TH1* histogram_Rchsh_vs_cosThetaStar = binnedMeasurement_cosThetaStar.get_histogram("Rchsh");
     addToOutputFile(fs, histogram_Rchsh_vs_cosThetaStar);

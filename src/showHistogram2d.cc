@@ -48,8 +48,8 @@ void showHistogram2d(TH2* histogram,
   canvas->Print(std::string(outputFileName_plot).append(".png").c_str());
   //canvas->Print(std::string(outputFileName_plot).append(".pdf").c_str());
   
-  // CV: pause for 3 seconds to reduce load on file system
-  sleep(3000);
+  // CV: pause for 1 second to reduce load on file system
+  sleep(1);
 
   delete canvas;  
 }

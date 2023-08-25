@@ -46,15 +46,18 @@ SpinAlgo_by_summation::operator()(const spin::Dataset& dataset)
       std::cout << " evtWeight = " << evtWeight << "\n";
     }
 
-    Bp(0) += evtWeight*hPlus_r;
-    Bp(1) += evtWeight*hPlus_n;
-    Bp(2) += evtWeight*hPlus_k;
+    // CV: compute polarization vectors B+ and B- for tau+ and tau- according to text following Eq. (4.18)
+    //     in the paper arXiv:1508.05271
+    double b = 3.*evtWeight;
+    Bp(0) += b*evtWeight*hPlus_r;
+    Bp(1) += b*evtWeight*hPlus_n;
+    Bp(2) += b*evtWeight*hPlus_k;
 
-    Bm(0) += evtWeight*hMinus_r;
-    Bm(1) += evtWeight*hMinus_n;
-    Bm(2) += evtWeight*hMinus_k;
+    Bm(0) += b*evtWeight*hMinus_r;
+    Bm(1) += b*evtWeight*hMinus_n;
+    Bm(2) += b*evtWeight*hMinus_k;
     
-    // CV: compute matrix C according to Eq. (25)
+    // CV: compute spin correlation matrix C according to Eq. (25)
     //     in the paper arXiv:2211.10513
     double c = -9.*evtWeight;
     C(0,0) += c*hPlus_r*hMinus_r;
