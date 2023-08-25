@@ -8,6 +8,7 @@
 #include <TGraph.h>                                          // TGraph
 #include <TH1.h>                                             // TH1F
 #include <TLegend.h>                                         // TLegend
+#include <TMatrixD.h>                                        // TMatrixD
 #include <TString.h>                                         // Form()
 
 #include <assert.h>                                          // assert()
@@ -349,6 +350,17 @@ SpinAlgo_by_mlfit::operator()(const spin::Dataset& dataset)
     std::cout << "Fit Results:\n";
     mlfit_->PrintResults();
   }
+
+  TMatrixD cov(npar,npar);
+  for ( size_t idxRow = 0; idxRow < npar; ++idxRow )
+  {
+    for ( size_t idxColumn = 0; idxColumn < npar; ++idxColumn )
+    {
+      cov(idxRow,idxColumn) = mlfit_->CovMatrix(idxRow, idxColumn);
+    }
+  }
+  std::cout << "Covariance Matrix:\n";
+  cov.Print();
 
   std::vector<double> parValues(npar);
   std::vector<double> parErrors(npar);

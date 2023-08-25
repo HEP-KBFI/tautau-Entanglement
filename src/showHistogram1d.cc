@@ -3,6 +3,8 @@
 #include <TAxis.h>   // TAxis
 #include <TCanvas.h> // TCanvas
 
+#include <stdlib.h>  // sleep()
+
 void showHistogram1d(TH1* histogram, 
                      const std::string& xAxisTitle, double xAxisOffset, 
                      bool useLogScale, double yMin, double yMax, const std::string& yAxisTitle, double yAxisOffset,
@@ -55,5 +57,8 @@ void showHistogram1d(TH1* histogram,
   canvas->Print(std::string(outputFileName_plot).append(".png").c_str());
   //canvas->Print(std::string(outputFileName_plot).append(".pdf").c_str());
   
+  // CV: pause for 3 seconds to reduce load on file system
+  sleep(3000);
+
   delete canvas;  
 }
