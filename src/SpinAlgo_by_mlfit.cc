@@ -311,6 +311,12 @@ namespace
 spin::Measurement
 SpinAlgo_by_mlfit::operator()(const spin::Dataset& dataset)
 {
+  if ( verbosity_ >= 3 )
+  {
+    std::cout << "<SpinAlgo_by_mlfit::operator()>:\n";
+    std::cout << " #entries = " << dataset.size() << "\n";
+  }
+
   // initialize fit parameters
   spin::Measurement startpos = (*algo_by_summation_)(dataset);
   const math::Matrix3x3& startpos_C = startpos.get_C();

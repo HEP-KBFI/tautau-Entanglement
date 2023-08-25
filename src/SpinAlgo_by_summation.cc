@@ -14,6 +14,12 @@ SpinAlgo_by_summation::~SpinAlgo_by_summation()
 spin::Measurement
 SpinAlgo_by_summation::operator()(const spin::Dataset& dataset)
 {
+  if ( verbosity_ >= 3 )
+  {
+    std::cout << "<SpinAlgo_by_summation::operator()>:\n";
+    std::cout << " #entries = " << dataset.size() << "\n";
+  }
+
   math::Vector3 Bp, Bm;
   math::Matrix3x3 C;
   double evtWeight_sum = 0.;
@@ -31,6 +37,14 @@ SpinAlgo_by_summation::operator()(const spin::Dataset& dataset)
     double hMinus_k = entry.get_hMinus_k();
 
     double evtWeight = entry.get_evtWeight();
+
+    if ( verbosity_ >= 3 )
+    {
+      std::cout << "entry #" << idxEntry << ":\n";
+      std::cout << " hPlus: r = " << hPlus_r  << ", n = " << hPlus_n  << ", k = " << hPlus_k  << "\n";
+      std::cout << " hMinus: r = " << hMinus_r << ", n = " << hMinus_n << ", k = " << hMinus_k << "\n";
+      std::cout << " evtWeight = " << evtWeight << "\n";
+    }
 
     Bp(0) += evtWeight*hPlus_r;
     Bp(1) += evtWeight*hPlus_n;

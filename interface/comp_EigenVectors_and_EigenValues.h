@@ -12,8 +12,13 @@
 
 template <typename T>
 std::vector<std::pair<TVectorD, double>>
-comp_EigenVectors_and_EigenValues(const T& symmMatrix)
+comp_EigenVectors_and_EigenValues(const T& symmMatrix, int verbosity = -1)
 {
+  if ( verbosity >= 3 )
+  {
+    std::cout << "<comp_EigenVectors_and_EigenValues>:\n";
+  }
+
   // CV: matrix passed as function argument needs to be symmetric,
   //     because ROOT can only handle the case that all EigenValues are real
   assert(T::kRows == T::kCols);
@@ -28,6 +33,11 @@ comp_EigenVectors_and_EigenValues(const T& symmMatrix)
     {
       tmp(idxRow,idxColumn) = symmMatrix(idxRow,idxColumn);
     }
+  }
+  if ( verbosity >= 3 )
+  {
+    std::cout << "tmp:\n";
+    tmp.Print();
   }
 
   TVectorD EigenValues(dim);

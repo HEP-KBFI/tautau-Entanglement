@@ -39,9 +39,8 @@ void showHistogram2d(TH2* histogram,
   histogram->Draw("BOX");
 
   canvas->Update();
-  std::string outputFileName_plot = "plots/";
   size_t idx = outputFileName.find_last_of('.');
-  outputFileName_plot.append(std::string(outputFileName, 0, idx));
+  std::string outputFileName_plot = std::string(outputFileName, 0, idx);
   outputFileName_plot.append("_");
   outputFileName_plot.append(histogram->GetName());
   canvas->Print(std::string(outputFileName_plot).append(".png").c_str());

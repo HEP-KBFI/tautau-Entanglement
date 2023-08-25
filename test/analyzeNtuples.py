@@ -38,6 +38,7 @@ def run_command(command):
   os.system(command)
 
 run_command('mkdir -p %s' % configDir)
+run_command('mkdir -p %s' % os.path.join(configDir, "plots"))
 run_command('mkdir -p %s' % outputDir)
 
 def build_cfgFile(cfgFile_original, cfgFile_modified, 
@@ -59,7 +60,7 @@ def build_cfgFile(cfgFile_original, cfgFile_modified,
   sedCommand += '  s/##decayMode/decayMode/; s/\$decayMode/%s/;' % decayMode
   sedCommand += '  s/##apply_evtWeight/apply_evtWeight/; s/\$apply_evtWeight/%s/;' % apply_evtWeight
   sedCommand += '  s/##spinAnalyzer/spinAnalyzer/; s/\$spinAnalyzer/%s/;' % spinAnalyzer
-  sedCommand += '  s/##outputFileName/outputFileName/; s/\$outputFileName/%s/"' % outputFileName
+  sedCommand += '  s/##outputFileName/outputFileName/; s/\$outputFileName/%s/"' % outputFileName.replace("/", "\/")
   sedCommand += ' %s > %s' % (cfgFile_original, cfgFile_modified)
   run_command(sedCommand)
  
@@ -76,31 +77,32 @@ for sampleName, sample in samples.items():
     print("Found %i input files." % numInputFiles)
     for mode in modes:
       for decayMode in decayModes:
-        for spinAnalyzer in spinAnalyzers:
-          cfgFileName_analysis_modified = os.path.join(configDir, "analyzeEntanglementNtuple_%s_%sMode_%sAxis_%sDecayMode_%s_cfg.py" % \
-            (sampleName, mode, hAxis, decayMode, spinAnalyzer))
-          outputFileName_analysis = "analyzeEntanglementNtuple_%s_%sMode_%sAxis_%sDecayMode_%s.root" % \
-            (sampleName, mode, hAxis, decayMode, spinAnalyzer)
-          build_cfgFile(
-            "analyzeEntanglementNtuple_cfg.py", cfgFileName_analysis_modified, 
-            inputFileNames, sample['process'],
-            mode, collider, hAxis, decayMode, sample['apply_evtWeight'], spinAnalyzer, 
-            outputFileName_analysis)
-          logFileName_analysis = cfgFileName_analysis_modified.replace("_cfg.py", ".log")
-          job_key_analysis = '%s_%s_%s_%s_%s_analysis' % (sampleName, mode, hAxis, decayMode, spinAnalyzer)
-          dependencies_analysis = [ cfgFileName_analysis_modified ]
-          dependencies_analysis.extend(inputFileNames)
-          jobOptions_analysis[job_key_analysis] = {
-            'inputFileNames' : dependencies_analysis,
-            'cfgFileName'    : cfgFileName_analysis_modified,
-            'outputFilePath' : outputDir,
-            'outputFileName' : outputFileName_analysis,
-            'logFileName'    : logFileName_analysis,
-          }
+        if mode != "gen_smeared":
+          for spinAnalyzer in spinAnalyzers:
+            cfgFileName_analysis_modified = os.path.join(configDir, "analyzeEntanglementNtuple_%s_%sMode_%sAxis_%sDecayMode_%s_cfg.py" % \
+              (sampleName, mode, hAxis, decayMode, spinAnalyzer))
+            outputFileName_analysis = "analyzeEntanglementNtuple_%s_%sMode_%sAxis_%sDecayMode_%s.root" % \
+              (sampleName, mode, hAxis, decayMode, spinAnalyzer)
+            build_cfgFile(
+              "analyzeEntanglementNtuple_cfg.py", cfgFileName_analysis_modified, 
+              inputFileNames, sample['process'],
+              mode, collider, hAxis, decayMode, sample['apply_evtWeight'], spinAnalyzer, 
+              outputFileName_analysis)
+            logFileName_analysis = cfgFileName_analysis_modified.replace("_cfg.py", ".log")
+            job_key_analysis = '%s_%s_%s_%s_%s_analysis' % (sampleName, mode, hAxis, decayMode, spinAnalyzer)
+            dependencies_analysis = [ cfgFileName_analysis_modified ]
+            dependencies_analysis.extend(inputFileNames)
+            jobOptions_analysis[job_key_analysis] = {
+              'inputFileNames' : dependencies_analysis,
+              'cfgFileName'    : cfgFileName_analysis_modified,
+              'outputFilePath' : outputDir,
+              'outputFileName' : outputFileName_analysis,
+              'logFileName'    : logFileName_analysis,
+            }
         cfgFileName_ctrlPlots_modified = os.path.join(configDir, "makeControlPlots_%s_%sMode_%sAxis_%sDecayMode_cfg.py" % \
           (sampleName, mode, hAxis, decayMode))
-        outputFileName_ctrlPlots = "makeControlPlots_%s_%sMode_%sAxis_%sDecayMode.root" % \
-          (sampleName, mode, hAxis, decayMode)
+        outputFileName_ctrlPlots = os.path.join(configDir, "plots", "makeControlPlots_%s_%sMode_%sAxis_%sDecayMode.root" % \
+          (sampleName, mode, hAxis, decayMode))
         build_cfgFile(
           "makeControlPlots_cfg.py", cfgFileName_ctrlPlots_modified, 
           inputFileNames, sample['process'],
@@ -120,8 +122,8 @@ for sampleName, sample in samples.items():
         if mode != "gen":
           cfgFileName_resPlots_modified = os.path.join(configDir, "makeResolutionPlots_%s_%sMode_%sAxis_%sDecayMode_cfg.py" % \
             (sampleName, mode, hAxis, decayMode))
-          outputFileName_resPlots = "makeResolutionPlots_%s_%sMode_%sAxis_%sDecayMode.root" % \
-            (sampleName, mode, hAxis, decayMode)
+          outputFileName_resPlots = os.path.join(configDir, "plots", "makeResolutionPlots_%s_%sMode_%sAxis_%sDecayMode.root" % \
+            (sampleName, mode, hAxis, decayMode))
           build_cfgFile(
             "makeResolutionPlots_cfg.py", cfgFileName_resPlots_modified, 
             inputFileNames, sample['process'],

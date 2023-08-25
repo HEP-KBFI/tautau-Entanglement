@@ -13,10 +13,17 @@ comp_Rchsh(const math::Matrix3x3& C, int verbosity)
   if ( verbosity >= 3 )
   {
     std::cout << "<comp_Rchsh>:\n";
+    std::cout << "C:\n";
+    std::cout << C << "\n";
   }
   math::Matrix3x3 CT = ROOT::Math::Transpose(C);
   math::Matrix3x3 CT_times_C = CT*C;
-  std::vector<std::pair<TVectorD, double>> EigenVectors_and_EigenValues = comp_EigenVectors_and_EigenValues(CT_times_C);
+  if ( verbosity >= 3 )
+  {
+    std::cout << "C^T*C:\n";
+    std::cout << CT_times_C << "\n";
+  }
+  std::vector<std::pair<TVectorD, double>> EigenVectors_and_EigenValues = comp_EigenVectors_and_EigenValues(CT_times_C, verbosity);
   if ( verbosity >= 3 )
   {
     printEigenVectors_and_EigenValues(EigenVectors_and_EigenValues);

@@ -161,9 +161,9 @@ int main(int argc, char* argv[])
 
   spin::BinnedDataset1d binnedDataset_cosThetaStar("cosThetaStar", 20, -1., +1.);
 
-  //spin::BinnedDataset2d binnedDataset_zPlus_vs_cosThetaStar("zPlus_vs_cosThetaStar",   10, -1., +1., 10,  0.,  1.);
-  //spin::BinnedDataset2d binnedDataset_zMinus_vs_cosThetaStar("zMinus_vs_cosThetaStar", 10, -1., +1., 10,  0.,  1.);
-  //spin::BinnedDataset2d binnedDataset_zPlus_vs_zMinus("zPlus_vs_zMinus",               10,  0.,  1., 10,  0.,  1.);
+  spin::BinnedDataset2d binnedDataset_zPlus_vs_cosThetaStar("zPlus_vs_cosThetaStar",   10, -1., +1., 10,  0.,  1.);
+  spin::BinnedDataset2d binnedDataset_zMinus_vs_cosThetaStar("zMinus_vs_cosThetaStar", 10, -1., +1., 10,  0.,  1.);
+  spin::BinnedDataset2d binnedDataset_zPlus_vs_zMinus("zPlus_vs_zMinus",               10,  0.,  1., 10,  0.,  1.);
 
   int analyzedEntries = 0;
   double analyzedEntries_weighted = 0.;
@@ -271,9 +271,9 @@ int main(int argc, char* argv[])
 
       binnedDataset_cosThetaStar.push_back(cosThetaStar, entry);
 
-      //binnedDataset_zPlus_vs_cosThetaStar.push_back(cosThetaStar,  zPlus,  entry);
-      //binnedDataset_zMinus_vs_cosThetaStar.push_back(cosThetaStar, zMinus, entry);
-      //binnedDataset_zPlus_vs_zMinus.push_back(zMinus,              zPlus,  entry);
+      binnedDataset_zPlus_vs_cosThetaStar.push_back(cosThetaStar,  zPlus,  entry);
+      binnedDataset_zMinus_vs_cosThetaStar.push_back(cosThetaStar, zMinus, entry);
+      binnedDataset_zPlus_vs_zMinus.push_back(zMinus,              zPlus,  entry);
 
       ++selectedEntries;
       selectedEntries_weighted += evtWeight;
@@ -325,21 +325,21 @@ int main(int argc, char* argv[])
     addToOutputFile(fs, histogram_Rchsh_vs_cosThetaStar);
     std::cout << " Done.\n";
 
-    //std::cout << "Processing binned measurement as function of zPlus and cosThetaStar...\n";
-    //spin::BinnedMeasurement2d binnedMeasurement_zPlus_vs_cosThetaStar = spinAnalyzer(binnedDataset_zPlus_vs_cosThetaStar);
-    //TH2* histogram_Rchsh_vs_zPlus_and_cosThetaStar = binnedMeasurement_zPlus_vs_cosThetaStar.get_histogram("Rchsh");
-    //addToOutputFile(fs, histogram_Rchsh_vs_zPlus_and_cosThetaStar);
-    //std::cout << " Done.\n";
-    //std::cout << "Processing binned measurement as function of zMinus and cosThetaStar...\n";
-    //spin::BinnedMeasurement2d binnedMeasurement_zMinus_vs_cosThetaStar = spinAnalyzer(binnedDataset_zMinus_vs_cosThetaStar);
-    //TH2* histogram_Rchsh_vs_zMinus_vs_cosThetaStar = binnedMeasurement_zMinus_vs_cosThetaStar.get_histogram("Rchsh");
-    //addToOutputFile(fs, histogram_Rchsh_vs_zMinus_vs_cosThetaStar);
-    //std::cout << " Done.\n";
-    //std::cout << "Processing binned measurement as function of zPlus and zMinus...\n";
-    //spin::BinnedMeasurement2d binnedMeasurement_zPlus_vs_zMinus = spinAnalyzer(binnedDataset_zPlus_vs_zMinus);
-    //TH2* histogram_Rchsh_vs_zPlus_vs_zMinus = binnedMeasurement_zPlus_vs_zMinus.get_histogram("Rchsh");
-    //addToOutputFile(fs, histogram_Rchsh_vs_zPlus_vs_zMinus);
-    //std::cout << " Done.\n";
+    std::cout << "Processing binned measurement as function of zPlus and cosThetaStar...\n";
+    spin::BinnedMeasurement2d binnedMeasurement_zPlus_vs_cosThetaStar = spinAnalyzer(binnedDataset_zPlus_vs_cosThetaStar);
+    TH2* histogram_Rchsh_vs_zPlus_and_cosThetaStar = binnedMeasurement_zPlus_vs_cosThetaStar.get_histogram("Rchsh");
+    addToOutputFile(fs, histogram_Rchsh_vs_zPlus_and_cosThetaStar);
+    std::cout << " Done.\n";
+    std::cout << "Processing binned measurement as function of zMinus and cosThetaStar...\n";
+    spin::BinnedMeasurement2d binnedMeasurement_zMinus_vs_cosThetaStar = spinAnalyzer(binnedDataset_zMinus_vs_cosThetaStar);
+    TH2* histogram_Rchsh_vs_zMinus_vs_cosThetaStar = binnedMeasurement_zMinus_vs_cosThetaStar.get_histogram("Rchsh");
+    addToOutputFile(fs, histogram_Rchsh_vs_zMinus_vs_cosThetaStar);
+    std::cout << " Done.\n";
+    std::cout << "Processing binned measurement as function of zPlus and zMinus...\n";
+    spin::BinnedMeasurement2d binnedMeasurement_zPlus_vs_zMinus = spinAnalyzer(binnedDataset_zPlus_vs_zMinus);
+    TH2* histogram_Rchsh_vs_zPlus_vs_zMinus = binnedMeasurement_zPlus_vs_zMinus.get_histogram("Rchsh");
+    addToOutputFile(fs, histogram_Rchsh_vs_zPlus_vs_zMinus);
+    std::cout << " Done.\n";
   }
 
   clock.Show("analyzeEntanglementNtuple");

@@ -48,9 +48,8 @@ void showHistogram1d(TH1* histogram,
   histogram->Draw("E1P");
 
   canvas->Update();
-  std::string outputFileName_plot = "plots/";
   size_t idx = outputFileName.find_last_of('.');
-  outputFileName_plot.append(std::string(outputFileName, 0, idx));
+  std::string outputFileName_plot = std::string(outputFileName, 0, idx);
   outputFileName_plot.append("_");
   outputFileName_plot.append(histogram->GetName());
   canvas->Print(std::string(outputFileName_plot).append(".png").c_str());
