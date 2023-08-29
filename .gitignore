@@ -1,0 +1,15 @@
+*.pyc
+*.config
+*.creator
+*.files
+*.includes
+*.creator.user*
+*.cxxflags
+*.cflags
+.qtc_clangd
+.idea/
+.gdb_history
+__init__.py
+*~
+.directory
+__pycache__

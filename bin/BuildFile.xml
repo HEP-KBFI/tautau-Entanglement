@@ -27,3 +27,6 @@
   <use name="root"/>
   <use name="rootgraphics"/>
 </bin>
+<bin file="testEntanglementVariables.cc" name="testEntanglementVariables">
+  <use name="TauAnalysis/Entanglement"/>
+</bin>
