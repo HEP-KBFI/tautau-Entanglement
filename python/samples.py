@@ -30,8 +30,8 @@ samples_LHC = {
 # CV: define samples for tau spin analysis @ SuperKEKB (Belle)
 samples_SuperKEKB = {
   'dy_lo_pythia8' : {
-    'inputFilePath' : '/local/karl/ee2tt_aod/',
-    'numJobs' : 10,
+    'inputFilePath' : '/local/karl/ee2tt_aod_unwgt/',
+    'numJobs' : 100,
     'process' : "dy_lo_pythia8",
     'apply_evtWeight' : False
   }
