@@ -4,6 +4,7 @@
 <use name="FWCore/ParameterSet"/>
 <use name="FWCore/Utilities"/>
 <use name="PhysicsTools/FWLite"/>
+<use name="roofit"/>
 <use name="root"/>
 <use name="rooteg"/>
 <use name="rootmath"/>

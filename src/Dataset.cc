@@ -3,10 +3,12 @@
 using namespace spin;
 
 Dataset::Dataset()
-  : numEntries_(0)
+  : TObject()
+  , numEntries_(0)
 {}
 
 Dataset::Dataset(const Dataset& dataset, int maxEvents_afterCuts)
+  : TObject(dataset)
 {
   // CV: If maxEvents_afterCuts == 0, an empty dataset will be created.
   //     This is the intended behaviour and is used for building bootstrap samples. 

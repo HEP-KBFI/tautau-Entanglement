@@ -1,16 +1,19 @@
 #include "TauAnalysis/Entanglement/interface/SpinAnalyzer.h"
 
-#include "TauAnalysis/Entanglement/interface/cmsException.h"          // cmsException
-#include "TauAnalysis/Entanglement/interface/Matrix_and_Vector.h"     // Matrix3x3, Vector3
-#include "TauAnalysis/Entanglement/interface/SpinAlgo_by_mlfit.h"     // SpinAlgo_by_mlfit
-#include "TauAnalysis/Entanglement/interface/SpinAlgo_by_summation.h" // SpinAlgo_by_summation
+#include "TauAnalysis/Entanglement/interface/cmsException.h"                   // cmsException
+#include "TauAnalysis/Entanglement/interface/Matrix_and_Vector.h"              // Matrix3x3, Vector3
+#include "TauAnalysis/Entanglement/interface/SpinAlgo_by_asymmetry.h"          // SpinAlgo_by_asymmetry
+#include "TauAnalysis/Entanglement/interface/SpinAlgo_by_differentialXsec1d.h" // SpinAlgo_by_differentialXsec1d
+#include "TauAnalysis/Entanglement/interface/SpinAlgo_by_differentialXsec2d.h" // SpinAlgo_by_differentialXsec2d
+#include "TauAnalysis/Entanglement/interface/SpinAlgo_by_mlfit.h"              // SpinAlgo_by_mlfit
+#include "TauAnalysis/Entanglement/interface/SpinAlgo_by_summation.h"          // SpinAlgo_by_summation
 
-#include <TMath.h>                                                    // TMath::Nint()
+#include <TMath.h>                                                             // TMath::Nint()
 
-#include <algorithm>                                                  // std::sort()
-#include <map>                                                        // std::map<>
-#include <string>                                                     // std::string
-#include <utility>                                                    // std::make_pair(), std::pair<>
+#include <algorithm>                                                           // std::sort()
+#include <map>                                                                 // std::map<>
+#include <string>                                                              // std::string
+#include <utility>                                                             // std::make_pair(), std::pair<>
 
 using namespace spin;
 
@@ -21,8 +24,11 @@ SpinAnalyzer::SpinAnalyzer(const edm::ParameterSet& cfg)
   , maxEvents_afterCuts_(cfg.getParameter<int>("maxEvents_afterCuts"))
   , verbosity_(cfg.getUntrackedParameter<int>("verbosity"))
 {
-  if      ( spinAnalyzer_ == "by_mlfit"     ) algo_ = new SpinAlgo_by_mlfit(cfg);
-  else if ( spinAnalyzer_ == "by_summation" ) algo_ = new SpinAlgo_by_summation(cfg);
+  if      ( spinAnalyzer_ == "by_asymmetry"          ) algo_ = new SpinAlgo_by_asymmetry(cfg);
+  else if ( spinAnalyzer_ == "by_differentialXsec1d" ) algo_ = new SpinAlgo_by_differentialXsec1d(cfg);
+  else if ( spinAnalyzer_ == "by_differentialXsec2d" ) algo_ = new SpinAlgo_by_differentialXsec2d(cfg);
+  else if ( spinAnalyzer_ == "by_mlfit"              ) algo_ = new SpinAlgo_by_mlfit(cfg);
+  else if ( spinAnalyzer_ == "by_summation"          ) algo_ = new SpinAlgo_by_summation(cfg);
   else throw cmsException("SpinAnalyzer", __LINE__)
     << "Invalid Configuration parameter 'spinAnalyzer' = " << spinAnalyzer_ << " !!\n";
 }

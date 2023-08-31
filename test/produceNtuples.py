@@ -11,7 +11,7 @@ hAxes = [ "beam", "higgs" ]
 #collider = "LHC"
 collider = "SuperKEKB"
 
-version = "2023Aug24_wSmearing"
+version = "2023Aug31_wSmearing"
 
 samples = None
 if collider == "LHC":
