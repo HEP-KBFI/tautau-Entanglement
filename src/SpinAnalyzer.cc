@@ -123,18 +123,27 @@ namespace
                       math::Vector3& Bp_median, math::Vector3& BpErr,
                       math::Vector3& Bm_median, math::Vector3& BmErr,
                       math::Matrix3x3& C_median, math::Matrix3x3& CErr,
-                      double& Rchsh_median, double& RchshErr)
+                      double& concurrence_median, double& concurrenceErr,
+                      double& Ek_median, double& EkErr,
+                      double& Rchsh_median, double& RchshErr,
+                      double& steerability_median, double& steerabilityErr)
   {
     std::vector<math::Vector3> measuredBp;
     std::vector<math::Vector3> measuredBm;
     std::vector<math::Matrix3x3> measuredC;
+    std::vector<double> measured_concurrence;
+    std::vector<double> measuredEk;
     std::vector<double> measuredRchsh;
+    std::vector<double> measured_steerability;
     for ( const spin::Measurement& measurement : measurements )
     {
       measuredBp.push_back(measurement.get_Bp());
       measuredBm.push_back(measurement.get_Bm());
       measuredC.push_back(measurement.get_C());
+      measured_concurrence.push_back(measurement.get_concurrence());
+      measuredEk.push_back(measurement.get_Ek());
       measuredRchsh.push_back(measurement.get_Rchsh());
+      measured_steerability.push_back(measurement.get_steerability());
     }
     std::pair<math::Vector3, math::Vector3> Bp_median_and_Err = comp_median_and_Err(measuredBp);
     Bp_median = Bp_median_and_Err.first;
@@ -145,9 +154,18 @@ namespace
     std::pair<math::Matrix3x3, math::Matrix3x3> C_median_and_Err = comp_median_and_Err(measuredC);
     C_median = C_median_and_Err.first;
     CErr = C_median_and_Err.second;
+    std::pair<double, double> concurrence_median_and_Err = comp_median_and_Err(measured_concurrence);
+    concurrence_median = concurrence_median_and_Err.first;
+    concurrenceErr = concurrence_median_and_Err.second;
+    std::pair<double, double> Ek_median_and_Err = comp_median_and_Err(measuredEk);
+    Ek_median = Ek_median_and_Err.first;
+    EkErr = Ek_median_and_Err.second;
     std::pair<double, double> Rchsh_median_and_Err = comp_median_and_Err(measuredRchsh);
     Rchsh_median = Rchsh_median_and_Err.first;
     RchshErr = Rchsh_median_and_Err.second;
+    std::pair<double, double> steerability_median_and_Err = comp_median_and_Err(measured_steerability);
+    steerability_median = steerability_median_and_Err.first;
+    steerabilityErr = steerability_median_and_Err.second;
   }
 }
 
@@ -185,16 +203,22 @@ SpinAnalyzer::build_measurement(const spin::Dataset& dataset, int maxEvents_afte
   }
   math::Vector3 Bp_median, BpErr, Bm_median, BmErr;
   math::Matrix3x3 C_median, CErr;
-  double Rchsh_median, RchshErr;
+  double concurrence_median, concurrenceErr, Ek_median, EkErr, Rchsh_median, RchshErr, steerability_median, steerabilityErr;
   comp_median_and_Err(bootstrap_measurements, 
     Bp_median, BpErr,
     Bm_median, BmErr,
     C_median, CErr,
-    Rchsh_median, RchshErr);
+    concurrence_median, concurrenceErr,
+    Ek_median, EkErr,
+    Rchsh_median, RchshErr,
+    steerability_median, steerabilityErr);
   nominal_measurement.set_BpErr(BpErr);
   nominal_measurement.set_BmErr(BmErr);
   nominal_measurement.set_CErr(CErr);
+  nominal_measurement.set_concurrenceErr(concurrenceErr);
+  nominal_measurement.set_EkErr(EkErr);
   nominal_measurement.set_RchshErr(RchshErr);
+  nominal_measurement.set_steerabilityErr(steerabilityErr);
   
   return nominal_measurement;
 }

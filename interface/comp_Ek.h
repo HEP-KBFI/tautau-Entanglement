@@ -1,5 +1,5 @@
-#ifndef TauAnalysis_Entanglement_comp_entanglementSignature_h
-#define TauAnalysis_Entanglement_comp_entanglementSignature_h
+#ifndef TauAnalysis_Entanglement_comp_Ek_h
+#define TauAnalysis_Entanglement_comp_Ek_h
 
 #include "TauAnalysis/Entanglement/interface/Matrix_and_Vector.h" // math::Matrix3x3
 
@@ -9,6 +9,6 @@
  * @return Entanglement signature E_k
  */
 double
-comp_entanglementSignature(const math::Matrix3x3& C);
+comp_Ek(const math::Matrix3x3& C);
 
-#endif // TauAnalysis_Entanglement_comp_entanglementSignature_h
+#endif // TauAnalysis_Entanglement_comp_Ek_h

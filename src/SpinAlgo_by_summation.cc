@@ -1,7 +1,5 @@
 #include "TauAnalysis/Entanglement/interface/SpinAlgo_by_summation.h"
 
-#include "TauAnalysis/Entanglement/interface/comp_Rchsh.h" // comp_Rchsh()
-
 using namespace spin;
 
 SpinAlgo_by_summation::SpinAlgo_by_summation(const edm::ParameterSet& cfg)
@@ -78,8 +76,7 @@ SpinAlgo_by_summation::operator()(const spin::Dataset& dataset)
 
   C *= (1./evtWeight_sum);
 
-  double Rchsh = comp_Rchsh(C, verbosity_);
-
-  spin::Measurement measurement(Bp, Bm, C, Rchsh);
+  spin::Measurement measurement(Bp, Bm, C);
+  addEntanglementVariables(measurement);
   return measurement;
 }

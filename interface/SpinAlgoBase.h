@@ -23,6 +23,9 @@ class SpinAlgoBase
   operator()(const spin::Dataset& dataset) = 0;
 
  protected:
+  void
+  addEntanglementVariables(spin::Measurement& measurement);
+
   int verbosity_;
 };
 

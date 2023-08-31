@@ -7,13 +7,18 @@ Measurement::Measurement()
   , RchshErr_(0.)
 {}
 
-Measurement::Measurement(const math::Vector3& Bp, const math::Vector3& Bm, const math::Matrix3x3& C,
-                         double Rchsh)
+Measurement::Measurement(const math::Vector3& Bp, const math::Vector3& Bm, const math::Matrix3x3& C)
   : Bp_(Bp)
   , Bm_(Bm)
   , C_(C)
-  , Rchsh_(Rchsh)
+  , concurrence_(0.)
+  , concurrenceErr_(0.)
+  , Ek_(0.)
+  , EkErr_(0.)
+  , Rchsh_(0.)
   , RchshErr_(0.)
+  , steerability_(0.)
+  , steerabilityErr_(0.)
 {}
 
 Measurement::~Measurement()
@@ -38,9 +43,27 @@ Measurement::set_CErr(const math::Matrix3x3& CErr)
 }
 
 void
+Measurement::set_concurrenceErr(double concurrenceErr)
+{
+  concurrenceErr_ = concurrenceErr;
+}
+
+void
+Measurement::set_EkErr(double EkErr)
+{
+  EkErr_ = EkErr;
+}
+
+void
 Measurement::set_RchshErr(double RchshErr)
 {
   RchshErr_ = RchshErr;
+}
+
+void
+Measurement::set_steerabilityErr(double steerabilityErr)
+{
+  steerabilityErr_ = steerabilityErr;
 }
 
 const math::Vector3&
@@ -80,6 +103,30 @@ Measurement::get_CErr() const
 }
 
 double
+Measurement::get_concurrence() const
+{
+  return concurrence_;
+}
+
+double
+Measurement::get_concurrenceErr() const
+{
+  return concurrenceErr_;
+}
+
+double
+Measurement::get_Ek() const
+{
+  return Ek_;
+}
+
+double
+Measurement::get_EkErr() const
+{
+  return EkErr_;
+}
+
+double
 Measurement::get_Rchsh() const
 {
   return Rchsh_;
@@ -89,4 +136,16 @@ double
 Measurement::get_RchshErr() const
 {
   return RchshErr_;
+}
+
+double
+Measurement::get_steerability() const
+{
+  return steerability_;
+}
+
+double
+Measurement::get_steerabilityErr() const
+{
+  return steerabilityErr_;
 }

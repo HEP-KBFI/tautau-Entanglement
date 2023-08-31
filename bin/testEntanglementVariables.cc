@@ -1,9 +1,9 @@
 #define _USE_MATH_DEFINES // M_PI
 
-#include "TauAnalysis/Entanglement/interface/comp_Rchsh.h" // comp_Rchsh()
-#include "TauAnalysis/Entanglement/interface/comp_entanglementSignature.h" // comp_entanglementSignature()
+#include "TauAnalysis/Entanglement/interface/comp_Rchsh.h"        // comp_Rchsh()
+#include "TauAnalysis/Entanglement/interface/comp_Ek.h"           // comp_Ek()
 #include "TauAnalysis/Entanglement/interface/comp_steerability.h" // comp_steerability()
-#include "TauAnalysis/Entanglement/interface/comp_concurrence.h" // comp_concurrence()
+#include "TauAnalysis/Entanglement/interface/comp_concurrence.h"  // comp_concurrence()
 
 int main(int argc, char* argv[])
 {
@@ -62,9 +62,9 @@ int main(int argc, char* argv[])
 
   // Compute 2)
   const double Ek_CP_theory = 2 * std::fabs(std::cos(2 * delta_CP_radians)) + 1.; // Eq. 20
-  const double Ek_CP  = comp_entanglementSignature(C_CP);
-  const double Ek_ILC = comp_entanglementSignature(C_ILC);
-  const double Ek_FCC = comp_entanglementSignature(C_FCC);
+  const double Ek_CP  = comp_Ek(C_CP);
+  const double Ek_ILC = comp_Ek(C_ILC);
+  const double Ek_FCC = comp_Ek(C_FCC);
 
   std::cout << "2) Ek:\n"
             << "  CP phase: " << Ek_CP  << " (expected: " << Ek_CP_theory << ", see Eq. (20))\n"

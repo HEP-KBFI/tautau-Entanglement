@@ -1,7 +1,6 @@
 #include "TauAnalysis/Entanglement/interface/SpinAlgo_by_mlfit.h"
 
 #include "TauAnalysis/Entanglement/interface/cmsException.h" // cmsException
-#include "TauAnalysis/Entanglement/interface/comp_Rchsh.h"   // comp_Rchsh()
 
 #include <Math/Functor.h>                                    // ROOT::Math::Functor
 #include <TCanvas.h>                                         // TCanvas
@@ -429,8 +428,7 @@ SpinAlgo_by_mlfit::operator()(const spin::Dataset& dataset)
     } else assert(0);
   }
 
-  double Rchsh = comp_Rchsh(C, verbosity_);
-
-  spin::Measurement measurement(Bp, Bm, C, Rchsh);
+  spin::Measurement measurement(Bp, Bm, C);
+  addEntanglementVariables(measurement);
   return measurement;
 }

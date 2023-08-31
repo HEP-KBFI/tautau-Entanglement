@@ -10,7 +10,10 @@
 #include "TauAnalysis/Entanglement/interface/bookHistogram1d.h"       // bookHistogram1d()
 #include "TauAnalysis/Entanglement/interface/bookHistogram2d.h"       // bookHistogram2d()
 #include "TauAnalysis/Entanglement/interface/cmsException.h"          // cmsException
+#include "TauAnalysis/Entanglement/interface/comp_concurrence.h"      // comp_concurrence()
+#include "TauAnalysis/Entanglement/interface/comp_Ek.h"               // comp_Ek()
 #include "TauAnalysis/Entanglement/interface/comp_Rchsh.h"            // comp_Rchsh()
+#include "TauAnalysis/Entanglement/interface/comp_steerability.h"     // comp_steerability()
 #include "TauAnalysis/Entanglement/interface/BinnedDataset.h"         // spin::BinnedDataset
 #include "TauAnalysis/Entanglement/interface/BinnedMeasurement.h"     // spin::BinnedMeasurement
 #include "TauAnalysis/Entanglement/interface/Dataset.h"               // spin::Dataset
@@ -299,10 +302,20 @@ int main(int argc, char* argv[])
   std::cout << measurement.get_C() << "\n";
   std::cout << "+/-\n";
   std::cout << measurement.get_CErr() << "\n";
+  std::cout << "Ek = " << measurement.get_Ek() << " +/- " << measurement.get_EkErr() << "\n";
+  std::cout << "concurrence = " << measurement.get_concurrence() << " +/- " << measurement.get_concurrenceErr() << "\n";
+  std::cout << "steerability = " << measurement.get_steerability() << " +/- " << measurement.get_steerabilityErr() << "\n";
   std::cout << "Rchsh = " << measurement.get_Rchsh() << " +/- " << measurement.get_RchshErr() << "\n";
 
   if ( verbosity >= 1 )
-  {    
+  {
+    math::Vector3 Bp_exp;
+    math::Vector3 Bm_exp;
+    for ( size_t idxElement = 0; idxElement < 3; ++idxElement )
+    {
+      Bp_exp(idxElement) = 0.;
+      Bm_exp(idxElement) = 0.;
+    }
     math::Matrix3x3 C_exp;
     for ( int idxRow = 0; idxRow < 3; ++idxRow )
     {
@@ -314,8 +327,14 @@ int main(int argc, char* argv[])
     std::cout << "Standard Model expectation:\n";
     std::cout << "Matrix C:\n";
     std::cout << C_exp << "\n";
+    double Ek_exp = comp_Ek(C_exp);
+    std::cout << "Ek = " << Ek_exp << "\n";
+    double concurrence_exp = comp_concurrence(Bp_exp, Bm_exp, C_exp, 1e-6);
+    std::cout << "concurrence = " << concurrence_exp << "\n";
     double Rchsh_exp = comp_Rchsh(C_exp);
     std::cout << "Rchsh = " << Rchsh_exp << "\n";
+    double steerability_exp = comp_steerability(C_exp, 360, 360);
+    std::cout << "steerability = " << steerability_exp << "\n";
   }
 
   if ( spinAnalyzer_algo == "by_summation" )

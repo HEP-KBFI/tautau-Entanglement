@@ -1,7 +1,7 @@
-#include "TauAnalysis/Entanglement/interface/comp_entanglementSignature.h"
+#include "TauAnalysis/Entanglement/interface/comp_Ek.h"
 
 double
-comp_entanglementSignature(const math::Matrix3x3& C)
+comp_Ek(const math::Matrix3x3& C)
 {
   const double trace = C.Trace();
   double E = 0.;

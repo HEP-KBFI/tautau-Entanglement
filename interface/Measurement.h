@@ -10,8 +10,7 @@ class Measurement
 {
  public:
   Measurement();
-  Measurement(const math::Vector3& Bp, const math::Vector3& Bm, const math::Matrix3x3& C, 
-              double Rchsh);
+  Measurement(const math::Vector3& Bp, const math::Vector3& Bm, const math::Matrix3x3& C);
   ~Measurement();
 
   void
@@ -22,9 +21,18 @@ class Measurement
 
   void
   set_CErr(const math::Matrix3x3& CErr);
+  
+  void
+  set_concurrenceErr(double concurrenceErr);
+
+  void
+  set_EkErr(double EkErr);
 
   void
   set_RchshErr(double RchshErr);
+
+  void
+  set_steerabilityErr(double steerabilityErr);
 
   const math::Vector3&
   get_Bp() const;
@@ -45,10 +53,30 @@ class Measurement
   get_CErr() const;
 
   double
+  get_concurrence() const;
+
+  double
+  get_concurrenceErr() const;
+
+  double
+  get_Ek() const;
+
+  double
+  get_EkErr() const;
+
+  double
   get_Rchsh() const;
 
   double
   get_RchshErr() const;
+
+  double
+  get_steerability() const;
+
+  double
+  get_steerabilityErr() const;
+
+  friend class SpinAlgoBase;
 
  private:
   math::Vector3 Bp_;
@@ -57,8 +85,14 @@ class Measurement
   math::Vector3 BmErr_;
   math::Matrix3x3 C_;
   math::Matrix3x3 CErr_;
+  double concurrence_;
+  double concurrenceErr_;
+  double Ek_;
+  double EkErr_;
   double Rchsh_;
   double RchshErr_;
+  double steerability_;
+  double steerabilityErr_;
 };
 
 }
