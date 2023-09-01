@@ -78,7 +78,11 @@ namespace
     
     RooDataHist data("data", "data", RooArgSet(cosTheta_p, cosTheta_m), Xsec.get_histogram());
 
-    RooRealVar C_ij("C_ij", "C_ij", 0., -2., +2.);
+    // CV: need to restrict range of fit variable C_ij to the interval [-1,+1],
+    //     to avoid that PDF becomes less than zero
+    //    (which is "unphysical" behaviour for a differential cross section and causes warnings from RooFit)
+    RooRealVar C_ij("C_ij", "C_ij", 0., -1., +1.);
+
     RooGenericPdf pdf("pdf", "pdf", "0.25*(1. - C_ij*cosTheta_p*cosTheta_m)", RooArgSet(C_ij, cosTheta_p, cosTheta_m));    
     pdf.fitTo(data, RooFit::PrintLevel(-1));
     if ( verbosity >= 2 )
