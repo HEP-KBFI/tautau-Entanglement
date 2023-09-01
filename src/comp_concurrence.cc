@@ -16,7 +16,7 @@ namespace {
       std::vector<Eigen::Matrix2cd> matrices(3);
       matrices[0] << 0, 1,
                      1, 0;
-      matrices[1] << 0,                          std::complex<double>(0, -1),
+      matrices[1] << 0, std::complex<double>(0, -1),
                      std::complex<double>(0, 1), 0;
       matrices[2] << 1,  0,
                      0, -1;
@@ -56,7 +56,7 @@ namespace {
 
   /**
    * @brief Complementary density operator (denoted as rho-tilde in the paper arXiv:2211.10513)
-   * @param rho Initial desnity matrix
+   * @param rho Initial density matrix
    * @return Complementary density operator
    */
   Eigen::Matrix4cd
@@ -67,7 +67,7 @@ namespace {
   }
 
   /**
-   * @brief Finds eignevalues of a complex 4x4 matrix
+   * @brief Finds eigenvalues of a complex 4x4 matrix
    * @param R Input matrix
    * @param errorBit For detecting errors
    * @param threshold Upper limit for the imaginary components of the eigenvalues
