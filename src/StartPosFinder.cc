@@ -10,6 +10,7 @@
 StartPosFinder::StartPosFinder(const edm::ParameterSet& cfg)
   : algo_(nullptr)
   , polarimetricVector_(cfg)
+  , skip_(cfg.getParameter<bool>("skip"))
   , verbosity_(cfg.getUntrackedParameter<int>("verbosity"))
   , cartesian_(cfg.getUntrackedParameter<bool>("cartesian"))
 {
@@ -37,6 +38,11 @@ StartPosFinder::operator()(const KinematicEvent& kineEvt)
   if ( verbosity_ >= 1 )
   {
     std::cout << "<StartPosFinder::operator()>:\n";
+  }
+
+  if ( skip_ )
+  {
+    return { kineEvt };
   }
 
   std::vector<KinematicEvent> kineEvts_startPos = (*algo_)(kineEvt);

@@ -251,7 +251,7 @@ SpinAnalyzer::operator()(const spin::BinnedDataset1d& dataset)
   int numEntries_unallocated = dataset.numEntries_;
   double prob_unallocated = 1.;
   for ( const std::pair<int, spin::Dataset>& entry : dataset.entries_ )
-  {
+  {    
     double prob = entry.second.numEntries_/(double)dataset.numEntries_;
     int maxEvents = 0;
     if ( prob < prob_unallocated )
@@ -273,9 +273,11 @@ SpinAnalyzer::operator()(const spin::BinnedDataset1d& dataset)
       int idxBinX, idxBinY, idxBinZ;
       dataset.binning_->GetBinXYZ(entry.first, idxBinX, idxBinY, idxBinZ);
       double x = dataset.binning_->GetXaxis()->GetBinCenter(idxBinX);
-      std::cout << " x = " << x << ":"
+      std::cout << "x = " << x << " (#entries = " << dataset.entries_.find(entry.first)->second.numEntries_ << "):"
                 << " Rchsh = " << measurement.entries_[entry.first].get_Rchsh() 
                 << " +/- " << measurement.entries_[entry.first].get_RchshErr() << "\n";
+      std::cout << "C:\n";
+      std::cout << measurement.entries_[entry.first].get_C() << "\n";
     }
   }
   return measurement;
@@ -292,7 +294,7 @@ SpinAnalyzer::operator()(const spin::BinnedDataset2d& dataset)
   for ( int idxBinX = 1; idxBinX <= dataset.binning_->GetNbinsX(); ++idxBinX )
   {
     for ( int idxBinY = 1; idxBinY <= dataset.binning_->GetNbinsY(); ++idxBinY )
-    {      
+    {
       measurement.binning_->SetBinContent(idxBinX, idxBinY, dataset.binning_->GetBinContent(idxBinX, idxBinY));
       measurement.binning_->SetBinError(idxBinX, idxBinY, dataset.binning_->GetBinError(idxBinX, idxBinY));
     }
@@ -323,9 +325,11 @@ SpinAnalyzer::operator()(const spin::BinnedDataset2d& dataset)
       dataset.binning_->GetBinXYZ(entry.first, idxBinX, idxBinY, idxBinZ);
       double x = dataset.binning_->GetXaxis()->GetBinCenter(idxBinX);
       double y = dataset.binning_->GetYaxis()->GetBinCenter(idxBinY);
-      std::cout << " x = " << x << ", y = " << y << ":" 
+      std::cout << "x = " << x << ", y = " << y << " (#entries = " << dataset.entries_.find(entry.first)->second.numEntries_ << "):" 
                 << " Rchsh = " << measurement.entries_[entry.first].get_Rchsh() 
                 << " +/- " << measurement.entries_[entry.first].get_RchshErr() << "\n";
+      std::cout << "C:\n";
+      std::cout << measurement.entries_[entry.first].get_C() << "\n";
     }
   }
   return measurement;

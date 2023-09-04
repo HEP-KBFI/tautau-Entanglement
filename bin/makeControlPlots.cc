@@ -283,35 +283,35 @@ int main(int argc, char* argv[])
 
   avEvtWeight /= selectedEntries;
 
-  showHistogram1d(histogram_tauPlusPt,       "#tau^{+} p_{T} [GeV]",     1.2, true, 1.e-3, 1.e0, "Events", 1.3, avEvtWeight, true,  outputFile.file());
-  showHistogram1d(histogram_tauPlusEta,      "#tau^{+} #eta",            1.2, true, 1.e-3, 1.e0, "Events", 1.3, avEvtWeight, false, outputFile.file());
-  showHistogram1d(histogram_tauPlusTIP,      "#tau^{+} d_{IP} [cm]",     1.2, true, 1.e-3, 1.e0, "Events", 1.3, avEvtWeight, false, outputFile.file());
-  showHistogram1d(histogram_visPlusPt,       "#tau^{+}_{h} p_{T} [GeV]", 1.2, true, 1.e-3, 1.e0, "Events", 1.3, avEvtWeight, true,  outputFile.file());
-  showHistogram1d(histogram_visPlusEta,      "#tau^{+}_{h} #eta",        1.2, true, 1.e-3, 1.e0, "Events", 1.3, avEvtWeight, false, outputFile.file());
+  showHistogram1d(histogram_tauPlusPt,       "#tau^{+} p_{T} [GeV]",     1.2, true,   1.e-3,  1.e0, "Events", 1.3, avEvtWeight, true,  outputFile.file());
+  showHistogram1d(histogram_tauPlusEta,      "#tau^{+} #eta",            1.2, true,   1.e-3,  1.e0, "Events", 1.3, avEvtWeight, false, outputFile.file());
+  showHistogram1d(histogram_tauPlusTIP,      "#tau^{+} d_{IP} [cm]",     1.2, true,   1.e-3,  1.e0, "Events", 1.3, avEvtWeight, false, outputFile.file());
+  showHistogram1d(histogram_visPlusPt,       "#tau^{+}_{h} p_{T} [GeV]", 1.2, true,   1.e-3,  1.e0, "Events", 1.3, avEvtWeight, true,  outputFile.file());
+  showHistogram1d(histogram_visPlusEta,      "#tau^{+}_{h} #eta",        1.2, true,   1.e-3,  1.e0, "Events", 1.3, avEvtWeight, false, outputFile.file());
 
-  showHistogram1d(histogram_tauMinusPt,      "#tau^{-} p_{T} [GeV]",     1.2, true, 1.e-3, 1.e0, "Events", 1.3, avEvtWeight, true,  outputFile.file());
-  showHistogram1d(histogram_tauMinusEta,     "#tau^{-} #eta",            1.2, true, 1.e-3, 1.e0, "Events", 1.3, avEvtWeight, false, outputFile.file());
-  showHistogram1d(histogram_tauMinusTIP,     "#tau^{-} d_{IP} [cm]",     1.2, true, 1.e-3, 1.e0, "Events", 1.3, avEvtWeight, false, outputFile.file());
-  showHistogram1d(histogram_visMinusPt,      "#tau^{-}_{h} p_{T} [GeV]", 1.2, true, 1.e-3, 1.e0, "Events", 1.3, avEvtWeight, true,  outputFile.file());
-  showHistogram1d(histogram_visMinusEta,     "#tau^{-}_{h} #eta",        1.2, true, 1.e-3, 1.e0, "Events", 1.3, avEvtWeight, false, outputFile.file());
+  showHistogram1d(histogram_tauMinusPt,      "#tau^{-} p_{T} [GeV]",     1.2, true,   1.e-3,  1.e0, "Events", 1.3, avEvtWeight, true,  outputFile.file());
+  showHistogram1d(histogram_tauMinusEta,     "#tau^{-} #eta",            1.2, true,   1.e-3,  1.e0, "Events", 1.3, avEvtWeight, false, outputFile.file());
+  showHistogram1d(histogram_tauMinusTIP,     "#tau^{-} d_{IP} [cm]",     1.2, true,   1.e-3,  1.e0, "Events", 1.3, avEvtWeight, false, outputFile.file());
+  showHistogram1d(histogram_visMinusPt,      "#tau^{-}_{h} p_{T} [GeV]", 1.2, true,   1.e-3,  1.e0, "Events", 1.3, avEvtWeight, true,  outputFile.file());
+  showHistogram1d(histogram_visMinusEta,     "#tau^{-}_{h} #eta",        1.2, true,   1.e-3,  1.e0, "Events", 1.3, avEvtWeight, false, outputFile.file());
 
-  showHistogram1d(histogram_mTauTau,         "m_{#tau#tau} [GeV]",       1.2, true, 1.e-3, 1.e0, "Events", 1.3, avEvtWeight, true,  outputFile.file());
-  showHistogram1d(histogram_mVis,            "m_{vis} [GeV]",            1.2, true, 1.e-3, 1.e0, "Events", 1.3, avEvtWeight, true,  outputFile.file());
-  showHistogram1d(histogram_cosThetaStar,    "cos(#theta^{*})",          1.2, true, 1.e-3, 1.e0, "Events", 1.3, avEvtWeight, false, outputFile.file());
+  showHistogram1d(histogram_mTauTau,         "m_{#tau#tau} [GeV]",       1.2, true,   1.e-3,  1.e0, "Events", 1.3, avEvtWeight, true,  outputFile.file());
+  showHistogram1d(histogram_mVis,            "m_{vis} [GeV]",            1.2, true,   1.e-3,  1.e0, "Events", 1.3, avEvtWeight, true,  outputFile.file());
+  showHistogram1d(histogram_cosThetaStar,    "cos(#theta^{*})",          1.2, false, -1.,    -1.,   "Events", 1.3, avEvtWeight, false, outputFile.file());
 
-  showHistogram1d(histogram_Bp_r,            "Bp_r",                     1.2, true, 1.e-3, 1.e0, "Events", 1.3, avEvtWeight, true,  outputFile.file());
-  showHistogram1d(histogram_Bp_n,            "Bp_n",                     1.2, true, 1.e-3, 1.e0, "Events", 1.3, avEvtWeight, true,  outputFile.file());
-  showHistogram1d(histogram_Bp_k,            "Bp_k",                     1.2, true, 1.e-3, 1.e0, "Events", 1.3, avEvtWeight, true,  outputFile.file());
+  showHistogram1d(histogram_Bp_r,            "Bp_r",                     1.2, true,   1.e-3,  1.e0, "Events", 1.3, avEvtWeight, true,  outputFile.file());
+  showHistogram1d(histogram_Bp_n,            "Bp_n",                     1.2, true,   1.e-3,  1.e0, "Events", 1.3, avEvtWeight, true,  outputFile.file());
+  showHistogram1d(histogram_Bp_k,            "Bp_k",                     1.2, true,   1.e-3,  1.e0, "Events", 1.3, avEvtWeight, true,  outputFile.file());
 
-  showHistogram1d(histogram_Bm_r,            "Bm_r",                     1.2, true, 1.e-3, 1.e0, "Events", 1.3, avEvtWeight, true,  outputFile.file());
-  showHistogram1d(histogram_Bm_n,            "Bm_n",                     1.2, true, 1.e-3, 1.e0, "Events", 1.3, avEvtWeight, true,  outputFile.file());
-  showHistogram1d(histogram_Bm_k,            "Bm_k",                     1.2, true, 1.e-3, 1.e0, "Events", 1.3, avEvtWeight, true,  outputFile.file());
+  showHistogram1d(histogram_Bm_r,            "Bm_r",                     1.2, true,   1.e-3,  1.e0, "Events", 1.3, avEvtWeight, true,  outputFile.file());
+  showHistogram1d(histogram_Bm_n,            "Bm_n",                     1.2, true,   1.e-3,  1.e0, "Events", 1.3, avEvtWeight, true,  outputFile.file());
+  showHistogram1d(histogram_Bm_k,            "Bm_k",                     1.2, true,   1.e-3,  1.e0, "Events", 1.3, avEvtWeight, true,  outputFile.file());
 
-  showHistogram1d(histogram_C_rr,            "C_rr",                     1.2, true, 1.e-3, 1.e0, "Events", 1.3, avEvtWeight, true,  outputFile.file());
-  showHistogram1d(histogram_C_nn,            "C_nn",                     1.2, true, 1.e-3, 1.e0, "Events", 1.3, avEvtWeight, true,  outputFile.file());
-  showHistogram1d(histogram_C_kk,            "C_kk",                     1.2, true, 1.e-3, 1.e0, "Events", 1.3, avEvtWeight, true,  outputFile.file());
+  showHistogram1d(histogram_C_rr,            "C_rr",                     1.2, true,   1.e-3,  1.e0, "Events", 1.3, avEvtWeight, true,  outputFile.file());
+  showHistogram1d(histogram_C_nn,            "C_nn",                     1.2, true,   1.e-3,  1.e0, "Events", 1.3, avEvtWeight, true,  outputFile.file());
+  showHistogram1d(histogram_C_kk,            "C_kk",                     1.2, true,   1.e-3,  1.e0, "Events", 1.3, avEvtWeight, true,  outputFile.file());
 
-  showHistogram2d(histogram_zPlus_vs_zMinus, "z^{-}",                    1.2,                    "z^{+}",  1.3, avEvtWeight, false, outputFile.file());
+  showHistogram2d(histogram_zPlus_vs_zMinus, "z^{-}",                    1.2,                       "z^{+}",  1.3, avEvtWeight, false, outputFile.file());
 
   clock.Show("makeControlPlots");
 

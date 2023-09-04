@@ -95,11 +95,11 @@ Smearing::~Smearing()
 KinematicEvent
 Smearing::operator()(const KinematicEvent& kineEvt)
 {
-  //if ( verbosity_ >= 1 )
-  //{
+  if ( verbosity_ >= 1 )
+  {
     std::cout << "<Smearing::operator()>:\n";
     std::cout << " rndSeed = " << rnd_.GetSeed() << "\n";
-  //}
+  }
 
   KinematicEvent kineEvt_smeared(kineEvt);
 

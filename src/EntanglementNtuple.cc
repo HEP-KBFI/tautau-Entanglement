@@ -2,6 +2,10 @@
 
 EntanglementNtuple::EntanglementNtuple(TTree* ntuple)
   : ntuple_(ntuple)
+  , run_(0)
+  , lumi_(0)
+  , event_(0)
+  , entry_(0)
   , branches_KinematicEvent_gen_("gen")
   , branches_KinematicEvent_gen_smeared_("gen_smeared")
   , branches_KinematicEvent_startPos_("startPos")
@@ -11,6 +15,8 @@ EntanglementNtuple::EntanglementNtuple(TTree* ntuple)
   ntuple_->Branch("run", &run_, "run/i");
   ntuple_->Branch("lumi", &lumi_, "lumi/i");
   ntuple_->Branch("event", &event_, "event/l");
+
+  ntuple_->Branch("entry", &entry_, "entry/l");
 
   branches_KinematicEvent_gen_.initBranches(ntuple);
   createBranchI(ntuple_, "gen", "tauPlus_nChargedKaons", &tauPlus_nChargedKaons_gen_); 
@@ -112,4 +118,6 @@ EntanglementNtuple::fillBranches(const edm::Event& evt,
   evtWeight_ = evtWeight;
 
   ntuple_->Fill();
+
+  ++entry_;
 }

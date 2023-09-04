@@ -31,6 +31,7 @@ using namespace math;
 KinematicFit::KinematicFit(const edm::ParameterSet& cfg)
   : polarimetricVector_(cfg)
   , applyLifetimeConstraint_(cfg.getParameter<bool>("applyLifetimeConstraint"))
+  , skip_(cfg.getParameter<bool>("skip"))
   , verbosity_(cfg.getUntrackedParameter<int>("verbosity"))
   , cartesian_(cfg.getUntrackedParameter<bool>("cartesian"))
 {
@@ -1022,6 +1023,11 @@ KinematicFit::operator()(const KinematicEvent& kineEvt)
   if ( verbosity_ >= 1 )
   {
     std::cout << "<KinematicFit::operator()>:\n"; 
+  }
+
+  if ( skip_ )
+  {
+    return kineEvt;
   }
 
   KinematicEvent kineEvt_kinFit = kineEvt;

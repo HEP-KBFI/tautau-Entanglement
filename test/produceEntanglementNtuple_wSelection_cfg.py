@@ -1,4 +1,3 @@
-
 import FWCore.ParameterSet.Config as cms
 
 process = cms.Process("produceEntanglementNtuple")
@@ -23,8 +22,10 @@ process.source = cms.Source("PoolSource",
 #    '1:1:10' 
 #)
 
-inputFilePath = '/store/mc/RunIISummer20UL18MiniAODv2/GluGluHToTauTau_M125_TuneCP5_13TeV-powheg-pythia8/MINIAODSIM/106X_upgrade2018_realistic_v16_L1v1-v3/100000/'
-inputFileNames = None
+#inputFilePath = '/store/mc/RunIISummer20UL18MiniAODv2/GluGluHToTauTau_M125_TuneCP5_13TeV-powheg-pythia8/MINIAODSIM/106X_upgrade2018_realistic_v16_L1v1-v3/100000/'
+#inputFileNames = None
+inputFilePath = None
+inputFileNames = [ 'file:/local/karl/ee2tt_aod_unwgt/aodsim_1.root' ]
 processName = "qqH_htt_pythia8"
 hAxis = "beam"
 rndSeed = 1
@@ -48,17 +49,11 @@ from TauAnalysis.Entanglement.resolutions_cfi import resolutions_LHC, resolution
 resolutions = None
 applyHiggsMassConstraint = None
 if collider == "LHC":
-    process.source.fileNames = cms.untracked.vstring(
-        'file:/store/mc/RunIISummer20UL18MiniAODv2/GluGluHToTauTau_M125_TuneCP5_13TeV-powheg-pythia8/MINIAODSIM/106X_upgrade2018_realistic_v16_L1v1-v3/100000/4FC3731A-E9C4-DD47-B222-83083ECF5684.root'
-    )
     srcGenParticles = 'prunedGenParticles'
     tauPairMassCut = 'mass > 120. & mass < 130.'
     resolutions = resolutions_LHC
     applyHiggsMassConstraint = True
 elif collider == "SuperKEKB":
-    process.source.fileNames = cms.untracked.vstring(
-        'file:/local/karl/ee2tt_aod/aodsim_1.root'
-    )
     srcGenParticles = 'genParticles'
     tauPairMassCut = 'mass > 0.'
     resolutions = resolutions_SuperKEKB
@@ -172,30 +167,17 @@ process.genWeight = cms.EDProducer("GenWeightProducer",
 )
 process.analysisSequence += process.genWeight
  
-from TauAnalysis.Entanglement.smearing_cfi import smearing
-process.ntupleProducer = cms.EDAnalyzer("EntanglementNtupleProducer",
-    src = cms.InputTag(srcGenParticles),
-    collider = cms.string(collider),
-    hAxis = cms.string(hAxis),
-    resolutions = resolutions,
-    smearing = smearing.clone(
-        rndSeed = cms.uint64(rndSeed)
-    ),
-    #applySmearing = cms.bool(False),
-    applySmearing = cms.bool(True),
-    startPosFinder = cms.PSet(
-        algos = cms.vint32(1),
-        applyHiggsMassConstraint = cms.bool(applyHiggsMassConstraint),
-        applyRecoilEnergy_and_PzConstraint = cms.bool(True)
-    ),
-    kinematicFit = cms.PSet(
-        applyLifetimeConstraint = cms.bool(False)
-    ),
-    srcEvtWeights = cms.VInputTag('genWeight'),
-    verbosity = cms.untracked.int32(-1),
-    #verbosity = cms.untracked.int32(3),
-    cartesian = cms.untracked.bool(True)
-)
+process.load("TauAnalysis.Entanglement.EntanglementNtupleProducer_cfi")
+process.ntupleProducer.src = cms.InputTag(srcGenParticles)
+process.ntupleProducer.collider = cms.string(collider)
+process.ntupleProducer.hAxis = cms.string(hAxis)
+process.ntupleProducer.resolutions = resolutions
+process.ntupleProducer.smearing.rndSeed = cms.uint64(rndSeed)
+process.ntupleProducer.startPosFinder.applyHiggsMassConstraint = cms.bool(applyHiggsMassConstraint)
+process.ntupleProducer.startPosFinder.skip = cms.bool(False)
+process.ntupleProducer.kinematicFit.skip = cms.bool(False)
+process.ntupleProducer.verbosity = cms.untracked.int32(-1)
+#process.ntupleProducer.verbosity = cms.untracked.int32(3)
 process.analysisSequence += process.ntupleProducer
 
 process.TFileService = cms.Service("TFileService", 

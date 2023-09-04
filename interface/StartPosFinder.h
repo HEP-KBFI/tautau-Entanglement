@@ -26,6 +26,8 @@ class StartPosFinder
 
   PolarimetricVector polarimetricVector_;
 
+  bool skip_;
+
   int verbosity_;
   bool cartesian_;
 };

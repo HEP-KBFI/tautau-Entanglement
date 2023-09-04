@@ -28,8 +28,11 @@ void showHistogram1d(TH1* histogram,
   
   histogram->SetTitle("");
   histogram->SetStats(showStatsBox);
-  histogram->SetMinimum(yMin*histogram->Integral());
-  histogram->SetMaximum(yMax*histogram->Integral());
+  if ( yMax > yMin )
+  {
+    histogram->SetMinimum(yMin*histogram->Integral());
+    histogram->SetMaximum(yMax*histogram->Integral());
+  }
 
   TAxis* xAxis = histogram->GetXaxis();
   xAxis->SetTitle(xAxisTitle.data());

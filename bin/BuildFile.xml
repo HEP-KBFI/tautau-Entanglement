@@ -7,6 +7,15 @@
   <use name="TauAnalysis/Entanglement"/>
   <use name="root"/>
 </bin>
+<bin file="dumpEntanglementNtuple.cc" name="dumpEntanglementNtuple">
+  <use name="DataFormats/FWLite"/>
+  <use name="FWCore/FWLite"/>
+  <use name="FWCore/ParameterSet"/>
+  <use name="FWCore/ParameterSetReader"/>
+  <use name="PhysicsTools/FWLite"/>
+  <use name="TauAnalysis/Entanglement"/>
+  <use name="root"/>
+</bin>
 <bin file="makeControlPlots.cc" name="makeControlPlots">
   <use name="DataFormats/FWLite"/>
   <use name="FWCore/FWLite"/>
@@ -30,3 +39,6 @@
 <bin file="testEntanglementVariables.cc" name="testEntanglementVariables">
   <use name="TauAnalysis/Entanglement"/>
 </bin>
+<!--bin file="testKinematicFit.cc" name="testKinematicFit">
+  <use name="TauAnalysis/Entanglement"/>
+</bin-->

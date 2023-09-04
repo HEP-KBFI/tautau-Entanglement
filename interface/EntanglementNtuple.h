@@ -76,6 +76,8 @@ class EntanglementNtuple
   UInt_t lumi_;                      // luminosity-section number
   ULong64_t event_;                  // event number  
 
+  ULong64_t entry_;
+
   class branchType_KinematicEvent
   {
    public:

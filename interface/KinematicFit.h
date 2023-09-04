@@ -22,6 +22,8 @@ class KinematicFit
 
   int collider_;
 
+  bool skip_;
+
   int verbosity_;
   bool cartesian_;
 };
