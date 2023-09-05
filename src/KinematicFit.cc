@@ -788,7 +788,7 @@ namespace kinFit
       //     respectively.
       //-----------------------------------------------------------------------------------------------
 
-      MatrixPxC DT = ROOT::Math::Transpose(D);    
+      MatrixPxC DT = ROOT::Math::Transpose(D);
       if ( verbosity >= 1 )
       {
         std::cout << "DT:\n";
@@ -875,7 +875,7 @@ namespace kinFit
 
       // CV: compute chi^2
       VectorP alpha_minus_alpha0 = alpha - alpha0;
-      double chi2 = ROOT::Math::Dot(alpha_minus_alpha0, Vinv_alpha0*alpha_minus_alpha0) + ROOT::Math::Dot(lambda, Vinv_D*lambda);
+      double chi2 = ROOT::Math::Dot(alpha_minus_alpha0, Vinv_alpha0*alpha_minus_alpha0) + ROOT::Math::Dot(lambda, D*dalpha + d);
       if ( applyLifetimeConstraint )
       {
         chi2 += 2.*tauPlusD*mTau/(ct*tauPlusP) + 2.*tauMinusD*mTau/(ct*tauMinusP);
@@ -1080,7 +1080,7 @@ KinematicFit::operator()(const KinematicEvent& kineEvt)
     std::cout << "best fit:\n";
     std::cout << " iteration = " << iteration_bestfit << " (max_iterations = " << max_iterations << ")\n";
     std::cout << " status = " << status << "\n";
-    std::cout << " min(chi^2) = " << min_chi2 << "\n";
+    std::cout << " min(chi^2/DoF) = " << min_chi2 << "\n";
   }
 
   kineEvt_kinFit.kinFitStatus_ = status;
