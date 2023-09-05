@@ -13,7 +13,7 @@ process.load('Configuration.StandardSequences.FrontierConditions_GlobalTag_cff')
 
 process.maxEvents = cms.untracked.PSet(
     input = cms.untracked.int32(-1)
-    #input = cms.untracked.int32(1000)
+    #input = cms.untracked.int32(10)
 )
 
 process.source = cms.Source("PoolSource",
@@ -27,6 +27,10 @@ process.source = cms.Source("PoolSource",
 #inputFileNames = None
 inputFilePath = None
 inputFileNames = [ 'file:/local/karl/ee2tt_aod_unwgt/aodsim_1.root' ]
+
+applyTauPairMassSelection  = True
+applyTauDecayModeSelection = True
+applyVisPtAndEtaSelection  = False
 
 ##inputFilePath = None
 ##inputFileNames = $inputFileNames
@@ -57,8 +61,37 @@ process.dumpGenParticles = cms.EDAnalyzer("ParticleListDrawer",
 )
 process.analysisSequence += process.dumpGenParticles
 
-process.lheWriter = cms.EDAnalyzer("LHEWriter",
-    moduleLabel = cms.untracked.InputTag('externalLHEProducer')
+#--------------------------------------------------------------------------------
+# apply event selection
+
+if applyTauPairMassSelection:
+    process.load("TauAnalysis.Entanglement.filterByTauPairMass_cff")
+    process.genTaus.src = cms.InputTag('genParticles')
+    process.genTauPair.cut = cms.string("mass > 0.")
+    process.analysisSequence += process.filterByTauPairMass
+
+if applyTauDecayModeSelection:
+    process.load("TauAnalysis.Entanglement.filterByTauDecayMode_cff")
+    process.tauGenJetsSelectorAllHadrons.select = cms.vstring("oneProng0Pi0")
+    process.analysisSequence += process.filterByTauDecayMode
+
+if applyVisPtAndEtaSelection:
+    if not applyTauDecayModeSelection:
+        process.load("TauAnalysis.Entanglement.filterByTauDecayMode_cff")
+        process.analysisSequence += process.tauGenJets
+        process.analysisSequence += process.tauGenJetsSelectorAllHadrons
+    process.load("TauAnalysis.Entanglement.filterByVisPtAndEta_cff")
+    process.analysisSequence += process.filterByVisPtAndEta
+#--------------------------------------------------------------------------------
+
+#process.lheWriter = cms.EDAnalyzer("LHEWriter",
+#    moduleLabel = cms.untracked.InputTag('externalLHEProducer')
+#)
+process.lheWriter = cms.EDAnalyzer("MyLHEWriter",
+    srcLHERunInfo = cms.InputTag('externalLHEProducer'),
+    srcLHEEvent = cms.InputTag('externalLHEProducer'),
+    srcGenParticles = cms.InputTag('genParticles'),
+    outputFileName = cms.string("aodsim_1_sel_piPlus_piMinus.lhe")
 )
 process.analysisSequence += process.lheWriter
 

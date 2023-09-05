@@ -72,7 +72,13 @@ minTauTIP = -1.
 maxNumChargedKaons = 0
 maxNumNeutralKaons = 0
 maxNumPhotons = -1
-maxSumPhotonEn = 5.
+maxSumPhotonEn = None
+if collider = "LHC":
+    maxSumPhotonEn = 5.
+elif collider = "SuperKEKB":
+    maxSumPhotonEn = 0.5
+else:
+    raise ValueError("Invalid Configuration parameter 'collider' = '%s' !!" % collider)
 
 ##inputFilePath = None
 ##inputFileNames = $inputFileNames

@@ -38,7 +38,7 @@ process.dumpEntanglementNtuple = cms.PSet(
 #inputFilePath = '/scratch/persistent/veelken/Entanglement/ntuples/2023Aug02/'
 #inputFileNames = None
 inputFilePath = None
-inputFileNames = [ '/home/veelken/Entanglement/CMSSW_12_4_8/src/TauAnalysis/Entanglement/test/DEBUG/entanglementNtuple_ee2tt_unwgt_DEBUG_forLuca.root' ]
+inputFileNames = [ '/home/veelken/Entanglement/CMSSW_12_4_8/src/TauAnalysis/Entanglement/test/entanglementNtuple_aodsim_1_sel_piPlus_piMinus.root' ]
 processName = "ggH_htt_pythia8"
 mode = 'gen'
 hAxis = "beam"
@@ -51,7 +51,7 @@ minTauTIP = -1.
 maxNumChargedKaons = 0
 maxNumNeutralKaons = 0
 maxNumPhotons = -1
-maxSumPhotonEn = 5.
+maxSumPhotonEn = 0.5
 
 ##inputFilePath = None
 ##inputFileNames = $inputFileNames

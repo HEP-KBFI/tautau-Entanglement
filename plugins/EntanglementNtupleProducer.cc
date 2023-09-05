@@ -13,7 +13,7 @@
 #include "TauAnalysis/Entanglement/interface/findDecayProducts.h"     // findDecayProducts()
 #include "TauAnalysis/Entanglement/interface/findLastTau.h"           // findLastTau()
 #include "TauAnalysis/Entanglement/interface/get_decayMode.h"         // get_decayMode()
-#include "TauAnalysis/Entanglement/interface/get_particles_of_type.h" // get_chargedHadrons(), get_neutralPions(), get_neutrinos()
+#include "TauAnalysis/Entanglement/interface/get_particles_of_type.h" // get_chargedKaons(), get_neutralKaons(), get_photons()
 
 #include <iostream>                                                   // std::cout
 
