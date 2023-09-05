@@ -4,6 +4,7 @@
 
 #include "TauAnalysis/Entanglement/interface/cmsException.h"   // cmsException
 #include "TauAnalysis/Entanglement/interface/printCovMatrix.h" // printCovMatrix()
+#include "TauAnalysis/Entanglement/interface/square.h"         // square()
 
 #include <TBenchmark.h>                                        // TBenchmark
 #include <TCanvas.h>                                           // TCanvas
@@ -230,11 +231,9 @@ fit(const Vector2& alpha0, const Matrix2x2& V_alpha0, const Polynomial<rank>& co
     }
 
     Vector2 dalpha0 = alpha0 - alphaA;
-    //Vector1 lambda = V_D*(D*dalpha0 + d); // CV: check if sign in this equation is correct
-    Vector1 lambda = -V_D*(D*dalpha0 + d);
+    Vector1 lambda = V_D*(D*dalpha0 + d);
 
-    //Vector2 alpha = alpha0 - V_alpha0*DT*lambda; // CV: may need to multiply second term by configurable scale factor < 1, in order to improve convergence of the fit
-    const double sfStepSize = 0.2;
+    const double sfStepSize = 1.;
     Vector2 alpha = alpha0 - sfStepSize*V_alpha0*DT*lambda;
 
     Matrix2x2 V_alpha = V_alpha0 - V_alpha0*DT*V_D*D*V_alpha0;
@@ -253,8 +252,7 @@ fit(const Vector2& alpha0, const Matrix2x2& V_alpha0, const Polynomial<rank>& co
     }
 
     Vector2 alpha_minus_alpha0 = alpha - alpha0;
-    //double chi2 = ROOT::Math::Dot(alpha_minus_alpha0, Vinv_alpha0*alpha_minus_alpha0) + ROOT::Math::Dot(lambda, D*dalpha + d);
-    double chi2 = ROOT::Math::Dot(alpha_minus_alpha0, Vinv_alpha0*alpha_minus_alpha0) + ROOT::Math::Dot(-lambda, D*dalpha + d);
+    double chi2 = ROOT::Math::Dot(alpha_minus_alpha0, Vinv_alpha0*alpha_minus_alpha0) + ROOT::Math::Dot(lambda, D*dalpha + d);
     chi2 /= numParameters;
     if ( verbosity >= 1 )
     {
@@ -320,7 +318,9 @@ fit(const Vector2& alpha0, const Matrix2x2& V_alpha0, const Polynomial<rank>& co
 
 template <unsigned int rank>
 void 
-showFit(const Vector2& mean, const Matrix2x2& cov, const Polynomial<rank>& constraint, const std::vector<FitResult>& fitResult, const std::string& outputFileName)
+showFit(const Vector2& mean, const Matrix2x2& cov, const Polynomial<rank>& constraint, 
+        const std::vector<FitResult>& fitResult,
+        const std::string& outputFileName)
 {
   TCanvas* canvas = new TCanvas("canvas", "canvas", 900, 800);
   canvas->SetFillColor(10);
@@ -393,7 +393,8 @@ showFit(const Vector2& mean, const Matrix2x2& cov, const Polynomial<rank>& const
 }
 
 void
-showChi2(const std::vector<FitResult>& fitResult, const std::string& outputFileName)
+showChi2(const std::vector<FitResult>& fitResult, 
+         const std::string& outputFileName)
 {
   TCanvas* canvas = new TCanvas("canvas", "canvas", 800, 600);
   canvas->SetFillColor(10);
@@ -428,10 +429,10 @@ showChi2(const std::vector<FitResult>& fitResult, const std::string& outputFileN
   }
   chi2_graph->SetMarkerStyle(8);
   chi2_graph->SetMarkerSize(1);
-  chi2_graph->SetMarkerColor(1);
+  chi2_graph->SetMarkerColor(8);
   chi2_graph->SetLineStyle(8);
   chi2_graph->SetLineWidth(1);
-  chi2_graph->SetLineColor(1);
+  chi2_graph->SetLineColor(8);
 
   TH1* dummyHistogram = new TH1D("dummyHistogram", "dummyHistogram", numPoints, -0.5, numPoints - 0.5);
   dummyHistogram->SetTitle("");
@@ -453,6 +454,72 @@ showChi2(const std::vector<FitResult>& fitResult, const std::string& outputFileN
   delete chi2_graph;
   delete dummyHistogram;
   delete canvas;
+}
+
+void
+showDistance(const Vector2& mean, 
+             const std::vector<FitResult>& fitResult,
+             const std::string& outputFileName)
+{
+  TCanvas* canvas = new TCanvas("canvas", "canvas", 800, 600);
+  canvas->SetFillColor(10);
+  canvas->SetBorderSize(2);
+  canvas->SetLeftMargin(0.14);
+  canvas->SetBottomMargin(0.12);
+
+  double yMin = 0.;
+  double yMax = 1.;
+
+  int numPoints = fitResult.size();
+  TGraph* distance_graph = new TGraph(numPoints);
+  for ( int idxPoint = 0; idxPoint < numPoints; ++idxPoint )
+  {
+    const point2d& point = fitResult.at(idxPoint).point_;
+    double distance = std::sqrt(square(point.first - mean(0)) + square(point.second - mean(1)));
+    distance_graph->SetPoint(idxPoint, fitResult.at(idxPoint).iteration_, distance);
+    if ( distance > yMax )
+    {
+      yMax = distance;
+    }
+  }
+  distance_graph->SetMarkerStyle(8);
+  distance_graph->SetMarkerSize(1);
+  distance_graph->SetMarkerColor(8);
+  distance_graph->SetLineStyle(8);
+  distance_graph->SetLineWidth(1);
+  distance_graph->SetLineColor(8);
+
+  TH1* dummyHistogram = new TH1D("dummyHistogram", "dummyHistogram", numPoints, -1.5, numPoints - 1.5);
+  dummyHistogram->SetTitle("");
+  dummyHistogram->SetStats(false);
+  dummyHistogram->SetMinimum(yMin);
+  dummyHistogram->SetMaximum(yMax);
+  dummyHistogram->GetXaxis()->SetTitle("Iteration");
+  dummyHistogram->GetYaxis()->SetTitle("Distance");
+  dummyHistogram->Draw("axis");
+
+  distance_graph->Draw("LPsame");
+
+  canvas->Update();
+  size_t idx = outputFileName.find_last_of('.');
+  std::string outputFileName_plot = std::string(outputFileName, 0, idx);
+  canvas->Print(std::string(outputFileName_plot).append(".png").c_str());
+  //canvas->Print(std::string(outputFileName_plot).append(".pdf").c_str());
+
+  delete distance_graph;
+  delete dummyHistogram;
+  delete canvas;
+}
+
+template <unsigned int rank>
+void 
+showResults(const Vector2& mean, const Matrix2x2& cov, const Polynomial<rank>& constraint, 
+            const std::vector<FitResult>& fitResult, 
+            const std::string& outputFileName)
+{
+  showFit(mean, cov, constraint, fitResult, outputFileName);
+  showChi2(fitResult, TString(outputFileName.c_str()).ReplaceAll(".png", "_chi2.png").Data());
+  showDistance(mean, fitResult, TString(outputFileName.c_str()).ReplaceAll(".png", "_distance.png").Data());
 }
 
 int main(int argc, char* argv[])
@@ -505,55 +572,49 @@ int main(int argc, char* argv[])
   std::cout << "Fitting Gaussian with covariance matrix:\n";
   std::cout << cov_uncorr << "\n";
   std::cout << "with constraint = '" << constraint_pol1.get_formula() << "'...\n";
-  std::vector<FitResult> fit_points_uncorr_pol1 = fit(mean, cov_uncorr, constraint_pol1, points_pol1.at(0), verbosity);
+  std::vector<FitResult> fitResult_uncorr_pol1 = fit(mean, cov_uncorr, constraint_pol1, points_pol1.at(0), verbosity);
   std::string outputFileName_uncorr_pol1 = "testKinematicFit_uncorr_pol1.png";
-  showFit(mean, cov_uncorr, constraint_pol1, fit_points_uncorr_pol1, outputFileName_uncorr_pol1);
-  showChi2(fit_points_uncorr_pol1, TString(outputFileName_uncorr_pol1.c_str()).ReplaceAll(".png", "_chi2.png").Data());
+  showResults(mean, cov_uncorr, constraint_pol1, fitResult_uncorr_pol1, outputFileName_uncorr_pol1);
   std::cout << " Done.\n";
 
   std::cout << "Fitting Gaussian with covariance matrix:\n";
   std::cout << cov_corr_wide << "\n";
   std::cout << "with constraint = '" << constraint_pol1.get_formula() << "'...\n";
-  std::vector<FitResult> fit_points_corr_wide_pol1 = fit(mean, cov_corr_wide, constraint_pol1, points_pol1.at(0), verbosity);
+  std::vector<FitResult> fitResult_corr_wide_pol1 = fit(mean, cov_corr_wide, constraint_pol1, points_pol1.at(0), verbosity);
   std::string outputFileName_corr_wide_pol1 = "testKinematicFit_corr_wide_pol1.png";
-  showFit(mean, cov_corr_wide, constraint_pol1, fit_points_corr_wide_pol1, outputFileName_corr_wide_pol1);
-  showChi2(fit_points_corr_wide_pol1, TString(outputFileName_corr_wide_pol1.c_str()).ReplaceAll(".png", "_chi2.png").Data());
+  showResults(mean, cov_corr_wide, constraint_pol1, fitResult_corr_wide_pol1, outputFileName_corr_wide_pol1);
   std::cout << " Done.\n";
 
   std::cout << "Fitting Gaussian with covariance matrix:\n";
   std::cout << cov_corr_narrow << "\n";
   std::cout << "with constraint = '" << constraint_pol1.get_formula() << "'...\n";
-  std::vector<FitResult> fit_points_corr_narrow_pol1 = fit(mean, cov_corr_narrow, constraint_pol1, points_pol1.at(0), verbosity);
+  std::vector<FitResult> fitResult_corr_narrow_pol1 = fit(mean, cov_corr_narrow, constraint_pol1, points_pol1.at(0), verbosity);
   std::string outputFileName_corr_narrow_pol1 = "testKinematicFit_corr_narrow_pol1.png";
-  showFit(mean, cov_corr_narrow, constraint_pol1, fit_points_corr_narrow_pol1, outputFileName_corr_narrow_pol1);
-  showChi2(fit_points_corr_narrow_pol1, TString(outputFileName_corr_narrow_pol1.c_str()).ReplaceAll(".png", "_chi2.png").Data());
+  showResults(mean, cov_corr_narrow, constraint_pol1, fitResult_corr_narrow_pol1, outputFileName_corr_narrow_pol1);
   std::cout << " Done.\n";
 */
   std::cout << "Fitting Gaussian with covariance matrix:\n";
   std::cout << cov_uncorr << "\n";
   std::cout << "with constraint = '" << constraint_pol3.get_formula() << "'...\n";
-  std::vector<FitResult> fit_points_uncorr_pol3 = fit(mean, cov_uncorr, constraint_pol3, points_pol3.at(0), verbosity);
+  std::vector<FitResult> fitResult_uncorr_pol3 = fit(mean, cov_uncorr, constraint_pol3, points_pol3.at(0), verbosity);
   std::string outputFileName_uncorr_pol3 = "testKinematicFit_uncorr_pol3.png";
-  showFit(mean, cov_uncorr, constraint_pol3, fit_points_uncorr_pol3, outputFileName_uncorr_pol3);
-  showChi2(fit_points_uncorr_pol3, TString(outputFileName_uncorr_pol3.c_str()).ReplaceAll(".png", "_chi2.png").Data());
+  showResults(mean, cov_uncorr, constraint_pol3, fitResult_uncorr_pol3, outputFileName_uncorr_pol3);
   std::cout << " Done.\n";
 /*
   std::cout << "Fitting Gaussian with covariance matrix:\n";
   std::cout << cov_corr_wide << "\n";
   std::cout << "with constraint = '" << constraint_pol3.get_formula() << "'...\n";
-  std::vector<FitResult> fit_points_corr_wide_pol3 = fit(mean, cov_corr_wide, constraint_pol3, points_pol3.at(0), verbosity);
+  std::vector<FitResult> fitResult_corr_wide_pol3 = fit(mean, cov_corr_wide, constraint_pol3, points_pol3.at(0), verbosity);
   std::string outputFileName_corr_wide_pol3 = "testKinematicFit_corr_wide_pol3.png";
-  showFit(mean, cov_corr_wide, constraint_pol3, fit_points_corr_wide_pol3, outputFileName_corr_wide_pol3);
-  showChi2(fit_points_corr_wide_pol3, TString(outputFileName_corr_wide_pol3.c_str()).ReplaceAll(".png", "_chi2.png").Data());
+  showResults(mean, cov_corr_wide, constraint_pol3, fitResult_corr_wide_pol3, outputFileName_corr_wide_pol3);
   std::cout << " Done.\n";
 
   std::cout << "Fitting Gaussian with covariance matrix:\n";
   std::cout << cov_corr_narrow << "\n";
   std::cout << "with constraint = '" << constraint_pol3.get_formula() << "'...\n";
-  std::vector<FitResult> fit_points_corr_narrow_pol3 = fit(mean, cov_corr_narrow, constraint_pol3, points_pol3.at(0), verbosity);
+  std::vector<FitResult> fitResult_corr_narrow_pol3 = fit(mean, cov_corr_narrow, constraint_pol3, points_pol3.at(0), verbosity);
   std::string outputFileName_corr_narrow_pol3 = "testKinematicFit_corr_narrow_pol3.png";
-  showFit(mean, cov_corr_narrow, constraint_pol3, fit_points_corr_narrow_pol3, outputFileName_corr_narrow_pol3);
-  showChi2(fit_points_corr_narrow_pol3, TString(outputFileName_corr_narrow_pol3.c_str()).ReplaceAll(".png", "_chi2.png").Data());
+  showResults(mean, cov_corr_narrow, constraint_pol3, fitResult_corr_narrow_pol3, outputFileName_corr_narrow_pol3);
   std::cout << " Done.\n";
 */
   clock.Show("testKinematicFit");
