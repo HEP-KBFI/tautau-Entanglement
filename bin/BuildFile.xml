@@ -39,6 +39,6 @@
 <bin file="testEntanglementVariables.cc" name="testEntanglementVariables">
   <use name="TauAnalysis/Entanglement"/>
 </bin>
-<!--bin file="testKinematicFit.cc" name="testKinematicFit">
+<bin file="testKinematicFit.cc" name="testKinematicFit">
   <use name="TauAnalysis/Entanglement"/>
-</bin-->
+</bin>
