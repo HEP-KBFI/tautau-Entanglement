@@ -29,9 +29,13 @@ inputFileNames = [ 'file:/local/karl/ee2tt_aod_unwgt/aodsim_1.root' ]
 processName = "qqH_htt_pythia8"
 hAxis = "beam"
 rndSeed = 1
-outputFileName = "entanglementNtuple_%s_DEBUG.root" % processName
+outputFileName = "entanglementNtuple_aodsim_1_sel_piPlus_piMinus.root"
 #collider = "LHC"
 collider = "SuperKEKB"
+
+applyTauPairMassSelection  = True
+applyTauDecayModeSelection = True
+applyVisPtAndEtaSelection  = False
 
 ##inputFilePath = None
 ##inputFileNames = $inputFileNames
@@ -47,17 +51,17 @@ srcGenParticles = None
 tauPairMassCut = None
 from TauAnalysis.Entanglement.resolutions_cfi import resolutions_LHC, resolutions_SuperKEKB
 resolutions = None
-applyHiggsMassConstraint = None
+startPosFinder_applyHiggsMassConstraint = None
 if collider == "LHC":
     srcGenParticles = 'prunedGenParticles'
-    tauPairMassCut = 'mass > 120. & mass < 130.'
+    tauPairMassCut = "mass > 120. & mass < 130."
     resolutions = resolutions_LHC
-    applyHiggsMassConstraint = True
+    startPosFinder_applyHiggsMassConstraint = True
 elif collider == "SuperKEKB":
     srcGenParticles = 'genParticles'
-    tauPairMassCut = 'mass > 0.'
+    tauPairMassCut = "mass > 0."
     resolutions = resolutions_SuperKEKB
-    applyHiggsMassConstraint = False
+    startPosFinder_applyHiggsMassConstraint = False
 else:
     raise ValueError("Invalid Configuration parameter 'collider' = '%s' !!" % collider)
 
@@ -86,80 +90,26 @@ process.dumpGenParticles = cms.EDAnalyzer("ParticleListDrawer",
 process.analysisSequence += process.dumpGenParticles
 
 #--------------------------------------------------------------------------------
-# CV: Veto events in which the tau leptons radiate high pT photons,
-#     causing the mass of the tau pair to be significantly lower than the Higgs/Z boson mass.
-#
-#     The KinematicFit will likely fail for these events and may cause the neutrino momentum to become "not-a-number" (NaN),
-#     triggering the following assert statement:
-#       cmsRun: /home/veelken/Entanglement/CMSSW_12_4_8/src/TauAnalysis/Entanglement/src/SpinAnalyzerOneProng1Pi0.cc:103: reco::Candidate::Vector {anonymous}::getPolarimetricVec_OneProng1PiZero(const LorentzVector&, const std::vector<KinematicParticle>&, const LorentzVector&, const ROOT::Math::Boost&, const Vector&, const Vector&, const Vector&, const ROOT::Math::Boost&, int, bool): Assertion `nuP4.energy() >= 0. && N.energy() >= 0.' failed.
-#
-process.genTaus = cms.EDFilter("GenParticleSelector",
-    src = cms.InputTag(srcGenParticles),
-    cut = cms.string("abs(pdgId) = 15 & status = 2"),
-    filter = cms.bool(False)
-)
-process.analysisSequence += process.genTaus
+# apply event selection
 
-process.genTauPair = cms.EDProducer("CandViewShallowCloneCombiner",
-    decay = cms.string("genTaus@+ genTaus@-"),
-    cut = cms.string(tauPairMassCut),
-    filter = cms.bool(False)
-)
-process.analysisSequence += process.genTauPair
+if applyTauPairMassSelection:
+    process.load("TauAnalysis.Entanglement.filterByTauPairMass_cff")
+    process.genTaus.src = cms.InputTag(srcGenParticles)
+    process.genTauPair.cut = cms.string(tauPairMassCut)
+    process.analysisSequence += process.filterByTauPairMass
 
-process.selectedTauPairFilter = cms.EDFilter("CandViewCountFilter",
-    src = cms.InputTag('genTauPair'),
-    minNumber = cms.uint32(1)
-)
-process.analysisSequence += process.selectedTauPairFilter
-#--------------------------------------------------------------------------------
+if applyTauDecayModeSelection:
+    process.load("TauAnalysis.Entanglement.filterByTauDecayMode_cff")
+    process.tauGenJetsSelectorAllHadrons.select = cms.vstring("oneProng0Pi0")
+    process.analysisSequence += process.filterByTauDecayMode
 
-#--------------------------------------------------------------------------------
-# CV: Require both generator-level tau leptons to decay into "oneProng0Pi0", "oneProng1Pi0", or "threeProng0Pi0".
-#     The tau decay mode strings are defined in:
-#       https://cmssdt.cern.ch/lxr/source/PhysicsTools/JetMCUtils/src/JetMCTag.cc
-# 
-#     Note that the KinematicFit will likely fail in case the event contains >= leptonic tau decay 
-#     and the spin analyzer vectors will be zero,
-#     so it is recommended to ALWAYS apply a tau decay mode selection 
-#     and require that BOTH taus decay hadronically and to the selected decay modes
-#
-#     Similarly, it is recommended to ALWAYS apply the pT > 20 GeV and |eta| < 2.3 cuts,
-#     in order to remove pathological events in which one of the tau leptons have very high longitudinal momentum
-#     or the visible decay products have very low transverse momentum
-#
-process.load("PhysicsTools.JetMCAlgos.TauGenJets_cfi")
-process.tauGenJets.GenParticles = cms.InputTag('genTaus')
-process.analysisSequence += process.tauGenJets
-
-process.load("PhysicsTools.JetMCAlgos.TauGenJetsDecayModeSelectorAllHadrons_cfi")
-process.tauGenJetsSelectorAllHadrons.select = cms.vstring(
-    'oneProng0Pi0', 
-    'oneProng1Pi0', 
-##    #'oneProng2Pi0', 
-##    #'oneProngOther',
-    'threeProng0Pi0', 
-##    #'threeProng1Pi0', 
-##    #'threeProngOther', 
-##    #'rare'
-)
-process.analysisSequence += process.tauGenJetsSelectorAllHadrons
-
-## CV: disabled pT and eta cuts on visible tau decay products 
-##     to test analyzeEntanglementNtuples.cc code (17/08/2023)
-##process.selectedGenHadTaus = cms.EDFilter("GenJetSelector",
-##    src = cms.InputTag('tauGenJetsSelectorAllHadrons'),
-##    cut = cms.string('pt > 20. & abs(eta) < 2.3'),
-##    filter = cms.bool(False)
-##)
-##process.analysisSequence += process.selectedGenHadTaus
-
-process.selectedGenHadTauFilter = cms.EDFilter("CandViewCountFilter",
-    ##src = cms.InputTag('selectedGenHadTaus'),
-    src = cms.InputTag('tauGenJetsSelectorAllHadrons'),
-    minNumber = cms.uint32(2)
-)
-process.analysisSequence += process.selectedGenHadTauFilter
+if applyVisPtAndEtaSelection:
+    if not applyTauDecayModeSelection:
+        process.load("TauAnalysis.Entanglement.filterByTauDecayMode_cff")
+        process.analysisSequence += process.tauGenJets
+        process.analysisSequence += process.tauGenJetsSelectorAllHadrons
+    process.load("TauAnalysis.Entanglement.filterByVisPtAndEta_cff")
+    process.analysisSequence += process.filterByVisPtAndEta
 #--------------------------------------------------------------------------------
 
 process.genWeight = cms.EDProducer("GenWeightProducer",
@@ -173,7 +123,7 @@ process.ntupleProducer.collider = cms.string(collider)
 process.ntupleProducer.hAxis = cms.string(hAxis)
 process.ntupleProducer.resolutions = resolutions
 process.ntupleProducer.smearing.rndSeed = cms.uint64(rndSeed)
-process.ntupleProducer.startPosFinder.applyHiggsMassConstraint = cms.bool(applyHiggsMassConstraint)
+process.ntupleProducer.startPosFinder.applyHiggsMassConstraint = cms.bool(startPosFinder_applyHiggsMassConstraint)
 process.ntupleProducer.startPosFinder.skip = cms.bool(False)
 process.ntupleProducer.kinematicFit.skip = cms.bool(False)
 process.ntupleProducer.verbosity = cms.untracked.int32(-1)
