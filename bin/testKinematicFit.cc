@@ -150,7 +150,7 @@ class Polynomial
     double x = point.first;
     double y = point.second;
     Vector1 d;
-    d(0) = y - get_polynomial(x);
+    d(0) = get_polynomial(x) - y;
     return d;
   }
 
@@ -197,10 +197,11 @@ fit(const Vector2& alpha0, const Matrix2x2& V_alpha0, const Polynomial<rank>& co
   std::vector<FitResult> fitResult;
   fitResult.push_back(FitResult(-1, startPos, -1.));
 
+  Vector2 alpha_bestfit;
   double min_chi2 = -1.;
   int status = -1;
   int iteration_bestfit = -1;
-  const int max_iterations = 10;
+  const int max_iterations = 25;
   bool hasConverged = false;
   int iteration = 0;
   Vector2 alphaA;
@@ -217,6 +218,13 @@ fit(const Vector2& alpha0, const Matrix2x2& V_alpha0, const Polynomial<rank>& co
 
     Matrix1x2 D = constraint.get_D(point2d(alphaA(0), alphaA(1)));
     Vector1   d = constraint.get_d(point2d(alphaA(0), alphaA(1)));
+    if ( verbosity >= 1 )
+    {
+      std::cout << "D:\n";
+      std::cout << D << "\n";
+      std::cout << "d:\n";
+      std::cout << d << "\n";
+    }
 
     Matrix2x1 DT = ROOT::Math::Transpose(D);
 
@@ -233,7 +241,8 @@ fit(const Vector2& alpha0, const Matrix2x2& V_alpha0, const Polynomial<rank>& co
     Vector2 dalpha0 = alpha0 - alphaA;
     Vector1 lambda = V_D*(D*dalpha0 + d);
 
-    const double sfStepSize = 1.;
+    //const double sfStepSize = +1.;
+    double sfStepSize = std::min(1., 2.*iteration/max_iterations);
     Vector2 alpha = alpha0 - sfStepSize*V_alpha0*DT*lambda;
 
     Matrix2x2 V_alpha = V_alpha0 - V_alpha0*DT*V_D*D*V_alpha0;
@@ -283,13 +292,17 @@ fit(const Vector2& alpha0, const Matrix2x2& V_alpha0, const Polynomial<rank>& co
       std::cout << pulls << "\n";
     }
 
-    if ( chi2 < min_chi2 )
+    double d_mag = std::sqrt(ROOT::Math::Dot(d, d));
+    if ( d_mag < 1.e-3 )
     {
-      min_chi2 = chi2;
-      status = 0;
-      iteration_bestfit = iteration;
-
-      if ( dalpha_mag < 1.e-1 )
+      if ( status == -1 || chi2 < min_chi2 )
+      {
+        alpha_bestfit = alphaA;
+        min_chi2 = chi2;
+        status = 0;
+        iteration_bestfit = iteration;
+      }
+      if ( status == 0 && dalpha_mag < 1.e-3 )
       {
         status = 1;
         hasConverged = true;
@@ -306,11 +319,11 @@ fit(const Vector2& alpha0, const Matrix2x2& V_alpha0, const Polynomial<rank>& co
   if ( verbosity >= 1 )
   {
     std::cout << "best fit:\n";
-    std::cout << " iteration = " << iteration_bestfit << " (max_iterations = " << max_iterations << ")\n";
-    std::cout << "alphaA:\n";
-    std::cout << alphaA << "\n";
-    std::cout << " status = " << status << "\n";
-    std::cout << " min(chi^2/DoF) = " << min_chi2 << "\n";
+    std::cout << "iteration = " << iteration_bestfit << " (max_iterations = " << max_iterations << ")\n";
+    std::cout << "alpha:\n";
+    std::cout << alpha_bestfit << "\n";
+    std::cout << "status = " << status << "\n";
+    std::cout << "min(chi^2/DoF) = " << min_chi2 << "\n";
   }
 
   return fitResult;
@@ -326,36 +339,39 @@ showFit(const Vector2& mean, const Matrix2x2& cov, const Polynomial<rank>& const
   canvas->SetFillColor(10);
   canvas->SetBorderSize(2); 
   canvas->SetTopMargin(0.05);
-  canvas->SetLeftMargin(0.07);
+  canvas->SetLeftMargin(0.08);
   canvas->SetBottomMargin(0.07);
-  canvas->SetRightMargin(0.15);
+  canvas->SetRightMargin(0.14);
 
   int covInv_errorFlag = 0;
   Matrix2x2 covInv = cov.Inverse(covInv_errorFlag);
   if ( covInv_errorFlag != 0 )
     throw cmsException("showFit", __LINE__) 
       << "Failed to invert matrix cov !!\n";
+  std::cout << "covInv:\n";
+  std::cout << covInv << "\n";
 
   double det = -1.;
   cov.Det2(det);
+  std::cout << "det = " << det << "\n";
 
   const double xMin = -10.;
   const double xMax = +10.;
   const double yMin = -10.;
   const double yMax = +10.;
 
-  std::string gaussian_formula = "[0]*exp(-0.5*((x - [1])*[3]*(x - [1]) + (x - [1])*[4]*(y - [2]) + (y - [2])*[5]*(x - [1]) + (y - [2])*[6]*(y - [2])))";
-  TF2* gaussian_function = new TF2("gaussian", gaussian_formula.c_str(), xMin, xMax, yMin, yMax);
-  gaussian_function->SetParameter(0, 1./(2.*TMath::Pi()*det));
-  gaussian_function->SetParameter(1, mean(0));
-  gaussian_function->SetParameter(2, mean(1));
-  gaussian_function->SetParameter(3, covInv(0,0));
-  gaussian_function->SetParameter(4, covInv(0,1));
-  gaussian_function->SetParameter(5, covInv(1,0));
-  gaussian_function->SetParameter(6, covInv(1,1));
+  std::string chi2_formula = "(x - [1])*[3]*(x - [1]) + (x - [1])*[4]*(y - [2]) + (y - [2])*[5]*(x - [1]) + (y - [2])*[6]*(y - [2])";
+  TF2* chi2_function = new TF2("chi2", chi2_formula.c_str(), xMin, xMax, yMin, yMax);
+  chi2_function->SetParameter(0, 1./(2.*TMath::Pi()*det));
+  chi2_function->SetParameter(1, mean(0));
+  chi2_function->SetParameter(2, mean(1));
+  chi2_function->SetParameter(3, covInv(0,0));
+  chi2_function->SetParameter(4, covInv(0,1));
+  chi2_function->SetParameter(5, covInv(1,0));
+  chi2_function->SetParameter(6, covInv(1,1));
 
-  gaussian_function->SetTitle("");
-  gaussian_function->Draw("Colz");
+  chi2_function->SetTitle("");
+  chi2_function->Draw("Colz");
 
   TF1* constraint_function = new TF1("constraint", constraint.get_formula().c_str(), xMin, xMax);
   constraint_function->SetLineStyle(1);
@@ -387,7 +403,7 @@ showFit(const Vector2& mean, const Matrix2x2& cov, const Polynomial<rank>& const
   //canvas->Print(std::string(outputFileName_plot).append(".pdf").c_str());
 
   delete fit_graph;
-  delete gaussian_function;
+  delete chi2_function;
   delete constraint_function;
   delete canvas;
 }
@@ -568,8 +584,8 @@ int main(int argc, char* argv[])
   cov_corr_narrow(0,1) = 0.4;
   cov_corr_narrow(1,0) = cov_corr_narrow(0,1);
   cov_corr_narrow(1,1) = 4.;
-/*
-  std::cout << "Fitting Gaussian with covariance matrix:\n";
+
+  std::cout << "Fitting covariance matrix:\n";
   std::cout << cov_uncorr << "\n";
   std::cout << "with constraint = '" << constraint_pol1.get_formula() << "'...\n";
   std::vector<FitResult> fitResult_uncorr_pol1 = fit(mean, cov_uncorr, constraint_pol1, points_pol1.at(0), verbosity);
@@ -577,7 +593,7 @@ int main(int argc, char* argv[])
   showResults(mean, cov_uncorr, constraint_pol1, fitResult_uncorr_pol1, outputFileName_uncorr_pol1);
   std::cout << " Done.\n";
 
-  std::cout << "Fitting Gaussian with covariance matrix:\n";
+  std::cout << "Fitting covariance matrix:\n";
   std::cout << cov_corr_wide << "\n";
   std::cout << "with constraint = '" << constraint_pol1.get_formula() << "'...\n";
   std::vector<FitResult> fitResult_corr_wide_pol1 = fit(mean, cov_corr_wide, constraint_pol1, points_pol1.at(0), verbosity);
@@ -585,23 +601,23 @@ int main(int argc, char* argv[])
   showResults(mean, cov_corr_wide, constraint_pol1, fitResult_corr_wide_pol1, outputFileName_corr_wide_pol1);
   std::cout << " Done.\n";
 
-  std::cout << "Fitting Gaussian with covariance matrix:\n";
+  std::cout << "Fitting covariance matrix:\n";
   std::cout << cov_corr_narrow << "\n";
   std::cout << "with constraint = '" << constraint_pol1.get_formula() << "'...\n";
   std::vector<FitResult> fitResult_corr_narrow_pol1 = fit(mean, cov_corr_narrow, constraint_pol1, points_pol1.at(0), verbosity);
   std::string outputFileName_corr_narrow_pol1 = "testKinematicFit_corr_narrow_pol1.png";
   showResults(mean, cov_corr_narrow, constraint_pol1, fitResult_corr_narrow_pol1, outputFileName_corr_narrow_pol1);
   std::cout << " Done.\n";
-*/
-  std::cout << "Fitting Gaussian with covariance matrix:\n";
+
+  std::cout << "Fitting covariance matrix:\n";
   std::cout << cov_uncorr << "\n";
   std::cout << "with constraint = '" << constraint_pol3.get_formula() << "'...\n";
   std::vector<FitResult> fitResult_uncorr_pol3 = fit(mean, cov_uncorr, constraint_pol3, points_pol3.at(0), verbosity);
   std::string outputFileName_uncorr_pol3 = "testKinematicFit_uncorr_pol3.png";
   showResults(mean, cov_uncorr, constraint_pol3, fitResult_uncorr_pol3, outputFileName_uncorr_pol3);
   std::cout << " Done.\n";
-/*
-  std::cout << "Fitting Gaussian with covariance matrix:\n";
+
+  std::cout << "Fitting covariance matrix:\n";
   std::cout << cov_corr_wide << "\n";
   std::cout << "with constraint = '" << constraint_pol3.get_formula() << "'...\n";
   std::vector<FitResult> fitResult_corr_wide_pol3 = fit(mean, cov_corr_wide, constraint_pol3, points_pol3.at(0), verbosity);
@@ -609,14 +625,14 @@ int main(int argc, char* argv[])
   showResults(mean, cov_corr_wide, constraint_pol3, fitResult_corr_wide_pol3, outputFileName_corr_wide_pol3);
   std::cout << " Done.\n";
 
-  std::cout << "Fitting Gaussian with covariance matrix:\n";
+  std::cout << "Fitting covariance matrix:\n";
   std::cout << cov_corr_narrow << "\n";
   std::cout << "with constraint = '" << constraint_pol3.get_formula() << "'...\n";
   std::vector<FitResult> fitResult_corr_narrow_pol3 = fit(mean, cov_corr_narrow, constraint_pol3, points_pol3.at(0), verbosity);
   std::string outputFileName_corr_narrow_pol3 = "testKinematicFit_corr_narrow_pol3.png";
   showResults(mean, cov_corr_narrow, constraint_pol3, fitResult_corr_narrow_pol3, outputFileName_corr_narrow_pol3);
   std::cout << " Done.\n";
-*/
+
   clock.Show("testKinematicFit");
 
   return EXIT_SUCCESS;
