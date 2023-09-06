@@ -1,25 +1,29 @@
 
-#include "DataFormats/Math/interface/Matrix.h"                 // math::Matrix
-#include "DataFormats/Math/interface/Vector.h"                 // math::Vector
+#include "DataFormats/Math/interface/Matrix.h"                   // math::Matrix
+#include "DataFormats/Math/interface/Vector.h"                   // math::Vector
 
-#include "TauAnalysis/Entanglement/interface/cmsException.h"   // cmsException
-#include "TauAnalysis/Entanglement/interface/printCovMatrix.h" // printCovMatrix()
-#include "TauAnalysis/Entanglement/interface/square.h"         // square()
+#include "TauAnalysis/Entanglement/interface/cmsException.h"     // cmsException
+#include "TauAnalysis/Entanglement/interface/fillWithOverFlow.h" // fillWithOverFlow2D()
+#include "TauAnalysis/Entanglement/interface/printCovMatrix.h"   // printCovMatrix()
+#include "TauAnalysis/Entanglement/interface/square.h"           // square()
 
-#include <TBenchmark.h>                                        // TBenchmark
-#include <TCanvas.h>                                           // TCanvas
-#include <TF1.h>                                               // TF1
-#include <TF2.h>                                               // TF2
-#include <TGraph.h>                                            // TGraph
-#include <TH1.h>                                               // TH1D
-#include <TMath.h>                                             // TMath::Pi()
-#include <TString.h>                                           // TString
+#include <TAxis.h>                                               // TAxis
+#include <TBenchmark.h>                                          // TBenchmark
+#include <TCanvas.h>                                             // TCanvas
+#include <TF1.h>                                                 // TF1
+#include <TF2.h>                                                 // TF2
+#include <TGraph.h>                                              // TGraph
+#include <TH1.h>                                                 // TH1D
+#include <TH2.h>                                                 // TH2D
+#include <TMath.h>                                               // TMath::Pi()
+#include <TRandom3.h>                                            // TRandom3
+#include <TString.h>                                             // TString
 
-#include <cmath>                                               // std::sqrt()
-#include <sstream>                                             // std::ostringstream
-#include <string>                                              // std::string
-#include <utility>                                             // std::pair
-#include <vector>                                              // std::vector
+#include <cmath>                                                 // std::sqrt()
+#include <sstream>                                               // std::ostringstream
+#include <string>                                                // std::string
+#include <utility>                                               // std::pair
+#include <vector>                                                // std::vector
 
 typedef std::pair<double, double> point2d;
 
@@ -154,6 +158,14 @@ class Polynomial
     return d;
   }
 
+  Matrix1x1
+  get_d_metric() const
+  {
+    Matrix1x1 d_metric;
+    d_metric(0,0) = 1.;
+    return d_metric;
+  }
+
  private:
   unsigned int rank_;
 
@@ -163,6 +175,83 @@ class Polynomial
 
   int verbosity_;
 };
+
+void
+showHistogram2d(double canvasSizeX, double canvasSizeY,
+                TH2* histogram,
+                const std::string& xAxisTitle,
+                const std::string& yAxisTitle,
+                const std::string& outputFileName)
+{
+  TCanvas* canvas = new TCanvas("canvas", "canvas", canvasSizeX, canvasSizeY);
+  canvas->SetFillColor(10);
+  canvas->SetBorderSize(2);
+  canvas->SetLeftMargin(0.14);
+  canvas->SetBottomMargin(0.12);
+
+  TAxis* xAxis = histogram->GetXaxis();
+  double xMin = xAxis->GetXmin();
+  double xMax = xAxis->GetXmax();
+  TAxis* yAxis = histogram->GetYaxis();
+  double yMin = yAxis->GetXmin();
+  double yMax = yAxis->GetXmax();
+
+  histogram->SetTitle("");
+  histogram->SetStats(false);
+  xAxis->SetTitle(xAxisTitle.c_str());
+  xAxis->SetTitleOffset(1.3);
+  yAxis->SetTitle(yAxisTitle.c_str());
+  yAxis->SetTitleOffset(1.3);
+  histogram->Draw("BOX");
+
+  TGraph* diagonal = new TGraph(2);
+  diagonal->SetPoint(0, xMin, yMin);
+  diagonal->SetPoint(1, xMax, yMax);
+  diagonal->SetLineColor(2);
+  diagonal->SetLineWidth(1);
+  diagonal->Draw("L");
+
+  canvas->Update();
+  size_t idx = outputFileName.find_last_of('.');
+  std::string outputFileName_plot = std::string(outputFileName, 0, idx);
+  canvas->Print(std::string(outputFileName_plot).append(".png").c_str());
+  //canvas->Print(std::string(outputFileName_plot).append(".pdf").c_str());
+
+  delete diagonal;
+  delete canvas;
+}
+
+template <unsigned int rank>
+void
+testConstraint(const Polynomial<rank>& constraint, const std::string& outputFileName)
+{
+  TRandom3 rnd;
+
+  TH2D* histogram_x = new TH2D("histogram_x", "histogram_x", 100, -5., +5., 100, -5., +5.); 
+  TH2D* histogram_y = new TH2D("histogram_y", "histogram_y", 100, -5., +5., 100, -5., +5.);
+
+  const int numToys = 10000;
+  for ( int idxToy = 0; idxToy < numToys; ++idxToy )
+  {
+    double x = rnd.Gaus(0., 2.);
+    double y = rnd.Gaus(0., 2.);
+
+    Matrix1x2 D = constraint.get_D(point2d(x, y));
+
+    const double epsilon = 1.e-2;
+    double dd_dx = (constraint.get_d(point2d(x + 0.5*epsilon, y))(0) - constraint.get_d(point2d(x - 0.5*epsilon, y))(0))/epsilon;
+    double dd_dy = (constraint.get_d(point2d(x, y + 0.5*epsilon))(0) - constraint.get_d(point2d(x, y - 0.5*epsilon))(0))/epsilon;
+
+    fillWithOverFlow2D(histogram_x, dd_dx, D(0,0));
+    fillWithOverFlow2D(histogram_y, dd_dy, D(0,1));
+  }
+
+  showHistogram2d(800, 800, histogram_x, "#frac{#partiald}{#partialx}", "D(0,0)", TString(outputFileName.c_str()).ReplaceAll(".png", "_x.png").Data());
+  showHistogram2d(800, 800, histogram_y, "#frac{#partiald}{#partialy}", "D(0,1)", TString(outputFileName.c_str()).ReplaceAll(".png", "_y.png").Data());
+
+  delete histogram_x;
+  delete histogram_y;
+}
 
 struct FitResult
 {
@@ -292,7 +381,7 @@ fit(const Vector2& alpha0, const Matrix2x2& V_alpha0, const Polynomial<rank>& co
       std::cout << pulls << "\n";
     }
 
-    double d_mag = std::sqrt(ROOT::Math::Dot(d, d));
+    double d_mag = std::sqrt(ROOT::Math::Dot(d, constraint.get_d_metric()*d));
     if ( d_mag < 1.e-3 )
     {
       if ( status == -1 || chi2 < min_chi2 )
@@ -409,9 +498,51 @@ showFit(const Vector2& mean, const Matrix2x2& cov, const Polynomial<rank>& const
 }
 
 void
+showGraph(double canvasSizeX, double canvasSizeY,
+          TGraph* graph,
+          const std::string& xAxisTitle, double xMin, double xMax,
+          const std::string& yAxisTitle, double yMin, double yMax,
+          const std::string& outputFileName)
+{
+  TCanvas* canvas = new TCanvas("canvas", "canvas", canvasSizeX, canvasSizeY);
+  canvas->SetFillColor(10);
+  canvas->SetBorderSize(2);
+  canvas->SetLeftMargin(0.14);
+  canvas->SetBottomMargin(0.12);
+
+  graph->SetMarkerStyle(8);
+  graph->SetMarkerSize(1);
+  graph->SetMarkerColor(8);
+  graph->SetLineStyle(8);
+  graph->SetLineWidth(1);
+  graph->SetLineColor(8);
+
+  TH1* dummyHistogram = new TH1D("dummyHistogram", "dummyHistogram", graph->GetN(), xMin, xMax);
+  dummyHistogram->SetTitle("");
+  dummyHistogram->SetStats(false);
+  dummyHistogram->SetMinimum(yMin);
+  dummyHistogram->SetMaximum(yMax);
+  dummyHistogram->GetXaxis()->SetTitle("Iteration");
+  dummyHistogram->GetYaxis()->SetTitle("#chi^{2}");
+  dummyHistogram->Draw("axis");
+
+  graph->Draw("LPsame");
+
+  canvas->Update();
+  size_t idx = outputFileName.find_last_of('.');
+  std::string outputFileName_plot = std::string(outputFileName, 0, idx);
+  canvas->Print(std::string(outputFileName_plot).append(".png").c_str());
+  //canvas->Print(std::string(outputFileName_plot).append(".pdf").c_str());
+
+  delete dummyHistogram;
+  delete canvas;
+}
+
+void
 showChi2(const std::vector<FitResult>& fitResult, 
          const std::string& outputFileName)
 {
+
   TCanvas* canvas = new TCanvas("canvas", "canvas", 800, 600);
   canvas->SetFillColor(10);
   canvas->SetBorderSize(2);
@@ -443,33 +574,10 @@ showChi2(const std::vector<FitResult>& fitResult,
       yMax = chi2;
     }
   }
-  chi2_graph->SetMarkerStyle(8);
-  chi2_graph->SetMarkerSize(1);
-  chi2_graph->SetMarkerColor(8);
-  chi2_graph->SetLineStyle(8);
-  chi2_graph->SetLineWidth(1);
-  chi2_graph->SetLineColor(8);
-
-  TH1* dummyHistogram = new TH1D("dummyHistogram", "dummyHistogram", numPoints, -0.5, numPoints - 0.5);
-  dummyHistogram->SetTitle("");
-  dummyHistogram->SetStats(false);
-  dummyHistogram->SetMinimum(yMin);
-  dummyHistogram->SetMaximum(yMax);
-  dummyHistogram->GetXaxis()->SetTitle("Iteration");
-  dummyHistogram->GetYaxis()->SetTitle("#chi^{2}");
-  dummyHistogram->Draw("axis");
-
-  chi2_graph->Draw("LPsame");
-
-  canvas->Update();
-  size_t idx = outputFileName.find_last_of('.');
-  std::string outputFileName_plot = std::string(outputFileName, 0, idx);
-  canvas->Print(std::string(outputFileName_plot).append(".png").c_str());
-  //canvas->Print(std::string(outputFileName_plot).append(".pdf").c_str());
+  
+  showGraph(800, 600, chi2_graph, "Iteration", -0.5, numPoints - 0.5, "#chi^{2}", yMin, yMax, outputFileName);
 
   delete chi2_graph;
-  delete dummyHistogram;
-  delete canvas;
 }
 
 void
@@ -477,12 +585,6 @@ showDistance(const Vector2& mean,
              const std::vector<FitResult>& fitResult,
              const std::string& outputFileName)
 {
-  TCanvas* canvas = new TCanvas("canvas", "canvas", 800, 600);
-  canvas->SetFillColor(10);
-  canvas->SetBorderSize(2);
-  canvas->SetLeftMargin(0.14);
-  canvas->SetBottomMargin(0.12);
-
   double yMin = 0.;
   double yMax = 1.;
 
@@ -498,33 +600,10 @@ showDistance(const Vector2& mean,
       yMax = distance;
     }
   }
-  distance_graph->SetMarkerStyle(8);
-  distance_graph->SetMarkerSize(1);
-  distance_graph->SetMarkerColor(8);
-  distance_graph->SetLineStyle(8);
-  distance_graph->SetLineWidth(1);
-  distance_graph->SetLineColor(8);
 
-  TH1* dummyHistogram = new TH1D("dummyHistogram", "dummyHistogram", numPoints, -1.5, numPoints - 1.5);
-  dummyHistogram->SetTitle("");
-  dummyHistogram->SetStats(false);
-  dummyHistogram->SetMinimum(yMin);
-  dummyHistogram->SetMaximum(yMax);
-  dummyHistogram->GetXaxis()->SetTitle("Iteration");
-  dummyHistogram->GetYaxis()->SetTitle("Distance");
-  dummyHistogram->Draw("axis");
-
-  distance_graph->Draw("LPsame");
-
-  canvas->Update();
-  size_t idx = outputFileName.find_last_of('.');
-  std::string outputFileName_plot = std::string(outputFileName, 0, idx);
-  canvas->Print(std::string(outputFileName_plot).append(".png").c_str());
-  //canvas->Print(std::string(outputFileName_plot).append(".pdf").c_str());
+  showGraph(800, 600, distance_graph, "Iteration", -1.5, numPoints - 1.5, "Distance", yMin, yMax, outputFileName);
 
   delete distance_graph;
-  delete dummyHistogram;
-  delete canvas;
 }
 
 template <unsigned int rank>
@@ -555,6 +634,7 @@ int main(int argc, char* argv[])
   points_pol1.push_back(point2d(-3., -2.));
   points_pol1.push_back(point2d(+3., +4.));
   Polynomial<1> constraint_pol1(points_pol1, verbosity);
+  testConstraint(constraint_pol1, "testConstraint_pol1.png");
 
   std::vector<point2d> points_pol3;
   points_pol3.push_back(point2d(-3., -2.));
@@ -562,6 +642,7 @@ int main(int argc, char* argv[])
   points_pol3.push_back(point2d(+1.,  0.));
   points_pol3.push_back(point2d(+3., +4.));
   Polynomial<3> constraint_pol3(points_pol3, verbosity);
+  testConstraint(constraint_pol3, "testConstraint_pol3.png");
 
   Vector2 mean;
   mean(0) = 0.;
