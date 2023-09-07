@@ -1,25 +1,29 @@
 
-#include "DataFormats/FWLite/interface/InputSource.h"                 // fwlite::InputSource
-#include "DataFormats/FWLite/interface/OutputFiles.h"                 // fwlite::OutputFiles
-#include "FWCore/ParameterSet/interface/ParameterSet.h"               // edm::ParameterSet
-#include "FWCore/ParameterSetReader/interface/ParameterSetReader.h"   // edm::readPSetsFrom()
-#include "FWCore/PluginManager/interface/PluginManager.h"             // edmplugin::PluginManager::configure()
-#include "FWCore/PluginManager/interface/standard.h"                  // edmplugin::standard::config()
-#include "PhysicsTools/FWLite/interface/TFileService.h"               // fwlite::TFileService
+#include "DataFormats/FWLite/interface/InputSource.h"                             // fwlite::InputSource
+#include "DataFormats/FWLite/interface/OutputFiles.h"                             // fwlite::OutputFiles
+#include "FWCore/ParameterSet/interface/ParameterSet.h"                           // edm::ParameterSet
+#include "FWCore/ParameterSetReader/interface/ParameterSetReader.h"               // edm::readPSetsFrom()
+#include "FWCore/PluginManager/interface/PluginManager.h"                         // edmplugin::PluginManager::configure()
+#include "FWCore/PluginManager/interface/standard.h"                              // edmplugin::standard::config()
+#include "PhysicsTools/FWLite/interface/TFileService.h"                           // fwlite::TFileService
 
-#include "TauAnalysis/Entanglement/interface/cmsException.h"          // cmsException
-#include "TauAnalysis/Entanglement/interface/Matrix_and_Vector.h"     // math::Matrix3x3
+#include "TauAnalysis/Entanglement/interface/cmsException.h"                      // cmsException
+#include "TauAnalysis/Entanglement/interface/comp_BandC.h"                        // comp_C()
+#include "TauAnalysis/Entanglement/interface/comp_EigenVectors_and_EigenValues.h" // comp_EigenVectors_and_EigenValues()
+#include "TauAnalysis/Entanglement/interface/comp_Rchsh.h"                        // comp_Rchsh()
+#include "TauAnalysis/Entanglement/interface/Matrix_and_Vector.h"                 // math::Matrix3x3
+#include "TauAnalysis/Entanglement/interface/printEigenVectors_and_EigenValues.h" // printEigenVectors_and_EigenValues()
 
-#include <TBenchmark.h>                                               // TBenchmark
-#include <TError.h>                                                   // gErrorAbortLevel, kError
-#include <TString.h>                                                  // Form()
-#include <TTree.h>                                                    // TTree
+#include <TBenchmark.h>                                                           // TBenchmark
+#include <TError.h>                                                               // gErrorAbortLevel, kError
+#include <TString.h>                                                              // Form()
+#include <TTree.h>                                                                // TTree
 
-#include <cmath>                                                      // std::fabs()
-#include <cstdlib>                                                    // EXIT_SUCCESS, EXIT_FAILURE
-#include <iostream>                                                   // std::cout
-#include <string>                                                     // std::string
-#include <vector>                                                     // std::vector<>
+#include <cmath>                                                                  // std::fabs()
+#include <cstdlib>                                                                // EXIT_SUCCESS, EXIT_FAILURE
+#include <iostream>                                                               // std::cout
+#include <string>                                                                 // std::string
+#include <vector>                                                                 // std::vector<>
 
 int main(int argc, char* argv[])
 {
@@ -123,9 +127,9 @@ int main(int argc, char* argv[])
     ULong64_t entry;
     inputTree->SetBranchAddress("entry", &entry);
 
-    Float_t hPlus_r, hPlus_n, hPlus_k;
-    inputTree->SetBranchAddress(Form("%s_hPlus_r", mode.c_str()), &hPlus_r);
+    Float_t hPlus_n, hPlus_r, hPlus_k;
     inputTree->SetBranchAddress(Form("%s_hPlus_n", mode.c_str()), &hPlus_n);
+    inputTree->SetBranchAddress(Form("%s_hPlus_r", mode.c_str()), &hPlus_r);
     inputTree->SetBranchAddress(Form("%s_hPlus_k", mode.c_str()), &hPlus_k);
     Float_t visPlus_pt, visPlus_eta;
     inputTree->SetBranchAddress(Form("%s_visPlus_pt", mode.c_str()), &visPlus_pt);
@@ -139,9 +143,9 @@ int main(int argc, char* argv[])
     inputTree->SetBranchAddress("gen_tauPlus_nPhotons", &tauPlus_nPhotons);
     inputTree->SetBranchAddress("gen_tauPlus_sumPhotonEn", &tauPlus_sumPhotonEn);
     
-    Float_t hMinus_r, hMinus_n, hMinus_k;
-    inputTree->SetBranchAddress(Form("%s_hMinus_r", mode.c_str()), &hMinus_r);
+    Float_t hMinus_n, hMinus_r, hMinus_k;
     inputTree->SetBranchAddress(Form("%s_hMinus_n", mode.c_str()), &hMinus_n);
+    inputTree->SetBranchAddress(Form("%s_hMinus_r", mode.c_str()), &hMinus_r);
     inputTree->SetBranchAddress(Form("%s_hMinus_k", mode.c_str()), &hMinus_k);
     Float_t visMinus_pt, visMinus_eta;
     inputTree->SetBranchAddress(Form("%s_visMinus_pt", mode.c_str()), &visMinus_pt);
@@ -188,20 +192,10 @@ int main(int argc, char* argv[])
       //if ( maxNumNeutralKaons       != -1  && tauMinus_nNeutralKaons > maxNumNeutralKaons            ) continue;
       //if ( maxNumPhotons            != -1  && tauMinus_nPhotons      > maxNumPhotons                 ) continue;
       //if ( maxSumPhotonEn           >=  0. && tauMinus_sumPhotonEn   > maxSumPhotonEn                ) continue;
-
-      math::Matrix3x3 C;
+      
       // CV: compute spin correlation matrix C according to Eq. (25)
       //     in the paper arXiv:2211.10513
-      double c = -9.*evtWeight;
-      C(0,0) += c*hPlus_r*hMinus_r;
-      C(0,1) += c*hPlus_r*hMinus_n;
-      C(0,2) += c*hPlus_r*hMinus_k;
-      C(1,0) += c*hPlus_n*hMinus_r;
-      C(1,1) += c*hPlus_n*hMinus_n;
-      C(1,2) += c*hPlus_n*hMinus_k;
-      C(2,0) += c*hPlus_k*hMinus_r;
-      C(2,1) += c*hPlus_k*hMinus_n;
-      C(2,2) += c*hPlus_k*hMinus_k;
+      math::Matrix3x3 C = comp_C(hPlus_n, hPlus_r, hPlus_k, hMinus_n, hMinus_r, hMinus_k, evtWeight);
 
       C_sum += C;
 
@@ -235,6 +229,13 @@ int main(int argc, char* argv[])
 
   std::cout << "<C>:\n";
   std::cout << C_sum << "\n";
+
+  math::Matrix3x3 CT_sum = ROOT::Math::Transpose(C_sum);
+  std::vector<std::pair<TVectorD, double>> EigenVectors_and_EigenValues = comp_EigenVectors_and_EigenValues(CT_sum*C_sum);
+  printEigenVectors_and_EigenValues(EigenVectors_and_EigenValues);
+
+  double Rchsh = comp_Rchsh(C_sum);
+  std::cout << "Rchsh = " << Rchsh << "\n";
 
   clock.Show("dumpEntanglementNtuple");
 

@@ -106,7 +106,6 @@ MyLHEWriter::analyze(const edm::Event& event, const edm::EventSetup& es)
            << std::setw(2) << genParticle->status() << " "
            << std::setw(4) << 1 + idxMother1 << " " << std::setw(4) << 1 + idxMother2 << " "
            << std::setw(4) << 1 + idxDaughter1 << " " << std::setw(4) << 1 + idxDaughter2 << " "
-           << format_float(0., 10) << " " << format_float(0., 10) << " "
            << format_float(genParticle->px(), 10) << " " << format_float(genParticle->py(), 10) << " " << format_float(genParticle->pz(), 10) << " "
            << format_float(genParticle->energy(), 10) << " " << format_float(genParticle->mass(), 10) << " "
            << format_float(0., 3) << " " << 0 << "\n";           

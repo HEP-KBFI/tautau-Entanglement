@@ -57,20 +57,20 @@ namespace
   {
     // define parameters for maximum-likelihood (ML) fit
     std::map<size_t, std::string> parNames;
-    parNames[0]  = "Bp_r";
-    parNames[1]  = "Bp_n";
+    parNames[0]  = "Bp_n";
+    parNames[1]  = "Bp_r";
     parNames[2]  = "Bp_k";
-    parNames[3]  = "Bm_r";
-    parNames[4]  = "Bm_n";
+    parNames[3]  = "Bm_n";
+    parNames[4]  = "Bm_r";
     parNames[5]  = "Bm_k";
-    parNames[6]  = "C_rr";
+    parNames[6]  = "C_nn";
     parNames[7]  = "C_rn";
-    parNames[8]  = "C_rk";
+    parNames[8]  = "C_kn";
     parNames[9]  = "C_nr";
-    parNames[10] = "C_nn";
-    parNames[11] = "C_nk";
-    parNames[12] = "C_kr";
-    parNames[13] = "C_kn";
+    parNames[10] = "C_rr";
+    parNames[11] = "C_kr";
+    parNames[12] = "C_nk";
+    parNames[13] = "C_rk";
     parNames[14] = "C_kk";
     return parNames;
   }
@@ -78,22 +78,22 @@ namespace
   double
   get_p(const double* par, const spin::Data& entry)
   {
-    double Bp_r = par[0];
-    double Bp_n = par[1];
+    double Bp_n = par[0];
+    double Bp_r = par[1];
     double Bp_k = par[2];
 
-    double Bm_r = par[3];
-    double Bm_n = par[4];
+    double Bm_n = par[3];
+    double Bm_r = par[4];
     double Bm_k = par[5];
 
-    double C_rr = par[6];
+    double C_nn = par[6];
     double C_rn = par[7];
-    double C_rk = par[8];
+    double C_kn = par[8];
     double C_nr = par[9];
-    double C_nn = par[10];
-    double C_nk = par[11];
-    double C_kr = par[12];
-    double C_kn = par[13];
+    double C_rr = par[10];
+    double C_kr = par[11];
+    double C_nk = par[12];
+    double C_rk = par[13];
     double C_kk = par[14];
 
     // CV: Equation for probability p of tau pair to be in given spin state
@@ -101,11 +101,11 @@ namespace
     //     The signs for the terms Bp_X and C_XX, in which the tau+ enters, are flipped, 
     //     because helicity frame defined with respect to tau- (and not tau+) direction in EntanglementNtupleProducer.cc code.
     double p = 1. 
-      + (Bp_r*entry.get_hPlus_r() + Bp_n*entry.get_hPlus_n()  + Bp_k*entry.get_hPlus_k())
-      - (Bm_r*entry.get_hMinus_r() + Bm_n*entry.get_hMinus_n() + Bm_k*entry.get_hMinus_k())
-      - (C_rr*entry.get_hPlus_r()*entry.get_hMinus_r() + C_rn*entry.get_hPlus_r()*entry.get_hMinus_n() + C_rk*entry.get_hPlus_r()*entry.get_hMinus_k())
-      - (C_nr*entry.get_hPlus_n()*entry.get_hMinus_r() + C_nn*entry.get_hPlus_n()*entry.get_hMinus_n() + C_nk*entry.get_hPlus_n()*entry.get_hMinus_k())
-      - (C_kr*entry.get_hPlus_k()*entry.get_hMinus_r() + C_kn*entry.get_hPlus_k()*entry.get_hMinus_n() + C_kk*entry.get_hPlus_k()*entry.get_hMinus_k());
+      + (Bp_n*entry.get_hPlus_n() + Bp_r*entry.get_hPlus_r()  + Bp_k*entry.get_hPlus_k())
+      - (Bm_n*entry.get_hMinus_n() + Bm_r*entry.get_hMinus_r() + Bm_k*entry.get_hMinus_k())
+      - (C_nn*entry.get_hPlus_n()*entry.get_hMinus_n() + C_rn*entry.get_hPlus_r()*entry.get_hMinus_n() + C_kn*entry.get_hPlus_k()*entry.get_hMinus_n())
+      - (C_nr*entry.get_hPlus_n()*entry.get_hMinus_r() + C_rr*entry.get_hPlus_r()*entry.get_hMinus_r() + C_kr*entry.get_hPlus_k()*entry.get_hMinus_r())
+      - (C_nk*entry.get_hPlus_n()*entry.get_hMinus_k() + C_rk*entry.get_hPlus_r()*entry.get_hMinus_k() + C_kk*entry.get_hPlus_k()*entry.get_hMinus_k());
     const double epsilon = 1.e-12;
     if ( p < epsilon ) p = epsilon;
 
@@ -120,20 +120,25 @@ namespace
 
     size_t numEntries = mlfitData->size();
 
-    assert(gpar_gen);
-    double par_gen[npar];
-    for ( size_t idxPar = 0; idxPar < npar; ++idxPar )
-    {
-      par_gen[idxPar] = gpar_gen->at(idxPar);
-    }
+    //assert(gpar_gen);
+    //double par_gen[npar];
+    //for ( size_t idxPar = 0; idxPar < npar; ++idxPar )
+    //{
+    //  par_gen[idxPar] = gpar_gen->at(idxPar);
+    //}
 
     double norm = 0.;
     for ( size_t idxEntry = 0; idxEntry < numEntries; ++idxEntry )
     {
       const spin::Data& entry = mlfitData->at(idxEntry);
 
-      norm += entry.get_evtWeight()*get_p(par, entry)/get_p(par_gen, entry);
-      //norm += get_p(par, entry)/get_p(par_gen, entry);
+      // TO-DO: the following equation does not work if par_gen is unknown;
+      //        need to correct for selection bias in another way,
+      //        e.g. by storing selection efficiencies as function of the 15 parameters
+      //        using k-nearest neighbour algorithm ("signal" = passing events, "background" = failing events)
+      //norm += entry.get_evtWeight()*get_p(par, entry)/get_p(par_gen, entry);
+      
+      norm += entry.get_evtWeight();
     }
 
     double logL = 0.;
@@ -144,7 +149,6 @@ namespace
       double p = get_p(par, entry);
 
       logL -= 2.*entry.get_evtWeight()*log(p/norm);
-      //logL -= 2.*log(p/norm);
     }
 
     return logL;

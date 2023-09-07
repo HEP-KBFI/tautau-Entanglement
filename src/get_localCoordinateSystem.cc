@@ -109,7 +109,13 @@ namespace
   reco::Candidate::Vector
   get_n(const reco::Candidate::Vector& k, const reco::Candidate::Vector& r, int verbosity, bool cartesian)
   {
-    reco::Candidate::Vector n = k.Cross(r);
+    // CV: The ordering of r and k in the cross product has been agreed with Luca on 06/09/2023.
+    //     The definition n = r x k has been chosen for consistency with Eq. (2.5) in the paper arXiv:1508.05271,
+    //     which Luca and Marco have used in their previous papers on Entanglement.
+    //    (Whether one computes the vector n using n = r x k or using n = p x k makes no difference:
+    //     in both cases, the vector n refers to the direction perpendicular to the scattering plane
+    //     and the vectors { n, r, k } define a right-handed coordinate system)
+    reco::Candidate::Vector n = r.Cross(k);
     if ( verbosity >= 3 )
     {
       printVector("n", n, cartesian);
@@ -153,8 +159,8 @@ get_localCoordinateSystem(const reco::Candidate::LorentzVector& p4,
 
   if ( verbosity >= 4 )
   {
-    std::cout << "r*n = " << r.Dot(n) << "\n";
-    std::cout << "r*k = " << r.Dot(k) << "\n";
+    std::cout << "n*r = " << n.Dot(r) << "\n";
     std::cout << "n*k = " << n.Dot(k) << "\n";
+    std::cout << "r*k = " << r.Dot(k) << "\n";
   }
 }

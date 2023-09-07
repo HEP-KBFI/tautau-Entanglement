@@ -19,7 +19,7 @@
 #include <TRandom3.h>                                            // TRandom3
 #include <TString.h>                                             // TString
 
-#include <cmath>                                                 // std::sqrt()
+#include <cmath>                                                 // std::isnan(), std::sqrt()
 #include <sstream>                                               // std::ostringstream
 #include <string>                                                // std::string
 #include <utility>                                               // std::pair
@@ -35,20 +35,20 @@ typedef math::Vector<1>::type   Vector1;
 typedef math::Vector<2>::type   Vector2;
 
 template <unsigned int rank>
-class Polynomial
+class PolynomialConstraint
 {
  public:
   typedef typename math::Matrix<rank + 1,rank + 1>::type MatrixPxP;
   typedef typename math::Vector<rank + 1>::type VectorP;
 
-  Polynomial(const std::vector<point2d>& points, int verbosity = -1)
+  PolynomialConstraint(const std::vector<point2d>& points, int verbosity = -1)
     : rank_(rank)
     , points_(points)
     , verbosity_(verbosity)
   {
     if ( verbosity_ >= 1 )
     {
-      std::cout << "<Polynomial::Polynomial>:\n";
+      std::cout << "<PolynomialConstraint::PolynomialConstraint>:\n";
       for ( size_t idxPoint = 0; idxPoint < points.size(); ++idxPoint )
       {
         const point2d& point = points.at(idxPoint);
@@ -57,7 +57,7 @@ class Polynomial
     }
 
     if ( points.size() != (rank + 1) )
-      throw cmsException("Polynomial", __LINE__) 
+      throw cmsException("PolynomialConstraint", __LINE__) 
         << "Given number of points = " << points.size() << " does not match rank + 1 = " << (rank + 1) << " !!\n";
     
     const int P = rank + 1;
@@ -82,7 +82,7 @@ class Polynomial
     int Minv_errorFlag = 0;
     MatrixPxP Minv = M.Inverse(Minv_errorFlag);
     if ( Minv_errorFlag != 0 )
-      throw cmsException("Polynomial", __LINE__) 
+      throw cmsException("PolynomialConstraint", __LINE__) 
         << "Failed to invert matrix M !!\n";
     if ( verbosity_ >= 1 )
     {
@@ -97,7 +97,7 @@ class Polynomial
       std::cout << coeff_ << "\n";
     }
   }
-  ~Polynomial()
+  ~PolynomialConstraint()
   {}
 
   std::string
@@ -177,11 +177,11 @@ class Polynomial
 };
 
 void
-showHistogram2d(double canvasSizeX, double canvasSizeY,
-                TH2* histogram,
-                const std::string& xAxisTitle,
-                const std::string& yAxisTitle,
-                const std::string& outputFileName)
+showConstraint(double canvasSizeX, double canvasSizeY,
+               TH2* histogram,
+               const std::string& xAxisTitle,
+               const std::string& yAxisTitle,
+               const std::string& outputFileName)
 {
   TCanvas* canvas = new TCanvas("canvas", "canvas", canvasSizeX, canvasSizeY);
   canvas->SetFillColor(10);
@@ -223,7 +223,7 @@ showHistogram2d(double canvasSizeX, double canvasSizeY,
 
 template <unsigned int rank>
 void
-testConstraint(const Polynomial<rank>& constraint, const std::string& outputFileName)
+testConstraint(const PolynomialConstraint<rank>& constraint, const std::string& outputFileName)
 {
   TRandom3 rnd;
 
@@ -246,11 +246,22 @@ testConstraint(const Polynomial<rank>& constraint, const std::string& outputFile
     fillWithOverFlow2D(histogram_y, dd_dy, D(0,1));
   }
 
-  showHistogram2d(800, 800, histogram_x, "#frac{#partiald}{#partialx}", "D(0,0)", TString(outputFileName.c_str()).ReplaceAll(".png", "_x.png").Data());
-  showHistogram2d(800, 800, histogram_y, "#frac{#partiald}{#partialy}", "D(0,1)", TString(outputFileName.c_str()).ReplaceAll(".png", "_y.png").Data());
+  showConstraint(800, 800, histogram_x, "#frac{#partiald}{#partialx}", "D(0,0)", TString(outputFileName.c_str()).ReplaceAll(".png", "_x.png").Data());
+  showConstraint(800, 800, histogram_y, "#frac{#partiald}{#partialy}", "D(0,1)", TString(outputFileName.c_str()).ReplaceAll(".png", "_y.png").Data());
 
   delete histogram_x;
   delete histogram_y;
+}
+
+bool
+isNaN(const Vector2& alpha)
+{
+  size_t numElements = alpha.Dim();
+  for ( size_t idxElement = 0; idxElement < numElements; ++idxElement )
+  {
+    if ( std::isnan(alpha(idxElement)) ) return true;
+  }
+  return false;
 }
 
 struct FitResult
@@ -270,7 +281,7 @@ struct FitResult
 
 template <unsigned int rank>
 std::vector<FitResult>
-fit(const Vector2& alpha0, const Matrix2x2& V_alpha0, const Polynomial<rank>& constraint, const point2d& startPos, int verbosity)
+fit(const Vector2& alpha0, const Matrix2x2& V_alpha0, const PolynomialConstraint<rank>& constraint, const point2d& startPos, int verbosity)
 {
   int Vinv_alpha0_errorFlag = 0;
   Matrix2x2 Vinv_alpha0 = V_alpha0.Inverse(Vinv_alpha0_errorFlag);
@@ -329,6 +340,17 @@ fit(const Vector2& alpha0, const Matrix2x2& V_alpha0, const Polynomial<rank>& co
 
     Vector2 dalpha0 = alpha0 - alphaA;
     Vector1 lambda = V_D*(D*dalpha0 + d);
+    if ( verbosity >= 1 )
+    {
+      // print "pulls" for constraint equations
+      std::cout << "distance from satisfaction:\n";
+      Vector1 D_times_dalpha0 = D*dalpha0;
+      for ( int idx = 0; idx < numConstraints; ++idx )
+      {
+        double pull = (D_times_dalpha0(idx) + d(idx))/std::sqrt(Vinv_D(idx,idx));
+        std::cout << "pull[" << idx << "] = " << pull << "\n";
+      }
+    }
 
     //const double sfStepSize = +1.;
     double sfStepSize = std::min(1., 2.*iteration/max_iterations);
@@ -372,6 +394,7 @@ fit(const Vector2& alpha0, const Matrix2x2& V_alpha0, const Polynomial<rank>& co
 
     if ( verbosity >= 1 )
     {
+      // print "pulls" for fit parameters
       Vector2 pulls;
       for ( int idx = 0; idx < numParameters; ++idx )
       {      
@@ -382,7 +405,7 @@ fit(const Vector2& alpha0, const Matrix2x2& V_alpha0, const Polynomial<rank>& co
     }
 
     double d_mag = std::sqrt(ROOT::Math::Dot(d, constraint.get_d_metric()*d));
-    if ( d_mag < 1.e-3 )
+    if ( !isNaN(alphaA) && d_mag < 1.e-3 )
     {
       if ( status == -1 || chi2 < min_chi2 )
       {
@@ -420,7 +443,7 @@ fit(const Vector2& alpha0, const Matrix2x2& V_alpha0, const Polynomial<rank>& co
 
 template <unsigned int rank>
 void 
-showFit(const Vector2& mean, const Matrix2x2& cov, const Polynomial<rank>& constraint, 
+showFit(const Vector2& mean, const Matrix2x2& cov, const PolynomialConstraint<rank>& constraint, 
         const std::vector<FitResult>& fitResult,
         const std::string& outputFileName)
 {
@@ -608,7 +631,7 @@ showDistance(const Vector2& mean,
 
 template <unsigned int rank>
 void 
-showResults(const Vector2& mean, const Matrix2x2& cov, const Polynomial<rank>& constraint, 
+showResults(const Vector2& mean, const Matrix2x2& cov, const PolynomialConstraint<rank>& constraint, 
             const std::vector<FitResult>& fitResult, 
             const std::string& outputFileName)
 {
@@ -633,7 +656,7 @@ int main(int argc, char* argv[])
   std::vector<point2d> points_pol1;
   points_pol1.push_back(point2d(-3., -2.));
   points_pol1.push_back(point2d(+3., +4.));
-  Polynomial<1> constraint_pol1(points_pol1, verbosity);
+  PolynomialConstraint<1> constraint_pol1(points_pol1, verbosity);
   testConstraint(constraint_pol1, "testConstraint_pol1.png");
 
   std::vector<point2d> points_pol3;
@@ -641,7 +664,7 @@ int main(int argc, char* argv[])
   points_pol3.push_back(point2d(-1., +2.));
   points_pol3.push_back(point2d(+1.,  0.));
   points_pol3.push_back(point2d(+3., +4.));
-  Polynomial<3> constraint_pol3(points_pol3, verbosity);
+  PolynomialConstraint<3> constraint_pol3(points_pol3, verbosity);
   testConstraint(constraint_pol3, "testConstraint_pol3.png");
 
   Vector2 mean;

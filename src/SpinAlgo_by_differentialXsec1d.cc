@@ -107,34 +107,35 @@ SpinAlgo_by_differentialXsec1d::operator()(const spin::Dataset& dataset)
     std::cout << " #entries = " << dataset.size() << "\n";
   }
 
-  DifferentialXsec_B Bp_r("Bp_r");
   DifferentialXsec_B Bp_n("Bp_n");
+  DifferentialXsec_B Bp_r("Bp_r");
   DifferentialXsec_B Bp_k("Bp_k");
- 
-  DifferentialXsec_B Bm_r("Bm_r");
+
   DifferentialXsec_B Bm_n("Bm_n");
+  DifferentialXsec_B Bm_r("Bm_r");
   DifferentialXsec_B Bm_k("Bm_k");
 
-  DifferentialXsec1d_C C_rr("C_rr");
-  DifferentialXsec1d_C C_rn("C_rn");
-  DifferentialXsec1d_C C_rk("C_rk");
-  DifferentialXsec1d_C C_nr("C_nr");
   DifferentialXsec1d_C C_nn("C_nn");
-  DifferentialXsec1d_C C_nk("C_nk");
-  DifferentialXsec1d_C C_kr("C_kr");
+  DifferentialXsec1d_C C_rn("C_rn");
   DifferentialXsec1d_C C_kn("C_kn");
+  DifferentialXsec1d_C C_nr("C_nr");
+  DifferentialXsec1d_C C_rr("C_rr");
+  DifferentialXsec1d_C C_kr("C_kr");
+  DifferentialXsec1d_C C_nk("C_nk");
+  DifferentialXsec1d_C C_rk("C_rk");
   DifferentialXsec1d_C C_kk("C_kk");
+
   size_t numEntries = dataset.size();
   for ( size_t idxEntry = 0; idxEntry < numEntries; ++idxEntry )
   {
     const spin::Data& entry = dataset.at(idxEntry);
 
-    double hPlus_r = entry.get_hPlus_r();
     double hPlus_n = entry.get_hPlus_n();
+    double hPlus_r = entry.get_hPlus_r();
     double hPlus_k = entry.get_hPlus_k();
-    
-    double hMinus_r = entry.get_hMinus_r();
+
     double hMinus_n = entry.get_hMinus_n();
+    double hMinus_r = entry.get_hMinus_r();
     double hMinus_k = entry.get_hMinus_k();
 
     double evtWeight = entry.get_evtWeight();
@@ -142,53 +143,53 @@ SpinAlgo_by_differentialXsec1d::operator()(const spin::Dataset& dataset)
     if ( verbosity_ >= 3 )
     {
       std::cout << "entry #" << idxEntry << ":\n";
-      std::cout << " hPlus: r = " << hPlus_r  << ", n = " << hPlus_n  << ", k = " << hPlus_k  << "\n";
-      std::cout << " hMinus: r = " << hMinus_r << ", n = " << hMinus_n << ", k = " << hMinus_k << "\n";
+      std::cout << " hPlus: n = " << hPlus_n  << ", r = " << hPlus_r  << ", k = " << hPlus_k  << "\n";
+      std::cout << " hMinus: n = " << hMinus_n << ", r = " << hMinus_r << ", k = " << hMinus_k << "\n";
       std::cout << " evtWeight = " << evtWeight << "\n";
     }
 
     // CV: compute polarization vectors B+ and B- for tau+ and tau- according to Eq. (4.18)
     //     in the paper arXiv:1508.05271
-    Bp_r.fill(hPlus_r, evtWeight);
     Bp_n.fill(hPlus_n, evtWeight);
+    Bp_r.fill(hPlus_r, evtWeight);
     Bp_k.fill(hPlus_k, evtWeight);
 
-    Bm_r.fill(hMinus_r, evtWeight);
     Bm_n.fill(hMinus_n, evtWeight);
+    Bm_r.fill(hMinus_r, evtWeight);
     Bm_k.fill(hMinus_k, evtWeight);
 
     // CV: compute spin correlation matrix C according to Eq. (4.16)
     //     in the paper arXiv:1508.05271
-    C_rr.fill(hPlus_r, hMinus_r, evtWeight);
-    C_rn.fill(hPlus_r, hMinus_n, evtWeight);
-    C_rk.fill(hPlus_r, hMinus_k, evtWeight);
-    C_nr.fill(hPlus_n, hMinus_r, evtWeight);
     C_nn.fill(hPlus_n, hMinus_n, evtWeight);
-    C_nk.fill(hPlus_n, hMinus_k, evtWeight);
-    C_kr.fill(hPlus_k, hMinus_r, evtWeight);
+    C_rn.fill(hPlus_r, hMinus_n, evtWeight);
     C_kn.fill(hPlus_k, hMinus_n, evtWeight);
+    C_nr.fill(hPlus_n, hMinus_r, evtWeight);
+    C_rr.fill(hPlus_r, hMinus_r, evtWeight);
+    C_kr.fill(hPlus_k, hMinus_r, evtWeight);
+    C_nk.fill(hPlus_n, hMinus_k, evtWeight);
+    C_rk.fill(hPlus_r, hMinus_k, evtWeight);
     C_kk.fill(hPlus_k, hMinus_k, evtWeight);
   }
 
   math::Vector3 Bp;
-  Bp(0) = fit_DifferentialXsec_B(Bp_r, verbosity_);
-  Bp(1) = fit_DifferentialXsec_B(Bp_n, verbosity_);
+  Bp(0) = fit_DifferentialXsec_B(Bp_n, verbosity_);
+  Bp(1) = fit_DifferentialXsec_B(Bp_r, verbosity_);
   Bp(2) = fit_DifferentialXsec_B(Bp_k, verbosity_);
 
   math::Vector3 Bm;
-  Bm(0) = fit_DifferentialXsec_B(Bm_r, verbosity_);
-  Bm(1) = fit_DifferentialXsec_B(Bm_n, verbosity_);
+  Bm(0) = fit_DifferentialXsec_B(Bm_n, verbosity_);
+  Bm(1) = fit_DifferentialXsec_B(Bm_r, verbosity_);
   Bm(2) = fit_DifferentialXsec_B(Bm_k, verbosity_);
 
   math::Matrix3x3 C;
-  C(0,0) = fit_DifferentialXsec1d_C(C_rr, verbosity_);
+  C(0,0) = fit_DifferentialXsec1d_C(C_nn, verbosity_);
   C(0,1) = fit_DifferentialXsec1d_C(C_rn, verbosity_);
-  C(0,2) = fit_DifferentialXsec1d_C(C_rk, verbosity_);
+  C(0,2) = fit_DifferentialXsec1d_C(C_kn, verbosity_);
   C(1,0) = fit_DifferentialXsec1d_C(C_nr, verbosity_);
-  C(1,1) = fit_DifferentialXsec1d_C(C_nn, verbosity_);
-  C(1,2) = fit_DifferentialXsec1d_C(C_nk, verbosity_);
-  C(2,0) = fit_DifferentialXsec1d_C(C_kr, verbosity_);
-  C(2,1) = fit_DifferentialXsec1d_C(C_kn, verbosity_);
+  C(1,1) = fit_DifferentialXsec1d_C(C_rr, verbosity_);
+  C(1,2) = fit_DifferentialXsec1d_C(C_kr, verbosity_);
+  C(2,0) = fit_DifferentialXsec1d_C(C_nk, verbosity_);
+  C(2,1) = fit_DifferentialXsec1d_C(C_rk, verbosity_);
   C(2,2) = fit_DifferentialXsec1d_C(C_kk, verbosity_);
 
   spin::Measurement measurement(Bp, Bm, C);
