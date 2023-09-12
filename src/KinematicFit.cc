@@ -128,7 +128,7 @@ KinematicFit::operator()(const KinematicEvent& kineEvt)
         {
           std::cout << "--> skipping this sign combination, because it does not reproduce the neutrino Pz of the start position !!\n";
         }
-        return kineEvt_kinFit;
+        continue;
       }
 
       VectorP alpha0;

@@ -33,7 +33,7 @@ class KinFitConstraint : public KinFitConstraintBase<P,C>
     d_metric_(  4,  4) = ( collider_ == kSuperKEKB ) ? 1. : 1.e-2; // H_px(recoil)
     d_metric_(  5,  5) = ( collider_ == kSuperKEKB ) ? 1. : 1.e-2; // H_py(recoil)
     d_metric_(  6,  6) = ( collider_ == kSuperKEKB ) ? 1. : 1.e-2; // H_pz(recoil)
-    d_metric_(  7,7  ) = ( collider_ == kSuperKEKB ) ? 1. : 1.e-2; // H_energy(recoil)
+    d_metric_(  7,  7) = ( collider_ == kSuperKEKB ) ? 1. : 1.e-2; // H_energy(recoil)
     d_metric_(C-1,C-1) = 1.e-4;                                    // H(Higgs mass)
   }
   ~KinFitConstraint()

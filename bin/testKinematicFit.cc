@@ -162,8 +162,6 @@ class PolynomialConstraint : public KinFitConstraintBase<2,1>
   std::vector<point2d> points_;
 
   VectorR coeff_;
-
-  int verbosity_;
 };
 
 class PolynomialConstraintTester : public KinFitConstraintTesterBase<2,1>

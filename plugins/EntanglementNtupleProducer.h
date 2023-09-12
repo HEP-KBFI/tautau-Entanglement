@@ -29,7 +29,6 @@ class EntanglementNtupleProducer : public edm::one::EDAnalyzer<>
  private:
   void beginJob();
   void analyze(const edm::Event&, const edm::EventSetup&);
-  void endJob();
 
   std::string moduleLabel_;
 

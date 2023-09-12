@@ -8,7 +8,7 @@ class KinFitConstraintTester : public KinFitConstraintTesterBase<P,C>
 {
  public:
   KinFitConstraintTester(int verbosity = -1)
-    : KinFitConstraintTesterBase(verbosity)
+    : KinFitConstraintTesterBase<P,C>(verbosity)
   {
     rndMean_( 0) = 0.; rndWidth_( 0) = 0.0100; // pvX
     rndMean_( 1) = 0.; rndWidth_( 1) = 0.0100; // pvY
@@ -36,6 +36,11 @@ class KinFitConstraintTester : public KinFitConstraintTesterBase<P,C>
       }
     }
   }
+
+ private:
+  using KinFitConstraintTesterBase<P,C>::rndMean_;
+  using KinFitConstraintTesterBase<P,C>::rndWidth_;
+  using KinFitConstraintTesterBase<P,C>::plotRange_;
 };
 
 #endif // TauAnalysis_Entanglement_KinFitConstraintTester_h

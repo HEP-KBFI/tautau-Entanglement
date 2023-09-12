@@ -156,43 +156,6 @@ void EntanglementNtupleProducer::analyze(const edm::Event& evt, const edm::Event
     printKinematicEvent("kineEvt_gen", kineEvt_gen, verbosity_, cartesian_);
   }
 
-  const reco::GenParticle* tauPlus  = nullptr;
-  const reco::GenParticle* tauMinus = nullptr;
-  for ( const reco::GenParticle& genParticle : *genParticles )
-  {
-    if ( genParticle.pdgId() == -15 && !tauPlus  ) tauPlus  = findLastTau(&genParticle);
-    if ( genParticle.pdgId() == +15 && !tauMinus ) tauMinus = findLastTau(&genParticle);
-  }
-  if ( !(tauPlus && tauMinus) ) 
-  {
-    std::cerr << "WARNING: Failed to find tau+ tau- pair --> skipping the event !!\n";
-    return;
-  }
-
-  std::vector<const reco::GenParticle*> tauPlus_daughters;
-  findDecayProducts(tauPlus, tauPlus_daughters);
-  std::vector<const reco::GenParticle*> tauPlus_ch = get_chargedHadrons(tauPlus_daughters);
-  std::vector<const reco::GenParticle*> tauPlus_pi0 = get_neutralPions(tauPlus_daughters);
-  std::vector<const reco::GenParticle*> tauPlus_nu = get_neutrinos(tauPlus_daughters);
-  int tauPlus_decaymode = get_decayMode(tauPlus_ch, tauPlus_pi0, tauPlus_nu);
-  int tauPlus_nChargedKaons = get_chargedKaons(tauPlus_daughters).size();
-  int tauPlus_nNeutralKaons = get_neutralKaons(tauPlus_daughters).size();
-  std::vector<const reco::GenParticle*> tauPlus_y = get_photons(tauPlus_daughters);
-  int tauPlus_nPhotons = tauPlus_y.size();
-  double tauPlus_sumPhotonEn = comp_visP4(tauPlus_y).energy();
-
-  std::vector<const reco::GenParticle*> tauMinus_daughters;
-  findDecayProducts(tauMinus, tauMinus_daughters);
-  std::vector<const reco::GenParticle*> tauMinus_ch = get_chargedHadrons(tauMinus_daughters);
-  std::vector<const reco::GenParticle*> tauMinus_pi0 = get_neutralPions(tauMinus_daughters);
-  std::vector<const reco::GenParticle*> tauMinus_nu = get_neutrinos(tauMinus_daughters);
-  int tauMinus_decaymode = get_decayMode(tauMinus_ch, tauMinus_pi0, tauMinus_nu);
-  int tauMinus_nChargedKaons = get_chargedKaons(tauMinus_daughters).size();
-  int tauMinus_nNeutralKaons = get_neutralKaons(tauMinus_daughters).size();
-  std::vector<const reco::GenParticle*> tauMinus_y = get_photons(tauMinus_daughters);
-  int tauMinus_nPhotons = tauMinus_y.size();
-  double tauMinus_sumPhotonEn = comp_visP4(tauMinus_y).energy();
-
   KinematicEvent kineEvt_gen_smeared = (*genKineEvtBuilder_wSmearing_)(*genParticles);
   if ( verbosity_ >= 1 )
   {
@@ -257,6 +220,43 @@ void EntanglementNtupleProducer::analyze(const edm::Event& evt, const edm::Event
     printKinematicEvent("kineEvt_kinFit", kineEvt_kinFit_bestfit, verbosity_, cartesian_);
   }
 
+  const reco::GenParticle* tauPlus  = nullptr;
+  const reco::GenParticle* tauMinus = nullptr;
+  for ( const reco::GenParticle& genParticle : *genParticles )
+  {
+    if ( genParticle.pdgId() == -15 && !tauPlus  ) tauPlus  = findLastTau(&genParticle);
+    if ( genParticle.pdgId() == +15 && !tauMinus ) tauMinus = findLastTau(&genParticle);
+  }
+  if ( !(tauPlus && tauMinus) ) 
+  {
+    std::cerr << "WARNING: Failed to find tau+ tau- pair --> skipping the event !!\n";
+    return;
+  }
+
+  std::vector<const reco::GenParticle*> tauPlus_daughters;
+  findDecayProducts(tauPlus, tauPlus_daughters);
+  std::vector<const reco::GenParticle*> tauPlus_ch = get_chargedHadrons(tauPlus_daughters);
+  std::vector<const reco::GenParticle*> tauPlus_pi0 = get_neutralPions(tauPlus_daughters);
+  std::vector<const reco::GenParticle*> tauPlus_nu = get_neutrinos(tauPlus_daughters);
+  int tauPlus_decaymode = get_decayMode(tauPlus_ch, tauPlus_pi0, tauPlus_nu);
+  int tauPlus_nChargedKaons = get_chargedKaons(tauPlus_daughters).size();
+  int tauPlus_nNeutralKaons = get_neutralKaons(tauPlus_daughters).size();
+  std::vector<const reco::GenParticle*> tauPlus_y = get_photons(tauPlus_daughters);
+  int tauPlus_nPhotons = tauPlus_y.size();
+  double tauPlus_sumPhotonEn = comp_visP4(tauPlus_y).energy();
+
+  std::vector<const reco::GenParticle*> tauMinus_daughters;
+  findDecayProducts(tauMinus, tauMinus_daughters);
+  std::vector<const reco::GenParticle*> tauMinus_ch = get_chargedHadrons(tauMinus_daughters);
+  std::vector<const reco::GenParticle*> tauMinus_pi0 = get_neutralPions(tauMinus_daughters);
+  std::vector<const reco::GenParticle*> tauMinus_nu = get_neutrinos(tauMinus_daughters);
+  int tauMinus_decaymode = get_decayMode(tauMinus_ch, tauMinus_pi0, tauMinus_nu);
+  int tauMinus_nChargedKaons = get_chargedKaons(tauMinus_daughters).size();
+  int tauMinus_nNeutralKaons = get_neutralKaons(tauMinus_daughters).size();
+  std::vector<const reco::GenParticle*> tauMinus_y = get_photons(tauMinus_daughters);
+  int tauMinus_nPhotons = tauMinus_y.size();
+  double tauMinus_sumPhotonEn = comp_visP4(tauMinus_y).energy();
+
   EntanglementNtuple* ntupleFiller = nullptr;
   if ( tauPlus_decaymode == reco::PFTau::kOneProng0PiZero && tauMinus_decaymode == reco::PFTau::kOneProng0PiZero )
   {
@@ -292,9 +292,6 @@ void EntanglementNtupleProducer::analyze(const edm::Event& evt, const edm::Event
     &kineEvt_gen_smeared, &kineEvt_startPos_bestfit, &kineEvt_kinFit_bestfit,
     evtWeight);
 }
-
-void EntanglementNtupleProducer::endJob()
-{}
 
 #include "FWCore/Framework/interface/MakerMacros.h"
 
