@@ -31,13 +31,16 @@ applyTauDecayModeSelection = True
 applyVisPtAndEtaSelection  = False
 
 srcGenParticles = None
+tauPairMassCut = None
 from TauAnalysis.Entanglement.resolutions_cfi import resolutions_LHC, resolutions_SuperKEKB
 resolutions = None
 if collider == "LHC":
     srcGenParticles = 'prunedGenParticles'
+    tauPairMassCut = "mass > 120. & mass < 130."
     resolutions = resolutions_LHC
 elif collider == "SuperKEKB":
     srcGenParticles = 'genParticles'
+    tauPairMassCut = "mass > 0."
     resolutions = resolutions_SuperKEKB
 else:
     raise ValueError("Invalid Configuration parameter 'collider' = '%s' !!" % collider)
@@ -78,8 +81,9 @@ if applyVisPtAndEtaSelection:
     process.analysisSequence += process.filterByVisPtAndEta
 #--------------------------------------------------------------------------------
 
+from TauAnalysis.Entanglement.smearing_cfi import smearing
 process.analyzeKinFitConstraint = cms.EDAnalyzer("KinFitConstraintAnalyzer",
-    src = cms.InputTag(srcGenParticles)
+    src = cms.InputTag(srcGenParticles),
     collider = cms.string(collider),
     resolutions = resolutions,
     smearing = smearing.clone(
