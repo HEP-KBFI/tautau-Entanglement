@@ -12,6 +12,7 @@
 #include "DataFormats/Candidate/interface/Candidate.h"            // reco::Candidate::LorentzVector, reco::Candidate::Point
 
 #include "TauAnalysis/Entanglement/interface/KinematicParticle.h" // KinematicParticle
+#include "TauAnalysis/Entanglement/interface/KinFitParameters.h"  // math::MatrixPxP
 #include "TauAnalysis/Entanglement/interface/Matrix_and_Vector.h" // math::Matrix3x3, math::Matrix4x4
 
 class KinematicEvent;
@@ -151,8 +152,6 @@ class KinematicEvent
 
   friend class GenKinematicEventBuilder;
   friend class KinematicFit;
-  template <unsigned int numParameters, unsigned int numConstraints>
-  friend void kinFit::fit(const KinematicEvent&, double, double, bool, int, KinematicEvent&, int&, double&, int&, int, bool&, int);
   friend class StartPosFinder;
   friend class StartPosAlgo1;
   friend class StartPosAlgo2;

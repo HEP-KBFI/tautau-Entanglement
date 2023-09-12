@@ -5,21 +5,14 @@
 
 #include <stdlib.h>  // sleep()
 
-void showHistogram1d(TH1* histogram, 
+void showHistogram1d(int canvasSizeX, int canvasSizeY,
+                     TH1* histogram, 
                      const std::string& xAxisTitle, double xAxisOffset, 
                      bool useLogScale, double yMin, double yMax, const std::string& yAxisTitle, double yAxisOffset,
-                     double avEvtWeight,
-                     bool showStatsBox,
+                     bool showStatsBox, const std::string& drawOption,
                      const std::string& outputFileName)
 {
-  //double integral = histogram->Integral();
-  //if ( integral > 0. ) histogram->Scale(1./integral);
-  if ( avEvtWeight > 0. )
-  {
-    histogram->Scale(1./avEvtWeight);
-  }
-
-  TCanvas* canvas = new TCanvas("canvas", "canvas", 800, 600);
+  TCanvas* canvas = new TCanvas("canvas", "canvas", canvasSizeX, canvasSizeY);
   canvas->SetFillColor(10);
   canvas->SetBorderSize(2); 
   canvas->SetLeftMargin(0.14);
@@ -50,7 +43,7 @@ void showHistogram1d(TH1* histogram,
   histogram->SetMarkerColor(1);
   histogram->SetMarkerSize(1);
   histogram->SetMarkerStyle(8);
-  histogram->Draw("E1P");
+  histogram->Draw(drawOption.c_str());
 
   canvas->Update();
   size_t idx = outputFileName.find_last_of('.');

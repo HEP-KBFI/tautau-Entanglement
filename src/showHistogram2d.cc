@@ -2,43 +2,52 @@
 
 #include <TAxis.h>   // TAxis
 #include <TCanvas.h> // TCanvas
+#include <TGraph.h>  // TGraph
 
 #include <stdlib.h>  // sleep()
 
-void showHistogram2d(TH2* histogram, 
+void showHistogram2d(int canvasSizeX, int canvasSizeY,
+                     TH2* histogram,
                      const std::string& xAxisTitle, double xAxisOffset, 
                      const std::string& yAxisTitle, double yAxisOffset,
-                     double avEvtWeight,
-                     bool showStatsBox,
+                     bool showDiagonal, bool showStatsBox, const std::string& drawOption,
                      const std::string& outputFileName)
 {
-  //double integral = histogram->Integral();
-  //if ( integral > 0. ) histogram->Scale(1./integral);
-  if ( avEvtWeight > 0. )
-  {
-    histogram->Scale(1./avEvtWeight);
-  }
-
-  TCanvas* canvas = new TCanvas("canvas", "canvas", 800, 800);
+  TCanvas* canvas = new TCanvas("canvas", "canvas", canvasSizeX, canvasSizeY);
   canvas->SetFillColor(10);
   canvas->SetBorderSize(2); 
   canvas->SetLeftMargin(0.14);
   canvas->SetBottomMargin(0.12);
   
+  TAxis* xAxis = histogram->GetXaxis();
+  double xMin = xAxis->GetXmin();
+  double xMax = xAxis->GetXmax();
+
+  TAxis* yAxis = histogram->GetYaxis();
+  double yMin = yAxis->GetXmin();
+  double yMax = yAxis->GetXmax();
+
   histogram->SetTitle("");
   histogram->SetStats(showStatsBox);
-
-  TAxis* xAxis = histogram->GetXaxis();
   xAxis->SetTitle(xAxisTitle.c_str());
   xAxis->SetTitleSize(0.045);
   xAxis->SetTitleOffset(xAxisOffset);  
-
-  TAxis* yAxis = histogram->GetYaxis();
   yAxis->SetTitle(yAxisTitle.c_str());
   yAxis->SetTitleSize(0.045);
   yAxis->SetTitleOffset(yAxisOffset);
 
-  histogram->Draw("BOX");
+  histogram->Draw(drawOption.c_str());
+
+  TGraph* diagonal = nullptr;
+  if ( showDiagonal )
+  {
+    diagonal = new TGraph(2);
+    diagonal->SetPoint(0, xMin, yMin);
+    diagonal->SetPoint(1, xMax, yMax);
+    diagonal->SetLineColor(2);
+    diagonal->SetLineWidth(1);
+    diagonal->Draw("L");
+  }
 
   canvas->Update();
   size_t idx = outputFileName.find_last_of('.');
@@ -51,6 +60,7 @@ void showHistogram2d(TH2* histogram,
   // CV: pause for 1 second to reduce load on file system
   sleep(1);
 
+  delete diagonal;
   delete canvas;  
 }
 

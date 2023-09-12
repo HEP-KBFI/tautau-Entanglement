@@ -5,11 +5,11 @@
 
 #include <string> // std::string
 
-void showHistogram2d(TH2* histogram, 
+void showHistogram2d(int canvasSizeX, int canvasSizeY,
+                     TH2* histogram,
                      const std::string& xAxisTitle, double xAxisOffset, 
                      const std::string& yAxisTitle, double yAxisOffset,
-                     double avEvtWeight,
-                     bool showStatsBox,
+                     bool showDiagonal, bool showStatsBox, const std::string& drawOption,
                      const std::string& outputFileName);
 
 #endif // TauAnalysis_Entanglement_showHistogram2d_h

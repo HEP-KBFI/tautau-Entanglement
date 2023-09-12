@@ -19,8 +19,6 @@ class KinematicFit
  private:
   PolarimetricVector polarimetricVector_;
 
-  bool applyLifetimeConstraint_;
-
   int collider_;
 
   bool skip_;
