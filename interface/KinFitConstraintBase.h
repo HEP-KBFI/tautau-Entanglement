@@ -22,7 +22,8 @@ class KinFitConstraintBase
   typedef typename math::Vector<C>::type VectorC;
 
   KinFitConstraintBase(int verbosity = -1)
-    : verbosity_(verbosity)
+    : errorFlag_(false)
+    , verbosity_(verbosity)
   {}
   virtual ~KinFitConstraintBase()
   {}
@@ -42,18 +43,25 @@ class KinFitConstraintBase
     return d_;
   }
 
-
   const MatrixCxC&
   get_d_metric() const
   {
     return d_metric_;
   }
 
+  bool
+  get_errorFlag() const
+  {
+    return errorFlag_;
+  }
+  
  protected:
   MatrixCxP D_;
   VectorC d_;
   MatrixCxC d_metric_;
 
+  bool errorFlag_;
+  
   int verbosity_;
 };
 

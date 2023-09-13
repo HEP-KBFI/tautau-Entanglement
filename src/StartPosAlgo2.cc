@@ -13,7 +13,7 @@
 #include "TauAnalysis/Entanglement/interface/square.h"                    // square()
 
 #include <algorithm>                                                      // std::min()
-#include <cmath>                                                          // std::atan(), std::cos(), std::sin(), std::sqrt()
+#include <cmath>                                                          // std::atan2(), std::cos(), std::sin(), std::sqrt()
 #include <iostream>                                                       // std::cout
 
 StartPosAlgo2::StartPosAlgo2(const edm::ParameterSet& cfg)

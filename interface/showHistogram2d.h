@@ -10,6 +10,7 @@ void showHistogram2d(int canvasSizeX, int canvasSizeY,
                      const std::string& xAxisTitle, double xAxisOffset, 
                      const std::string& yAxisTitle, double yAxisOffset,
                      bool showDiagonal, bool showStatsBox, const std::string& drawOption,
-                     const std::string& outputFileName);
+                     const std::string& outputFileName, bool addHistogramName = true,
+                     int verbosity = -1);
 
 #endif // TauAnalysis_Entanglement_showHistogram2d_h

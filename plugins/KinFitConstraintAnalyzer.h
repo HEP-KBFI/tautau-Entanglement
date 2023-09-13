@@ -32,6 +32,8 @@ class KinFitConstraintAnalyzer : public edm::one::EDAnalyzer<>
 
   GenKinematicEventBuilder* genKineEvtBuilder_;
 
+  bool applySmearing_;
+
   int collider_;
 
   int verbosity_;

@@ -21,8 +21,6 @@ printInverseCovMatrix(const std::string& label, const T& cov)
   double det = -1.;
   covInv.Det2(det);
   std::cout << " det = " << det << "\n";
-  T product = cov*covInv;
-  printCovMatrix(Form("%s*%s^-1", label.c_str(), label.c_str()), product);
 }
 
 #endif // TauAnalysis_Entanglement_printInverseCovMatrix_h

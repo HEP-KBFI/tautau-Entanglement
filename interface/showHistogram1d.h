@@ -10,6 +10,7 @@ void showHistogram1d(int canvasSizeX, int canvasSizeY,
                      const std::string& xAxisTitle, double xAxisOffset, 
                      bool useLogScale, double yMin, double yMax, const std::string& yAxisTitle, double yAxisOffset,
                      bool showStatsBox, const std::string& drawOption,
-                     const std::string& outputFileName);
+                     const std::string& outputFileName, bool addHistogramName = true,
+                     int verbosity = -1);
 
 #endif // TauAnalysis_Entanglement_showHistogram1d_h

@@ -6,6 +6,7 @@
 double
 comp_nuPz(const reco::Candidate::LorentzVector& visP4, double nuPx, double nuPy, double sign, 
           double& nu_dPzdPx, double& nu_dPzdPy,
+          bool& errorFlag,
           int verbosity = -1);
 
 reco::Candidate::LorentzVector

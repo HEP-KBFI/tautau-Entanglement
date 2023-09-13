@@ -111,7 +111,15 @@ Smearing::operator()(const KinematicEvent& kineEvt)
   double drecoilPz = kineEvt_smeared.recoilP4_.pz()     - kineEvt.recoilP4().pz();
   double drecoilE  = kineEvt_smeared.recoilP4_.energy() - kineEvt.recoilP4().energy();
 
-  double u = rnd_.Uniform(0., 1.);
+  double u = 0.5;
+  if ( kineEvt.tauPlusP4_isValid() && kineEvt.tauMinusP4_isValid() )
+  {
+    u = kineEvt.tauPlusP4().energy()/(kineEvt.tauPlusP4().energy() + kineEvt.tauMinusP4().energy());
+  }
+  else
+  {
+    u = rnd_.Uniform(0., 1.);
+  }
 
   if ( kineEvt.tauPlusP4_isValid() )
   {

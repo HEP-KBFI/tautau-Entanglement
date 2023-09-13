@@ -11,6 +11,7 @@ showGraph(double canvasSizeX, double canvasSizeY,
           const std::string& xAxisTitle, double xMin, double xMax,
           const std::string& yAxisTitle, double yMin, double yMax,
           const std::string& drawingOption,
-          const std::string& outputFileName);
+          const std::string& outputFileName,
+          int verbosity = -1);
 
 #endif // TauAnalysis_Entanglement_showGraph_h

@@ -156,6 +156,7 @@ class PolynomialConstraint : public KinFitConstraintBase<2,1>
   using KinFitConstraintBase<2,1>::D_;
   using KinFitConstraintBase<2,1>::d_;
   using KinFitConstraintBase<2,1>::d_metric_;
+  using KinFitConstraintBase<2,1>::verbosity_;
 
   unsigned int rank_;
 
@@ -167,18 +168,19 @@ class PolynomialConstraint : public KinFitConstraintBase<2,1>
 class PolynomialConstraintTester : public KinFitConstraintTesterBase<2,1>
 {
  public:
-  PolynomialConstraintTester(int verbosity = -1)
-    : KinFitConstraintTesterBase<2,1>(verbosity)
+  PolynomialConstraintTester(const Vector2& alpha0, int verbosity = -1)
+    : KinFitConstraintTesterBase<2,1>(alpha0, verbosity)
   {
+    rndMean_ = alpha0_;
+    
     for ( unsigned int idxParameter = 0; idxParameter < 2; ++idxParameter )
     {
-      rndMean_(idxParameter)  = 0.;
       rndWidth_(idxParameter) = 2.;
     }
 
-    for ( unsigned int idxParameter = 0; idxParameter < 2; ++idxParameter )
+    for ( unsigned int idxConstraint = 0; idxConstraint < 1; ++idxConstraint )
     {
-      for ( unsigned int idxConstraint = 0; idxConstraint < 1; ++idxConstraint )
+      for ( unsigned int idxParameter = 0; idxParameter < 2; ++idxParameter )
       {
         plotRange_(idxConstraint, idxParameter) = 5.;
       }
@@ -186,6 +188,7 @@ class PolynomialConstraintTester : public KinFitConstraintTesterBase<2,1>
   }
  
  private:
+  using KinFitConstraintTesterBase<2,1>::alpha0_;
   using KinFitConstraintTesterBase<2,1>::rndMean_;
   using KinFitConstraintTesterBase<2,1>::rndWidth_;
   using KinFitConstraintTesterBase<2,1>::plotRange_;
@@ -202,7 +205,7 @@ get_startPos(const point2d& point)
 
 template <unsigned int rank>
 void 
-showFit(const Vector2& mean, const Matrix2x2& cov, const PolynomialConstraint<rank>& constraint, 
+showFit(const Vector2& alpha0, const Matrix2x2& V_alpha0, const PolynomialConstraint<rank>& constraint, 
         const std::vector<KinFitSummary<2>>& fitHistory,
         const std::string& outputFileName)
 {
@@ -214,17 +217,17 @@ showFit(const Vector2& mean, const Matrix2x2& cov, const PolynomialConstraint<ra
   canvas->SetBottomMargin(0.07);
   canvas->SetRightMargin(0.14);
 
-  int covInv_errorFlag = 0;
-  Matrix2x2 covInv = cov.Inverse(covInv_errorFlag);
-  if ( covInv_errorFlag != 0 )
+  int Vinv_alpha0_errorFlag = 0;
+  Matrix2x2 Vinv_alpha0 = V_alpha0.Inverse(Vinv_alpha0_errorFlag);
+  if ( Vinv_alpha0_errorFlag != 0 )
     throw cmsException("showFit", __LINE__) 
-      << "Failed to invert matrix cov !!\n";
-  std::cout << "covInv:\n";
-  std::cout << covInv << "\n";
+      << "Failed to invert matrix V_alpha0 !!\n";
+  std::cout << "Vinv_alpha0:\n";
+  std::cout << Vinv_alpha0 << "\n";
 
-  double det = -1.;
-  cov.Det2(det);
-  std::cout << "det = " << det << "\n";
+  double V_alpha0_det = -1.;
+  V_alpha0.Det2(V_alpha0_det);
+  std::cout << "det(V_alpha0) = " << V_alpha0_det << "\n";
 
   const double xMin = -10.;
   const double xMax = +10.;
@@ -233,13 +236,13 @@ showFit(const Vector2& mean, const Matrix2x2& cov, const PolynomialConstraint<ra
 
   std::string chi2_formula = "(x - [1])*[3]*(x - [1]) + (x - [1])*[4]*(y - [2]) + (y - [2])*[5]*(x - [1]) + (y - [2])*[6]*(y - [2])";
   TF2* chi2_function = new TF2("chi2", chi2_formula.c_str(), xMin, xMax, yMin, yMax);
-  chi2_function->SetParameter(0, 1./(2.*TMath::Pi()*det));
-  chi2_function->SetParameter(1, mean(0));
-  chi2_function->SetParameter(2, mean(1));
-  chi2_function->SetParameter(3, covInv(0,0));
-  chi2_function->SetParameter(4, covInv(0,1));
-  chi2_function->SetParameter(5, covInv(1,0));
-  chi2_function->SetParameter(6, covInv(1,1));
+  chi2_function->SetParameter(0, 1./(2.*TMath::Pi()*V_alpha0_det));
+  chi2_function->SetParameter(1, alpha0(0));
+  chi2_function->SetParameter(2, alpha0(1));
+  chi2_function->SetParameter(3, Vinv_alpha0(0,0));
+  chi2_function->SetParameter(4, Vinv_alpha0(0,1));
+  chi2_function->SetParameter(5, Vinv_alpha0(1,0));
+  chi2_function->SetParameter(6, Vinv_alpha0(1,1));
 
   chi2_function->SetTitle("");
   chi2_function->Draw("Colz");
@@ -362,11 +365,33 @@ int main(int argc, char* argv[])
   TBenchmark clock;
   clock.Start("testKinematicFit");  
 
+  Vector2 alpha0;
+  alpha0(0) = 0.;
+  alpha0(1) = 0.;
+
+  Matrix2x2 V_alpha0_uncorr;
+  V_alpha0_uncorr(0,0) = 1.;
+  V_alpha0_uncorr(0,1) = 0.;
+  V_alpha0_uncorr(1,0) = V_alpha0_uncorr(0,1);
+  V_alpha0_uncorr(1,1) = 4.;
+
+  Matrix2x2 V_alpha0_corr_wide;
+  V_alpha0_corr_wide(0,0) = 1.;
+  V_alpha0_corr_wide(0,1) = 1.6;
+  V_alpha0_corr_wide(1,0) = V_alpha0_corr_wide(0,1);
+  V_alpha0_corr_wide(1,1) = 4.;
+
+  Matrix2x2 V_alpha0_corr_narrow;
+  V_alpha0_corr_narrow(0,0) = 1./16;
+  V_alpha0_corr_narrow(0,1) = 0.4;
+  V_alpha0_corr_narrow(1,0) = V_alpha0_corr_narrow(0,1);
+  V_alpha0_corr_narrow(1,1) = 4.;
+  
   std::vector<point2d> points_pol1;
   points_pol1.push_back(point2d(-3., -2.));
   points_pol1.push_back(point2d(+3., +4.));  
   PolynomialConstraint<1> constraint_pol1(points_pol1, verbosity);
-  PolynomialConstraintTester constraintTester_pol1;
+  PolynomialConstraintTester constraintTester_pol1(alpha0, verbosity);
   constraintTester_pol1(constraint_pol1, "testConstraint_pol1.png");
 
   std::vector<point2d> points_pol3;
@@ -375,90 +400,68 @@ int main(int argc, char* argv[])
   points_pol3.push_back(point2d(+1.,  0.));
   points_pol3.push_back(point2d(+3., +4.));
   PolynomialConstraint<3> constraint_pol3(points_pol3, verbosity);
-  PolynomialConstraintTester constraintTester_pol3;
+  PolynomialConstraintTester constraintTester_pol3(alpha0, verbosity);
   constraintTester_pol3(constraint_pol3, "testConstraint_pol3.png");
   
   edm::ParameterSet cfg_kinFit;
   cfg_kinFit.addParameter<int>("verbosity", -1);
   KinFitAlgo<2,1> kinFit(cfg_kinFit);
 
-  Vector2 mean;
-  mean(0) = 0.;
-  mean(1) = 0.;
-
-  Matrix2x2 cov_uncorr;
-  cov_uncorr(0,0) = 1.;
-  cov_uncorr(0,1) = 0.;
-  cov_uncorr(1,0) = cov_uncorr(0,1);
-  cov_uncorr(1,1) = 4.;
-
-  Matrix2x2 cov_corr_wide;
-  cov_corr_wide(0,0) = 1.;
-  cov_corr_wide(0,1) = 1.6;
-  cov_corr_wide(1,0) = cov_corr_wide(0,1);
-  cov_corr_wide(1,1) = 4.;
-
-  Matrix2x2 cov_corr_narrow;
-  cov_corr_narrow(0,0) = 1./16;
-  cov_corr_narrow(0,1) = 0.4;
-  cov_corr_narrow(1,0) = cov_corr_narrow(0,1);
-  cov_corr_narrow(1,1) = 4.;
-
   Vector2 startPos_pol1 = get_startPos(points_pol1.at(0));
 
   Vector2 startPos_pol3 = get_startPos(points_pol3.at(0));
 
   std::cout << "Fitting covariance matrix:\n";
-  std::cout << cov_uncorr << "\n";
+  std::cout << V_alpha0_uncorr << "\n";
   std::cout << "with constraint = '" << (std::string)constraint_pol1 << "'...\n";  
   std::vector<KinFitSummary<2>> fitHistory_uncorr_pol1;
-  kinFit(mean, cov_uncorr, constraint_pol1, startPos_pol1, &fitHistory_uncorr_pol1);
+  kinFit(alpha0, V_alpha0_uncorr, constraint_pol1, startPos_pol1, &fitHistory_uncorr_pol1);
   std::string outputFileName_uncorr_pol1 = "testKinematicFit_uncorr_pol1.png";
-  showResults(mean, cov_uncorr, constraint_pol1, fitHistory_uncorr_pol1, outputFileName_uncorr_pol1);
+  showResults(alpha0, V_alpha0_uncorr, constraint_pol1, fitHistory_uncorr_pol1, outputFileName_uncorr_pol1);
   std::cout << " Done.\n";
 
   std::cout << "Fitting covariance matrix:\n";
-  std::cout << cov_corr_wide << "\n";
+  std::cout << V_alpha0_corr_wide << "\n";
   std::cout << "with constraint = '" << (std::string)constraint_pol1 << "'...\n";
   std::vector<KinFitSummary<2>> fitHistory_corr_wide_pol1;
-  kinFit(mean, cov_corr_wide, constraint_pol1, startPos_pol1, &fitHistory_corr_wide_pol1);
+  kinFit(alpha0, V_alpha0_corr_wide, constraint_pol1, startPos_pol1, &fitHistory_corr_wide_pol1);
   std::string outputFileName_corr_wide_pol1 = "testKinematicFit_corr_wide_pol1.png";
-  showResults(mean, cov_corr_wide, constraint_pol1, fitHistory_corr_wide_pol1, outputFileName_corr_wide_pol1);
+  showResults(alpha0, V_alpha0_corr_wide, constraint_pol1, fitHistory_corr_wide_pol1, outputFileName_corr_wide_pol1);
   std::cout << " Done.\n";
 
   std::cout << "Fitting covariance matrix:\n";
-  std::cout << cov_corr_narrow << "\n";
+  std::cout << V_alpha0_corr_narrow << "\n";
   std::cout << "with constraint = '" << (std::string)constraint_pol1 << "'...\n";
   std::vector<KinFitSummary<2>> fitHistory_corr_narrow_pol1;
-  kinFit(mean, cov_corr_narrow, constraint_pol1, startPos_pol1, &fitHistory_corr_narrow_pol1);
+  kinFit(alpha0, V_alpha0_corr_narrow, constraint_pol1, startPos_pol1, &fitHistory_corr_narrow_pol1);
   std::string outputFileName_corr_narrow_pol1 = "testKinematicFit_corr_narrow_pol1.png";
-  showResults(mean, cov_corr_narrow, constraint_pol1, fitHistory_corr_narrow_pol1, outputFileName_corr_narrow_pol1);
+  showResults(alpha0, V_alpha0_corr_narrow, constraint_pol1, fitHistory_corr_narrow_pol1, outputFileName_corr_narrow_pol1);
 
   std::cout << "Fitting covariance matrix:\n";
-  std::cout << cov_uncorr << "\n";
+  std::cout << V_alpha0_uncorr << "\n";
   std::cout << "with constraint = '" << (std::string)constraint_pol3 << "'...\n";  
   std::vector<KinFitSummary<2>> fitHistory_uncorr_pol3;
-  kinFit(mean, cov_uncorr, constraint_pol3, startPos_pol3, &fitHistory_uncorr_pol3);
+  kinFit(alpha0, V_alpha0_uncorr, constraint_pol3, startPos_pol3, &fitHistory_uncorr_pol3);
   std::string outputFileName_uncorr_pol3 = "testKinematicFit_uncorr_pol3.png";
-  showResults(mean, cov_uncorr, constraint_pol3, fitHistory_uncorr_pol3, outputFileName_uncorr_pol3);
+  showResults(alpha0, V_alpha0_uncorr, constraint_pol3, fitHistory_uncorr_pol3, outputFileName_uncorr_pol3);
   std::cout << " Done.\n";
 
   std::cout << "Fitting covariance matrix:\n";
-  std::cout << cov_corr_wide << "\n";
+  std::cout << V_alpha0_corr_wide << "\n";
   std::cout << "with constraint = '" << (std::string)constraint_pol3<< "'...\n";
   std::vector<KinFitSummary<2>> fitHistory_corr_wide_pol3;
-  kinFit(mean, cov_corr_wide, constraint_pol3, startPos_pol3, &fitHistory_corr_wide_pol3);
+  kinFit(alpha0, V_alpha0_corr_wide, constraint_pol3, startPos_pol3, &fitHistory_corr_wide_pol3);
   std::string outputFileName_corr_wide_pol3 = "testKinematicFit_corr_wide_pol3.png";
-  showResults(mean, cov_corr_wide, constraint_pol3, fitHistory_corr_wide_pol3, outputFileName_corr_wide_pol3);
+  showResults(alpha0, V_alpha0_corr_wide, constraint_pol3, fitHistory_corr_wide_pol3, outputFileName_corr_wide_pol3);
   std::cout << " Done.\n";
 
   std::cout << "Fitting covariance matrix:\n";
-  std::cout << cov_corr_narrow << "\n";
+  std::cout << V_alpha0_corr_narrow << "\n";
   std::cout << "with constraint = '" << (std::string)constraint_pol3 << "'...\n";
   std::vector<KinFitSummary<2>> fitHistory_corr_narrow_pol3;
-  kinFit(mean, cov_corr_narrow, constraint_pol3, startPos_pol3, &fitHistory_corr_narrow_pol3);
+  kinFit(alpha0, V_alpha0_corr_narrow, constraint_pol3, startPos_pol3, &fitHistory_corr_narrow_pol3);
   std::string outputFileName_corr_narrow_pol3 = "testKinematicFit_corr_narrow_pol3.png";
-  showResults(mean, cov_corr_narrow, constraint_pol3, fitHistory_corr_narrow_pol3, outputFileName_corr_narrow_pol3);
+  showResults(alpha0, V_alpha0_corr_narrow, constraint_pol3, fitHistory_corr_narrow_pol3, outputFileName_corr_narrow_pol3);
 
   clock.Show("testKinematicFit");
 

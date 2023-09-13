@@ -349,11 +349,6 @@ GenKinematicEventBuilder::operator()(const reco::GenParticleCollection& genParti
     }
     std::cout << "tauPlus_decayMode = " << tauPlus_decayMode << "\n";
     printCovMatrix("nuTauPlusCov", nuTauPlusCov);
-    if ( verbosity_ >= 3 )
-    {
-      printEigenVectors_and_EigenValues(nuTauPlusCov);
-    }
-    printInverseCovMatrix("nuTauPlusCov", nuTauPlusCov);
   }
   std::vector<KinematicParticle> daughtersTauPlus = build_kineDaughters(
     visTauPlusP4, tauPlus_decayMode, tauPlus_daughters, 
@@ -385,11 +380,6 @@ GenKinematicEventBuilder::operator()(const reco::GenParticleCollection& genParti
     }
     std::cout << "tauMinus_decayMode = " << tauMinus_decayMode << "\n";
     printCovMatrix("nuTauMinusCov", nuTauMinusCov);
-    if ( verbosity_ >= 3 )
-    {
-      printEigenVectors_and_EigenValues(nuTauMinusCov);
-    }
-    printInverseCovMatrix("nuTauMinusCov", nuTauMinusCov);
   }
   std::vector<KinematicParticle> daughtersTauMinus = build_kineDaughters(
     visTauMinusP4, tauMinus_decayMode, tauMinus_daughters, 
@@ -411,7 +401,6 @@ GenKinematicEventBuilder::operator()(const reco::GenParticleCollection& genParti
   {
     printPoint("pv", pv);
     printCovMatrix("pvCov", pvCov);
-    printInverseCovMatrix("pvCov", pvCov);
   }
 
   reco::Candidate::LorentzVector recoilP4 = tauPlusP4 + tauMinusP4;
@@ -420,7 +409,6 @@ GenKinematicEventBuilder::operator()(const reco::GenParticleCollection& genParti
   {
     printLorentzVector("recoilP4", recoilP4, cartesian_);
     printCovMatrix("recoilCov", recoilCov);
-    printInverseCovMatrix("recoilCov", recoilCov);
   }
 
   const reco::GenParticle* tauPlus_leadTrack = get_leadTrack(tauPlus_daughters);
@@ -440,20 +428,10 @@ GenKinematicEventBuilder::operator()(const reco::GenParticleCollection& genParti
     printDistance("svTauPlus - pv", svTauPlus - pv, cartesian_);
     printDistance("svTauPlus - pv", svTauPlus - pv, false);
     printCovMatrix("svTauPlusCov", svTauPlusCov);
-    if ( verbosity_ >= 3 )
-    {
-      printEigenVectors_and_EigenValues(svTauPlusCov);
-    }
-    printInverseCovMatrix("svTauPlusCov", svTauPlusCov);
     printPoint("svTauMinus", svTauMinus);
     printDistance("svTauMinus - pv", svTauMinus - pv, cartesian_);
     printDistance("svTauMinus - pv", svTauMinus - pv, false);
     printCovMatrix("svTauMinusCov", svTauMinusCov);
-    if ( verbosity_ >= 3 )
-    {
-      printEigenVectors_and_EigenValues(svTauMinusCov);
-    }
-    printInverseCovMatrix("svTauMinusCov", svTauMinusCov);
   }
 
   KinematicEvent kineEvt;

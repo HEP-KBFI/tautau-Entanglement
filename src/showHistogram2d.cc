@@ -4,6 +4,7 @@
 #include <TCanvas.h> // TCanvas
 #include <TGraph.h>  // TGraph
 
+#include <iostream>  // std::cout
 #include <stdlib.h>  // sleep()
 
 void showHistogram2d(int canvasSizeX, int canvasSizeY,
@@ -11,13 +12,22 @@ void showHistogram2d(int canvasSizeX, int canvasSizeY,
                      const std::string& xAxisTitle, double xAxisOffset, 
                      const std::string& yAxisTitle, double yAxisOffset,
                      bool showDiagonal, bool showStatsBox, const std::string& drawOption,
-                     const std::string& outputFileName)
+                     const std::string& outputFileName, bool addHistogramName,
+                     int verbosity)
 {
+  if ( verbosity >= 1 )
+  {
+    std::cout << "<showHistogram2d>:\n";
+    std::cout << " outputFileName = '" << outputFileName << "'\n";
+  }
+
   TCanvas* canvas = new TCanvas("canvas", "canvas", canvasSizeX, canvasSizeY);
   canvas->SetFillColor(10);
-  canvas->SetBorderSize(2); 
+  canvas->SetBorderSize(2);
+  canvas->SetTopMargin(0.06);
   canvas->SetLeftMargin(0.14);
-  canvas->SetBottomMargin(0.12);
+  canvas->SetBottomMargin(0.14);
+  canvas->SetRightMargin(0.06);
   
   TAxis* xAxis = histogram->GetXaxis();
   double xMin = xAxis->GetXmin();
@@ -52,8 +62,11 @@ void showHistogram2d(int canvasSizeX, int canvasSizeY,
   canvas->Update();
   size_t idx = outputFileName.find_last_of('.');
   std::string outputFileName_plot = std::string(outputFileName, 0, idx);
-  outputFileName_plot.append("_");
-  outputFileName_plot.append(histogram->GetName());
+  if ( addHistogramName )
+  {
+    outputFileName_plot.append("_");
+    outputFileName_plot.append(histogram->GetName());
+  }
   canvas->Print(std::string(outputFileName_plot).append(".png").c_str());
   //canvas->Print(std::string(outputFileName_plot).append(".pdf").c_str());
   

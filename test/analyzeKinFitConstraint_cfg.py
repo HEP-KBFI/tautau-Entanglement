@@ -18,9 +18,9 @@ process.maxEvents = cms.untracked.PSet(
 process.source = cms.Source("PoolSource",
     fileNames = cms.untracked.vstring()
 )
-#process.source.eventsToProcess = cms.untracked.VEventRange(
-#    '1:1:10' 
-#)
+process.source.eventsToProcess = cms.untracked.VEventRange(
+    '1:1:213' 
+)
 
 inputFileNames = [ 'file:/local/karl/ee2tt_aod_unwgt/aodsim_1.root' ]
 
@@ -52,12 +52,6 @@ process.GlobalTag = GlobalTag(process.GlobalTag, '124X_dataRun2_v2', '')
 
 process.analysisSequence = cms.Sequence()
 
-process.dumpGenParticles = cms.EDAnalyzer("ParticleListDrawer",
-    src = cms.InputTag(srcGenParticles),
-    maxEventsToPrint = cms.untracked.int32(10) 
-)
-process.analysisSequence += process.dumpGenParticles
-
 #--------------------------------------------------------------------------------
 # apply event selection
 
@@ -85,16 +79,21 @@ from TauAnalysis.Entanglement.smearing_cfi import smearing
 process.analyzeKinFitConstraint = cms.EDAnalyzer("KinFitConstraintAnalyzer",
     src = cms.InputTag(srcGenParticles),
     collider = cms.string(collider),
+    hAxis = cms.string("beam"),
     resolutions = resolutions,
     smearing = smearing.clone(
         rndSeed = cms.uint64(1)
     ),
-    #applySmearing = cms.bool(False),
-    applySmearing = cms.bool(True),
-    verbosity = cms.untracked.int32(-1),
-    #verbosity = cms.untracked.int32(3),
+    # CV: keep applySmearing set to false,
+    #     as neutrino Px, Py will not be initialized by GenKinematicEventBuilder otherwise !!
+    applySmearing = cms.bool(False),
+    verbosity = cms.untracked.int32(1),
     cartesian = cms.untracked.bool(True)
 )
 process.analysisSequence += process.analyzeKinFitConstraint
 
 process.p = cms.Path(process.analysisSequence)
+
+process.options = cms.untracked.PSet(
+    wantSummary = cms.untracked.bool(True)
+)

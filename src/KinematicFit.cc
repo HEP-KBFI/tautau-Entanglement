@@ -113,16 +113,34 @@ KinematicFit::operator()(const KinematicEvent& kineEvt)
 
       // CV: Check that chosen signs for tau+ and tau- reproduce neutrino Pz of start position; skip sign combination if not.
       //     Skipping these sign combinations saves computing time and avoids running into unphysical solutions.
-      double nuTauPlusPx = startPos_nuTauPlusP4.px();
-      double nuTauPlusPy = startPos_nuTauPlusP4.py();
-      double nuTauPlus_dPzdPx, nuTauPlus_dPzdPy;
-      double nuTauPlusPz = comp_nuPz(startPos_visTauPlusP4, nuTauPlusPx, nuTauPlusPy, signTauPlus, nuTauPlus_dPzdPx, nuTauPlus_dPzdPy, verbosity_);
-      double nuTauMinusPx = startPos_nuTauMinusP4.px();
-      double nuTauMinusPy = startPos_nuTauMinusP4.py();
-      double nuTauMinus_dPzdPx, nuTauMinus_dPzdPy;
-      double nuTauMinusPz = comp_nuPz(startPos_visTauMinusP4, nuTauMinusPx, nuTauMinusPy, signTauMinus, nuTauMinus_dPzdPx, nuTauMinus_dPzdPy, verbosity_);
-      if ( std::fabs(nuTauPlusPz  - startPos_nuTauPlusP4.pz())  > std::max(1., 0.10*startPos_nuTauPlusP4.pz())  ||
-           std::fabs(nuTauMinusPz - startPos_nuTauMinusP4.pz()) > std::max(1., 0.10*startPos_nuTauMinusP4.pz()) )
+      double startPos_nuTauPlusPx = startPos_nuTauPlusP4.px();
+      double startPos_nuTauPlusPy = startPos_nuTauPlusP4.py();
+      double startPos_nuTauPlus_dPzdPx, startPos_nuTauPlus_dPzdPy;
+      bool startPos_nuTauPlus_errorFlag = false;
+      double startPos_nuTauPlusPz = comp_nuPz(
+	       startPos_visTauPlusP4, startPos_nuTauPlusPx, startPos_nuTauPlusPy, signTauPlus,
+	       startPos_nuTauPlus_dPzdPx, startPos_nuTauPlus_dPzdPy,
+	       startPos_nuTauPlus_errorFlag,
+	       verbosity_);
+      double startPos_nuTauMinusPx = startPos_nuTauMinusP4.px();
+      double startPos_nuTauMinusPy = startPos_nuTauMinusP4.py();
+      double startPos_nuTauMinus_dPzdPx, startPos_nuTauMinus_dPzdPy;
+      bool startPos_nuTauMinus_errorFlag = false;
+      double startPos_nuTauMinusPz = comp_nuPz(
+	       startPos_visTauMinusP4, startPos_nuTauMinusPx, startPos_nuTauMinusPy, signTauMinus,
+	       startPos_nuTauMinus_dPzdPx, startPos_nuTauMinus_dPzdPy,
+	       startPos_nuTauMinus_errorFlag,
+	       verbosity_);
+      if ( startPos_nuTauPlus_errorFlag || startPos_nuTauMinus_errorFlag )
+      {
+	if ( verbosity_ >= 1 )
+        {
+          std::cout << "--> skipping this sign combination, because computation of neutrino Pz returned an error !!\n";
+        }
+        continue;
+      }  
+      if ( std::fabs(startPos_nuTauPlusPz  - startPos_nuTauPlusP4.pz())  > std::max(1., 0.10*startPos_nuTauPlusP4.pz())  ||
+           std::fabs(startPos_nuTauMinusPz - startPos_nuTauMinusP4.pz()) > std::max(1., 0.10*startPos_nuTauMinusP4.pz()) )
       {
         if ( verbosity_ >= 1 )
         {
@@ -149,7 +167,7 @@ KinematicFit::operator()(const KinematicEvent& kineEvt)
       alpha0(14) = startPos_recoilP4.py();
       alpha0(15) = startPos_recoilP4.pz();
       alpha0(16) = startPos_recoilP4.energy();
-      if ( verbosity_ >= 1 )
+      if ( verbosity_ >= 2 )
       {
         std::cout << "alpha0:\n";
         std::cout << alpha0 << "\n";
@@ -165,13 +183,13 @@ KinematicFit::operator()(const KinematicEvent& kineEvt)
       V_alpha0.Place_at(nuTauMinusCov,  8,  8);
       V_alpha0.Place_at(svTauMinusCov, 10, 10);
       V_alpha0.Place_at(recoilCov    , 13, 13);
-      if ( verbosity_ >= 1 )
+      if ( verbosity_ >= 2 )
       {
         printCovMatrix("V_alpha0", V_alpha0);
       }
 
       VectorP alphaA = alpha0;
-      if ( verbosity_ >= 1 )
+      if ( verbosity_ >= 2 )
       {
         std::cout << "alphaA:\n";
         std::cout << alphaA << "\n";
@@ -185,7 +203,7 @@ KinematicFit::operator()(const KinematicEvent& kineEvt)
         const int C = numConstraints_LHC;
         KinFitConstraint<P,C> constraint(collider_, kineEvt, signTauPlus, signTauMinus, verbosity_);
         edm::ParameterSet cfg_kinFit;
-        cfg_kinFit.addParameter<int>("verbosity", -1);
+        cfg_kinFit.addParameter<int>("verbosity", verbosity_);
         KinFitAlgo<P,C> kinFit(cfg_kinFit);
         fitResult = kinFit(alpha0, V_alpha0, constraint, alphaA);
       }
@@ -194,55 +212,60 @@ KinematicFit::operator()(const KinematicEvent& kineEvt)
         const int C = numConstraints_SuperKEKB;
         KinFitConstraint<P,C> constraint(collider_, kineEvt, signTauPlus, signTauMinus, verbosity_);
         edm::ParameterSet cfg_kinFit;
-        cfg_kinFit.addParameter<int>("verbosity", -1);
+        cfg_kinFit.addParameter<int>("verbosity", verbosity_);
         KinFitAlgo<P,C> kinFit(cfg_kinFit);
         fitResult = kinFit(alpha0, V_alpha0, constraint, alphaA);
       }
       else assert(0);
 
-      if (  fitResult.get_status() >  bestfit_status                                         ||
-           (fitResult.get_status() == bestfit_status && fitResult.get_chi2() < bestfit_chi2) )
-       {
-        VectorP bestfit_alpha = fitResult.get_alpha();
-        MatrixPxP bestfit_V_alpha = fitResult.get_V_alpha();
+      VectorP fitResult_alpha = fitResult.get_alpha();
+      MatrixPxP fitResult_V_alpha = fitResult.get_V_alpha();
 
+      double fitResult_nuTauPlusPx = fitResult_alpha(3);
+      double fitResult_nuTauPlusPy = fitResult_alpha(4);
+      double fitResult_nuTauPlus_dPzdPx, fitResult_nuTauPlus_dPzdPy;
+      bool fitResult_nuTauPlus_errorFlag = false;
+      double fitResult_nuTauPlusPz = comp_nuPz(
+               kineEvt.visTauPlusP4_, fitResult_nuTauPlusPx, fitResult_nuTauPlusPy, signTauPlus,
+               fitResult_nuTauPlus_dPzdPx, fitResult_nuTauPlus_dPzdPy,
+	       fitResult_nuTauPlus_errorFlag,
+               verbosity_);
+      double fitResult_nuTauMinusPx = fitResult_alpha(8);
+      double fitResult_nuTauMinusPy = fitResult_alpha(9);
+      double fitResult_nuTauMinus_dPzdPx, fitResult_nuTauMinus_dPzdPy;
+      bool fitResult_nuTauMinus_errorFlag = false;
+      double fitResult_nuTauMinusPz = comp_nuPz(
+               kineEvt.visTauMinusP4_, fitResult_nuTauMinusPx, fitResult_nuTauMinusPy, signTauMinus,
+               fitResult_nuTauMinus_dPzdPx, fitResult_nuTauMinus_dPzdPy,
+	       fitResult_nuTauMinus_errorFlag,
+               verbosity_);
+
+      if ( !(fitResult_nuTauPlus_errorFlag || fitResult_nuTauMinus_errorFlag)                   &&
+	    ( fitResult.get_status() >  bestfit_status                                       ||
+	     (fitResult.get_status() == bestfit_status && fitResult.get_chi2() < bestfit_chi2)) ) 
+       {
         // CV: store results of kinematic fit in KinematicEvent class;
         //     for the syntax of retrieving a small covariance matrix from a larger one, 
         //     see Section "Accessing and setting methods" of the ROOT documentation https://root.cern.ch/doc/v608/SMatrixDoc.html
-        kineEvt_kinFit.pv_ = reco::Candidate::Point(bestfit_alpha(0), bestfit_alpha(1), bestfit_alpha(2));
-        kineEvt_kinFit.pvCov_ = bestfit_V_alpha.Sub<Matrix3x3>(0,0);
-        kineEvt_kinFit.recoilP4_ = reco::Candidate::LorentzVector(bestfit_alpha(13), bestfit_alpha(14), bestfit_alpha(15), bestfit_alpha(16));
-        kineEvt_kinFit.recoilCov_ = bestfit_V_alpha.Sub<Matrix4x4>(13,13);
-        double bestfit_nuTauPlusPx = bestfit_alpha(3);
-        double bestfit_nuTauPlusPy = bestfit_alpha(4);
-        double bestfit_nuTauPlus_dPzdPx, bestfit_nuTauPlus_dPzdPy;
-        double bestfit_nuTauPlusPz = comp_nuPz(
-                 kineEvt.visTauPlusP4_, bestfit_nuTauPlusPx, bestfit_nuTauPlusPy, signTauPlus,
-                 bestfit_nuTauPlus_dPzdPx, bestfit_nuTauPlus_dPzdPy,
-                 verbosity_);
-        kineEvt_kinFit.nuTauPlusP4_ = build_nuP4(bestfit_nuTauPlusPx, bestfit_nuTauPlusPy, bestfit_nuTauPlusPz);
+        kineEvt_kinFit.pv_ = reco::Candidate::Point(fitResult_alpha(0), fitResult_alpha(1), fitResult_alpha(2));
+        kineEvt_kinFit.pvCov_ = fitResult_V_alpha.Sub<Matrix3x3>(0,0);
+        kineEvt_kinFit.recoilP4_ = reco::Candidate::LorentzVector(fitResult_alpha(13), fitResult_alpha(14), fitResult_alpha(15), fitResult_alpha(16));
+        kineEvt_kinFit.recoilCov_ = fitResult_V_alpha.Sub<Matrix4x4>(13,13);
+        kineEvt_kinFit.nuTauPlusP4_ = build_nuP4(fitResult_nuTauPlusPx, fitResult_nuTauPlusPy, fitResult_nuTauPlusPz);
         kineEvt_kinFit.nuTauPlusP4_isValid_ = true;
-        kineEvt_kinFit.nuTauPlusCov_ = build_nuCov(bestfit_V_alpha.Sub<Matrix2x2>(3,3), bestfit_nuTauPlus_dPzdPx, bestfit_nuTauPlus_dPzdPy);
+        kineEvt_kinFit.nuTauPlusCov_ = build_nuCov(fitResult_V_alpha.Sub<Matrix2x2>(3,3), fitResult_nuTauPlus_dPzdPx, fitResult_nuTauPlus_dPzdPy);
         kineEvt_kinFit.tauPlusP4_ = kineEvt.visTauPlusP4_ + kineEvt.nuTauPlusP4_;
         kineEvt_kinFit.tauPlusP4_isValid_ = true;
-        kineEvt_kinFit.svTauPlus_ = reco::Candidate::Point(bestfit_alpha(5), bestfit_alpha(6), bestfit_alpha(7));
-        kineEvt_kinFit.svTauPlusCov_ = bestfit_V_alpha.Sub<Matrix3x3>(5,5);
-        double bestfit_nuTauMinusPx = bestfit_alpha(8);
-        double bestfit_nuTauMinusPy = bestfit_alpha(9);
-        double bestfit_nuTauMinus_dPzdPx, bestfit_nuTauMinus_dPzdPy;
-        double bestfit_nuTauMinusPz = comp_nuPz(
-                 kineEvt.visTauMinusP4_, bestfit_nuTauMinusPx, bestfit_nuTauMinusPy, signTauMinus,
-                 bestfit_nuTauMinus_dPzdPx, bestfit_nuTauMinus_dPzdPy,
-                 verbosity_);
-        kineEvt_kinFit.nuTauMinusP4_ = build_nuP4(bestfit_nuTauMinusPx, bestfit_nuTauMinusPy, bestfit_nuTauMinusPz);
+        kineEvt_kinFit.svTauPlus_ = reco::Candidate::Point(fitResult_alpha(5), fitResult_alpha(6), fitResult_alpha(7));
+        kineEvt_kinFit.svTauPlusCov_ = fitResult_V_alpha.Sub<Matrix3x3>(5,5);        
+        kineEvt_kinFit.nuTauMinusP4_ = build_nuP4(fitResult_nuTauMinusPx, fitResult_nuTauMinusPy, fitResult_nuTauMinusPz);
         kineEvt_kinFit.nuTauMinusP4_isValid_ = true;       
-        kineEvt_kinFit.nuTauMinusCov_ = build_nuCov(bestfit_V_alpha.Sub<Matrix2x2>(8,8), bestfit_nuTauMinus_dPzdPx, bestfit_nuTauMinus_dPzdPy);
+        kineEvt_kinFit.nuTauMinusCov_ = build_nuCov(fitResult_V_alpha.Sub<Matrix2x2>(8,8), fitResult_nuTauMinus_dPzdPx, fitResult_nuTauMinus_dPzdPy);
         kineEvt_kinFit.tauMinusP4_ = kineEvt.visTauMinusP4_ + kineEvt.nuTauMinusP4_;
         kineEvt_kinFit.tauMinusP4_isValid_ = true;
-        kineEvt_kinFit.svTauMinus_ = reco::Candidate::Point(bestfit_alpha(10), bestfit_alpha(11), bestfit_alpha(12));
-        kineEvt_kinFit.svTauMinusCov_ = bestfit_V_alpha.Sub<Matrix3x3>(10,10);
-        
-        kineEvt_kinFit.kinFitCov_ = bestfit_V_alpha;
+        kineEvt_kinFit.svTauMinus_ = reco::Candidate::Point(fitResult_alpha(10), fitResult_alpha(11), fitResult_alpha(12));
+        kineEvt_kinFit.svTauMinusCov_ = fitResult_V_alpha.Sub<Matrix3x3>(10,10);
+        kineEvt_kinFit.kinFitCov_ = fitResult_V_alpha;
         kineEvt_kinFit.kinFitStatus_ = fitResult.get_status();
         kineEvt_kinFit.kinFitChi2_ = fitResult.get_chi2();
         kineEvt_kinFit.kinFit_isValid_ = true;
@@ -252,10 +275,15 @@ KinematicFit::operator()(const KinematicEvent& kineEvt)
       }
     }
   }
+
+  if ( !(bestfit_status == 1 || (bestfit_status == 0 && bestfit_chi2 < 1.e+2)) )
+  {
+    std::cerr << "WARNING: KinematicFit failed to converge (@KinematicFit) !!" << std::endl;
+  }
   
   if ( verbosity_ >= 1 )
   {
-    std::cout << "best fit (among all tau+, tau- sign combinations):\n";
+    std::cout << "best fit (@KinematicFit):\n";
     std::cout << "status = " << bestfit_status << "\n";
     std::cout << "min(chi^2/DoF) = " << bestfit_chi2 << "\n";
   }

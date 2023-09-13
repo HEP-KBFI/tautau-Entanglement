@@ -66,7 +66,8 @@ class KinFitConstraint : public KinFitConstraintBase<P,C>
     visTauPlusP4_ = kineEvt_.visTauPlusP4();
     double nuTauPlusPx = alphaA(3);
     double nuTauPlusPy = alphaA(4);
-    double nuTauPlusPz = comp_nuPz(visTauPlusP4_, nuTauPlusPx, nuTauPlusPy, signTauPlus_, nuTauPlus_dPzdPx_, nuTauPlus_dPzdPy_, verbosity_);
+    bool nuTauPlus_errorFlag = false;
+    double nuTauPlusPz = comp_nuPz(visTauPlusP4_, nuTauPlusPx, nuTauPlusPy, signTauPlus_, nuTauPlus_dPzdPx_, nuTauPlus_dPzdPy_, nuTauPlus_errorFlag, verbosity_);
     nuTauPlusP4_ = build_nuP4(nuTauPlusPx, nuTauPlusPy, nuTauPlusPz);
     tauPlusP4_ = visTauPlusP4_ + nuTauPlusP4_;
     reco::Candidate::Point svTauPlus = reco::Candidate::Point(alphaA(5), alphaA(6), alphaA(7));
@@ -75,7 +76,8 @@ class KinFitConstraint : public KinFitConstraintBase<P,C>
     visTauMinusP4_ = kineEvt_.visTauMinusP4();
     double nuTauMinusPx = alphaA(8);
     double nuTauMinusPy = alphaA(9);
-    double nuTauMinusPz = comp_nuPz(visTauMinusP4_, nuTauMinusPx, nuTauMinusPy, signTauMinus_, nuTauMinus_dPzdPx_, nuTauMinus_dPzdPy_, verbosity_);
+    bool nuTauMinus_errorFlag = false;
+    double nuTauMinusPz = comp_nuPz(visTauMinusP4_, nuTauMinusPx, nuTauMinusPy, signTauMinus_, nuTauMinus_dPzdPx_, nuTauMinus_dPzdPy_, nuTauMinus_errorFlag, verbosity_);
     nuTauMinusP4_ = build_nuP4(nuTauMinusPx, nuTauMinusPy, nuTauMinusPz);
     tauMinusP4_ = visTauMinusP4_ + nuTauMinusP4_;
     reco::Candidate::Point svTauMinus = reco::Candidate::Point(alphaA(10), alphaA(11), alphaA(12));
@@ -96,8 +98,8 @@ class KinFitConstraint : public KinFitConstraintBase<P,C>
     //  [1] cf. Section 4.1.3.3 of https://cds.cern.ch/record/1358627/files/CERN-THESIS-2011-028.pdf
 
     // CV: add "parallelism" constraint for tau+ and tau-
-    set_parlConstraint(0, tauPlusP4_,  tauPlusD3_,  nuTauPlus_dPzdPx_,  nuTauPlus_dPzdPy_);
-    set_parlConstraint(2, tauMinusP4_, tauMinusD3_, nuTauMinus_dPzdPx_, nuTauMinus_dPzdPy_);
+    set_parlConstraint(0, 3, tauPlusP4_,  tauPlusD3_,  nuTauPlus_dPzdPx_,  nuTauPlus_dPzdPy_);
+    set_parlConstraint(2, 8, tauMinusP4_, tauMinusD3_, nuTauMinus_dPzdPx_, nuTauMinus_dPzdPy_);
 
     // CV: add constraint that recoil = tau+ + tau-
     set_recoilConstraint();
@@ -108,18 +110,16 @@ class KinFitConstraint : public KinFitConstraintBase<P,C>
       set_higgsMassConstraint();
     }
 
-    if ( verbosity_ >= 1 )
+    errorFlag_ = nuTauPlus_errorFlag || nuTauMinus_errorFlag;    
+    if ( verbosity_ >= 2 )
     {
-      std::cout << "D:\n";
-      std::cout << KinFitConstraintBase<P,C>::D_ << "\n";
-      std::cout << "d:\n";
-      std::cout << KinFitConstraintBase<P,C>::d_ << "\n";
+      std::cout << "errorFlag = " << errorFlag_ << "\n";
     }
   }
 
  protected:
   void
-  set_parlConstraint(unsigned int idx,
+  set_parlConstraint(unsigned int idxOffsetC, unsigned int idxOffsetP,
                      const reco::Candidate::LorentzVector& tauP4, const reco::Candidate::Vector& tauD3,
                      double nu_dPzdPx, double nu_dPzdPy)
   {
@@ -144,22 +144,22 @@ class KinFitConstraint : public KinFitConstraintBase<P,C>
     //     in order to reduce the magnitude of derivatives (by avoiding the division by small numbers)
     //
     //   [1] https://cds.cern.ch/record/1358627/files/CERN-THESIS-2011-028.pdf
-    D_(idx,0)     =  (1. - tauDx/tauDt)/tauDy;                                                                                // dH_Pphi/dpvX
-    D_(idx,1)     = -(tauDx/tauDy)*D_(idx,0);                                                                                 // dH_Pphi/dpvY
-    D_(idx,3)     =  (1. - tauPx/tauPt)/tauPy;                                                                                // dH_Pphi/dnuPx
-    D_(idx,4)     = -(tauPx/tauPy)*D_(idx,3);                                                                                 // dH_Pphi/dnuPy     
-    D_(idx,5)     = -D_(idx,0);                                                                                               // dH_Pphi/dsvX
-    D_(idx,6)     = -D_(idx,1);                                                                                               // dH_Pphi/dsvY
-    d_(idx)     = (tauDt - tauDx)/tauDy + (tauPx - tauPt)/tauPy;
-    D_(idx + 1,0) =  (tauDx/tauDz)*(1./tauDt - 1./tauD);                                                                      // dH_Ptheta/dpvX
-    D_(idx + 1,1) =  (tauDy/tauDz)*(1./tauDt - 1./tauD);                                                                      // dH_Ptheta/dpvY
-    D_(idx + 1,2) = -1./tauD + (tauD - tauDt)/square(tauDz);                                                                  // dH_Ptheta/dpvZ
-    D_(idx + 1,3) =  (1./square(tauPz))*nu_dPzdPx*(tauP - tauPt) + (1./tauPz)*(tauPx/tauPt - (tauPx + nu_dPzdPx*tauPz)/tauP); // dH_Ptheta/dnuPx
-    D_(idx + 1,4) =  (1./square(tauPz))*nu_dPzdPy*(tauP - tauPt) + (1./tauPz)*(tauPy/tauPt - (tauPy + nu_dPzdPy*tauPz)/tauP); // dH_Ptheta/dnuPy
-    D_(idx + 1,5) = -D_(idx + 1,0);                                                                                           // dH_Ptheta/dsvX
-    D_(idx + 1,6) = -D_(idx + 1,1);                                                                                           // dH_Ptheta/dsvY
-    D_(idx + 1,7) = -D_(idx + 1,2);                                                                                           // dH_Ptheta/dsvZ
-    d_(idx + 1) = (tauD - tauDt)/tauDz + (tauPt - tauP)/tauPz;
+    D_(idxOffsetC  ,0)            =  (1. - tauDx/tauDt)/tauDy;                                                                                // dH_Pphi/dpvX
+    D_(idxOffsetC  ,1)            = -(tauDx/tauDy)*D_(idxOffsetC,0);                                                                          // dH_Pphi/dpvY
+    D_(idxOffsetC  ,idxOffsetP)   =  (1. - tauPx/tauPt)/tauPy;                                                                                // dH_Pphi/dnuPx
+    D_(idxOffsetC  ,idxOffsetP+1) = -(tauPx/tauPy)*D_(idxOffsetC,idxOffsetP);                                                                 // dH_Pphi/dnuPy     
+    D_(idxOffsetC  ,idxOffsetP+2) = -D_(idxOffsetC,0);                                                                                        // dH_Pphi/dsvX
+    D_(idxOffsetC  ,idxOffsetP+3) = -D_(idxOffsetC,1);                                                                                        // dH_Pphi/dsvY
+    d_(idxOffsetC  ) = (tauDt - tauDx)/tauDy + (tauPx - tauPt)/tauPy;
+    D_(idxOffsetC+1,0)            =  (tauDx/tauDz)*(1./tauDt - 1./tauD);                                                                      // dH_Ptheta/dpvX
+    D_(idxOffsetC+1,1)            =  (tauDy/tauDz)*(1./tauDt - 1./tauD);                                                                      // dH_Ptheta/dpvY
+    D_(idxOffsetC+1,2)            = -1./tauD + (tauD - tauDt)/square(tauDz);                                                                  // dH_Ptheta/dpvZ
+    D_(idxOffsetC+1,idxOffsetP)   =  (1./square(tauPz))*nu_dPzdPx*(tauP - tauPt) + (1./tauPz)*(tauPx/tauPt - (tauPx + nu_dPzdPx*tauPz)/tauP); // dH_Ptheta/dnuPx
+    D_(idxOffsetC+1,idxOffsetP+1) =  (1./square(tauPz))*nu_dPzdPy*(tauP - tauPt) + (1./tauPz)*(tauPy/tauPt - (tauPy + nu_dPzdPy*tauPz)/tauP); // dH_Ptheta/dnuPy
+    D_(idxOffsetC+1,idxOffsetP+2) = -D_(idxOffsetC+1,0);                                                                                      // dH_Ptheta/dsvX
+    D_(idxOffsetC+1,idxOffsetP+3) = -D_(idxOffsetC+1,1);                                                                                      // dH_Ptheta/dsvY
+    D_(idxOffsetC+1,idxOffsetP+4) = -D_(idxOffsetC+1,2);                                                                                      // dH_Ptheta/dsvZ
+    d_(idxOffsetC+1) = (tauD - tauDt)/tauDz + (tauPt - tauP)/tauPz;
   }
 
   void
@@ -188,9 +188,9 @@ class KinFitConstraint : public KinFitConstraintBase<P,C>
     D_(6,15) = -1.;                                                                           // dH_pz/drecoilPz
     d_(6) = tauPlusP4_.pz() + tauMinusP4_.pz() - recoilP4_.pz();
     D_(7, 3) = (tauPlusP4_.px()  + nuTauPlus_dPzdPx_*tauPlusP4_.pz())/tauPlusP4_.energy();    // dH_energy/dnuTauPlusPx
-    D_(7, 4) = (tauPlusP4_.py()  + nuTauPlus_dPzdPy_*tauPlusP4_.pz())/tauPlusP4_.energy();    // dH_energy/dnuTauPlusPx
+    D_(7, 4) = (tauPlusP4_.py()  + nuTauPlus_dPzdPy_*tauPlusP4_.pz())/tauPlusP4_.energy();    // dH_energy/dnuTauPlusPy
     D_(7, 8) = (tauMinusP4_.px() + nuTauMinus_dPzdPx_*tauMinusP4_.pz())/tauMinusP4_.energy(); // dH_energy/dnuTauPlusPx
-    D_(7, 9) = (tauMinusP4_.py() + nuTauMinus_dPzdPy_*tauMinusP4_.pz())/tauMinusP4_.energy(); // dH_energy/dnuTauPlusPx
+    D_(7, 9) = (tauMinusP4_.py() + nuTauMinus_dPzdPy_*tauMinusP4_.pz())/tauMinusP4_.energy(); // dH_energy/dnuTauPlusPy
     D_(7,16) = -1.;                                                                           // dH_energy/drecoilE
     d_(7) = tauPlusP4_.energy() + tauMinusP4_.energy() - recoilP4_.energy();
   }
@@ -223,17 +223,19 @@ class KinFitConstraint : public KinFitConstraintBase<P,C>
     //     The error disappears when setting idx to numConstraints - 1 instead.
     //     Note that the index will be wrong when collider = SuperKEKB,
     //     but this does not matter as the code will actually be executed for collider = LHC only.
-    const int idx = C - 1;
-    D_(idx,3) = ((tauMinusE/tauPlusE)*(tauPlusPx  + nuTauPlus_dPzdPx_*tauPlusPz)   - tauMinusPx - nuTauPlus_dPzdPx_*tauMinusPz)/denominator0; // dH/dnuTauPlusPx
-    D_(idx,4) = ((tauMinusE/tauPlusE)*(tauPlusPy  + nuTauPlus_dPzdPy_*tauPlusPz)   - tauMinusPy - nuTauPlus_dPzdPy_*tauMinusPz)/denominator0; // dH/dnuTauPlusPy
-    D_(idx,8) = ((tauPlusE/tauMinusE)*(tauMinusPx + nuTauMinus_dPzdPx_*tauMinusPz) - tauPlusPx  - nuTauMinus_dPzdPx_*tauPlusPz)/denominator0; // dH/dnuTauMinusPx
-    D_(idx,9) = ((tauPlusE/tauMinusE)*(tauMinusPy + nuTauMinus_dPzdPy_*tauMinusPz) - tauPlusPy  - nuTauMinus_dPzdPy_*tauPlusPz)/denominator0; // dH/dnuTauMinusPy
-    d_(idx) = (tauPlusP4_ + tauMinusP4_).mass() - mHiggs;
+    const int idxC = C - 1;
+    D_(idxC,3) = ((tauMinusE/tauPlusE)*(tauPlusPx  + nuTauPlus_dPzdPx_*tauPlusPz)   - tauMinusPx - nuTauPlus_dPzdPx_*tauMinusPz)/denominator0; // dH/dnuTauPlusPx
+    D_(idxC,4) = ((tauMinusE/tauPlusE)*(tauPlusPy  + nuTauPlus_dPzdPy_*tauPlusPz)   - tauMinusPy - nuTauPlus_dPzdPy_*tauMinusPz)/denominator0; // dH/dnuTauPlusPy
+    D_(idxC,8) = ((tauPlusE/tauMinusE)*(tauMinusPx + nuTauMinus_dPzdPx_*tauMinusPz) - tauPlusPx  - nuTauMinus_dPzdPx_*tauPlusPz)/denominator0; // dH/dnuTauMinusPx
+    D_(idxC,9) = ((tauPlusE/tauMinusE)*(tauMinusPy + nuTauMinus_dPzdPy_*tauMinusPz) - tauPlusPy  - nuTauMinus_dPzdPy_*tauPlusPz)/denominator0; // dH/dnuTauMinusPy
+    d_(idxC) = (tauPlusP4_ + tauMinusP4_).mass() - mHiggs;
   }
 
   using KinFitConstraintBase<P,C>::D_;
   using KinFitConstraintBase<P,C>::d_;
   using KinFitConstraintBase<P,C>::d_metric_;
+  using KinFitConstraintBase<P,C>::errorFlag_;
+  using KinFitConstraintBase<P,C>::verbosity_;
 
   int collider_;
 
@@ -257,8 +259,6 @@ class KinFitConstraint : public KinFitConstraintBase<P,C>
   double nuTauMinus_dPzdPy_;
 
   reco::Candidate::LorentzVector recoilP4_;
-
-  int verbosity_;
 };
 
 #endif // TauAnalysis_Entanglement_KinFitConstraintBase_h

@@ -27,6 +27,12 @@ KinFitConstraintAnalyzer::KinFitConstraintAnalyzer(const edm::ParameterSet& cfg)
 
   genKineEvtBuilder_ = new GenKinematicEventBuilder(cfg);
 
+  applySmearing_ = cfg.getParameter<bool>("applySmearing"); 
+  if ( applySmearing_ )
+  {
+    std::cerr << "WARNING: Smearing enabled in Configuration file - this will neutrino Px, Py not to be initialized by GenKinematicEventBuilder !!\n";
+  }
+
   std::string collider = cfg.getParameter<std::string>("collider");
   if      ( collider == "LHC"       ) collider_ = kLHC;
   else if ( collider == "SuperKEKB" ) collider_ = kSuperKEKB;
@@ -53,7 +59,8 @@ void KinFitConstraintAnalyzer::analyze(const edm::Event& evt, const edm::EventSe
   KinematicEvent kineEvt_gen = (*genKineEvtBuilder_)(*genParticles);
   if ( verbosity_ >= 1 )
   {
-    printKinematicEvent("kineEvt_gen(smeared)", kineEvt_gen, verbosity_, cartesian_);
+    std::string label = ( applySmearing_ ) ? "kineEvt_gen(smeared)" : "kineEvt_gen";
+    printKinematicEvent(label, kineEvt_gen, verbosity_, cartesian_);
   }
 
   for ( int idxSignTauPlus = 0; idxSignTauPlus <= 1; ++idxSignTauPlus )
@@ -74,21 +81,35 @@ void KinFitConstraintAnalyzer::analyze(const edm::Event& evt, const edm::EventSe
         std::cout << "sign(tau+) = " << signTauPlus << ", sign(tau-) = " << signTauMinus << "\n";
       }
 
+      const reco::Candidate::Point& pv_gen = kineEvt_gen.pv();
       const reco::Candidate::LorentzVector& visTauPlusP4_gen = kineEvt_gen.visTauPlusP4();
       const reco::Candidate::LorentzVector& nuTauPlusP4_gen = kineEvt_gen.nuTauPlusP4();
+      const reco::Candidate::Point& svTauPlus_gen = kineEvt_gen.svTauPlus();
       const reco::Candidate::LorentzVector& visTauMinusP4_gen = kineEvt_gen.visTauMinusP4();
       const reco::Candidate::LorentzVector& nuTauMinusP4_gen = kineEvt_gen.nuTauMinusP4();
+      const reco::Candidate::Point& svTauMinus_gen = kineEvt_gen.svTauMinus();
+      const reco::Candidate::LorentzVector& recoilP4_gen = kineEvt_gen.recoilP4();
 
       // CV: Check that chosen signs for tau+ and tau- reproduce neutrino Pz of start position; skip sign combination if not.
       //     Skipping these sign combinations saves computing time and avoids running into unphysical solutions.
       double nuTauPlusPx = nuTauPlusP4_gen.px();
       double nuTauPlusPy = nuTauPlusP4_gen.py();
       double nuTauPlus_dPzdPx, nuTauPlus_dPzdPy;
-      double nuTauPlusPz = comp_nuPz(visTauPlusP4_gen, nuTauPlusPx, nuTauPlusPy, signTauPlus, nuTauPlus_dPzdPx, nuTauPlus_dPzdPy, verbosity_);
+      bool nuTauPlus_errorFlag = false; 
+      double nuTauPlusPz = comp_nuPz(visTauPlusP4_gen, nuTauPlusPx, nuTauPlusPy, signTauPlus, nuTauPlus_dPzdPx, nuTauPlus_dPzdPy, nuTauPlus_errorFlag, verbosity_);
       double nuTauMinusPx = nuTauMinusP4_gen.px();
       double nuTauMinusPy = nuTauMinusP4_gen.py();
       double nuTauMinus_dPzdPx, nuTauMinus_dPzdPy;
-      double nuTauMinusPz = comp_nuPz(visTauMinusP4_gen, nuTauMinusPx, nuTauMinusPy, signTauMinus, nuTauMinus_dPzdPx, nuTauMinus_dPzdPy, verbosity_);
+      bool nuTauMinus_errorFlag = false;
+      double nuTauMinusPz = comp_nuPz(visTauMinusP4_gen, nuTauMinusPx, nuTauMinusPy, signTauMinus, nuTauMinus_dPzdPx, nuTauMinus_dPzdPy, nuTauMinus_errorFlag, verbosity_);
+      if ( nuTauPlus_errorFlag || nuTauMinus_errorFlag )
+      {
+	if ( verbosity_ >= 1 )
+        {
+          std::cout << "--> skipping this sign combination, because computation of neutrino Pz returned an error !!\n";
+        }
+        continue;
+      }  
       if ( std::fabs(nuTauPlusPz  - nuTauPlusP4_gen.pz())  > std::max(1., 0.10*nuTauPlusP4_gen.pz())  ||
            std::fabs(nuTauMinusPz - nuTauMinusP4_gen.pz()) > std::max(1., 0.10*nuTauMinusP4_gen.pz()) )
       {
@@ -99,11 +120,35 @@ void KinFitConstraintAnalyzer::analyze(const edm::Event& evt, const edm::EventSe
         continue;
       }
 
+      VectorP alpha0;
+      alpha0( 0) = pv_gen.x();
+      alpha0( 1) = pv_gen.y();
+      alpha0( 2) = pv_gen.z();
+      alpha0( 3) = nuTauPlusP4_gen.px();
+      alpha0( 4) = nuTauPlusP4_gen.py();
+      alpha0( 5) = svTauPlus_gen.x();
+      alpha0( 6) = svTauPlus_gen.y();
+      alpha0( 7) = svTauPlus_gen.z();
+      alpha0( 8) = nuTauMinusP4_gen.px();
+      alpha0( 9) = nuTauMinusP4_gen.py();
+      alpha0(10) = svTauMinus_gen.x();
+      alpha0(11) = svTauMinus_gen.y();
+      alpha0(12) = svTauMinus_gen.z();
+      alpha0(13) = recoilP4_gen.px();
+      alpha0(14) = recoilP4_gen.py();
+      alpha0(15) = recoilP4_gen.pz();
+      alpha0(16) = recoilP4_gen.energy();
+      if ( verbosity_ >= 2 )
+      {
+        std::cout << "alpha0:\n";
+        std::cout << alpha0 << "\n";
+      }
+
       if ( collider_ == kLHC ) 
       {
         const int C = numConstraints_LHC;
         KinFitConstraint<P,C> constraint(collider_, kineEvt_gen, signTauPlus, signTauMinus, verbosity_);
-        KinFitConstraintTester<P,C> constraintTester(verbosity_);
+        KinFitConstraintTester<P,C> constraintTester(alpha0, verbosity_);
         std::string outputFileName = Form("testConstraint_r%uls%uev%llu.png", evt.id().run(), evt.id().luminosityBlock(), evt.id().event());
         constraintTester(constraint, outputFileName);
       }
@@ -111,7 +156,7 @@ void KinFitConstraintAnalyzer::analyze(const edm::Event& evt, const edm::EventSe
       {
         const int C = numConstraints_SuperKEKB;
         KinFitConstraint<P,C> constraint(collider_, kineEvt_gen, signTauPlus, signTauMinus, verbosity_);
-        KinFitConstraintTester<P,C> constraintTester(verbosity_);
+        KinFitConstraintTester<P,C> constraintTester(alpha0, verbosity_);
         std::string outputFileName = Form("testConstraint_r%uls%uev%llu.png", evt.id().run(), evt.id().luminosityBlock(), evt.id().event());
         constraintTester(constraint, outputFileName);
       }
