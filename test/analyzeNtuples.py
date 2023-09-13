@@ -12,11 +12,11 @@ hAxes = [ "beam", "higgs" ]
 #collider = "LHC"
 collider = "SuperKEKB"
 #decayModes = [ "piPlus_piMinus", "piPlus_rhoMinus", "rhoPlus_piMinus", "rhoPlus_rhoMinus" ]
-decayModes = [ "piPlus_piMinus", "rhoPlus_rhoMinus" ]
+decayModes = [ "piPlus_piMinus" ]
 spinAnalyzers = [ "by_summation", "by_mlfit", "by_differentialXsec1d", "by_differentialXsec2d", "by_asymmetry" ]
 #spinAnalyzers = [ "by_summation" ]
 
-version = "2023Aug31_wSmearing"
+version = "2023Sep13_wSmearing"
 
 samples = None
 if collider == "LHC":
