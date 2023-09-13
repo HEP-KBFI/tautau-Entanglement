@@ -73,10 +73,10 @@ maxNumChargedKaons = 0
 maxNumNeutralKaons = 0
 maxNumPhotons = -1
 maxSumPhotonEn = None
-if collider = "LHC":
+if collider == "LHC":
     maxSumPhotonEn = 5.
-elif collider = "SuperKEKB":
-    maxSumPhotonEn = 0.5
+elif collider == "SuperKEKB":
+    maxSumPhotonEn = 0.2
 else:
     raise ValueError("Invalid Configuration parameter 'collider' = '%s' !!" % collider)
 
