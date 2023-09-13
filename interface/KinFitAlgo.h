@@ -3,6 +3,7 @@
 
 #include "FWCore/ParameterSet/interface/ParameterSet.h"              // edm::ParameterSet
 
+#include "TauAnalysis/Entanglement/interface/cmsException.h"         // cmsException
 #include "TauAnalysis/Entanglement/interface/KinFitConstraintBase.h" // KinFitConstraintBase
 #include "TauAnalysis/Entanglement/interface/printCovMatrix.h"       // printCovMatrix()
 
