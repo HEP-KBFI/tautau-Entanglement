@@ -11,7 +11,7 @@ hAxes = [ "beam", "higgs" ]
 #collider = "LHC"
 collider = "SuperKEKB"
 
-version = "2023Aug31_wSmearing"
+version = "2023Sep13_wSmearing"
 
 samples = None
 if collider == "LHC":
@@ -76,7 +76,7 @@ for sampleName, sample in samples.items():
       outputFileName = "entanglementNtuple_%s_%sAxis_%i.root" % \
         (sampleName, hAxis, jobId)
       build_cfgFile(
-        "produceEntanglementNtuple_wSelection_cfg.py", cfgFileName_modified, 
+        "produceEntanglementNtuple_cfg.py", cfgFileName_modified, 
         inputFileNames_job, sample['process'],
         collider, hAxis,
         rndSeed,
