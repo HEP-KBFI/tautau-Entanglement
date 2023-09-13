@@ -152,10 +152,12 @@ class KinFitAlgo
       VectorC d = constraint.get_d();
       if ( verbosity_ >= 1 )
       {
-        std::cout << "D:\n";
+        std::cout << "D (@alphaA):\n";
         std::cout << D << "\n";
-        std::cout << "d:\n";
+        std::cout << "d (@alphaA):\n";
         std::cout << d << "\n";
+        double d_mag = std::sqrt(ROOT::Math::Dot(d, constraint.get_d_metric()*d));
+        std::cout << "|d (@alphaA)| = " << d_mag << "\n";
       }
 
       MatrixPxC DT = ROOT::Math::Transpose(D);
@@ -239,25 +241,36 @@ class KinFitAlgo
         std::cout << "sum_i |residual[i]| = " << residuals_sum << "\n";
       }
 
+      bool alpha_isNaN = isNaN(alpha);
+      constraint.set_alphaA(alpha);
+      d = constraint.get_d();
       double d_mag = std::sqrt(ROOT::Math::Dot(d, constraint.get_d_metric()*d));
-      if ( !isNaN(alphaA) && d_mag < 1.e-3 )
+      if ( verbosity_ >= 1 )
+      {
+        std::cout << "isNaN(alpha) = " << alpha_isNaN << "\n";
+        std::cout << "d (@alpha):\n";
+        std::cout << d << "\n";
+        std::cout << "|d (@alpha)| = " << d_mag << "\n";
+      }
+      if ( !alpha_isNaN && d_mag < 1.e-2 )
       {
         if ( status == -1 || chi2 < min_chi2 )
         {
-          bestfit = KinFitSummary<P>(iteration, alphaA, V_alpha, chi2, status);
           min_chi2 = chi2;
           status = 0;
+          bestfit = KinFitSummary<P>(iteration, alpha, V_alpha, chi2, status);
         }
         if ( status == 0 && dalpha_mag < 1.e-3 )
         {
           status = 1;
+          bestfit = KinFitSummary<P>(iteration, alpha, V_alpha, chi2, status);
           hasConverged = true;
         }
       }
 
       if ( fitHistory )
       {
-        fitHistory->push_back(KinFitSummary<P>(iteration, alphaA, V_alpha, chi2, status));
+        fitHistory->push_back(KinFitSummary<P>(iteration, alpha, V_alpha, chi2, status));
       }
 
       alphaA = alpha;
@@ -271,12 +284,12 @@ class KinFitAlgo
     }
     if ( !hasConverged )
     {
-      std::cerr << "WARNING: KinematicFit failed to converge !!" << std::endl;
+      std::cerr << "WARNING: KinematicFit failed to converge (@KinFitAlgo) !!" << std::endl;
     }
 
     if ( verbosity_ >= 1 )
     {
-      std::cout << "best fit:\n";
+      std::cout << "best fit (@KinFitAlgo):\n";
       std::cout << "iteration = " << bestfit.get_iteration() << " (max_iterations = " << max_iterations << ")\n";
       std::cout << "alpha:\n";
       std::cout << bestfit.get_alpha() << "\n";
