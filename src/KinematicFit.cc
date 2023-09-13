@@ -1,5 +1,7 @@
 #include "TauAnalysis/Entanglement/interface/KinematicFit.h"
 
+#include "FWCore/Utilities/interface/Exception.h"                         // cms::Exception
+
 #include "DataFormats/Math/interface/deltaPhi.h"                          // deltaPhi()
 #include "DataFormats/Math/interface/Matrix.h"                            // math::Matrix
 #include "DataFormats/Math/interface/Vector.h"                            // math::Vector
@@ -204,8 +206,16 @@ KinematicFit::operator()(const KinematicEvent& kineEvt)
         KinFitConstraint<P,C> constraint(collider_, kineEvt, signTauPlus, signTauMinus, verbosity_);
         edm::ParameterSet cfg_kinFit;
         cfg_kinFit.addParameter<int>("verbosity", verbosity_);
-        KinFitAlgo<P,C> kinFit(cfg_kinFit);
-        fitResult = kinFit(alpha0, V_alpha0, constraint, alphaA);
+        KinFitAlgo<P,C> kinFit(cfg_kinFit);        
+        try
+        { 
+          fitResult = kinFit(alpha0, V_alpha0, constraint, alphaA);
+        }
+        catch ( const cms::Exception& )
+        {
+          std::cerr << "Error in <KinematicFit::operator()>: Caught exception from KinFitAlgo --> skipping this sign combination !!\n";
+          continue;
+        }
       }
       else if ( collider_ == kSuperKEKB )
       {
@@ -214,7 +224,15 @@ KinematicFit::operator()(const KinematicEvent& kineEvt)
         edm::ParameterSet cfg_kinFit;
         cfg_kinFit.addParameter<int>("verbosity", verbosity_);
         KinFitAlgo<P,C> kinFit(cfg_kinFit);
-        fitResult = kinFit(alpha0, V_alpha0, constraint, alphaA);
+        try
+        { 
+          fitResult = kinFit(alpha0, V_alpha0, constraint, alphaA);
+        }
+        catch ( const cms::Exception& )
+        {
+          std::cerr << "Error in <KinematicFit::operator()>: Caught exception from KinFitAlgo --> skipping this sign combination !!\n";
+          continue;
+        }
       }
       else assert(0);
 
