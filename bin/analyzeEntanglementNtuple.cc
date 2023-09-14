@@ -403,7 +403,7 @@ int main(int argc, char* argv[])
     tmvaDataloader_options.append(":nTest_Signal=0:nTest_Background=0:SplitMode=Random:NormMode=NumEvents:!V");
     tmvaDataloader->PrepareTrainingAndTestTree("", tmvaDataloader_options.c_str());
 
-    std::string tmvaKNN_options = "H:nkNN=1000:ScaleFrac=1.0:SigmaFact=1.0:Kernel=Gaus:UseKernel=F:UseWeight=T:!Trim";
+    std::string tmvaKNN_options = "H:nkNN=100:ScaleFrac=1.0:SigmaFact=1.0:Kernel=Gaus:UseKernel=F:UseWeight=T:!Trim";
     tmvaFactory->BookMethod(tmvaDataloader, TMVA::Types::kKNN, "KNN", tmvaKNN_options.c_str());
 
     tmvaFactory->TrainAllMethods();
