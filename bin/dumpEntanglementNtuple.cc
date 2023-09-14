@@ -195,9 +195,9 @@ int main(int argc, char* argv[])
       
       // CV: compute spin correlation matrix C according to Eq. (25)
       //     in the paper arXiv:2211.10513
-      math::Matrix3x3 C = comp_C(hPlus_n, hPlus_r, hPlus_k, hMinus_n, hMinus_r, hMinus_k, evtWeight);
+      math::Matrix3x3 C = comp_C(hPlus_n, hPlus_r, hPlus_k, hMinus_n, hMinus_r, hMinus_k);
 
-      C_sum += C;
+      C_sum += evtWeight*C;
 
       if ( isFirst )
       {

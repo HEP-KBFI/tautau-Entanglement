@@ -19,6 +19,9 @@ class SpinAlgo_by_mlfit : public SpinAlgoBase
   SpinAlgo_by_mlfit(const edm::ParameterSet& cfg);
   ~SpinAlgo_by_mlfit();
 
+  void
+  set_verbosity(int verbosity);
+
   spin::Measurement
   operator()(const spin::Dataset& dataset);
 

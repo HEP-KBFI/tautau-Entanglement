@@ -50,6 +50,13 @@ SpinAlgo_by_mlfit::~SpinAlgo_by_mlfit()
   delete mlfit_;
 }
 
+void
+SpinAlgo_by_mlfit::set_verbosity(int verbosity)
+{
+  verbosity_ = verbosity;
+  algo_by_summation_->set_verbosity(verbosity);
+}
+
 namespace
 {
   std::map<size_t, std::string>

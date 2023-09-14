@@ -38,6 +38,13 @@ SpinAnalyzer::~SpinAnalyzer()
   delete algo_;
 }
 
+void
+SpinAnalyzer::set_verbosity(int verbosity)
+{
+  verbosity_ = verbosity;
+  algo_->set_verbosity(verbosity);
+}
+
 namespace
 {
   spin::Dataset
@@ -176,7 +183,7 @@ namespace
 }
 
 spin::Measurement
-SpinAnalyzer::build_measurement(const spin::Dataset& dataset, int maxEvents_afterCuts, int verbosity)
+SpinAnalyzer::build_measurement(const spin::Dataset& dataset, int maxEvents_afterCuts, int verbosity) const
 {
   spin::Dataset nominal_sample(dataset, maxEvents_afterCuts);
   algo_->set_verbosity(verbosity);
@@ -195,7 +202,7 @@ SpinAnalyzer::build_measurement(const spin::Dataset& dataset, int maxEvents_afte
     {
       if ( idxBootstrapSample > 0 && (idxBootstrapSample % 100) == 0 )
       {
-        std::cout << " Processing " << idxBootstrapSample << "th sample.\n";
+        std::cout << " Processing " << idxBootstrapSample << "th sample\n";
       }
     }
     spin::Dataset bootstrap_sample = build_bootstrap_sample(dataset, rnd_, maxEvents_afterCuts);
@@ -230,13 +237,13 @@ SpinAnalyzer::build_measurement(const spin::Dataset& dataset, int maxEvents_afte
 }
 
 spin::Measurement
-SpinAnalyzer::operator()(const spin::Dataset& dataset)
+SpinAnalyzer::operator()(const spin::Dataset& dataset) const
 {
   return build_measurement(dataset, maxEvents_afterCuts_, verbosity_);
 }
 
 spin::BinnedMeasurement1d
-SpinAnalyzer::operator()(const spin::BinnedDataset1d& dataset)
+SpinAnalyzer::operator()(const spin::BinnedDataset1d& dataset) const
 {
   if ( verbosity_ >= 2 )
   {
@@ -284,7 +291,7 @@ SpinAnalyzer::operator()(const spin::BinnedDataset1d& dataset)
 }
 
 spin::BinnedMeasurement2d
-SpinAnalyzer::operator()(const spin::BinnedDataset2d& dataset)
+SpinAnalyzer::operator()(const spin::BinnedDataset2d& dataset) const
 {
   if ( verbosity_ >= 2 )
   {

@@ -19,7 +19,7 @@ process.source = cms.Source("PoolSource",
     fileNames = cms.untracked.vstring()
 )
 #process.source.eventsToProcess = cms.untracked.VEventRange(
-#    '1:1:29268' 
+#    '1:1:213' 
 #)
 
 #inputFilePath = '/store/mc/RunIISummer20UL18MiniAODv2/GluGluHToTauTau_M125_TuneCP5_13TeV-powheg-pythia8/MINIAODSIM/106X_upgrade2018_realistic_v16_L1v1-v3/100000/'
@@ -127,7 +127,7 @@ process.ntupleProducer.startPosFinder.applyHiggsMassConstraint = cms.bool(startP
 process.ntupleProducer.startPosFinder.skip = cms.bool(False)
 process.ntupleProducer.kinematicFit.skip = cms.bool(False)
 process.ntupleProducer.verbosity = cms.untracked.int32(-1)
-#process.ntupleProducer.verbosity = cms.untracked.int32(1)
+#process.ntupleProducer.verbosity = cms.untracked.int32(3)
 process.analysisSequence += process.ntupleProducer
 
 process.TFileService = cms.Service("TFileService", 

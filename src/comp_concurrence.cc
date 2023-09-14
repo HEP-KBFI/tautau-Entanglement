@@ -93,9 +93,10 @@ namespace {
 
       if(evals(i).imag() != 0)
       {
-        if(verbosity >= 0)
+        if (verbosity >= 0)
         {
-          std::cerr << "Not all eigenvalues are real: " << evals.transpose() << '\n';
+          std::cerr << "WARNING: Not all Eigenvalues are real !!\n";
+          std::cerr << " " << evals.transpose() << "\n";
         }
         errorBit = 1;
         return {};
@@ -105,7 +106,8 @@ namespace {
       {
         if(verbosity >= 0)
         {
-          std::cerr << "Eigenvalues must be non-negative: " << evals.transpose() << '\n';
+          std::cerr << "WARNING: Not all Eigenvalues are greater than or equal to zero !!\n";
+          std::cerr << " " << evals.transpose() << "\n";
         }
         errorBit = 2;
         return {};

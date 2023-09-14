@@ -16,7 +16,7 @@ decayModes = [ "piPlus_piMinus" ]
 spinAnalyzers = [ "by_summation", "by_mlfit", "by_differentialXsec1d", "by_differentialXsec2d", "by_asymmetry" ]
 #spinAnalyzers = [ "by_summation" ]
 
-version = "2023Sep13_wSmearing"
+version = "2023Sep14_wSmearing"
 
 samples = None
 if collider == "LHC":
@@ -160,8 +160,6 @@ for job_key, job in jobOptions_ctrlPlots.items():
   commands.append('rm -f %s' % job['outputFileName'])
   commands.append('rm -f %s' % job['logFileName'])
   commands.append('makeControlPlots %s >& %s' % (job['cfgFileName'], job['logFileName']))
-  commands.append('cp %s %s' % (job['outputFileName'], os.path.join(outputDir, job['outputFileName'])))
-  commands.append('rm -f %s' % job['outputFileName'])
   jobOptions_Makefile.append({
     'target'          : os.path.join(outputDir, job['outputFileName']),
     'dependencies'    : [ inputFileName.replace("file:", "") for inputFileName in job['inputFileNames'] ],
@@ -173,8 +171,6 @@ for job_key, job in jobOptions_resPlots.items():
   commands.append('rm -f %s' % job['outputFileName'])
   commands.append('rm -f %s' % job['logFileName'])
   commands.append('makeResolutionPlots %s >& %s' % (job['cfgFileName'], job['logFileName']))
-  commands.append('cp %s %s' % (job['outputFileName'], os.path.join(outputDir, job['outputFileName'])))
-  commands.append('rm -f %s' % job['outputFileName'])
   jobOptions_Makefile.append({
     'target'          : os.path.join(outputDir, job['outputFileName']),
     'dependencies'    : [ inputFileName.replace("file:", "") for inputFileName in job['inputFileNames'] ],

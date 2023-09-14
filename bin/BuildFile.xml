@@ -6,6 +6,7 @@
   <use name="PhysicsTools/FWLite"/>
   <use name="TauAnalysis/Entanglement"/>
   <use name="root"/>
+  <use name="roottmva"/>
 </bin>
 <bin file="dumpEntanglementNtuple.cc" name="dumpEntanglementNtuple">
   <use name="DataFormats/FWLite"/>

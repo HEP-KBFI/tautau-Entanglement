@@ -48,16 +48,16 @@ SpinAlgo_by_summation::operator()(const spin::Dataset& dataset)
 
     // CV: compute polarization vectors B+ and B- for tau+ and tau- according to text following Eq. (4.18)
     //     in the paper arXiv:1508.05271
-    math::Vector3 Bp = comp_Bp(hPlus_n, hPlus_r, hPlus_k, evtWeight);
-    Bp_sum += Bp;
+    math::Vector3 Bp = comp_Bp(hPlus_n, hPlus_r, hPlus_k);
+    Bp_sum += evtWeight*Bp;
 
-    math::Vector3 Bm = comp_Bm(hMinus_n, hMinus_r, hMinus_k, evtWeight);
-    Bm_sum += Bm;
+    math::Vector3 Bm = comp_Bm(hMinus_n, hMinus_r, hMinus_k);
+    Bm_sum += evtWeight*Bm;
     
     // CV: compute spin correlation matrix C according to Eq. (25)
     //     in the paper arXiv:2211.10513
-    math::Matrix3x3 C = comp_C(hPlus_n, hPlus_r, hPlus_k, hMinus_n, hMinus_r, hMinus_k, evtWeight);
-    C_sum += C;
+    math::Matrix3x3 C = comp_C(hPlus_n, hPlus_r, hPlus_k, hMinus_n, hMinus_r, hMinus_k);
+    C_sum += evtWeight*C;
 
     evtWeight_sum += evtWeight;
   }

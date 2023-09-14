@@ -22,24 +22,27 @@ class SpinAnalyzer
   SpinAnalyzer(const edm::ParameterSet& cfg);
   ~SpinAnalyzer();
 
+  void
+  set_verbosity(int verbosity);
+
   spin::Measurement
-  operator()(const spin::Dataset& dataset);
+  operator()(const spin::Dataset& dataset) const;
 
   spin::BinnedMeasurement1d
-  operator()(const spin::BinnedDataset1d& dataset);
+  operator()(const spin::BinnedDataset1d& dataset) const;
   spin::BinnedMeasurement2d
-  operator()(const spin::BinnedDataset2d& dataset);
+  operator()(const spin::BinnedDataset2d& dataset) const;
 
  protected:
   spin::Measurement
-  build_measurement(const spin::Dataset& dataset, int maxEvents_afterCuts, int verbosity);
+  build_measurement(const spin::Dataset& dataset, int maxEvents_afterCuts, int verbosity) const;
 
   std::string spinAnalyzer_;
   SpinAlgoBase* algo_;
   unsigned numBootstrapSamples_;
   int maxEvents_afterCuts_;
 
-  TRandom3 rnd_;
+  mutable TRandom3 rnd_;
 
   int verbosity_;
 };

@@ -15,6 +15,7 @@ class SpinAlgoBase
   SpinAlgoBase(const edm::ParameterSet& cfg);
   virtual ~SpinAlgoBase();
 
+  virtual
   void
   set_verbosity(int verbosity);
 

@@ -10,7 +10,6 @@
 #include "TauAnalysis/Entanglement/interface/bookHistogram1d.h"       // bookHistogram1d()
 #include "TauAnalysis/Entanglement/interface/bookHistogram2d.h"       // bookHistogram2d()
 #include "TauAnalysis/Entanglement/interface/cmsException.h"          // cmsException
-//#include "TauAnalysis/Entanglement/interface/comp_BandC.h"            // comp_Bm(), comp_Bp(), comp_C()
 #include "TauAnalysis/Entanglement/interface/comp_concurrence.h"      // comp_concurrence()
 #include "TauAnalysis/Entanglement/interface/comp_Ek.h"               // comp_Ek()
 #include "TauAnalysis/Entanglement/interface/comp_Rchsh.h"            // comp_Rchsh()
@@ -18,18 +17,25 @@
 #include "TauAnalysis/Entanglement/interface/BinnedDataset.h"         // spin::BinnedDataset
 #include "TauAnalysis/Entanglement/interface/BinnedMeasurement.h"     // spin::BinnedMeasurement
 #include "TauAnalysis/Entanglement/interface/Dataset.h"               // spin::Dataset
+#include "TauAnalysis/Entanglement/interface/fillWithOverFlow.h"      // fillWithOverFlow1D()
 #include "TauAnalysis/Entanglement/interface/format_vT.h"             // format_vint(), vdouble, vint
 #include "TauAnalysis/Entanglement/interface/Matrix_and_Vector.h"     // math::Matrix3x3, math::Vector3
 #include "TauAnalysis/Entanglement/interface/Measurement.h"           // spin::Measurement
 #include "TauAnalysis/Entanglement/interface/passesStatusSelection.h" // passesStatusSelection()
+#include "TauAnalysis/Entanglement/interface/showHistogram1d.h"       // showHistogram1d()
 #include "TauAnalysis/Entanglement/interface/SpinAnalyzer.h"          // spin::SpinAnalyzer
+
+#include "TMVA/Tools.h"                                               // TMVA::Tools::Instance()
+#include "TMVA/DataLoader.h"                                          // TMVA::DataLoader
+#include "TMVA/Factory.h"                                             // TMVA::Factory
+#include "TMVA/Reader.h"                                              // TMVA::Reader
 
 #include <TAxis.h>                                                    // TAxis
 #include <TBenchmark.h>                                               // TBenchmark
 #include <TError.h>                                                   // gErrorAbortLevel, kError
 #include <TH1.h>                                                      // TH1
 #include <TH2.h>                                                      // TH2
-#include <TString.h>                                                  // Form()
+#include <TString.h>                                                  // Form(), TString
 #include <TTree.h>                                                    // TTree
 
 #include <algorithm>                                                  // std::sort()
@@ -42,94 +48,35 @@
 
 const size_t npar = 15;
 
-namespace math
-{
-  typedef Vector<6>::type  Vector6;
-  typedef Vector<15>::type Vector15;
-}
-
-math::Vector6
-get_vector6(double hPlus_n, double hPlus_r, double hPlus_k, double hMinus_n, double hMinus_r, double hMinus_k)
-{
-  math::Vector6 vector6;
-  vector6(0) = hPlus_n;
-  vector6(1) = hPlus_r;
-  vector6(2) = hPlus_k;
-  vector6(3) = hMinus_n;
-  vector6(4) = hMinus_r;
-  vector6(5) = hMinus_k;
-  return vector6;
-}
-
-//math::Vector15
-//get_vector15(double hPlus_n, double hPlus_r, double hPlus_k, double hMinus_n, double hMinus_r, double hMinus_k)
-//{
-//  // CV: compute polarization vectors B+ and B- for tau+ and tau- according to text following Eq. (4.18)
-//  //     in the paper arXiv:1508.05271
-//  math::Vector3 Bp = comp_Bp(hPlus_n, hPlus_r, hPlus_k);
-//
-//  math::Vector3 Bm = comp_Bm(hMinus_n, hMinus_r, hMinus_k);
-//    
-//  // CV: compute spin correlation matrix C according to Eq. (25)
-//  //     in the paper arXiv:2211.10513
-//  math::Matrix3x3 C = comp_C(hPlus_n, hPlus_r, hPlus_k, hMinus_n, hMinus_r, hMinus_k);
-//
-//  math::Vector15 vector15;
-//  for ( size_t idxPar = 0; idxPar < npar; ++idxPar )
-//  {
-//    double value = 0.;
-//    if ( idxPar >= 0 && idxPar <= 2 )
-//    {
-//      value = Bp(idxPar);
-//    }
-//    else if ( idxPar >= 3 && idxPar <= 5 )
-//    {
-//      value = Bm(idxPar - 3);
-//    }
-//    else if ( idxPar >= 6 && idxPar <= 14 )
-//    {
-//      size_t idxRow = (idxPar - 6) / 3;
-//      size_t idxCol = (idxPar - 6) % 3;
-//      value = C(idxRow,idxCol);
-//    }
-//    else assert(0);
-//    vector15(idxPar) = value;
-//  }
-//  return vector15;
-//}
-
 TTree*
-get_tree(const spin::Dataset& dataset)
+createTree(const spin::Dataset& dataset)
 {
   TTree* tree = new TTree();
   Float_t x[6];
   Float_t weight;
   for ( size_t idxPar = 0; idxPar < 6; ++idxPar )
   {
-    std::string branchName = Form("x_%u", idxPar);
-    tree->Branch(branchName.c_str(), &x[idxPar], Form("%s/i", branchName.c_str()));
+    std::string branchName = Form("x_%lu", idxPar);
+    tree->Branch(branchName.c_str(), &x[idxPar], Form("%s/F", branchName.c_str()));
   }
-  tree->Branch("weight", weight, "weight/F");
+  tree->Branch("weight", &weight, "weight/F");
 
   size_t numEntries = dataset.size();
   for ( size_t idxEntry = 0; idxEntry < numEntries; ++idxEntry )
   {
     const spin::Data& entry = dataset.at(idxEntry);
 
-    double hPlus_n = entry.get_hPlus_n();
-    double hPlus_r = entry.get_hPlus_r();
-    double hPlus_k = entry.get_hPlus_k();
+    x[0] = entry.get_hPlus_n();
+    x[1] = entry.get_hPlus_r();
+    x[2] = entry.get_hPlus_k();
+    x[3] = entry.get_hMinus_n();
+    x[4] = entry.get_hMinus_r();
+    x[5] = entry.get_hMinus_k();
 
-    double hMinus_n = entry.get_hMinus_n();
-    double hMinus_r = entry.get_hMinus_r();
-    double hMinus_k = entry.get_hMinus_k();
-
-    //math::Vector15 vector15 = get_vector15(hPlus_n, hPlus_r, hPlus_k, hMinus_n, hMinus_r, hMinus_k);
-    math::Vector6 vector6 = get_vector6(hPlus_n, hPlus_r, hPlus_k, hMinus_n, hMinus_r, hMinus_k);
-    for ( size_t idxPar = 0; idxPar < 6; ++idxPar )
-    {
-      x[idxPar] = vector6(idxPar);
-    }
+    //if ( idxEntry < 20 )
+    //{
+    //  std::cout << "x = { " << x[0] << ", " << x[1] << ", " << x[2] << ", " << x[3] << ", " << x[4] << ", " << x[5] << " }\n";
+    //}
 
     weight = entry.get_evtWeight();
 
@@ -140,6 +87,20 @@ get_tree(const spin::Dataset& dataset)
   tree->ResetBranchAddresses();
 
   return tree;
+}
+
+void
+printResults(const spin::SpinAnalyzer& spinAnalyzer, const spin::Dataset& dataset, const std::string& label)
+{
+  spin::Measurement measurement = spinAnalyzer(dataset);
+  std::cout << "Matrix C" << label << ":\n";
+  std::cout << measurement.get_C() << "\n";
+  std::cout << "+/-\n";
+  std::cout << measurement.get_CErr() << "\n";
+  std::cout << "Ek = " << measurement.get_Ek() << " +/- " << measurement.get_EkErr() << "\n";
+  std::cout << "concurrence = " << measurement.get_concurrence() << " +/- " << measurement.get_concurrenceErr() << "\n";
+  std::cout << "steerability = " << measurement.get_steerability() << " +/- " << measurement.get_steerabilityErr() << "\n";
+  std::cout << "Rchsh = " << measurement.get_Rchsh() << " +/- " << measurement.get_RchshErr() << "\n";
 }
 
 void
@@ -272,6 +233,8 @@ int main(int argc, char* argv[])
   //spin::BinnedDataset2d binnedDataset_zPlus_vs_zMinus("zPlus_vs_zMinus",                 10,  0.,  1., 10,  0.,  1.);
   spin::BinnedDataset2d binnedDataset_visPlusPt_vs_visMinusPt("visPlusPt_vs_visMinusPt", 12,  0.,  6., 12,  0.,  6.);
 
+  TH1* histogram_knnOutput = bookHistogram1d(fs, "knnOutput", 120, -0.1, +1.1);
+
   int analyzedEntries = 0;
   double analyzedEntries_weighted = 0.;
   int selectedEntries = 0;
@@ -295,9 +258,9 @@ int main(int argc, char* argv[])
 
     ++processedInputFiles;
 
-    Float_t hPlus_r, hPlus_n, hPlus_k;
-    inputTree->SetBranchAddress(Form("%s_hPlus_r", mode.c_str()), &hPlus_r);
+    Float_t hPlus_n, hPlus_r, hPlus_k;
     inputTree->SetBranchAddress(Form("%s_hPlus_n", mode.c_str()), &hPlus_n);
+    inputTree->SetBranchAddress(Form("%s_hPlus_r", mode.c_str()), &hPlus_r);
     inputTree->SetBranchAddress(Form("%s_hPlus_k", mode.c_str()), &hPlus_k);
     Float_t visPlus_pt, visPlus_eta;
     inputTree->SetBranchAddress(Form("%s_visPlus_pt", mode.c_str()), &visPlus_pt);
@@ -311,9 +274,9 @@ int main(int argc, char* argv[])
     inputTree->SetBranchAddress("gen_tauPlus_nPhotons", &tauPlus_nPhotons);
     inputTree->SetBranchAddress("gen_tauPlus_sumPhotonEn", &tauPlus_sumPhotonEn);
     
-    Float_t hMinus_r, hMinus_n, hMinus_k;
-    inputTree->SetBranchAddress(Form("%s_hMinus_r", mode.c_str()), &hMinus_r);
+    Float_t hMinus_n, hMinus_r, hMinus_k;
     inputTree->SetBranchAddress(Form("%s_hMinus_n", mode.c_str()), &hMinus_n);
+    inputTree->SetBranchAddress(Form("%s_hMinus_r", mode.c_str()), &hMinus_r);
     inputTree->SetBranchAddress(Form("%s_hMinus_k", mode.c_str()), &hMinus_k);
     Float_t visMinus_pt, visMinus_eta;
     inputTree->SetBranchAddress(Form("%s_visMinus_pt", mode.c_str()), &visMinus_pt);
@@ -371,7 +334,7 @@ int main(int argc, char* argv[])
         if ( statusSelection.size() >   0  && !passesStatusSelection(kinFit_status, statusSelection) ) continue;
       }
 
-      spin::Data entry(hPlus_r, hPlus_n, hPlus_k, hMinus_r, hMinus_n, hMinus_k, evtWeight);
+      spin::Data entry(hPlus_n, hPlus_r, hPlus_k, hMinus_n, hMinus_r, hMinus_k, evtWeight);
 
       if ( visPlus_pt  > minVisTauPt && std::fabs(visPlus_eta)  < maxAbsVisTauEta &&
            visMinus_pt > minVisTauPt && std::fabs(visMinus_eta) < maxAbsVisTauEta )
@@ -406,61 +369,97 @@ int main(int argc, char* argv[])
   std::cout << " processedInputFiles = " << processedInputFiles << " (out of " << numInputFiles << ")\n";
   std::cout << " analyzedEntries = " << analyzedEntries << " (weighted = " << analyzedEntries_weighted << ")\n";
   std::cout << " selectedEntries = " << selectedEntries << " (weighted = " << selectedEntries_weighted << ")\n";
-
+  
+  spin::Dataset* dataset_passed_corrected = nullptr;
   if ( dataset_failed.size() > 0 )
   {
     // CV: correct selected events for bias on Bp, Bm, and C caused by pT and eta cuts
 
-   TMVA::Factory *factory = new TMVA::Factory( "TMVAClassification", outputFile,
-                                               "!V:!Silent:Color:DrawProgressBar:Transformations=I;D;P;G,D:AnalysisType=Classification" );
+    TMVA::Tools::Instance();
+
+    std::string tmvaOutputFileName = TString(outputFile.file().c_str()).ReplaceAll(".root", "_tmva.root").Data();
+    TFile* tmvaOutputFile = TFile::Open(tmvaOutputFileName.c_str(), "RECREATE");
+
+    std::string tmvaFactory_options = "!V:!Silent:Color:DrawProgressBar:Transformations=I;D;P;G,D:AnalysisType=Classification";
+    TMVA::Factory* tmvaFactory = new TMVA::Factory("TMVAClassification", tmvaOutputFile, tmvaFactory_options.c_str());
  
-   TMVA::DataLoader *dataloader=new TMVA::DataLoader("dataset");
-   // If you wish to modify default settings
-   // (please check "src/Config.h" to see all available global options)
-   //
-   //    (TMVA::gConfig().GetVariablePlotting()).fTimesRMS = 8.0;
-   //    (TMVA::gConfig().GetIONames()).fWeightFileDir = "myWeightDirectory";
- 
-   // Define the input variables that shall be used for the MVA training
-   // note that you may also use variable expressions, such as: "3*var1/var2*abs(var3)"
-   // [all types of expressions that can also be parsed by TTree::Draw( "expression" )]
-   dataloader->AddVariable( "myvar1 := var1+var2", 'F' );
-   dataloader->AddVariable( "myvar2 := var1-var2", "Expression 2", "", 'F' );
-   dataloader->AddVariable( "var3",                "Variable 3", "units", 'F' );
-   dataloader->AddVariable( "var4",                "Variable 4", "units", 'F' );
+    TMVA::DataLoader* tmvaDataloader = new TMVA::DataLoader("dataset");
+    for ( size_t idxPar = 0; idxPar < 6; ++idxPar )
+    {
+      std::string branchName = Form("x_%lu", idxPar);      
+      tmvaDataloader->AddVariable(branchName.c_str(), Form("Variable %lu", idxPar + 1), "units", 'F');
+    }
+    TTree* tmvaSignalTree = createTree(dataset_passed);
+    std::cout << "Created \"Signal\" Tree with " << tmvaSignalTree->GetEntries() << " entries.\n";
+    tmvaSignalTree->Scan("x_0:x_1:x_2:x_3:x_4:x_5:weight", "", "", 20);
+    tmvaDataloader->AddSignalTree(tmvaSignalTree, 1.);
+    tmvaDataloader->SetSignalWeightExpression("weight");
+    TTree* tmvaBackgroundTree = createTree(dataset_failed);
+    std::cout << "Created \"Background\" Tree with " << tmvaBackgroundTree->GetEntries() << " entries.\n";
+    tmvaBackgroundTree->Scan("x_0:x_1:x_2:x_3:x_4:x_5:weight", "", "", 20);
+    tmvaDataloader->AddBackgroundTree(tmvaBackgroundTree, 1.);
+    tmvaDataloader->SetBackgroundWeightExpression("weight");
+    std::string tmvaDataloader_options = Form("nTrain_Signal=%lu:nTrain_Background=%lu", dataset_passed.size(), dataset_failed.size());
+    tmvaDataloader_options.append(":nTest_Signal=0:nTest_Background=0:SplitMode=Random:NormMode=NumEvents:!V");
+    tmvaDataloader->PrepareTrainingAndTestTree("", tmvaDataloader_options.c_str());
 
-   dataloader->AddSignalTree    ( signalTree, 1.);
-   dataloader->AddBackgroundTree( background, 1.);
+    std::string tmvaKNN_options = "H:nkNN=1000:ScaleFrac=1.0:SigmaFact=1.0:Kernel=Gaus:UseKernel=F:UseWeight=T:!Trim";
+    tmvaFactory->BookMethod(tmvaDataloader, TMVA::Types::kKNN, "KNN", tmvaKNN_options.c_str());
 
-dataloader->SetSignalWeightExpression    ("weight1*weight2");`
-   // -  for background: `dataloader->SetBackgroundWeightExpression("weight1*weight2");`
+    tmvaFactory->TrainAllMethods();
 
-   dataloader->PrepareTrainingAndTestTree("", "",
-                                        "nTrain_Signal=1000:nTrain_Background=1000:SplitMode=Random:NormMode=NumEvents:!V" );
+    tmvaOutputFile->Close();
+    delete tmvaOutputFile;
 
-          factory->BookMethod( dataloader, TMVA::Types::kKNN, "KNN",
-                           "H:nkNN=20:ScaleFrac=0.8:SigmaFact=1.0:Kernel=Gaus:UseKernel=F:UseWeight=T:!Trim" );
+    dataset_passed_corrected = new spin::Dataset();
 
-   factory->TrainAllMethods();
- 
-   // Evaluate all MVAs using the set of test events
-   factory->TestAllMethods();
- 
-   // Evaluate and compare performance of all configured MVAs
-   factory->EvaluateAllMethods();
+    TMVA::Reader* tmvaReader = new TMVA::Reader("!Color:!Silent");
+    Float_t x[6];
+    for ( size_t idxPar = 0; idxPar < 6; ++idxPar )
+    {
+      std::string variableName = Form("x_%lu", idxPar);      
+      tmvaReader->AddVariable(variableName.c_str(), &x[idxPar]);
+    }
+    std::string tmvaWeightFileName = "dataset/weights/TMVAClassification_KNN.weights.xml";
+    tmvaReader->BookMVA("KNN method", tmvaWeightFileName.c_str());
 
+    size_t numEntries_passed = dataset_passed.size();
+    for ( size_t idxEntry = 0; idxEntry < numEntries_passed; ++idxEntry )
+    {
+      const spin::Data& entry = dataset_passed.at(idxEntry);
+
+      x[0] = entry.get_hPlus_n();
+      x[1] = entry.get_hPlus_r();
+      x[2] = entry.get_hPlus_k();
+      x[3] = entry.get_hMinus_n();
+      x[4] = entry.get_hMinus_r();
+      x[5] = entry.get_hMinus_k();
+
+      double knnOutput = tmvaReader->EvaluateMVA("KNN method");
+
+      if ( idxEntry < 20 )
+      {
+        std::cout << "x = { " << x[0] << ", " << x[1] << ", " << x[2] << ", " << x[3] << ", " << x[4] << ", " << x[5] << " }:"
+                  << " knnOutput = " << knnOutput << "\n";
+      }
+
+      spin::Data entry_corrected(entry, (1./knnOutput)*entry.get_evtWeight());
+      dataset_passed_corrected->push_back(entry_corrected);
+
+      fillWithOverFlow1D(histogram_knnOutput, knnOutput, entry.get_evtWeight());
+    }
+
+    histogram_knnOutput->Scale(1./histogram_knnOutput->Integral());
+    showHistogram1d(800, 600, histogram_knnOutput, "KNN output", 1.2, true, 1.e-3, 1.e0, "Events", 1.3, true, "E1P", outputFile.file());
   }
 
+  std::string label = ( dataset_passed_corrected ) ? " (without selection bias correction)" : "";
+  printResults(spinAnalyzer, dataset_passed, label);
 
-  spin::Measurement measurement = spinAnalyzer(dataset);
-  std::cout << "Matrix C:\n";
-  std::cout << measurement.get_C() << "\n";
-  std::cout << "+/-\n";
-  std::cout << measurement.get_CErr() << "\n";
-  std::cout << "Ek = " << measurement.get_Ek() << " +/- " << measurement.get_EkErr() << "\n";
-  std::cout << "concurrence = " << measurement.get_concurrence() << " +/- " << measurement.get_concurrenceErr() << "\n";
-  std::cout << "steerability = " << measurement.get_steerability() << " +/- " << measurement.get_steerabilityErr() << "\n";
-  std::cout << "Rchsh = " << measurement.get_Rchsh() << " +/- " << measurement.get_RchshErr() << "\n";
+  if ( dataset_passed_corrected )
+  {
+    printResults(spinAnalyzer, *dataset_passed_corrected, " (with selection bias correction)");
+  }
 
   if ( verbosity >= 1 )
   {
@@ -484,7 +483,7 @@ dataloader->SetSignalWeightExpression    ("weight1*weight2");`
     std::cout << C_exp << "\n";
     double Ek_exp = comp_Ek(C_exp);
     std::cout << "Ek = " << Ek_exp << "\n";
-    double concurrence_exp = comp_concurrence(Bp_exp, Bm_exp, C_exp, 1e-6);
+    double concurrence_exp = comp_concurrence(Bp_exp, Bm_exp, C_exp, 1e-6, verbosity);
     std::cout << "concurrence = " << concurrence_exp << "\n";
     double Rchsh_exp = comp_Rchsh(C_exp);
     std::cout << "Rchsh = " << Rchsh_exp << "\n";

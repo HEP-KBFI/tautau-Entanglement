@@ -285,7 +285,7 @@ class KinFitAlgo
     }
     if ( !hasConverged )
     {
-      std::cerr << "WARNING: KinematicFit failed to converge (@KinFitAlgo) !!" << std::endl;
+      std::cerr << "WARNING: KinematicFit failed to converge !!" << std::endl;
     }
 
     if ( verbosity_ >= 1 )
