@@ -10,6 +10,7 @@
 #include "TauAnalysis/Entanglement/interface/bookHistogram1d.h"       // bookHistogram1d()
 #include "TauAnalysis/Entanglement/interface/bookHistogram2d.h"       // bookHistogram2d()
 #include "TauAnalysis/Entanglement/interface/cmsException.h"          // cmsException
+//#include "TauAnalysis/Entanglement/interface/comp_BandC.h"            // comp_Bm(), comp_Bp(), comp_C()
 #include "TauAnalysis/Entanglement/interface/comp_concurrence.h"      // comp_concurrence()
 #include "TauAnalysis/Entanglement/interface/comp_Ek.h"               // comp_Ek()
 #include "TauAnalysis/Entanglement/interface/comp_Rchsh.h"            // comp_Rchsh()
@@ -40,6 +41,106 @@
 #include <vector>                                                     // std::vector<>
 
 const size_t npar = 15;
+
+namespace math
+{
+  typedef Vector<6>::type  Vector6;
+  typedef Vector<15>::type Vector15;
+}
+
+math::Vector6
+get_vector6(double hPlus_n, double hPlus_r, double hPlus_k, double hMinus_n, double hMinus_r, double hMinus_k)
+{
+  math::Vector6 vector6;
+  vector6(0) = hPlus_n;
+  vector6(1) = hPlus_r;
+  vector6(2) = hPlus_k;
+  vector6(3) = hMinus_n;
+  vector6(4) = hMinus_r;
+  vector6(5) = hMinus_k;
+  return vector6;
+}
+
+//math::Vector15
+//get_vector15(double hPlus_n, double hPlus_r, double hPlus_k, double hMinus_n, double hMinus_r, double hMinus_k)
+//{
+//  // CV: compute polarization vectors B+ and B- for tau+ and tau- according to text following Eq. (4.18)
+//  //     in the paper arXiv:1508.05271
+//  math::Vector3 Bp = comp_Bp(hPlus_n, hPlus_r, hPlus_k);
+//
+//  math::Vector3 Bm = comp_Bm(hMinus_n, hMinus_r, hMinus_k);
+//    
+//  // CV: compute spin correlation matrix C according to Eq. (25)
+//  //     in the paper arXiv:2211.10513
+//  math::Matrix3x3 C = comp_C(hPlus_n, hPlus_r, hPlus_k, hMinus_n, hMinus_r, hMinus_k);
+//
+//  math::Vector15 vector15;
+//  for ( size_t idxPar = 0; idxPar < npar; ++idxPar )
+//  {
+//    double value = 0.;
+//    if ( idxPar >= 0 && idxPar <= 2 )
+//    {
+//      value = Bp(idxPar);
+//    }
+//    else if ( idxPar >= 3 && idxPar <= 5 )
+//    {
+//      value = Bm(idxPar - 3);
+//    }
+//    else if ( idxPar >= 6 && idxPar <= 14 )
+//    {
+//      size_t idxRow = (idxPar - 6) / 3;
+//      size_t idxCol = (idxPar - 6) % 3;
+//      value = C(idxRow,idxCol);
+//    }
+//    else assert(0);
+//    vector15(idxPar) = value;
+//  }
+//  return vector15;
+//}
+
+TTree*
+get_tree(const spin::Dataset& dataset)
+{
+  TTree* tree = new TTree();
+  Float_t x[6];
+  Float_t weight;
+  for ( size_t idxPar = 0; idxPar < 6; ++idxPar )
+  {
+    std::string branchName = Form("x_%u", idxPar);
+    tree->Branch(branchName.c_str(), &x[idxPar], Form("%s/i", branchName.c_str()));
+  }
+  tree->Branch("weight", weight, "weight/F");
+
+  size_t numEntries = dataset.size();
+  for ( size_t idxEntry = 0; idxEntry < numEntries; ++idxEntry )
+  {
+    const spin::Data& entry = dataset.at(idxEntry);
+
+    double hPlus_n = entry.get_hPlus_n();
+    double hPlus_r = entry.get_hPlus_r();
+    double hPlus_k = entry.get_hPlus_k();
+
+    double hMinus_n = entry.get_hMinus_n();
+    double hMinus_r = entry.get_hMinus_r();
+    double hMinus_k = entry.get_hMinus_k();
+
+    //math::Vector15 vector15 = get_vector15(hPlus_n, hPlus_r, hPlus_k, hMinus_n, hMinus_r, hMinus_k);
+    math::Vector6 vector6 = get_vector6(hPlus_n, hPlus_r, hPlus_k, hMinus_n, hMinus_r, hMinus_k);
+    for ( size_t idxPar = 0; idxPar < 6; ++idxPar )
+    {
+      x[idxPar] = vector6(idxPar);
+    }
+
+    weight = entry.get_evtWeight();
+
+    tree->Fill();
+  }    
+ 
+  // CV: disconnect tree from memory locations of x and weight
+  tree->ResetBranchAddresses();
+
+  return tree;
+}
 
 void
 addToOutputFile(fwlite::TFileService& fs, const TH1* histogram)
@@ -159,15 +260,17 @@ int main(int argc, char* argv[])
   size_t numInputFiles = inputFileNames.size();
   std::cout << "Loaded " << numInputFiles << " file(s).\n";
   
-  spin::Dataset dataset;
+  spin::Dataset dataset_passed;
+  spin::Dataset dataset_failed;
 
   //spin::BinnedDataset1d binnedDataset_zPlus("zPlus",               20,  0.,  1.);
   //spin::BinnedDataset1d binnedDataset_zMinus("zMinus",             20,  0.,  1.);
   spin::BinnedDataset1d binnedDataset_cosThetaStar("cosThetaStar", 20, -1., +1.);
 
-  //spin::BinnedDataset2d binnedDataset_zPlus_vs_cosThetaStar("zPlus_vs_cosThetaStar",   10, -1., +1., 10,  0.,  1.);
-  //spin::BinnedDataset2d binnedDataset_zMinus_vs_cosThetaStar("zMinus_vs_cosThetaStar", 10, -1., +1., 10,  0.,  1.);
-  //spin::BinnedDataset2d binnedDataset_zPlus_vs_zMinus("zPlus_vs_zMinus",               10,  0.,  1., 10,  0.,  1.);
+  //spin::BinnedDataset2d binnedDataset_zPlus_vs_cosThetaStar("zPlus_vs_cosThetaStar",     10, -1., +1., 10,  0.,  1.);
+  //spin::BinnedDataset2d binnedDataset_zMinus_vs_cosThetaStar("zMinus_vs_cosThetaStar",   10, -1., +1., 10,  0.,  1.);
+  //spin::BinnedDataset2d binnedDataset_zPlus_vs_zMinus("zPlus_vs_zMinus",                 10,  0.,  1., 10,  0.,  1.);
+  spin::BinnedDataset2d binnedDataset_visPlusPt_vs_visMinusPt("visPlusPt_vs_visMinusPt", 12,  0.,  6., 12,  0.,  6.);
 
   int analyzedEntries = 0;
   double analyzedEntries_weighted = 0.;
@@ -252,13 +355,11 @@ int main(int argc, char* argv[])
         std::cout << "processing Entry " << analyzedEntries << "\n";
       }
 
-      if ( !(visPlus_pt  > minVisTauPt && std::fabs(visPlus_eta)  < maxAbsVisTauEta) ) continue;
       if ( !(tauPlus_tip > minTauTIP) ) continue;
       if ( maxNumChargedKaons       != -1  && tauPlus_nChargedKaons  > maxNumChargedKaons            ) continue;
       if ( maxNumNeutralKaons       != -1  && tauPlus_nNeutralKaons  > maxNumNeutralKaons            ) continue;
       if ( maxNumPhotons            != -1  && tauPlus_nPhotons       > maxNumPhotons                 ) continue;
       if ( maxSumPhotonEn           >=  0. && tauPlus_sumPhotonEn    > maxSumPhotonEn                ) continue;
-      if ( !(visMinus_pt > minVisTauPt && std::fabs(visMinus_eta) < maxAbsVisTauEta) ) continue;
       if ( !(tauMinus_tip > minTauTIP) ) continue;
       if ( maxNumChargedKaons       != -1  && tauMinus_nChargedKaons > maxNumChargedKaons            ) continue;
       if ( maxNumNeutralKaons       != -1  && tauMinus_nNeutralKaons > maxNumNeutralKaons            ) continue;
@@ -271,7 +372,16 @@ int main(int argc, char* argv[])
       }
 
       spin::Data entry(hPlus_r, hPlus_n, hPlus_k, hMinus_r, hMinus_n, hMinus_k, evtWeight);
-      dataset.push_back(entry);
+
+      if ( visPlus_pt  > minVisTauPt && std::fabs(visPlus_eta)  < maxAbsVisTauEta &&
+           visMinus_pt > minVisTauPt && std::fabs(visMinus_eta) < maxAbsVisTauEta )
+      {
+        dataset_passed.push_back(entry);
+      }
+      else
+      {
+        dataset_failed.push_back(entry);
+      }
 
       //binnedDataset_zPlus.push_back(zPlus, entry);
       //binnedDataset_zMinus.push_back(zMinus, entry);
@@ -280,6 +390,7 @@ int main(int argc, char* argv[])
       //binnedDataset_zPlus_vs_cosThetaStar.push_back(cosThetaStar, zPlus, entry);
       //binnedDataset_zMinus_vs_cosThetaStar.push_back(cosThetaStar, zMinus, entry);
       //binnedDataset_zPlus_vs_zMinus.push_back(zMinus, zPlus,  entry);
+      binnedDataset_visPlusPt_vs_visMinusPt.push_back(visMinus_pt, visPlus_pt, entry);
 
       ++selectedEntries;
       selectedEntries_weighted += evtWeight;
@@ -295,6 +406,51 @@ int main(int argc, char* argv[])
   std::cout << " processedInputFiles = " << processedInputFiles << " (out of " << numInputFiles << ")\n";
   std::cout << " analyzedEntries = " << analyzedEntries << " (weighted = " << analyzedEntries_weighted << ")\n";
   std::cout << " selectedEntries = " << selectedEntries << " (weighted = " << selectedEntries_weighted << ")\n";
+
+  if ( dataset_failed.size() > 0 )
+  {
+    // CV: correct selected events for bias on Bp, Bm, and C caused by pT and eta cuts
+
+   TMVA::Factory *factory = new TMVA::Factory( "TMVAClassification", outputFile,
+                                               "!V:!Silent:Color:DrawProgressBar:Transformations=I;D;P;G,D:AnalysisType=Classification" );
+ 
+   TMVA::DataLoader *dataloader=new TMVA::DataLoader("dataset");
+   // If you wish to modify default settings
+   // (please check "src/Config.h" to see all available global options)
+   //
+   //    (TMVA::gConfig().GetVariablePlotting()).fTimesRMS = 8.0;
+   //    (TMVA::gConfig().GetIONames()).fWeightFileDir = "myWeightDirectory";
+ 
+   // Define the input variables that shall be used for the MVA training
+   // note that you may also use variable expressions, such as: "3*var1/var2*abs(var3)"
+   // [all types of expressions that can also be parsed by TTree::Draw( "expression" )]
+   dataloader->AddVariable( "myvar1 := var1+var2", 'F' );
+   dataloader->AddVariable( "myvar2 := var1-var2", "Expression 2", "", 'F' );
+   dataloader->AddVariable( "var3",                "Variable 3", "units", 'F' );
+   dataloader->AddVariable( "var4",                "Variable 4", "units", 'F' );
+
+   dataloader->AddSignalTree    ( signalTree, 1.);
+   dataloader->AddBackgroundTree( background, 1.);
+
+dataloader->SetSignalWeightExpression    ("weight1*weight2");`
+   // -  for background: `dataloader->SetBackgroundWeightExpression("weight1*weight2");`
+
+   dataloader->PrepareTrainingAndTestTree("", "",
+                                        "nTrain_Signal=1000:nTrain_Background=1000:SplitMode=Random:NormMode=NumEvents:!V" );
+
+          factory->BookMethod( dataloader, TMVA::Types::kKNN, "KNN",
+                           "H:nkNN=20:ScaleFrac=0.8:SigmaFact=1.0:Kernel=Gaus:UseKernel=F:UseWeight=T:!Trim" );
+
+   factory->TrainAllMethods();
+ 
+   // Evaluate all MVAs using the set of test events
+   factory->TestAllMethods();
+ 
+   // Evaluate and compare performance of all configured MVAs
+   factory->EvaluateAllMethods();
+
+  }
+
 
   spin::Measurement measurement = spinAnalyzer(dataset);
   std::cout << "Matrix C:\n";
@@ -372,6 +528,11 @@ int main(int argc, char* argv[])
     //TH2* histogram_Rchsh_vs_zPlus_vs_zMinus = binnedMeasurement_zPlus_vs_zMinus.get_histogram("Rchsh");
     //addToOutputFile(fs, histogram_Rchsh_vs_zPlus_vs_zMinus);
     //std::cout << " Done.\n";
+    std::cout << "Processing binned measurement as function of visPlusPt and visMinusPt...\n";
+    spin::BinnedMeasurement2d binnedMeasurement_visPlusPt_vs_visMinusPt = spinAnalyzer(binnedDataset_visPlusPt_vs_visMinusPt);
+    TH2* histogram_Rchsh_vs_visPlusPt_vs_visMinusPt = binnedMeasurement_visPlusPt_vs_visMinusPt.get_histogram("Rchsh");
+    addToOutputFile(fs, histogram_Rchsh_vs_visPlusPt_vs_visMinusPt);
+    std::cout << " Done.\n";
   }
 
   clock.Show("analyzeEntanglementNtuple");
