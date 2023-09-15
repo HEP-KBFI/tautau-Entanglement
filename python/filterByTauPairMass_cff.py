@@ -9,6 +9,8 @@ import FWCore.ParameterSet.Config as cms
 #
 genTaus = cms.EDFilter("GenParticleSelector",
     src = cms.InputTag('genParticles'),
+    # CV: use "status = 2" for Pythia8 and Tauola samples and "status = 22" for TauDecay sample
+    #    (or simply remove the cut on the genParticle status)
     cut = cms.string("abs(pdgId) = 15 & status = 2"),
     filter = cms.bool(False)
 )
