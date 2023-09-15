@@ -20,7 +20,7 @@ math::Vector3
 comp_Bp(double hPlus_n, double hPlus_r, double hPlus_k)
 {
   // CV: not sure if for tau+ the constant factor b should be +3 or -3 ?!
-  double b = -3.;
+  double b = +3.;
   return comp_B(hPlus_n, hPlus_r, hPlus_k, b);
 }
 
@@ -28,7 +28,7 @@ math::Vector3
 comp_Bm(double hMinus_n, double hMinus_r, double hMinus_k)
 {
   // CV: not sure if for tau- the constant factor b should be +3 or -3 ?!
-  double b = +3.;
+  double b = -3.;
   return comp_B(hMinus_n, hMinus_r, hMinus_k, b);
 }
 
