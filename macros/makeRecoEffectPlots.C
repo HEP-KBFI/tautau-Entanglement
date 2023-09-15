@@ -204,26 +204,56 @@ makeRecoEffectPlots()
   TFile* inputFile_noNeutralKaonCut = openFile(inputFilePath, inputFileName_noNeutralKaonCut);
 
   std::vector<std::string> observables;
+  observables.push_back("Bp_n");
+  observables.push_back("Bp_r");
+  observables.push_back("Bp_k");
+  observables.push_back("Bm_n");
+  observables.push_back("Bm_r");
+  observables.push_back("Bm_k");
   observables.push_back("C_rr");
   observables.push_back("C_nn");
   observables.push_back("C_kk");
 
   std::map<std::string, int> rebin; // key = observable
+  rebin["Bp_n"]                =   1;
+  rebin["Bp_r"]                =   1;
+  rebin["Bp_k"]                =   1;
+  rebin["Bm_n"]                =   1;
+  rebin["Bm_r"]                =   1;
+  rebin["Bm_k"]                =   1;
   rebin["C_rr"]                =   1;
   rebin["C_nn"]                =   1;
   rebin["C_kk"]                =   1;
 
   std::map<std::string, double> xMin; // key = observable
+  xMin["Bp_n"]                 =  -3.;
+  xMin["Bp_r"]                 =  -3.;
+  xMin["Bp_k"]                 =  -3.;
+  xMin["Bm_n"]                 =  -3.;
+  xMin["Bm_r"]                 =  -3.;
+  xMin["Bm_k"]                 =  -3.;
   xMin["C_rr"]                 =  -9.;
   xMin["C_nn"]                 =  -9.;
   xMin["C_kk"]                 =  -9.;
 
   std::map<std::string, double> xMax; // key = observable
+  xMax["Bp_n"]                 =  +3.;
+  xMax["Bp_r"]                 =  +3.;
+  xMax["Bp_k"]                 =  +3.;
+  xMax["Bm_n"]                 =  +3.;
+  xMax["Bm_r"]                 =  +3.;
+  xMax["Bm_k"]                 =  +3.;
   xMax["C_rr"]                 =  +9.;
   xMax["C_nn"]                 =  +9.;
   xMax["C_kk"]                 =  +9.;
   
   std::map<std::string, std::string> xAxisTitles; // key = observable
+  xAxisTitles["Bp_n"]          = "B^{+}_{n}";
+  xAxisTitles["Bp_r"]          = "B^{+}_{r}";
+  xAxisTitles["Bp_k"]          = "B^{+}_{k}";
+  xAxisTitles["Bm_n"]          = "B^{-}_{n}";
+  xAxisTitles["Bm_r"]          = "B^{-}_{r}";
+  xAxisTitles["Bm_k"]          = "B^{-}_{k}";
   xAxisTitles["C_rr"]          = "C_{rr}";
   xAxisTitles["C_nn"]          = "C_{nn}";
   xAxisTitles["C_kk"]          = "C_{kk}";
