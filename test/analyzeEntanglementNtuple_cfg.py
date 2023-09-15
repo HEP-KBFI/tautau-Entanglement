@@ -61,7 +61,7 @@ hAxis = "beam"
 decayMode = "piPlus_piMinus"
 apply_evtWeight = True
 spinAnalyzer = "by_summation"
-outputFileName = 'analyzeEntanglementNtuple_%s_%sMode_%sAxis.root' % (processName, mode, hAxis)
+outputFileName = 'analyzeEntanglementNtuple_%s_%sMode_%sAxis_%sDecayMode_%s.root' % (processName, mode, hAxis, decayMode, spinAnalyzer)
 
 #minVisTauPt = 20.
 #maxAbsVisTauEta = 2.3
