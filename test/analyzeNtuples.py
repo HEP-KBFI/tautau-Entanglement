@@ -42,7 +42,7 @@ run_command('mkdir -p %s' % os.path.join(configDir, "plots"))
 run_command('mkdir -p %s' % outputDir)
 
 def build_cfgFile(cfgFile_original, cfgFile_modified, 
-                  inputFileNames, process,
+                  inputFileNames, process, par_gen,
                   mode, collider, hAxis, decayMode, apply_evtWeight, spinAnalyzer,
                   outputFileName):
   print("Building configFile = '%s'" % cfgFile_modified)
@@ -54,6 +54,7 @@ def build_cfgFile(cfgFile_original, cfgFile_modified,
   sedCommand += ' "s/##inputFilePath/inputFilePath/; s/\$inputFilePath/None/;'
   sedCommand += '  s/##inputFileNames/inputFileNames/; s/\$inputFileNames/%s/;' % [ inputFileName.replace("/", "\/") for inputFileName in inputFileNames ]
   sedCommand += '  s/##processName/processName/; s/\$processName/%s/;' % process
+  sedCommand += '  s/##par_gen/par_gen/; s/\$par_gen/%s/;' % par_gen
   sedCommand += '  s/##mode/mode/; s/\$mode/%s/;' % mode
   sedCommand += '  s/##collider/collider/; s/\$collider/%s/;' % collider
   sedCommand += '  s/##hAxis/hAxis/; s/\$hAxis/%s/;' % hAxis
@@ -85,7 +86,7 @@ for sampleName, sample in samples.items():
               (sampleName, mode, hAxis, decayMode, spinAnalyzer)
             build_cfgFile(
               "analyzeEntanglementNtuple_cfg.py", cfgFileName_analysis_modified, 
-              inputFileNames, sample['process'],
+              inputFileNames, sample['process'], sample['par_gen'],
               mode, collider, hAxis, decayMode, sample['apply_evtWeight'], spinAnalyzer, 
               outputFileName_analysis)
             logFileName_analysis = cfgFileName_analysis_modified.replace("_cfg.py", ".log")
@@ -105,7 +106,7 @@ for sampleName, sample in samples.items():
           (sampleName, mode, hAxis, decayMode))
         build_cfgFile(
           "makeControlPlots_cfg.py", cfgFileName_ctrlPlots_modified, 
-          inputFileNames, sample['process'],
+          inputFileNames, sample['process'], sample['par_gen'],
           mode, collider, hAxis, decayMode, sample['apply_evtWeight'], "",
           outputFileName_ctrlPlots)
         logFileName_ctrlPlots = cfgFileName_ctrlPlots_modified.replace("_cfg.py", ".log")
@@ -126,7 +127,7 @@ for sampleName, sample in samples.items():
             (sampleName, mode, hAxis, decayMode))
           build_cfgFile(
             "makeResolutionPlots_cfg.py", cfgFileName_resPlots_modified, 
-            inputFileNames, sample['process'],
+            inputFileNames, sample['process'], sample['par_gen'],
             mode, collider, hAxis, decayMode, sample['apply_evtWeight'], "", 
             outputFileName_resPlots)
           logFileName_resPlots = cfgFileName_resPlots_modified.replace("_cfg.py", ".log")

@@ -49,17 +49,17 @@ process.analyzeEntanglementNtuple = cms.PSet(
     verbosity = cms.untracked.int32(1)
 )
 
-inputFilePath = '/scratch/persistent/veelken/Entanglement/ntuples/2023Aug02/'
+inputFilePath = '/scratch/persistent/veelken/Entanglement/ntuples/SuperKEKB/2023Sep14_wSmearing/'
 inputFileNames = None
-processName = "ggH_htt_pythia8"
-mode = 'gen'
-collider = "LHC"
-hAxis = "higgs"
-decayMode = "piPlus_piMinus"
-apply_evtWeight = True
+processName = "dy_lo_pythia8"
 # CV: define Standard Model expectation for matrix C, given by Eq. (69) of arXiv:2208:11723, 
 #     for comparison with measured matrix elements
-par_gen = [ 0., 0., 0., 0., 0., 0., +1., 0., 0., 0., +1., 0., 0., 0., -1. ]
+par_gen = [ 0., 0., 0., 0., 0., 0., -0.249686, 0.00508408, 0.00391348, 0.00653464, 0.138683, -0.276996, -0.00186421, 0.243658, 0.885224 ]
+mode = 'gen'
+collider = "SuperKEKB"
+hAxis = "beam"
+decayMode = "piPlus_piMinus"
+apply_evtWeight = True
 spinAnalyzer = "by_summation"
 outputFileName = 'analyzeEntanglementNtuple_%s_%sMode_%sAxis.root' % (processName, mode, hAxis)
 
@@ -83,12 +83,12 @@ else:
 ##inputFilePath = None
 ##inputFileNames = $inputFileNames
 ##processName = "$processName"
+##par_gen = $par_gen
 ##mode = "$mode"
 ##collider = "$collider"
 ##hAxis = "$hAxis"
 ##decayMode = "$decayMode"
 ##apply_evtWeight = $apply_evtWeight
-##par_gen = $par_gen
 ##spinAnalyzer = "$spinAnalyzer"
 ##outputFileName = "$outputFileName"
 
