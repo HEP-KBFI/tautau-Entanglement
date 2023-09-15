@@ -22,6 +22,14 @@ class SpinAlgo_by_mlfit : public SpinAlgoBase
   void
   set_verbosity(int verbosity);
 
+  static
+  void
+  set_dataset_norm_passed(const spin::Dataset* dataset);
+
+  static
+  void
+  set_dataset_norm_failed(const spin::Dataset* dataset);
+
   spin::Measurement
   operator()(const spin::Dataset& dataset);
 
