@@ -16,6 +16,8 @@
 const size_t npar = 15;
 
 static const spin::Dataset* gDataset = nullptr;
+static const spin::Dataset* gDataset_norm_passed = nullptr;
+static const spin::Dataset* gDataset_norm_failed = nullptr;
 static const std::vector<double>* gpar_gen = nullptr;
 
 using namespace spin;
@@ -55,6 +57,18 @@ SpinAlgo_by_mlfit::set_verbosity(int verbosity)
 {
   verbosity_ = verbosity;
   algo_by_summation_->set_verbosity(verbosity);
+}
+
+void
+SpinAlgo_by_mlfit::set_dataset_norm_passed(const spin::Dataset* dataset)
+{
+  gDataset_norm_passed = dataset;
+}
+
+void
+SpinAlgo_by_mlfit::set_dataset_norm_failed(const spin::Dataset* dataset)
+{
+  gDataset_norm_failed = dataset;
 }
 
 namespace
@@ -122,36 +136,45 @@ namespace
   double
   mlfit_fcn(const double* par)
   {
-    assert(gDataset);
-    const spin::Dataset* mlfitData = gDataset;
-
-    size_t numEntries = mlfitData->size();
-
-    //assert(gpar_gen);
-    //double par_gen[npar];
-    //for ( size_t idxPar = 0; idxPar < npar; ++idxPar )
-    //{
-    //  par_gen[idxPar] = gpar_gen->at(idxPar);
-    //}
-
-    double norm = 0.;
-    for ( size_t idxEntry = 0; idxEntry < numEntries; ++idxEntry )
+    assert(gpar_gen);
+    double par_gen[npar];
+    for ( size_t idxPar = 0; idxPar < npar; ++idxPar )
     {
-      const spin::Data& entry = mlfitData->at(idxEntry);
-
-      // TO-DO: the following equation does not work if par_gen is unknown;
-      //        need to correct for selection bias in another way,
-      //        e.g. by storing selection efficiencies as function of the 15 parameters
-      //        using k-nearest neighbour algorithm ("signal" = passing events, "background" = failing events)
-      //norm += entry.get_evtWeight()*get_p(par, entry)/get_p(par_gen, entry);
-      
-      norm += entry.get_evtWeight();
+      par_gen[idxPar] = gpar_gen->at(idxPar);
     }
 
-    double logL = 0.;
-    for ( size_t idxEntry = 0; idxEntry < numEntries; ++idxEntry )
+    assert(gDataset_norm_passed);
+    double norm_passed = 0.;
+    for ( size_t idxEntry = 0; idxEntry < gDataset_norm_passed->size(); ++idxEntry )
     {
-      const spin::Data& entry = mlfitData->at(idxEntry);
+      const spin::Data& entry = gDataset_norm_passed->at(idxEntry);
+
+      // CV: reweight events from values of Bp, Bm, and C that were used to produce the Monte Carlo sample
+      //     to values of Bp, Bm, and C passed as parameters to mlfit_fcn function
+      double reweight = get_p(par, entry)/get_p(par_gen, entry);
+      norm_passed += entry.get_evtWeight()*reweight;
+    }
+
+    assert(gDataset_norm_failed);
+    double norm_failed = 0.;
+    for ( size_t idxEntry = 0; idxEntry < gDataset_norm_failed->size(); ++idxEntry )
+    {
+      const spin::Data& entry = gDataset_norm_failed->at(idxEntry);
+
+      // CV: reweight events from values of Bp, Bm, and C that were used to produce the Monte Carlo sample
+      //     to values of Bp, Bm, and C passed as parameters to mlfit_fcn function
+      double reweight = get_p(par, entry)/get_p(par_gen, entry);
+      norm_failed += entry.get_evtWeight()*reweight;
+    }
+
+    // CV: normalize likelihood by selection efficiency
+    double norm = norm_passed/(norm_passed + norm_failed);
+
+    assert(gDataset);
+    double logL = 0.;
+    for ( size_t idxEntry = 0; idxEntry < gDataset->size(); ++idxEntry )
+    {
+      const spin::Data& entry = gDataset->at(idxEntry);
 
       double p = get_p(par, entry);
 
