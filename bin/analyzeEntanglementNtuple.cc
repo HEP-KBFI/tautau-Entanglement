@@ -380,6 +380,10 @@ int main(int argc, char* argv[])
   }
 
   spin::Dataset* dataset_passed_corrected = nullptr;
+/*
+  // CV: Disabled this code, as it does not allow to run multiple analyzeEntanglementNtuple jobs in parallel.
+  //     The issue is that the XML files containing the trained KNN configuration clash,
+  //     as each analyzeEntanglementNtuple job tries to write to and read from the same XML file !!
   if ( dataset_failed.size() > 0 )
   {
     // CV: correct selected events for bias on Bp, Bm, and C caused by pT and eta cuts
@@ -461,7 +465,7 @@ int main(int argc, char* argv[])
     histogram_knnOutput->Scale(1./histogram_knnOutput->Integral());
     showHistogram1d(800, 600, histogram_knnOutput, "KNN output", 1.2, true, 1.e-3, 1.e0, "Events", 1.3, true, "E1P", outputFile.file());
   }
-
+ */
   spin::SpinAlgo_by_mlfit::set_dataset_norm_passed(&dataset_passed);
   spin::SpinAlgo_by_mlfit::set_dataset_norm_failed(&dataset_failed);
 
