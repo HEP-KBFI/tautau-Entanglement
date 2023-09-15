@@ -23,6 +23,7 @@
 #include "TauAnalysis/Entanglement/interface/Measurement.h"           // spin::Measurement
 #include "TauAnalysis/Entanglement/interface/passesStatusSelection.h" // passesStatusSelection()
 #include "TauAnalysis/Entanglement/interface/showHistogram1d.h"       // showHistogram1d()
+#include "TauAnalysis/Entanglement/interface/SpinAlgo_by_mlfit.h"     // SpinAlgo_by_mlfit
 #include "TauAnalysis/Entanglement/interface/SpinAnalyzer.h"          // spin::SpinAnalyzer
 
 #include "TMVA/Tools.h"                                               // TMVA::Tools::Instance()
@@ -370,6 +371,14 @@ int main(int argc, char* argv[])
   std::cout << " analyzedEntries = " << analyzedEntries << " (weighted = " << analyzedEntries_weighted << ")\n";
   std::cout << " selectedEntries = " << selectedEntries << " (weighted = " << selectedEntries_weighted << ")\n";
   
+  if ( selectedEntries == 0 )
+  {
+    if ( analyzedEntries == 0 ) std::cerr << "WARNING: Tree '" << treeName << "' contains no events !!\n";
+    else                        std::cerr << "WARNING: No events pass selection !!\n";
+    std::cerr << "Please check that the tau decay mode you are analyzing was enabled in the Ntuple production.\n";
+    return EXIT_SUCCESS;
+  }
+
   spin::Dataset* dataset_passed_corrected = nullptr;
   if ( dataset_failed.size() > 0 )
   {
@@ -403,7 +412,7 @@ int main(int argc, char* argv[])
     tmvaDataloader_options.append(":nTest_Signal=0:nTest_Background=0:SplitMode=Random:NormMode=NumEvents:!V");
     tmvaDataloader->PrepareTrainingAndTestTree("", tmvaDataloader_options.c_str());
 
-    std::string tmvaKNN_options = "H:nkNN=100:ScaleFrac=1.0:SigmaFact=1.0:Kernel=Gaus:UseKernel=F:UseWeight=T:!Trim";
+    std::string tmvaKNN_options = "H:nkNN=100:ScaleFrac=1.0:SigmaFact=1.0:Kernel=Gaus:UseKernel=T:UseWeight=T:!Trim";
     tmvaFactory->BookMethod(tmvaDataloader, TMVA::Types::kKNN, "KNN", tmvaKNN_options.c_str());
 
     tmvaFactory->TrainAllMethods();
@@ -452,6 +461,9 @@ int main(int argc, char* argv[])
     histogram_knnOutput->Scale(1./histogram_knnOutput->Integral());
     showHistogram1d(800, 600, histogram_knnOutput, "KNN output", 1.2, true, 1.e-3, 1.e0, "Events", 1.3, true, "E1P", outputFile.file());
   }
+
+  spin::SpinAlgo_by_mlfit::set_dataset_norm_passed(&dataset_passed);
+  spin::SpinAlgo_by_mlfit::set_dataset_norm_failed(&dataset_failed);
 
   std::string label = ( dataset_passed_corrected ) ? " (without selection bias correction)" : "";
   printResults(spinAnalyzer, dataset_passed, label);
