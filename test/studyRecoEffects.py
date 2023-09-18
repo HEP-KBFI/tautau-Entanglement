@@ -7,8 +7,8 @@ from TauAnalysis.Entanglement.tools.jobTools import getInputFileNames, build_Mak
 from TauAnalysis.Entanglement.samples import samples_LHC, samples_SuperKEKB
 
 modes = [ "gen", "gen_smeared", "startPos", "kinFit" ]
-hAxes = [ "beam", "higgs" ]
-#hAxes = [ "higgs" ]
+#hAxes = [ "beam", "higgs" ]
+hAxes = [ "beam" ]
 #collider = "LHC"
 collider = "SuperKEKB"
 #decayModes = [ "piPlus_piMinus", "piPlus_rhoMinus", "rhoPlus_piMinus", "rhoPlus_rhoMinus" ]
@@ -49,7 +49,7 @@ recoEffects = {
     'minVisTauPt' : 3.0 
   },
   'noVisTauEtaCut' : {
-    'maxAbsVisTauEta' : -1.
+    'maxAbsVisTauEta' : 1.e+3
   },
   'maxAbsVisTauEtaLt1p5' : {
     'maxAbsVisTauEta' : 1.5
