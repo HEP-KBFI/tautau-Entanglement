@@ -187,20 +187,20 @@ makeRecoEffectPlots()
 //--- suppress the output canvas 
   gROOT->SetBatch(true);
 
-  std::string inputFilePath = "/scratch/persistent/veelken/Entanglement/studyRecoEffects/2023Jun02/";
-  std::string inputFileName_baseline = "makeControlPlots_ggH_htt_pythia8_beamAxis_maxSumPhotonEnLt5.root";
+  std::string inputFilePath = "/home/veelken/Entanglement/studyRecoEffects/SuperKEKB/2023Sep14_wSmearing/plots/";
+  std::string inputFileName_baseline = "makeControlPlots_dy_lo_pythia8_genMode_beamAxis_piPlus_piMinusDecayMode_noVisTauPtCut.root";
   TFile* inputFile_baseline = openFile(inputFilePath, inputFileName_baseline);
-  
-  std::string inputFileName_minVisTauPtGt10 = "makeControlPlots_ggH_htt_pythia8_beamAxis_minVisTauPtGt10.root";
-  TFile* inputFile_minVisTauPtGt10 = openFile(inputFilePath, inputFileName_minVisTauPtGt10);
-  std::string inputFileName_minVisTauPtGt20 = "makeControlPlots_ggH_htt_pythia8_beamAxis_minVisTauPtGt20.root";
-  TFile* inputFile_minVisTauPtGt20 = openFile(inputFilePath, inputFileName_minVisTauPtGt20);
-  std::string inputFileName_minVisTauPtGt30 = "makeControlPlots_ggH_htt_pythia8_beamAxis_minVisTauPtGt30.root";
-  TFile* inputFile_minVisTauPtGt30 = openFile(inputFilePath, inputFileName_minVisTauPtGt30);
-  std::string inputFileName_minVisTauPtGt40 = "makeControlPlots_ggH_htt_pythia8_beamAxis_minVisTauPtGt40.root";
-  TFile* inputFile_minVisTauPtGt40 = openFile(inputFilePath, inputFileName_minVisTauPtGt40);
 
-  std::string inputFileName_noNeutralKaonCut = "makeControlPlots_ggH_htt_pythia8_beamAxis_noNeutralKaonCut.root";
+  std::string inputFileName_minVisTauPtGt0p5 = "makeControlPlots_dy_lo_pythia8_genMode_beamAxis_piPlus_piMinusDecayMode_minVisTauPtGt0p5.root";
+  TFile* inputFile_minVisTauPtGt0p5 = openFile(inputFilePath, inputFileName_minVisTauPtGt0p5);
+  std::string inputFileName_minVisTauPtGt1p0 = "makeControlPlots_dy_lo_pythia8_genMode_beamAxis_piPlus_piMinusDecayMode_minVisTauPtGt1p0.root";
+  TFile* inputFile_minVisTauPtGt1p0 = openFile(inputFilePath, inputFileName_minVisTauPtGt1p0);
+  std::string inputFileName_minVisTauPtGt2p0 = "makeControlPlots_dy_lo_pythia8_genMode_beamAxis_piPlus_piMinusDecayMode_minVisTauPtGt2p0.root";
+  TFile* inputFile_minVisTauPtGt2p0 = openFile(inputFilePath, inputFileName_minVisTauPtGt2p0);
+  std::string inputFileName_minVisTauPtGt3p0 = "makeControlPlots_dy_lo_pythia8_genMode_beamAxis_piPlus_piMinusDecayMode_minVisTauPtGt3p0.root";
+  TFile* inputFile_minVisTauPtGt3p0 = openFile(inputFilePath, inputFileName_minVisTauPtGt3p0);
+
+  std::string inputFileName_noNeutralKaonCut = "makeControlPlots_dy_lo_pythia8_genMode_beamAxis_piPlus_piMinusDecayMode_noNeutralKaonCut.root";
   TFile* inputFile_noNeutralKaonCut = openFile(inputFilePath, inputFileName_noNeutralKaonCut);
 
   std::vector<std::string> observables;
@@ -268,20 +268,20 @@ makeRecoEffectPlots()
 
     TH1* histogram_baseline = loadHistogram(inputFile_baseline, histogramName);
 
-    TH1* histogram_minVisTauPtGt10 = loadHistogram(inputFile_minVisTauPtGt10, histogramName);
-    TH1* histogram_minVisTauPtGt20 = loadHistogram(inputFile_minVisTauPtGt20, histogramName);
-    TH1* histogram_minVisTauPtGt30 = loadHistogram(inputFile_minVisTauPtGt30, histogramName);
-    TH1* histogram_minVisTauPtGt40 = loadHistogram(inputFile_minVisTauPtGt40, histogramName);
+    TH1* histogram_minVisTauPtGt0p5 = loadHistogram(inputFile_minVisTauPtGt0p5, histogramName);
+    TH1* histogram_minVisTauPtGt1p0 = loadHistogram(inputFile_minVisTauPtGt1p0, histogramName);
+    TH1* histogram_minVisTauPtGt2p0 = loadHistogram(inputFile_minVisTauPtGt2p0, histogramName);
+    TH1* histogram_minVisTauPtGt3p0 = loadHistogram(inputFile_minVisTauPtGt3p0, histogramName);
 
     TH1* histogram_noNeutralKaonCut = loadHistogram(inputFile_noNeutralKaonCut, histogramName);
 
     double normFactor = 1./histogram_baseline->Integral();
     histogram_baseline->Scale(normFactor);
 
-    histogram_minVisTauPtGt10->Scale(normFactor);
-    histogram_minVisTauPtGt20->Scale(normFactor);
-    histogram_minVisTauPtGt30->Scale(normFactor);
-    histogram_minVisTauPtGt40->Scale(normFactor);
+    histogram_minVisTauPtGt0p5->Scale(normFactor);
+    histogram_minVisTauPtGt1p0->Scale(normFactor);
+    histogram_minVisTauPtGt2p0->Scale(normFactor);
+    histogram_minVisTauPtGt3p0->Scale(normFactor);
 
     histogram_noNeutralKaonCut->Scale(normFactor);
 
@@ -289,21 +289,21 @@ makeRecoEffectPlots()
     {
       histogram_baseline->Rebin();
 
-      histogram_minVisTauPtGt10->Rebin();
-      histogram_minVisTauPtGt20->Rebin();
-      histogram_minVisTauPtGt30->Rebin();
-      histogram_minVisTauPtGt40->Rebin();
+      histogram_minVisTauPtGt0p5->Rebin();
+      histogram_minVisTauPtGt1p0->Rebin();
+      histogram_minVisTauPtGt2p0->Rebin();
+      histogram_minVisTauPtGt3p0->Rebin();
 
       histogram_noNeutralKaonCut->Rebin();
     }
 
     std::string outputFileName_minVisTauPt = Form("makeRecoEffectPlots_%s_minVisTauPt.png", observable->c_str());
     showHistograms(1150, 950,
-                   histogram_baseline,        "No cut",
-                   histogram_minVisTauPtGt10, "p_{T}^{vis} > 10 GeV",
-                   histogram_minVisTauPtGt20, "p_{T}^{vis} > 20 GeV",
-                   histogram_minVisTauPtGt30, "p_{T}^{vis} > 30 GeV",
-                   histogram_minVisTauPtGt40, "p_{T}^{vis} > 40 GeV",
+                   histogram_baseline,         "No cut",
+                   histogram_minVisTauPtGt0p5, "p_{T}^{vis} > 0.5 GeV",
+                   histogram_minVisTauPtGt1p0, "p_{T}^{vis} > 1.0 GeV",
+                   histogram_minVisTauPtGt2p0, "p_{T}^{vis} > 2.0 GeV",
+                   histogram_minVisTauPtGt3p0, "p_{T}^{vis} > 3.0 GeV",
 		   0, "",
 		   colors, lineStyles, 
 		   0.040, 0.68, 0.64, 0.22, 0.30, 
@@ -328,10 +328,10 @@ makeRecoEffectPlots()
 
   delete inputFile_baseline;
 
-  delete inputFile_minVisTauPtGt10;
-  delete inputFile_minVisTauPtGt20;
-  delete inputFile_minVisTauPtGt30;
-  delete inputFile_minVisTauPtGt40;
+  delete inputFile_minVisTauPtGt0p5;
+  delete inputFile_minVisTauPtGt1p0;
+  delete inputFile_minVisTauPtGt2p0;
+  delete inputFile_minVisTauPtGt3p0;
 
   delete inputFile_noNeutralKaonCut;
 }
