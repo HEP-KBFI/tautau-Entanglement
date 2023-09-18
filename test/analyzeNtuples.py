@@ -45,7 +45,6 @@ run_command('mkdir -p %s' % outputDir)
 def build_cfgFile(cfgFile_original, cfgFile_modified, 
                   inputFileNames, process, par_gen,
                   mode, collider, hAxis, decayMode, apply_evtWeight, spinAnalyzer,
-                  read_selBiasCorrection, write_selBiasCorrection, selBiasCorrection_outputFileName,
                   outputFileName):
   print("Building configFile = '%s'" % cfgFile_modified)
 
@@ -63,9 +62,6 @@ def build_cfgFile(cfgFile_original, cfgFile_modified,
   sedCommand += '  s/##decayMode/decayMode/; s/\$decayMode/%s/;' % decayMode
   sedCommand += '  s/##apply_evtWeight/apply_evtWeight/; s/\$apply_evtWeight/%s/;' % apply_evtWeight
   sedCommand += '  s/##spinAnalyzer/spinAnalyzer/; s/\$spinAnalyzer/%s/;' % spinAnalyzer
-  sedCommand += '  s/##read_selBiasCorrection/read_selBiasCorrection/; s/\$read_selBiasCorrection/%s/;' % read_selBiasCorrection
-  sedCommand += '  s/##write_selBiasCorrection/write_selBiasCorrection/; s/\$write_selBiasCorrection/%s/;' % write_selBiasCorrection
-  sedCommand += '  s/##selBiasCorrection_outputFileName/selBiasCorrection_outputFileName/; s/\$selBiasCorrection_outputFileName/%s/;' % selBiasCorrection_outputFileName.replace("/", "\/")
   sedCommand += '  s/##outputFileName/outputFileName/; s/\$outputFileName/%s/"' % outputFileName.replace("/", "\/")
   sedCommand += ' %s > %s' % (cfgFile_original, cfgFile_modified)
   run_command(sedCommand)
@@ -93,8 +89,6 @@ def get_all_values(dictionary):
             all_values.append(dictionary[key])
     return all_values
 
-jobOptions_trainSelBiasCorr      = {} # key = job_key_trainSelBiasCorr
-outputFileNames_trainSelBiasCorr = {} # key = sampleName, mode, decayMode
 jobOptions_analysis              = {} # key = job_key_analysis
 jobOptions_ctrlPlots             = {} # key = job_key_ctrlPlots
 jobOptions_resPlots              = {} # key = job_key_resPlots
@@ -111,33 +105,6 @@ for sampleName, sample in samples.items():
     for mode in modes:
       for decayMode in decayModes:
         if mode != "gen_smeared":
-          cfgFileName_trainSelBiasCorr_modified = os.path.join(configDir, "trainSelBiasCorr_%s_%sMode_%sAxis_%sDecayMode_cfg.py" % \
-            (sampleName, mode, hAxis, decayMode))
-          outputFileName_trainSelBiasCorr = os.path.join(configDir, "TMVAClassification_KNN_weights_%s_%sMode_%sDecayMode.xml" % (sampleName, mode, decayMode))
-          if outputFileName_trainSelBiasCorr not in get_all_values(outputFileNames_trainSelBiasCorr):
-            build_cfgFile(
-              "analyzeEntanglementNtuple_cfg.py", cfgFileName_trainSelBiasCorr_modified, 
-              inputFileNames, sample['process'], sample['par_gen'],
-              mode, collider, hAxis, decayMode, sample['apply_evtWeight'], "by_summation",
-              False, True, outputFileName_trainSelBiasCorr,
-              "dummy.root")
-            logFileName_trainSelBiasCorr = cfgFileName_trainSelBiasCorr_modified.replace("_cfg.py", ".log")
-            job_key_trainSelBiasCorr = '%s_%s_%s_trainSelBiasCorr' % (sampleName, mode, decayMode)
-            dependencies_trainSelBiasCorr = [ cfgFileName_trainSelBiasCorr_modified ]
-            dependencies_trainSelBiasCorr.extend(inputFileNames)
-            # CV: add all previous analyzeEntanglementNtuple jobs that write an TMVAClassification_KNN.weights.xml file
-            #     as dependencies for current job, to make sure that only one analyzeEntanglementNtuple job w
-            #     writing a TMVAClassification_KNN.weights.xml file runs at any moment in time
-            dependencies_trainSelBiasCorr.extend(get_all_values(outputFileNames_trainSelBiasCorr))
-            jobOptions_trainSelBiasCorr[job_key_trainSelBiasCorr] = {
-              'inputFileNames' : dependencies_trainSelBiasCorr,
-              'cfgFileName'    : cfgFileName_trainSelBiasCorr_modified,
-              'outputFilePath' : outputDir,
-              'outputFileName' : outputFileName_trainSelBiasCorr,
-              'logFileName'    : logFileName_trainSelBiasCorr,
-            }
-            init_dict(outputFileNames_trainSelBiasCorr, [ sampleName, mode, decayMode ]) 
-            outputFileNames_trainSelBiasCorr[sampleName][mode][decayMode] = outputFileName_trainSelBiasCorr
           for spinAnalyzer in spinAnalyzers:
             cfgFileName_analysis_modified = os.path.join(configDir, "analyzeEntanglementNtuple_%s_%sMode_%sAxis_%sDecayMode_%s_cfg.py" % \
               (sampleName, mode, hAxis, decayMode, spinAnalyzer))
@@ -153,7 +120,6 @@ for sampleName, sample in samples.items():
             job_key_analysis = '%s_%s_%s_%s_%s_analysis' % (sampleName, mode, hAxis, decayMode, spinAnalyzer)
             dependencies_analysis = [ cfgFileName_analysis_modified ]
             dependencies_analysis.extend(inputFileNames)
-            dependencies_analysis.append(outputFileNames_trainSelBiasCorr[sampleName][mode][decayMode])
             jobOptions_analysis[job_key_analysis] = {
               'inputFileNames' : dependencies_analysis,
               'cfgFileName'    : cfgFileName_analysis_modified,
@@ -206,17 +172,6 @@ for sampleName, sample in samples.items():
           }
 
 jobOptions_Makefile = []
-for job_key, job in jobOptions_trainSelBiasCorr.items():
-  commands = []
-  commands.append('rm -f %s' % job['outputFileName'])
-  commands.append('rm -f %s' % job['logFileName'])
-  commands.append('analyzeEntanglementNtuple %s >& %s' % (job['cfgFileName'], job['logFileName']))
-  jobOptions_Makefile.append({
-    'target'          : job['outputFileName'],
-    'dependencies'    : [ inputFileName.replace("file:", "") for inputFileName in job['inputFileNames'] ],
-    'commands'        : commands,
-    'outputFileNames' : [ job['outputFileName'] ],
-  })
 for job_key, job in jobOptions_analysis.items():
   commands = []
   commands.append('rm -f %s' % job['outputFileName'])
