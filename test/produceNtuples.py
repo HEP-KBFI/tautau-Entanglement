@@ -23,7 +23,7 @@ else:
 
 configDir  = os.path.join("/home",               getpass.getuser(), "Entanglement/ntuples/", collider, version)
 outputDir  = os.path.join("/scratch/persistent", getpass.getuser(), "Entanglement/ntuples/", collider, version)
-workingDir = os.getcwd()
+testDir    = os.path.dirname(os.path.abspath(__file__))
 cmsswDir   = os.getenv('CMSSW_BASE')
 
 def run_command(command):
@@ -52,7 +52,7 @@ def build_cfgFile(cfgFile_original, cfgFile_modified,
   sedCommand += '  s/##hAxis/hAxis/; s/\$hAxis/%s/;' % hAxis
   sedCommand += '  s/##rndSeed/rndSeed/; s/\$rndSeed/%i/;' % rndSeed
   sedCommand += '  s/##outputFileName/outputFileName/; s/\$outputFileName/%s/"' % outputFileName
-  sedCommand += ' %s > %s' % (os.path.join(workingDir, cfgFile_original), cfgFile_modified)
+  sedCommand += ' %s > %s' % (os.path.join(testDir, cfgFile_original), cfgFile_modified)
   run_command(sedCommand)
 
 jobOptions = {} # key = process, hAxis, jobId
