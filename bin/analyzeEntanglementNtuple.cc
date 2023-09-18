@@ -26,11 +26,6 @@
 #include "TauAnalysis/Entanglement/interface/SpinAlgo_by_mlfit.h"     // SpinAlgo_by_mlfit
 #include "TauAnalysis/Entanglement/interface/SpinAnalyzer.h"          // spin::SpinAnalyzer
 
-#include "TMVA/Tools.h"                                               // TMVA::Tools::Instance()
-#include "TMVA/DataLoader.h"                                          // TMVA::DataLoader
-#include "TMVA/Factory.h"                                             // TMVA::Factory
-#include "TMVA/Reader.h"                                              // TMVA::Reader
-
 #include <TAxis.h>                                                    // TAxis
 #include <TBenchmark.h>                                               // TBenchmark
 #include <TError.h>                                                   // gErrorAbortLevel, kError
@@ -49,61 +44,6 @@
 #include <vector>                                                     // std::vector<>
 
 const size_t npar = 15;
-
-TTree*
-createTree(const spin::Dataset& dataset)
-{
-  TTree* tree = new TTree();
-  Float_t x[6];
-  Float_t weight;
-  for ( size_t idxPar = 0; idxPar < 6; ++idxPar )
-  {
-    std::string branchName = Form("x_%lu", idxPar);
-    tree->Branch(branchName.c_str(), &x[idxPar], Form("%s/F", branchName.c_str()));
-  }
-  tree->Branch("weight", &weight, "weight/F");
-
-  size_t numEntries = dataset.size();
-  for ( size_t idxEntry = 0; idxEntry < numEntries; ++idxEntry )
-  {
-    const spin::Data& entry = dataset.at(idxEntry);
-
-    x[0] = entry.get_hPlus_n();
-    x[1] = entry.get_hPlus_r();
-    x[2] = entry.get_hPlus_k();
-    x[3] = entry.get_hMinus_n();
-    x[4] = entry.get_hMinus_r();
-    x[5] = entry.get_hMinus_k();
-
-    //if ( idxEntry < 20 )
-    //{
-    //  std::cout << "x = { " << x[0] << ", " << x[1] << ", " << x[2] << ", " << x[3] << ", " << x[4] << ", " << x[5] << " }\n";
-    //}
-
-    weight = entry.get_evtWeight();
-
-    tree->Fill();
-  }    
- 
-  // CV: disconnect tree from memory locations of x and weight
-  tree->ResetBranchAddresses();
-
-  return tree;
-}
-
-void
-printResults(const spin::SpinAnalyzer& spinAnalyzer, const spin::Dataset& dataset, const std::string& label)
-{
-  spin::Measurement measurement = spinAnalyzer(dataset);
-  std::cout << "Matrix C" << label << ":\n";
-  std::cout << measurement.get_C() << "\n";
-  std::cout << "+/-\n";
-  std::cout << measurement.get_CErr() << "\n";
-  std::cout << "Ek = " << measurement.get_Ek() << " +/- " << measurement.get_EkErr() << "\n";
-  std::cout << "concurrence = " << measurement.get_concurrence() << " +/- " << measurement.get_concurrenceErr() << "\n";
-  std::cout << "steerability = " << measurement.get_steerability() << " +/- " << measurement.get_steerabilityErr() << "\n";
-  std::cout << "Rchsh = " << measurement.get_Rchsh() << " +/- " << measurement.get_RchshErr() << "\n";
-}
 
 void
 addToOutputFile(fwlite::TFileService& fs, const TH1* histogram)
@@ -209,10 +149,6 @@ int main(int argc, char* argv[])
     throw cmsException("analyzeEntanglementNtuple", __LINE__) 
       << "Invalid Configuration parameter 'par_gen' !!\n";
 
-  bool read_selBiasCorrection = cfg_analyze.getParameter<bool>("read_selBiasCorrection");
-  bool write_selBiasCorrection = cfg_analyze.getParameter<bool>("write_selBiasCorrection");
-  std::string selBiasCorrection_outputFileName = cfg_analyze.getParameter<std::string>("selBiasCorrection_outputFileName");
-
   cfg_analyze.addParameter<int>("maxEvents_afterCuts", maxEvents_afterCuts);
   spin::SpinAnalyzer spinAnalyzer(cfg_analyze);
   std::string spinAnalyzer_algo = cfg_analyze.getParameter<std::string>("spinAnalyzer");
@@ -240,8 +176,6 @@ int main(int argc, char* argv[])
   //spin::BinnedDataset2d binnedDataset_zMinus_vs_cosThetaStar("zMinus_vs_cosThetaStar",   10, -1., +1., 10,  0.,  1.);
   spin::BinnedDataset2d binnedDataset_zPlus_vs_zMinus("zPlus_vs_zMinus",                 10,  0.,  1., 10,  0.,  1.);
   spin::BinnedDataset2d binnedDataset_visPlusPt_vs_visMinusPt("visPlusPt_vs_visMinusPt", 12,  0.,  6., 12,  0.,  6.);
-
-  TH1* histogram_knnOutput = bookHistogram1d(fs, "knnOutput", 120, -0.1, +1.1);
 
   int analyzedEntries = 0;
   double analyzedEntries_weighted = 0.;
@@ -350,23 +284,23 @@ int main(int argc, char* argv[])
            visMinus_pt > minVisTauPt && std::fabs(visMinus_eta) < maxAbsVisTauEta )
       {
         dataset_passed.push_back(entry);
+        
+        //binnedDataset_zPlus.push_back(zPlus, entry);
+        //binnedDataset_zMinus.push_back(zMinus, entry);
+        binnedDataset_cosThetaStar.push_back(cosThetaStar, entry);
+
+        //binnedDataset_zPlus_vs_cosThetaStar.push_back(cosThetaStar, zPlus, entry);
+        //binnedDataset_zMinus_vs_cosThetaStar.push_back(cosThetaStar, zMinus, entry);
+        binnedDataset_zPlus_vs_zMinus.push_back(zMinus, zPlus,  entry);
+        binnedDataset_visPlusPt_vs_visMinusPt.push_back(visMinus_pt, visPlus_pt, entry);
+
+        ++selectedEntries;
+        selectedEntries_weighted += evtWeight;
       }
       else
       {
         dataset_failed.push_back(entry);
       }
-
-      //binnedDataset_zPlus.push_back(zPlus, entry);
-      //binnedDataset_zMinus.push_back(zMinus, entry);
-      binnedDataset_cosThetaStar.push_back(cosThetaStar, entry);
-
-      //binnedDataset_zPlus_vs_cosThetaStar.push_back(cosThetaStar, zPlus, entry);
-      //binnedDataset_zMinus_vs_cosThetaStar.push_back(cosThetaStar, zMinus, entry);
-      binnedDataset_zPlus_vs_zMinus.push_back(zMinus, zPlus,  entry);
-      binnedDataset_visPlusPt_vs_visMinusPt.push_back(visMinus_pt, visPlus_pt, entry);
-
-      ++selectedEntries;
-      selectedEntries_weighted += evtWeight;
 
       if ( maxEvents_beforeCuts != -1 && analyzedEntries >= maxEvents_beforeCuts ) STOP = true;
     }
@@ -388,120 +322,18 @@ int main(int argc, char* argv[])
     return EXIT_SUCCESS;
   }
 
-  // CV: correct selected events for bias on Bp, Bm, and C caused by pT and eta cuts
-  TMVA::Tools::Instance();
-  if ( dataset_failed.size() > 0 && write_selBiasCorrection )
-  {
-    std::string tmvaOutputFileName = TString(outputFile.file().c_str()).ReplaceAll(".root", "_tmva.root").Data();
-    TFile* tmvaOutputFile = TFile::Open(tmvaOutputFileName.c_str(), "RECREATE");
-
-    std::string tmvaFactory_options = "!V:!Silent:Color:DrawProgressBar:Transformations=I;D;P;G,D:AnalysisType=Classification";
-    TMVA::Factory* tmvaFactory = new TMVA::Factory("TMVAClassification", tmvaOutputFile, tmvaFactory_options.c_str());
- 
-    TMVA::DataLoader* tmvaDataloader = new TMVA::DataLoader("dataset");
-    for ( size_t idxPar = 0; idxPar < 6; ++idxPar )
-    {
-      std::string branchName = Form("x_%lu", idxPar);      
-      tmvaDataloader->AddVariable(branchName.c_str(), Form("Variable %lu", idxPar + 1), "units", 'F');
-    }
-    TTree* tmvaSignalTree = createTree(dataset_passed);
-    std::cout << "Created \"Signal\" Tree with " << tmvaSignalTree->GetEntries() << " entries.\n";
-    tmvaSignalTree->Scan("x_0:x_1:x_2:x_3:x_4:x_5:weight", "", "", 20);
-    tmvaDataloader->AddSignalTree(tmvaSignalTree, 1.);
-    tmvaDataloader->SetSignalWeightExpression("weight");
-    TTree* tmvaBackgroundTree = createTree(dataset_failed);
-    std::cout << "Created \"Background\" Tree with " << tmvaBackgroundTree->GetEntries() << " entries.\n";
-    tmvaBackgroundTree->Scan("x_0:x_1:x_2:x_3:x_4:x_5:weight", "", "", 20);
-    tmvaDataloader->AddBackgroundTree(tmvaBackgroundTree, 1.);
-    tmvaDataloader->SetBackgroundWeightExpression("weight");
-    std::string tmvaDataloader_options = Form("nTrain_Signal=%lu:nTrain_Background=%lu", dataset_passed.size(), dataset_failed.size());
-    tmvaDataloader_options.append(":nTest_Signal=0:nTest_Background=0:SplitMode=Random:NormMode=NumEvents:!V");
-    tmvaDataloader->PrepareTrainingAndTestTree("", tmvaDataloader_options.c_str());
-
-    std::string tmvaKNN_options = "H:nkNN=100:ScaleFrac=1.0:SigmaFact=1.0:Kernel=Gaus:UseKernel=T:UseWeight=T:!Trim";
-    tmvaFactory->BookMethod(tmvaDataloader, TMVA::Types::kKNN, "KNN", tmvaKNN_options.c_str());
-
-    tmvaFactory->TrainAllMethods();
-
-    tmvaOutputFile->Close();
-    delete tmvaOutputFile;
-
-    // CV: pause for 10 seconds to allow XML file to be written
-    sleep(10);
-
-    // CV: The function TMVA::Factory->TrainAllMethods() always writes the KNN configuration into the file TMVAClassification_KNN.weights.xml;
-    //     move the file, so that different analyzeEntanglementNtuple jobs don't overwrite each other's TMVAClassification_KNN.weights.xml file
-    //    (and make sure that only one analyzeEntanglementNtuple job that writes a TMVAClassification_KNN.weights.xml file runs at any moment in time !!)
-    std::cout << "Writing correction for selection bias to file '" << selBiasCorrection_outputFileName << "'.\n";
-    std::string sourceFile = Form("%s/dataset/weights/TMVAClassification_KNN.weights.xml", std::filesystem::current_path().c_str());
-    std::string destFile = selBiasCorrection_outputFileName;
-    std::string command = Form("cp %s %s", sourceFile.c_str(), destFile.c_str());
-    std::system(command.c_str());
-
-    // CV: pause for 10 seconds to allow XML file to be copied
-    sleep(10);
-
-    std::cout << "Exiting after XML file has been written...\n";
-
-    clock.Show("analyzeEntanglementNtuple");
-
-    return EXIT_SUCCESS;
-  }
-  spin::Dataset* dataset_passed_corrected = nullptr;
-  if ( dataset_failed.size() > 0 && read_selBiasCorrection )
-  {
-    dataset_passed_corrected = new spin::Dataset();
-
-    TMVA::Reader* tmvaReader = new TMVA::Reader("!Color:!Silent");
-    Float_t x[6];
-    for ( size_t idxPar = 0; idxPar < 6; ++idxPar )
-    {
-      std::string variableName = Form("x_%lu", idxPar);      
-      tmvaReader->AddVariable(variableName.c_str(), &x[idxPar]);
-    }
-    std::cout << "Reading correction for selection bias from file '" << selBiasCorrection_outputFileName << "'.\n";
-    tmvaReader->BookMVA("KNN method", selBiasCorrection_outputFileName.c_str());
-
-    size_t numEntries_passed = dataset_passed.size();
-    for ( size_t idxEntry = 0; idxEntry < numEntries_passed; ++idxEntry )
-    {
-      const spin::Data& entry = dataset_passed.at(idxEntry);
-
-      x[0] = entry.get_hPlus_n();
-      x[1] = entry.get_hPlus_r();
-      x[2] = entry.get_hPlus_k();
-      x[3] = entry.get_hMinus_n();
-      x[4] = entry.get_hMinus_r();
-      x[5] = entry.get_hMinus_k();
-
-      double knnOutput = tmvaReader->EvaluateMVA("KNN method");
-
-      if ( idxEntry < 20 )
-      {
-        std::cout << "x = { " << x[0] << ", " << x[1] << ", " << x[2] << ", " << x[3] << ", " << x[4] << ", " << x[5] << " }:"
-                  << " knnOutput = " << knnOutput << "\n";
-      }
-
-      spin::Data entry_corrected(entry, (1./knnOutput)*entry.get_evtWeight());
-      dataset_passed_corrected->push_back(entry_corrected);
-
-      fillWithOverFlow1D(histogram_knnOutput, knnOutput, entry.get_evtWeight());
-    }
-
-    histogram_knnOutput->Scale(1./histogram_knnOutput->Integral());
-    showHistogram1d(800, 600, histogram_knnOutput, "KNN output", 1.2, true, 1.e-3, 1.e0, "Events", 1.3, true, "E1P", outputFile.file());
-  }
-
   spin::SpinAlgo_by_mlfit::set_dataset_norm_passed(&dataset_passed);
   spin::SpinAlgo_by_mlfit::set_dataset_norm_failed(&dataset_failed);
 
-  std::string label = ( dataset_passed_corrected ) ? " (without selection bias correction)" : "";
-  printResults(spinAnalyzer, dataset_passed, label);
-
-  if ( dataset_passed_corrected )
-  {
-    printResults(spinAnalyzer, *dataset_passed_corrected, " (with selection bias correction)");
-  }
+  spin::Measurement measurement = spinAnalyzer(dataset_passed);
+  std::cout << "Matrix C:\n";
+  std::cout << measurement.get_C() << "\n";
+  std::cout << "+/-\n";
+  std::cout << measurement.get_CErr() << "\n";
+  std::cout << "Ek = " << measurement.get_Ek() << " +/- " << measurement.get_EkErr() << "\n";
+  std::cout << "concurrence = " << measurement.get_concurrence() << " +/- " << measurement.get_concurrenceErr() << "\n";
+  std::cout << "steerability = " << measurement.get_steerability() << " +/- " << measurement.get_steerabilityErr() << "\n";
+  std::cout << "Rchsh = " << measurement.get_Rchsh() << " +/- " << measurement.get_RchshErr() << "\n";
 
   if ( verbosity >= 1 )
   {
