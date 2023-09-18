@@ -25,6 +25,7 @@ process.analyzeEntanglementNtuple = cms.PSet(
     #maxAbsVisTauEta = cms.double(2.3),
     minVisTauPt = cms.double(-1.),
     maxAbsVisTauEta = cms.double(1.e+3),
+    minVisTauZ = cms.double(-1.),
     #minTauTIP = cms.double(0.0030),
     minTauTIP = cms.double(-1.),
     maxNumChargedKaons = cms.int32(0),
@@ -42,6 +43,14 @@ process.analyzeEntanglementNtuple = cms.PSet(
 
     spinAnalyzer = cms.string('by_summation'), # CV: either 'by_summation' or 'by_mlfit'
     numBootstrapSamples = cms.uint32(1000),
+
+    # CV: Disabled correction for selection bias by default, as current implementation of TMVA 
+    #     does not allow to run multiple analyzeEntanglementNtuple jobs in parallel.
+    #     The issue is that the XML files containing the trained KNN configuration clash,
+    #     as each analyzeEntanglementNtuple job tries to write to and read from the same XML file !!
+    read_selBiasCorrection = cms.bool(False),
+    write_selBiasCorrection = cms.bool(False),
+    selBiasCorrection_outputFileName = cms.string("dataset/weights/TMVAClassification_KNN_weights.xml"),
 
     mlfit_outputFileName = cms.string(""),
     mlfit_scan_likelihood = cms.bool(False),
@@ -61,12 +70,16 @@ hAxis = "beam"
 decayMode = "piPlus_piMinus"
 apply_evtWeight = True
 spinAnalyzer = "by_summation"
+read_selBiasCorrection = False
+write_selBiasCorrection = False
+selBiasCorrection_outputFileName = 'dataset/weights/TMVAClassification_KNN_weights.xml'
 outputFileName = 'analyzeEntanglementNtuple_%s_%sMode_%sAxis_%sDecayMode_%s.root' % (processName, mode, hAxis, decayMode, spinAnalyzer)
 
-#minVisTauPt = 20.
+#minVisTauPt = 2.5
 #maxAbsVisTauEta = 2.3
 minVisTauPt = -1.
 maxAbsVisTauEta = 1.e+3
+minVisTauZ = -1.
 #minTauTIP = 0.0030
 minTauTIP = -1.
 maxNumChargedKaons = 0
@@ -90,10 +103,14 @@ else:
 ##decayMode = "$decayMode"
 ##apply_evtWeight = $apply_evtWeight
 ##spinAnalyzer = "$spinAnalyzer"
+##read_selBiasCorrection = $read_selBiasCorrection
+##write_selBiasCorrection = $write_selBiasCorrection
+##selBiasCorrection_outputFileName = "$selBiasCorrection_outputFileName"
 ##outputFileName = "$outputFileName"
 
 ##minVisTauPt = $minVisTauPt
 ##maxAbsVisTauEta = $maxAbsVisTauEta
+##minVisTauZ = $minVisTauZ
 ##maxNumChargedKaons = $maxNumChargedKaons
 ##maxNumNeutralKaons = $maxNumNeutralKaons
 ##maxNumPhotons = $maxNumPhotons
@@ -130,3 +147,6 @@ process.analyzeEntanglementNtuple.apply_evtWeight = apply_evtWeight
 process.analyzeEntanglementNtuple.par_gen = par_gen
 process.analyzeEntanglementNtuple.spinAnalyzer = spinAnalyzer
 process.analyzeEntanglementNtuple.mlfit_outputFileName = outputFileName
+process.analyzeEntanglementNtuple.read_selBiasCorrection = read_selBiasCorrection
+process.analyzeEntanglementNtuple.write_selBiasCorrection = write_selBiasCorrection
+process.analyzeEntanglementNtuple.selBiasCorrection_outputFileName = selBiasCorrection_outputFileName
