@@ -6,6 +6,8 @@ import os
 from TauAnalysis.Entanglement.tools.jobTools import getInputFileNames, build_Makefile
 from TauAnalysis.Entanglement.samples import samples_LHC, samples_SuperKEKB
 
+current_directory = os.path.dirname(os.path.abspath(__file__))
+
 hAxes = [ "beam", "higgs" ]
 #hAxes = [ "beam" ]
 #collider = "LHC"
@@ -52,7 +54,7 @@ def build_cfgFile(cfgFile_original, cfgFile_modified,
   sedCommand += '  s/##hAxis/hAxis/; s/\$hAxis/%s/;' % hAxis
   sedCommand += '  s/##rndSeed/rndSeed/; s/\$rndSeed/%i/;' % rndSeed
   sedCommand += '  s/##outputFileName/outputFileName/; s/\$outputFileName/%s/"' % outputFileName
-  sedCommand += ' %s > %s' % (cfgFile_original, cfgFile_modified)
+  sedCommand += ' %s > %s' % (os.path.join(current_directory, cfgFile_original), cfgFile_modified)
   run_command(sedCommand)
 
 jobOptions = {} # key = process, hAxis, jobId

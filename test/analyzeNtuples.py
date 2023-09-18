@@ -6,6 +6,8 @@ import os
 from TauAnalysis.Entanglement.tools.jobTools import getInputFileNames, build_Makefile
 from TauAnalysis.Entanglement.samples import samples_LHC, samples_SuperKEKB
 
+current_directory = os.path.dirname(os.path.abspath(__file__))
+
 modes = [ "gen", "gen_smeared", "startPos", "kinFit" ]
 #modes = [ "gen" ]
 #hAxes = [ "beam", "higgs" ]
@@ -67,7 +69,7 @@ def build_cfgFile(cfgFile_original, cfgFile_modified,
   sedCommand += '  s/##write_selBiasCorrection/write_selBiasCorrection/; s/\$write_selBiasCorrection/%s/;' % write_selBiasCorrection
   sedCommand += '  s/##selBiasCorrection_outputFileName/selBiasCorrection_outputFileName/; s/\$selBiasCorrection_outputFileName/%s/;' % selBiasCorrection_outputFileName.replace("/", "\/")
   sedCommand += '  s/##outputFileName/outputFileName/; s/\$outputFileName/%s/"' % outputFileName.replace("/", "\/")
-  sedCommand += ' %s > %s' % (cfgFile_original, cfgFile_modified)
+  sedCommand += ' %s > %s' % (os.path.join(current_directory, cfgFile_original), cfgFile_modified)
   run_command(sedCommand)
  
 def init_dict(dictionary, keys):
