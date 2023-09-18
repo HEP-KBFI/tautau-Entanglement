@@ -42,7 +42,8 @@
 #include <algorithm>                                                  // std::sort()
 #include <assert.h>                                                   // assert()
 #include <cmath>                                                      // std::fabs()
-#include <cstdlib>                                                    // EXIT_SUCCESS, EXIT_FAILURE
+#include <cstdlib>                                                    // EXIT_SUCCESS, EXIT_FAILURE, std::system()
+#include <filesystem>                                                 // std::filesystem::current_path()
 #include <iostream>                                                   // std::cout
 #include <string>                                                     // std::string
 #include <vector>                                                     // std::vector<>
@@ -182,6 +183,8 @@ int main(int argc, char* argv[])
   std::cout << " minVisTauPt = " << minVisTauPt << "\n";
   float maxAbsVisTauEta = cfg_analyze.getParameter<double>("maxAbsVisTauEta");
   std::cout << " maxAbsVisTauEta = " << maxAbsVisTauEta << "\n";
+  float minVisTauZ = cfg_analyze.getParameter<double>("minVisTauZ");
+  std::cout << " minVisTauZ = " << minVisTauZ << "\n";
   float minTauTIP = cfg_analyze.getParameter<double>("minTauTIP");
   std::cout << " minTauTIP = " << minTauTIP << "\n";
   int maxNumChargedKaons = cfg_analyze.getParameter<int>("maxNumChargedKaons");
@@ -205,6 +208,10 @@ int main(int argc, char* argv[])
   if ( par_gen.size() != npar )
     throw cmsException("analyzeEntanglementNtuple", __LINE__) 
       << "Invalid Configuration parameter 'par_gen' !!\n";
+
+  bool read_selBiasCorrection = cfg_analyze.getParameter<bool>("read_selBiasCorrection");
+  bool write_selBiasCorrection = cfg_analyze.getParameter<bool>("write_selBiasCorrection");
+  std::string selBiasCorrection_outputFileName = cfg_analyze.getParameter<std::string>("selBiasCorrection_outputFileName");
 
   cfg_analyze.addParameter<int>("maxEvents_afterCuts", maxEvents_afterCuts);
   spin::SpinAnalyzer spinAnalyzer(cfg_analyze);
@@ -231,7 +238,7 @@ int main(int argc, char* argv[])
 
   //spin::BinnedDataset2d binnedDataset_zPlus_vs_cosThetaStar("zPlus_vs_cosThetaStar",     10, -1., +1., 10,  0.,  1.);
   //spin::BinnedDataset2d binnedDataset_zMinus_vs_cosThetaStar("zMinus_vs_cosThetaStar",   10, -1., +1., 10,  0.,  1.);
-  //spin::BinnedDataset2d binnedDataset_zPlus_vs_zMinus("zPlus_vs_zMinus",                 10,  0.,  1., 10,  0.,  1.);
+  spin::BinnedDataset2d binnedDataset_zPlus_vs_zMinus("zPlus_vs_zMinus",                 10,  0.,  1., 10,  0.,  1.);
   spin::BinnedDataset2d binnedDataset_visPlusPt_vs_visMinusPt("visPlusPt_vs_visMinusPt", 12,  0.,  6., 12,  0.,  6.);
 
   TH1* histogram_knnOutput = bookHistogram1d(fs, "knnOutput", 120, -0.1, +1.1);
@@ -319,11 +326,13 @@ int main(int argc, char* argv[])
         std::cout << "processing Entry " << analyzedEntries << "\n";
       }
 
+      if ( !(zPlus > minVisTauZ) ) continue;
       if ( !(tauPlus_tip > minTauTIP) ) continue;
       if ( maxNumChargedKaons       != -1  && tauPlus_nChargedKaons  > maxNumChargedKaons            ) continue;
       if ( maxNumNeutralKaons       != -1  && tauPlus_nNeutralKaons  > maxNumNeutralKaons            ) continue;
       if ( maxNumPhotons            != -1  && tauPlus_nPhotons       > maxNumPhotons                 ) continue;
       if ( maxSumPhotonEn           >=  0. && tauPlus_sumPhotonEn    > maxSumPhotonEn                ) continue;
+      if ( !(zMinus > minVisTauZ) ) continue;
       if ( !(tauMinus_tip > minTauTIP) ) continue;
       if ( maxNumChargedKaons       != -1  && tauMinus_nChargedKaons > maxNumChargedKaons            ) continue;
       if ( maxNumNeutralKaons       != -1  && tauMinus_nNeutralKaons > maxNumNeutralKaons            ) continue;
@@ -353,7 +362,7 @@ int main(int argc, char* argv[])
 
       //binnedDataset_zPlus_vs_cosThetaStar.push_back(cosThetaStar, zPlus, entry);
       //binnedDataset_zMinus_vs_cosThetaStar.push_back(cosThetaStar, zMinus, entry);
-      //binnedDataset_zPlus_vs_zMinus.push_back(zMinus, zPlus,  entry);
+      binnedDataset_zPlus_vs_zMinus.push_back(zMinus, zPlus,  entry);
       binnedDataset_visPlusPt_vs_visMinusPt.push_back(visMinus_pt, visPlus_pt, entry);
 
       ++selectedEntries;
@@ -379,17 +388,10 @@ int main(int argc, char* argv[])
     return EXIT_SUCCESS;
   }
 
-  spin::Dataset* dataset_passed_corrected = nullptr;
-/*
-  // CV: Disabled this code, as it does not allow to run multiple analyzeEntanglementNtuple jobs in parallel.
-  //     The issue is that the XML files containing the trained KNN configuration clash,
-  //     as each analyzeEntanglementNtuple job tries to write to and read from the same XML file !!
-  if ( dataset_failed.size() > 0 )
+  // CV: correct selected events for bias on Bp, Bm, and C caused by pT and eta cuts
+  TMVA::Tools::Instance();
+  if ( dataset_failed.size() > 0 && write_selBiasCorrection )
   {
-    // CV: correct selected events for bias on Bp, Bm, and C caused by pT and eta cuts
-
-    TMVA::Tools::Instance();
-
     std::string tmvaOutputFileName = TString(outputFile.file().c_str()).ReplaceAll(".root", "_tmva.root").Data();
     TFile* tmvaOutputFile = TFile::Open(tmvaOutputFileName.c_str(), "RECREATE");
 
@@ -424,6 +426,30 @@ int main(int argc, char* argv[])
     tmvaOutputFile->Close();
     delete tmvaOutputFile;
 
+    // CV: pause for 10 seconds to allow XML file to be written
+    sleep(10);
+
+    // CV: The function TMVA::Factory->TrainAllMethods() always writes the KNN configuration into the file TMVAClassification_KNN.weights.xml;
+    //     move the file, so that different analyzeEntanglementNtuple jobs don't overwrite each other's TMVAClassification_KNN.weights.xml file
+    //    (and make sure that only one analyzeEntanglementNtuple job that writes a TMVAClassification_KNN.weights.xml file runs at any moment in time !!)
+    std::cout << "Writing correction for selection bias to file '" << selBiasCorrection_outputFileName << "'.\n";
+    std::string sourceFile = Form("%s/dataset/weights/TMVAClassification_KNN.weights.xml", std::filesystem::current_path().c_str());
+    std::string destFile = selBiasCorrection_outputFileName;
+    std::string command = Form("cp %s %s", sourceFile.c_str(), destFile.c_str());
+    std::system(command.c_str());
+
+    // CV: pause for 10 seconds to allow XML file to be copied
+    sleep(10);
+
+    std::cout << "Exiting after XML file has been written...\n";
+
+    clock.Show("analyzeEntanglementNtuple");
+
+    return EXIT_SUCCESS;
+  }
+  spin::Dataset* dataset_passed_corrected = nullptr;
+  if ( dataset_failed.size() > 0 && read_selBiasCorrection )
+  {
     dataset_passed_corrected = new spin::Dataset();
 
     TMVA::Reader* tmvaReader = new TMVA::Reader("!Color:!Silent");
@@ -433,8 +459,8 @@ int main(int argc, char* argv[])
       std::string variableName = Form("x_%lu", idxPar);      
       tmvaReader->AddVariable(variableName.c_str(), &x[idxPar]);
     }
-    std::string tmvaWeightFileName = "dataset/weights/TMVAClassification_KNN.weights.xml";
-    tmvaReader->BookMVA("KNN method", tmvaWeightFileName.c_str());
+    std::cout << "Reading correction for selection bias from file '" << selBiasCorrection_outputFileName << "'.\n";
+    tmvaReader->BookMVA("KNN method", selBiasCorrection_outputFileName.c_str());
 
     size_t numEntries_passed = dataset_passed.size();
     for ( size_t idxEntry = 0; idxEntry < numEntries_passed; ++idxEntry )
@@ -465,7 +491,7 @@ int main(int argc, char* argv[])
     histogram_knnOutput->Scale(1./histogram_knnOutput->Integral());
     showHistogram1d(800, 600, histogram_knnOutput, "KNN output", 1.2, true, 1.e-3, 1.e0, "Events", 1.3, true, "E1P", outputFile.file());
   }
- */
+
   spin::SpinAlgo_by_mlfit::set_dataset_norm_passed(&dataset_passed);
   spin::SpinAlgo_by_mlfit::set_dataset_norm_failed(&dataset_failed);
 
@@ -538,11 +564,11 @@ int main(int argc, char* argv[])
     //TH2* histogram_Rchsh_vs_zMinus_vs_cosThetaStar = binnedMeasurement_zMinus_vs_cosThetaStar.get_histogram("Rchsh");
     //addToOutputFile(fs, histogram_Rchsh_vs_zMinus_vs_cosThetaStar);
     //std::cout << " Done.\n";
-    //std::cout << "Processing binned measurement as function of zPlus and zMinus...\n";
-    //spin::BinnedMeasurement2d binnedMeasurement_zPlus_vs_zMinus = spinAnalyzer(binnedDataset_zPlus_vs_zMinus);
-    //TH2* histogram_Rchsh_vs_zPlus_vs_zMinus = binnedMeasurement_zPlus_vs_zMinus.get_histogram("Rchsh");
-    //addToOutputFile(fs, histogram_Rchsh_vs_zPlus_vs_zMinus);
-    //std::cout << " Done.\n";
+    std::cout << "Processing binned measurement as function of zPlus and zMinus...\n";
+    spin::BinnedMeasurement2d binnedMeasurement_zPlus_vs_zMinus = spinAnalyzer(binnedDataset_zPlus_vs_zMinus);
+    TH2* histogram_Rchsh_vs_zPlus_vs_zMinus = binnedMeasurement_zPlus_vs_zMinus.get_histogram("Rchsh");
+    addToOutputFile(fs, histogram_Rchsh_vs_zPlus_vs_zMinus);
+    std::cout << " Done.\n";
     std::cout << "Processing binned measurement as function of visPlusPt and visMinusPt...\n";
     spin::BinnedMeasurement2d binnedMeasurement_visPlusPt_vs_visMinusPt = spinAnalyzer(binnedDataset_visPlusPt_vs_visMinusPt);
     TH2* histogram_Rchsh_vs_visPlusPt_vs_visMinusPt = binnedMeasurement_visPlusPt_vs_visMinusPt.get_histogram("Rchsh");
