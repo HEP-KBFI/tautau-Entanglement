@@ -1,5 +1,7 @@
 #include "TauAnalysis/Entanglement/interface/comp_Rchsh.h"
 
+#include "FWCore/Utilities/interface/Exception.h"                                 // cms::Exception
+
 #include "TauAnalysis/Entanglement/interface/comp_EigenVectors_and_EigenValues.h" // comp_EigenVectors_and_EigenValues()
 #include "TauAnalysis/Entanglement/interface/printEigenVectors_and_EigenValues.h" // printEigenVectors_and_EigenValues()
 
@@ -23,7 +25,16 @@ comp_Rchsh(const math::Matrix3x3& C, int verbosity)
     std::cout << "C^T*C:\n";
     std::cout << CT_times_C << "\n";
   }
-  std::vector<std::pair<TVectorD, double>> EigenVectors_and_EigenValues = comp_EigenVectors_and_EigenValues(CT_times_C, verbosity);
+  std::vector<std::pair<TVectorD, double>> EigenVectors_and_EigenValues;
+  try
+  { 
+    EigenVectors_and_EigenValues = comp_EigenVectors_and_EigenValues(CT_times_C, verbosity);
+  }
+  catch ( const cms::Exception& )
+  {
+    std::cerr << "Error in <comp_Rchsh>: Caught exception from comp_EigenVectors_and_EigenValues !!\n";
+    return -1.;
+  }
   if ( verbosity >= 3 )
   {
     printEigenVectors_and_EigenValues(EigenVectors_and_EigenValues);
