@@ -12,8 +12,8 @@ modes = [ "gen", "gen_smeared", "startPos", "kinFit" ]
 hAxes = [ "beam" ]
 #collider = "LHC"
 collider = "SuperKEKB"
-#decayModes = [ "piPlus_piMinus", "piPlus_rhoMinus", "rhoPlus_piMinus", "rhoPlus_rhoMinus" ]
-decayModes = [ "piPlus_piMinus" ]
+decayModes = [ "piPlus_piMinus", "piPlus_rhoMinus", "rhoPlus_piMinus", "rhoPlus_rhoMinus" ]
+#decayModes = [ "piPlus_piMinus" ]
 spinAnalyzers = [ "by_summation", "by_mlfit", "by_differentialXsec1d", "by_differentialXsec2d", "by_asymmetry" ]
 #spinAnalyzers = [ "by_summation" ]
 
@@ -114,7 +114,6 @@ for sampleName, sample in samples.items():
               "analyzeEntanglementNtuple_cfg.py", cfgFileName_analysis_modified, 
               inputFileNames, sample['process'], sample['par_gen'],
               mode, collider, hAxis, decayMode, sample['apply_evtWeight'], spinAnalyzer,
-              True, False, outputFileNames_trainSelBiasCorr[sampleName][mode][decayMode],
               outputFileName_analysis)
             logFileName_analysis = cfgFileName_analysis_modified.replace("_cfg.py", ".log")
             job_key_analysis = '%s_%s_%s_%s_%s_analysis' % (sampleName, mode, hAxis, decayMode, spinAnalyzer)
@@ -135,7 +134,6 @@ for sampleName, sample in samples.items():
           "makeControlPlots_cfg.py", cfgFileName_ctrlPlots_modified, 
           inputFileNames, sample['process'], sample['par_gen'],
           mode, collider, hAxis, decayMode, sample['apply_evtWeight'], "",
-          False, False, "",
           outputFileName_ctrlPlots)
         logFileName_ctrlPlots = cfgFileName_ctrlPlots_modified.replace("_cfg.py", ".log")
         job_key_ctrlPlots = '%s_%s_%s_%s_ctrlPlots' % (sampleName, mode, hAxis, decayMode)
@@ -157,7 +155,6 @@ for sampleName, sample in samples.items():
             "makeResolutionPlots_cfg.py", cfgFileName_resPlots_modified, 
             inputFileNames, sample['process'], sample['par_gen'],
             mode, collider, hAxis, decayMode, sample['apply_evtWeight'], "", 
-            False, False, "",
             outputFileName_resPlots)
           logFileName_resPlots = cfgFileName_resPlots_modified.replace("_cfg.py", ".log")
           job_key_resPlots = '%s_%s_%s_%s_resPlots' % (sampleName, mode, hAxis, decayMode)
