@@ -31,7 +31,7 @@ inputFilePath = os.path.join("/scratch/persistent", getpass.getuser(), "Entangle
 
 configDir  = os.path.join("/home",               getpass.getuser(), "Entanglement/analysis/", collider, version)
 outputDir  = os.path.join("/scratch/persistent", getpass.getuser(), "Entanglement/analysis/", collider, version)
-workingDir = os.getcwd()
+testDir    = os.path.dirname(os.path.abspath(__file__))
 cmsswDir   = os.getenv('CMSSW_BASE')
 
 def run_command(command):
@@ -63,7 +63,7 @@ def build_cfgFile(cfgFile_original, cfgFile_modified,
   sedCommand += '  s/##apply_evtWeight/apply_evtWeight/; s/\$apply_evtWeight/%s/;' % apply_evtWeight
   sedCommand += '  s/##spinAnalyzer/spinAnalyzer/; s/\$spinAnalyzer/%s/;' % spinAnalyzer
   sedCommand += '  s/##outputFileName/outputFileName/; s/\$outputFileName/%s/"' % outputFileName.replace("/", "\/")
-  sedCommand += ' %s > %s' % (os.path.join(workingDir, cfgFile_original), cfgFile_modified)
+  sedCommand += ' %s > %s' % (os.path.join(testDir, cfgFile_original), cfgFile_modified)
   run_command(sedCommand)
  
 def init_dict(dictionary, keys):
