@@ -34,14 +34,14 @@ samples_LHC = {
 # CV: define samples for tau spin analysis @ SuperKEKB (Belle)
 samples_SuperKEKB = {
   'dy_lo_pythia8' : {
-    'inputFilePath' : '/local/karl/belle_eeToTauTau/aod/unwgt_pythia/',
+    'inputFilePath' : '/local/karl/belle_eeToTauTau/aod/unwgt_pythia_internal4/',
     'numJobs' : 100,
     'process' : "dy_lo_pythia8",
     'par_gen' : [ 0., 0., 0., 0., 0., 0., -0.249686, 0.00508408, 0.00391348, 0.00653464, 0.138683, -0.276996, -0.00186421, 0.243658, 0.885224 ],
     'apply_evtWeight' : False,
   },
   'dy_lo_tauola' : {
-    'inputFilePath' : '/local/karl/belle_eeToTauTau/aod/unwgt_tauola/',
+    'inputFilePath' : '/local/karl/belle_eeToTauTau/aod/unwgt_tauola_sanc_fine/',
     'numJobs' : 100,
     'process' : "dy_lo_tauola",
     'par_gen' : [ 0., 0., 0., 0., 0., 0., -0.249686, 0.00508408, 0.00391348, 0.00653464, 0.138683, -0.276996, -0.00186421, 0.243658, 0.885224 ],
