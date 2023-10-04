@@ -54,4 +54,25 @@ samples_SuperKEKB = {
     'par_gen' : [ 0., 0., 0., 0., 0., 0., -0.249686, 0.00508408, 0.00391348, 0.00653464, 0.138683, -0.276996, -0.00186421, 0.243658, 0.885224 ],
     'apply_evtWeight' : False,
   },
+  'dy_lo_kkmc_orig' : {
+    'inputFilePath' : '/local/karl/belle_eeToTauTau/kkmc/orig_100j_100Kevs/',
+    'numJobs' : 100,
+    'process' : "dy_lo_kkmc_orig",
+    'par_gen' : [ 0., 0., 0., 0., 0., 0., -0.249686, 0.00508408, 0.00391348, 0.00653464, 0.138683, -0.276996, -0.00186421, 0.243658, 0.885224 ],
+    'apply_evtWeight' : False,
+  },
+  'dy_lo_kkmc_bbb' : {
+    'inputFilePath' : '/local/karl/belle_eeToTauTau/kkmc/bbb_100j_100Kevs/',
+    'numJobs' : 100,
+    'process' : "dy_lo_kkmc_bbb",
+    'par_gen' : [ 0., 0., 0., 0., 0., 0., -0.249686, 0.00508408, 0.00391348, 0.00653464, 0.138683, -0.276996, -0.00186421, 0.243658, 0.885224 ],
+    'apply_evtWeight' : False,
+  },
+  'dy_lo_kkmc_pythia' : {
+    'inputFilePath' : '/local/karl/belle_eeToTauTau/kkmc/pythia_100j_100Kevs/',
+    'numJobs' : 100,
+    'process' : "dy_lo_kkmc_pythia",
+    'par_gen' : [ 0., 0., 0., 0., 0., 0., -0.249686, 0.00508408, 0.00391348, 0.00653464, 0.138683, -0.276996, -0.00186421, 0.243658, 0.885224 ],
+    'apply_evtWeight' : False,
+  },
 }
