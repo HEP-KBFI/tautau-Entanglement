@@ -29,6 +29,7 @@ inputFileNames = [ 'file:/local/karl/ee2tt_aod_unwgt/aodsim_1.root' ]
 processName = "qqH_htt_pythia8"
 hAxis = "beam"
 rndSeed = 1
+genWeight_includeSource = False
 outputFileName = "entanglementNtuple_aodsim_1_sel_piPlus_piMinus.root"
 #collider = "LHC"
 collider = "SuperKEKB"
@@ -43,6 +44,7 @@ applyVisPtAndEtaSelection  = False
 ##collider = "$collider"
 ##hAxis = "$hAxis"
 ##rndSeed = $rndSeed
+##genWeight_includeSource = $genWeight_includeSource
 ##outputFileName = "$outputFileName"
 
 inputFile_regex = r"[a-zA-Z0-9-_]+.root"
@@ -115,6 +117,8 @@ if applyVisPtAndEtaSelection:
 process.genWeight = cms.EDProducer("GenWeightProducer",
     src = cms.InputTag('generator')
 )
+if genWeight_includeSource:
+    process.genWeight.src = cms.InputTag('source', 'generator')
 process.analysisSequence += process.genWeight
  
 process.load("TauAnalysis.Entanglement.EntanglementNtupleProducer_cfi")

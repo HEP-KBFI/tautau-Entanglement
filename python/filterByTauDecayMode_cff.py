@@ -14,7 +14,7 @@ import FWCore.ParameterSet.Config as cms
 #     or the visible decay products have very low transverse momentum
 #
 from PhysicsTools.JetMCAlgos.TauGenJets_cfi import tauGenJets
-tauGenJets.GenParticles = cms.InputTag('genTaus')
+#tauGenJets.GenParticles = cms.InputTag('genTaus')
 
 from PhysicsTools.JetMCAlgos.TauGenJetsDecayModeSelectorAllHadrons_cfi import tauGenJetsSelectorAllHadrons
 tauGenJetsSelectorAllHadrons.select = cms.vstring(

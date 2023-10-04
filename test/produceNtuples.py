@@ -37,6 +37,7 @@ def build_cfgFile(cfgFile_original, cfgFile_modified,
                   inputFileNames, process,
                   collider, hAxis,
                   rndSeed,
+                  genWeight_includeSource,
                   outputFileName):
   print("Building configFile = '%s'" % cfgFile_modified)
   #print(" rndSeed = %i" % rndSeed)
@@ -51,6 +52,7 @@ def build_cfgFile(cfgFile_original, cfgFile_modified,
   sedCommand += '  s/##collider/collider/; s/\$collider/%s/;' % collider
   sedCommand += '  s/##hAxis/hAxis/; s/\$hAxis/%s/;' % hAxis
   sedCommand += '  s/##rndSeed/rndSeed/; s/\$rndSeed/%i/;' % rndSeed
+  sedCommand += '  s/##genWeight_includeSource/genWeight_includeSource/; s/\$genWeight_includeSource/%s/;' % genWeight_includeSource
   sedCommand += '  s/##outputFileName/outputFileName/; s/\$outputFileName/%s/"' % outputFileName
   sedCommand += ' %s > %s' % (os.path.join(testDir, cfgFile_original), cfgFile_modified)
   run_command(sedCommand)
@@ -65,6 +67,7 @@ for sampleName, sample in samples.items():
   numInputFiles = len(inputFileNames)
   print("Found %i input files." % numInputFiles)
   numJobs = sample['numJobs']
+  is_kkmc = 'kkmc' in sample['process'].lower()
   for hAxis in hAxes:
     for jobId in range(numJobs):
       idxFirstFile = int(jobId*numInputFiles/numJobs)
@@ -80,6 +83,7 @@ for sampleName, sample in samples.items():
         inputFileNames_job, sample['process'],
         collider, hAxis,
         rndSeed,
+        is_kkmc,
         outputFileName)
       logFileName = cfgFileName_modified.replace("_cfg.py", ".log")
       job_key = '%s_%s_%i' % (process, hAxis, jobId)
