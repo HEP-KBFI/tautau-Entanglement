@@ -75,4 +75,11 @@ samples_SuperKEKB = {
     'par_gen' : [ 0., 0., 0., 0., 0., 0., -0.249686, 0.00508408, 0.00391348, 0.00653464, 0.138683, -0.276996, -0.00186421, 0.243658, 0.885224 ],
     'apply_evtWeight' : False,
   },
+  'dy_lo_pythia8_ext' : {
+    'inputFilePath' : '/local/karl/belle_eeToTauTau/aod/unwgt_pythia_extended/',
+    'numJobs' : 100,
+    'process' : "dy_lo_pythia8_ext",
+    'par_gen' : [ 0., 0., 0., 0., 0., 0., -0.249686, 0.00508408, 0.00391348, 0.00653464, 0.138683, -0.276996, -0.00186421, 0.243658, 0.885224 ],
+    'apply_evtWeight' : False,
+  },
 }
