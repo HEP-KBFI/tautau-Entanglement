@@ -1,17 +1,29 @@
 #!/usr/bin/env python3
 
+# Example usage:
+# ./test/produceNtuples.py -v 2023Oct06_wSmearing -s dy_lo_pythia8 -j local
+
+import argparse
 import getpass
 import os
+import sys
 
-from TauAnalysis.Entanglement.tools.jobTools import getInputFileNames, build_Makefile
+from TauAnalysis.Entanglement.tools.jobTools import getInputFileNames, build_Makefile, build_sbatchSubmission, query_yes_no
 from TauAnalysis.Entanglement.samples import samples_LHC, samples_SuperKEKB
 
-#hAxes = [ "beam", "higgs" ]
-hAxes = [ "beam" ]
-#collider = "LHC"
-collider = "SuperKEKB"
+parser = argparse.ArgumentParser(formatter_class = argparse.ArgumentDefaultsHelpFormatter)
+parser.add_argument('-v', '--version', type = str, required = True, help = 'Version')
+parser.add_argument('-c', '--collider', type = str, choices = ['LHC', 'SuperKEKB'], default = 'SuperKEKB', help = 'Collider')
+parser.add_argument('-a', '--axes', nargs = '*', type = str, choices = ['beam', 'higgs'], default = ['beam'], help = 'Axes')
+parser.add_argument('-s', '--samples', nargs = '*', default = [], help = 'Whitelisted samples')
+parser.add_argument('-j', '--job-type', type = str, choices = ['local', 'cluster'], required = True, help = 'Job type')
+args = parser.parse_args()
 
-version = "2023Sep18_wSmearing"
+hAxes = args.axes
+collider = args.collider
+version = args.version
+whitelist = args.samples
+run_makefile = args.job_type == 'local'
 
 samples = None
 if collider == "LHC":
@@ -20,6 +32,14 @@ elif collider == "SuperKEKB":
     samples = samples_SuperKEKB
 else:
     raise ValueError("Invalid Configuration parameter 'collider' = '%s' !!" % collider)
+
+if not whitelist:
+  run_all_samples = query_yes_no(
+    "Do you really want to process all those samples: {}?".format(', '.join(samples.keys())),
+    default = "no",
+  )
+  if not run_all_samples:
+    sys.exit(0)
 
 configDir  = os.path.join("/home",               getpass.getuser(), "Entanglement/ntuples/", collider, version)
 outputDir  = os.path.join("/scratch/persistent", getpass.getuser(), "Entanglement/ntuples/", collider, version)
@@ -59,6 +79,8 @@ def build_cfgFile(cfgFile_original, cfgFile_modified,
 
 jobOptions = {} # key = process, hAxis, jobId
 for sampleName, sample in samples.items():
+  if whitelist and sampleName not in whitelist:
+    continue
   print("processing sample = '%s'" % sampleName)
   process = sample['process']
   inputFilePath = sample['inputFilePath']
@@ -97,23 +119,28 @@ for sampleName, sample in samples.items():
         'logFileName'    : logFileName,
       }
 
-jobOptions_Makefile = []
-for job_key, job in jobOptions.items():
-  commands = []
-  commands.append('rm -f %s' % job['outputFileName'])
-  commands.append('rm -f %s' % job['logFileName'])
-  commands.append('cmsRun %s >& %s' % (job['cfgFileName'], job['logFileName']))
-  commands.append('cp %s %s' % (job['outputFileName'], os.path.join(outputDir, job['outputFileName'])))
-  commands.append('rm -f %s' % job['outputFileName'])
-  jobOptions_Makefile.append({
-    'target'          : os.path.join(outputDir, job['outputFileName']),
-    'dependencies'    : [ inputFileName.replace("file:", "") for inputFileName in job['inputFileNames'] ],
-    'commands'        : commands,
-    'outputFileNames' : [ os.path.join(outputDir, job['outputFileName']) ],
-  })
-makeFileName = os.path.join(configDir, "Makefile")
-build_Makefile(makeFileName, jobOptions_Makefile)
-
 message  = "Finished building config files."
-message += " Now execute 'make -j 12 -f %s' to start the jobs." % makeFileName
+if run_makefile:
+  jobOptions_Makefile = []
+  for job_key, job in jobOptions.items():
+    commands = []
+    commands.append('rm -f %s' % job['outputFileName'])
+    commands.append('rm -f %s' % job['logFileName'])
+    commands.append('cmsRun %s >& %s' % (job['cfgFileName'], job['logFileName']))
+    commands.append('cp %s %s' % (job['outputFileName'], os.path.join(outputDir, job['outputFileName'])))
+    commands.append('rm -f %s' % job['outputFileName'])
+    jobOptions_Makefile.append({
+      'target'          : os.path.join(outputDir, job['outputFileName']),
+      'dependencies'    : [ inputFileName.replace("file:", "") for inputFileName in job['inputFileNames'] ],
+      'commands'        : commands,
+      'outputFileNames' : [ os.path.join(outputDir, job['outputFileName']) ],
+    })
+  makeFileName = os.path.join(configDir, "Makefile")
+  build_Makefile(makeFileName, jobOptions_Makefile)
+  message += " Now execute 'make -j 12 -f %s' to start the jobs." % makeFileName
+else:
+  sbatchSubmissionFileName = os.path.join(configDir, "sbatch_submission.sh")
+  build_sbatchSubmission(sbatchSubmissionFileName, jobOptions, 'produceEntanglementNtuple')
+  os.chmod(sbatchSubmissionFileName, 0o755)
+  message += " Now execute '%s' to submit the jobs to SLURM." % sbatchSubmissionFileName
 print(message)
