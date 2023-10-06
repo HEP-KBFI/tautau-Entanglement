@@ -22,8 +22,8 @@ scram b -j 8
 
 ```bash
 source /cvmfs/cms.cern.ch/cmsset_default.sh
-cd Entanglement/CMSSW_12_4_8/src/TauAnalysis/Entanglement/test
-./produceNtuples.py
+cd Entanglement/CMSSW_12_4_8/src/TauAnalysis/Entanglement
+./test/produceNtuples.py -v 2023Oct06_wSmearing -s dy_lo_pythia8 -j local # or -j cluster
 ```
 
 Execute make command as instructed in terminal window
