@@ -224,7 +224,7 @@ jobOptions_Makefile = []
 for job_key, job in jobOptions_analysis.items():
   commands = []
   commands.append('rm -f {}'.format(job['outputFileName']))
-  commands.append('analyzeEntanglementNtuple {} &> {}'.format(job['cfgFileName'], job['logFileName']))
+  commands.append('/usr/bin/time --verbose analyzeEntanglementNtuple {} &> {}'.format(job['cfgFileName'], job['logFileName']))
   commands.append('cp -v {} {}'.format(job['outputFileName'], os.path.join(outputDir, job['outputFileName'])))
   commands.append('rm -f {}'.format(job['outputFileName']))
   jobOptions_Makefile.append({
@@ -236,7 +236,7 @@ for job_key, job in jobOptions_analysis.items():
 for job_key, job in jobOptions_ctrlPlots.items():
   commands = []
   commands.append('rm -f {}'.format(job['outputFileName']))
-  commands.append('makeControlPlots {} &> {}'.format(job['cfgFileName'], job['logFileName']))
+  commands.append('/usr/bin/time --verbose makeControlPlots {} &> {}'.format(job['cfgFileName'], job['logFileName']))
   jobOptions_Makefile.append({
     'target'          : os.path.join(outputDir, job['outputFileName']),
     'dependencies'    : [ inputFileName.replace("file:", "") for inputFileName in job['inputFileNames'] ],
@@ -246,7 +246,7 @@ for job_key, job in jobOptions_ctrlPlots.items():
 for job_key, job in jobOptions_resPlots.items():
   commands = []
   commands.append('rm -f {}'.format(job['outputFileName']))
-  commands.append('makeResolutionPlots {} &> {}'.format(job['cfgFileName'], job['logFileName']))
+  commands.append('/usr/bin/time --verbose makeResolutionPlots {} &> {}'.format(job['cfgFileName'], job['logFileName']))
   jobOptions_Makefile.append({
     'target'          : os.path.join(outputDir, job['outputFileName']),
     'dependencies'    : [ inputFileName.replace("file:", "") for inputFileName in job['inputFileNames'] ],

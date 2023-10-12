@@ -111,7 +111,7 @@ if run_makefile:
   for job_key, job in jobOptions.items():
     commands = []
     commands.append('rm -f {}'.format(job['outputFileName']))
-    commands.append('cmsRun {} &> {}'.format(job['cfgFileName'], job['logFileName']))
+    commands.append('/usr/bin/time --verbose cmsRun {} &> {}'.format(job['cfgFileName'], job['logFileName']))
     commands.append('cp -v {} {}'.format(job['outputFileName'], os.path.join(outputDir, job['outputFileName'])))
     commands.append('rm -f {}'.format(job['outputFileName']))
     jobOptions_Makefile.append({
