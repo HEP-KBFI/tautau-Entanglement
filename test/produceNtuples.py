@@ -3,35 +3,40 @@
 # Example usage:
 # ./test/produceNtuples.py -v 2023Oct06_wSmearing -s dy_lo_pythia8 -j local
 
+import datetime
 import argparse
 import getpass
 import os
 import sys
 
-from TauAnalysis.Entanglement.tools.jobTools import getInputFileNames, build_Makefile, build_sbatchSubmission, query_yes_no
-from TauAnalysis.Entanglement.samples import samples_LHC, samples_SuperKEKB
+from TauAnalysis.Entanglement.tools.jobTools import getInputFileNames, build_Makefile, build_sbatchSubmission, query_yes_no, \
+  build_cfg, mkdir, read_contents, save_cmd
 
 parser = argparse.ArgumentParser(formatter_class = argparse.ArgumentDefaultsHelpFormatter)
-parser.add_argument('-v', '--version', type = str, required = True, help = 'Version')
+parser.add_argument('-v', '--version', type = str, required = True, help = f'Version, e.g. {datetime.datetime.now().strftime("%Y%b%d")}')
 parser.add_argument('-c', '--collider', type = str, choices = ['LHC', 'SuperKEKB'], default = 'SuperKEKB', help = 'Collider')
 parser.add_argument('-a', '--axes', nargs = '*', type = str, choices = ['beam', 'higgs'], default = ['beam'], help = 'Axes')
 parser.add_argument('-s', '--samples', nargs = '*', default = [], help = 'Whitelisted samples')
 parser.add_argument('-j', '--job-type', type = str, choices = ['local', 'cluster'], required = True, help = 'Job type')
+parser.add_argument('-f', '--filter', nargs = '*', choices = [ 'inv_mass', 'decay_mode', 'pt_eta' ], default = [], help = 'Event selection filters')
 args = parser.parse_args()
 
 hAxes = args.axes
 collider = args.collider
 version = args.version
 whitelist = args.samples
+apply_inv_mass = 'inv_mass' in args.filter
+apply_decay_mode = 'decay_mode' in args.filter
+apply_pt_eta = 'pt_eta' in args.filter
 run_makefile = args.job_type == 'local'
 
 samples = None
 if collider == "LHC":
-    samples = samples_LHC
+    from TauAnalysis.Entanglement.samples import samples_LHC as samples
 elif collider == "SuperKEKB":
-    samples = samples_SuperKEKB
+    from TauAnalysis.Entanglement.samples import samples_SuperKEKB as samples
 else:
-    raise ValueError("Invalid Configuration parameter 'collider' = '%s' !!" % collider)
+    assert(False)
 
 if not whitelist:
   run_all_samples = query_yes_no(
@@ -41,74 +46,55 @@ if not whitelist:
   if not run_all_samples:
     sys.exit(0)
 
-configDir  = os.path.join("/home",               getpass.getuser(), "Entanglement/ntuples/", collider, version)
-outputDir  = os.path.join("/scratch/persistent", getpass.getuser(), "Entanglement/ntuples/", collider, version)
+configDir  = os.path.join("/home",               getpass.getuser(), "Entanglement/ntuples", collider, version)
+outputDir  = os.path.join("/scratch/persistent", getpass.getuser(), "Entanglement/ntuples", collider, version)
 testDir    = os.path.dirname(os.path.abspath(__file__))
 cmsswDir   = os.getenv('CMSSW_BASE')
 
-def run_command(command):
-  #print("executing command = '%s'" % command)
-  os.system(command)
+produceNtuple_template = read_contents(os.path.join(testDir, "produceEntanglementNtuple_cfg.py"))
 
-run_command('mkdir -p %s' % configDir)
-run_command('mkdir -p %s' % outputDir)
+mkdir(configDir)
+mkdir(outputDir)
 
-def build_cfgFile(cfgFile_original, cfgFile_modified, 
-                  inputFileNames, process,
-                  collider, hAxis,
-                  rndSeed,
-                  genWeight_includeSource,
-                  outputFileName):
-  print("Building configFile = '%s'" % cfgFile_modified)
-  #print(" rndSeed = %i" % rndSeed)
-
-  rmCommand   = 'rm -f %s' % cfgFile_modified
-  run_command(rmCommand)
- 
-  sedCommand  = 'sed'
-  sedCommand += ' "s/##inputFilePath/inputFilePath/; s/\$inputFilePath/None/;'
-  sedCommand += '  s/##inputFileNames/inputFileNames/; s/\$inputFileNames/%s/;' % [ inputFileName.replace("/", "\/") for inputFileName in inputFileNames ]
-  sedCommand += '  s/##processName/processName/; s/\$processName/%s/;' % process
-  sedCommand += '  s/##collider/collider/; s/\$collider/%s/;' % collider
-  sedCommand += '  s/##hAxis/hAxis/; s/\$hAxis/%s/;' % hAxis
-  sedCommand += '  s/##rndSeed/rndSeed/; s/\$rndSeed/%i/;' % rndSeed
-  sedCommand += '  s/##genWeight_includeSource/genWeight_includeSource/; s/\$genWeight_includeSource/%s/;' % genWeight_includeSource
-  sedCommand += '  s/##outputFileName/outputFileName/; s/\$outputFileName/%s/"' % outputFileName
-  sedCommand += ' %s > %s' % (os.path.join(testDir, cfgFile_original), cfgFile_modified)
-  run_command(sedCommand)
+if not save_cmd(os.path.join(configDir, "cmd.txt")):
+  sys.exit(0)
 
 jobOptions = {} # key = process, hAxis, jobId
 for sampleName, sample in samples.items():
   if whitelist and sampleName not in whitelist:
     continue
-  print("processing sample = '%s'" % sampleName)
-  process = sample['process']
+  print(f"processing sample = '{sampleName}'")
   inputFilePath = sample['inputFilePath']
-  print(" inputFilePath = '%s'" % inputFilePath)
+  print(f" inputFilePath = '{inputFilePath}'")
   inputFileNames = getInputFileNames(inputFilePath)
   numInputFiles = len(inputFileNames)
-  print("Found %i input files." % numInputFiles)
+  print(f"Found {numInputFiles} input files.")
   numJobs = sample['numJobs']
-  is_kkmc = 'kkmc' in sample['process'].lower()
+  is_kkmc = 'kkmc' in sampleName.lower()
   for hAxis in hAxes:
     for jobId in range(numJobs):
-      idxFirstFile = int(jobId*numInputFiles/numJobs)
-      idxLastFile = int((jobId + 1)*numInputFiles/numJobs - 1)
+      idxFirstFile = int(jobId * numInputFiles / numJobs)
+      idxLastFile = int((jobId + 1) * numInputFiles / numJobs - 1)
       inputFileNames_job = inputFileNames[idxFirstFile:idxLastFile + 1]
-      cfgFileName_modified = os.path.join(configDir, "produceEntanglementNtuple_%s_%sAxis_%i_cfg.py" % \
-        (sampleName, hAxis, jobId))
+      cfgFileName_modified = os.path.join(
+        configDir, f"produceEntanglementNtuple_{sampleName}_{hAxis}Axis_{jobId}_cfg.py"
+      )
       rndSeed = jobId + 1
-      outputFileName = "entanglementNtuple_%s_%sAxis_%i.root" % \
-        (sampleName, hAxis, jobId)
-      build_cfgFile(
-        "produceEntanglementNtuple_cfg.py", cfgFileName_modified, 
-        inputFileNames_job, sample['process'],
-        collider, hAxis,
-        rndSeed,
-        is_kkmc,
-        outputFileName)
+      outputFileName = f"entanglementNtuple_{sampleName}_{hAxis}Axis_{jobId}.root"
+      cfg_args = {
+        'inputFileNames'          : inputFileNames_job,
+        'outputFileName'          : outputFileName,
+        'collider'                : collider,
+        'hAxis'                   : hAxis,
+        'rndSeed'                 : rndSeed,
+        'genWeight_includeSource' : is_kkmc,
+        'apply_inv_mass'          : apply_inv_mass,
+        'apply_decay_mode'        : apply_decay_mode,
+        'apply_pt_eta'            : apply_pt_eta,
+      }
+      build_cfg(produceNtuple_template, cfgFileName_modified, cfg_args)
       logFileName = cfgFileName_modified.replace("_cfg.py", ".log")
-      job_key = '%s_%s_%i' % (process, hAxis, jobId)
+      job_key = '_'.join([sampleName, hAxis, str(jobId)])
       dependencies = [ cfgFileName_modified ]
       dependencies.extend(inputFileNames_job)
       jobOptions[job_key] = {
@@ -124,11 +110,10 @@ if run_makefile:
   jobOptions_Makefile = []
   for job_key, job in jobOptions.items():
     commands = []
-    commands.append('rm -f %s' % job['outputFileName'])
-    commands.append('rm -f %s' % job['logFileName'])
-    commands.append('cmsRun %s >& %s' % (job['cfgFileName'], job['logFileName']))
-    commands.append('cp %s %s' % (job['outputFileName'], os.path.join(outputDir, job['outputFileName'])))
-    commands.append('rm -f %s' % job['outputFileName'])
+    commands.append('rm -f {}'.format(job['outputFileName']))
+    commands.append('cmsRun {} &> {}'.format(job['cfgFileName'], job['logFileName']))
+    commands.append('cp -v {} {}'.format(job['outputFileName'], os.path.join(outputDir, job['outputFileName'])))
+    commands.append('rm -f {}'.format(job['outputFileName']))
     jobOptions_Makefile.append({
       'target'          : os.path.join(outputDir, job['outputFileName']),
       'dependencies'    : [ inputFileName.replace("file:", "") for inputFileName in job['inputFileNames'] ],
@@ -137,10 +122,10 @@ if run_makefile:
     })
   makeFileName = os.path.join(configDir, "Makefile")
   build_Makefile(makeFileName, jobOptions_Makefile)
-  message += " Now execute 'make -j 12 -f %s' to start the jobs." % makeFileName
+  message += f" Now execute 'make -j 12 -f {makeFileName}' to start the jobs."
 else:
   sbatchSubmissionFileName = os.path.join(configDir, "sbatch_submission.sh")
   build_sbatchSubmission(sbatchSubmissionFileName, jobOptions, 'produceEntanglementNtuple')
   os.chmod(sbatchSubmissionFileName, 0o755)
-  message += " Now execute '%s' to submit the jobs to SLURM." % sbatchSubmissionFileName
+  message += f" Now execute '{sbatchSubmissionFileName}' to submit the jobs to SLURM."
 print(message)

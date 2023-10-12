@@ -2,6 +2,9 @@
 import os
 import re
 import sys
+import subprocess
+import jinja2
+import argparse
 
 def getInputFileNames(inputFilePath, inputFile_regex = r"[a-zA-Z0-9-_]+.root"):
     inputFile_matcher = re.compile(inputFile_regex)
@@ -95,3 +98,59 @@ def query_yes_no(question, default = "yes"):
     elif choice in valid:                    return valid[choice]
     else:
       sys.stdout.write("Please respond with 'yes' or 'no' (or 'y' or 'n').\n")
+
+def run_command_os(cmd, verbose = False):
+  if verbose:
+    print(f"Executing: {cmd}")
+  os.system(cmd)
+
+def run_command_subprocess(cmd, verbose = False):
+  if verbose:
+    print(f"Executing: {cmd}")
+  try:
+    process = subprocess.Popen(cmd, stdout = subprocess.PIPE, stderr = subprocess.PIPE, shell = True)
+    stdout, stderr = process.communicate()
+    exit_code = process.returncode
+    if exit_code != 0 or stderr:
+      print(f"Got an exit code of {exit_code} with the following error message: '{stderr.decode()}'")
+  except Exception as e:
+    print(e)
+    raise
+
+def read_contents(filename):
+  with open(filename, 'r') as fileptr:
+    lines = fileptr.readlines()
+  contents = '\n'.join([ line.rstrip('\n') for line in lines if not (line.startswith('#') or not line.strip()) ])
+  return contents
+
+def save_cmd(filename):
+  cmd = ' '.join(sys.argv)
+  if os.path.isfile(filename):
+    file_contents = ' '.join(read_contents(filename).split())
+    msg = f"It seems that you've run this workflow before with command '{file_contents}'.\n"
+    if file_contents != cmd:
+      msg += "Also, the command looks different from what you're currently trying to run.\n"
+    proceed = query_yes_no(f"{msg}Do you still want to proceed?", default = 'no')
+    if not proceed:
+      return False
+  with open(filename, 'w') as fileptr:
+    fileptr.write('{}\n'.format(cmd))
+  return True
+
+def build_cfg(template_contents, output_filename, args):
+  print(f"Building configFile = '{output_filename}'")
+  with open(output_filename, 'w') as output_file:
+    output_file.write(jinja2.Template(template_contents).render(**args))
+
+def mkdir(dirname):
+  if not os.path.isdir(dirname):
+    os.makedirs(dirname)
+
+def positive_int_type(value):
+  try:
+    value_int = int(value)
+  except ValueError:
+    raise argparse.ArgumentTypeError('Not an integer: %s' % value)
+  if value_int <= 0:
+    raise argparse.ArgumentTypeError('Must be a positive integer: %d' % value_int)
+  return value_int
