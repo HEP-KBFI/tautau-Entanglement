@@ -22,14 +22,18 @@ EntanglementNtupleProducer::EntanglementNtupleProducer(const edm::ParameterSet& 
   , genKineEvtBuilder_woSmearing_(nullptr)
   , genKineEvtBuilder_wSmearing_(nullptr)
   , kinematicFit_(nullptr)
-  , ntuple_piPlus_piMinus_(nullptr)
-  , ntupleFiller_piPlus_piMinus_(nullptr)
-  , ntuple_piPlus_rhoMinus_(nullptr)
-  , ntupleFiller_piPlus_rhoMinus_(nullptr)
-  , ntuple_rhoPlus_piMinus_(nullptr)
-  , ntupleFiller_rhoPlus_piMinus_(nullptr)
-  , ntuple_rhoPlus_rhoMinus_(nullptr)
-  , ntupleFiller_rhoPlus_rhoMinus_(nullptr)
+  , ntuple_pi_pi_(nullptr)
+  , ntupleFiller_pi_pi_(nullptr)
+  , ntuple_pi_rho_(nullptr)
+  , ntupleFiller_pi_rho_(nullptr)
+  , ntuple_pi_a1_(nullptr)
+  , ntupleFiller_pi_a1_(nullptr)
+  , ntuple_rho_rho_(nullptr)
+  , ntupleFiller_rho_rho_(nullptr)
+  , ntuple_rho_a1_(nullptr)
+  , ntupleFiller_rho_a1_(nullptr)
+  , ntuple_a1_a1_(nullptr)
+  , ntupleFiller_a1_a1_(nullptr)
   , ntuple_had_had_(nullptr)
   , ntupleFiller_had_had_(nullptr)
   , verbosity_(cfg.getUntrackedParameter<int>("verbosity"))
@@ -103,10 +107,12 @@ EntanglementNtupleProducer::~EntanglementNtupleProducer()
 
   // CV: don't delete TTree objects, as these are handled by TFileService
 
-  delete ntupleFiller_piPlus_piMinus_;
-  delete ntupleFiller_piPlus_rhoMinus_;
-  delete ntupleFiller_rhoPlus_piMinus_;
-  delete ntupleFiller_rhoPlus_rhoMinus_;
+  delete ntupleFiller_pi_pi_;
+  delete ntupleFiller_pi_rho_;
+  delete ntupleFiller_pi_a1_;
+  delete ntupleFiller_rho_rho_;
+  delete ntupleFiller_rho_a1_;
+  delete ntupleFiller_a1_a1_;
   delete ntupleFiller_had_had_;
 }
 
@@ -114,15 +120,18 @@ void EntanglementNtupleProducer::beginJob()
 {
   edm::Service<TFileService> fs;
 
-  ntuple_piPlus_piMinus_ = fs->make<TTree>("piPlus_piMinus", "piPlus_piMinus");
-  ntupleFiller_piPlus_piMinus_ = new EntanglementNtuple(ntuple_piPlus_piMinus_);
-  ntuple_piPlus_rhoMinus_ = fs->make<TTree>("piPlus_rhoMinus", "piPlus_rhoMinus");
-  ntupleFiller_piPlus_rhoMinus_ = new EntanglementNtuple(ntuple_piPlus_rhoMinus_);
-  ntuple_rhoPlus_piMinus_ = fs->make<TTree>("rhoPlus_piMinus", "rhoPlus_piMinus");
-  ntupleFiller_rhoPlus_piMinus_ = new EntanglementNtuple(ntuple_rhoPlus_piMinus_);
-  ntuple_rhoPlus_rhoMinus_ = fs->make<TTree>("rhoPlus_rhoMinus", "rhoPlus_rhoMinus");
-  ntupleFiller_rhoPlus_rhoMinus_ = new EntanglementNtuple(ntuple_rhoPlus_rhoMinus_);
-
+  ntuple_pi_pi_ = fs->make<TTree>("pi_pi", "pi_pi");
+  ntupleFiller_pi_pi_ = new EntanglementNtuple(ntuple_pi_pi_);
+  ntuple_pi_rho_ = fs->make<TTree>("pi_rho", "pi_rho");
+  ntupleFiller_pi_rho_ = new EntanglementNtuple(ntuple_pi_rho_);
+  ntuple_pi_a1_ = fs->make<TTree>("pi_a1", "pi_a1");
+  ntupleFiller_pi_a1_ = new EntanglementNtuple(ntuple_pi_a1_);
+  ntuple_rho_rho_ = fs->make<TTree>("rho_rho", "rho_rho");
+  ntupleFiller_rho_rho_ = new EntanglementNtuple(ntuple_rho_rho_);
+  ntuple_rho_a1_ = fs->make<TTree>("rho_a1", "rho_a1");
+  ntupleFiller_rho_a1_ = new EntanglementNtuple(ntuple_rho_a1_);
+  ntuple_a1_a1_ = fs->make<TTree>("a1_a1", "a1_a1");
+  ntupleFiller_a1_a1_ = new EntanglementNtuple(ntuple_a1_a1_);
   ntuple_had_had_ = fs->make<TTree>("had_had", "had_had");
   ntupleFiller_had_had_ = new EntanglementNtuple(ntuple_had_had_);
 }
@@ -187,13 +196,12 @@ void EntanglementNtupleProducer::analyze(const edm::Event& evt, const edm::Event
       if ( verbosity_ >= 1 )
       {
         std::cout << "executing KinematicFit for startPosFinder algo #" << startPosFinder->get_algo() << ", solution #" << idxSolution << "...\n";
+        printKinematicEvent("kineEvt_startPos", kineEvt_startPos, verbosity_, cartesian_);
       }
       KinematicEvent kineEvt_kinFit = (*kinematicFit_)(kineEvt_startPos);
 
       if ( verbosity_ >= 1 )
       {
-        std::cout << "startPosFinder algo #" << startPosFinder->get_algo() << ", solution #" << idxSolution << ":\n";
-        printKinematicEvent("kineEvt_startPos", kineEvt_startPos, verbosity_, cartesian_);
         printKinematicEvent("kineEvt_kinFit", kineEvt_kinFit, verbosity_, cartesian_);
       }
  
@@ -213,6 +221,11 @@ void EntanglementNtupleProducer::analyze(const edm::Event& evt, const edm::Event
       }
     }
   }
+  if ( !(kinFitStatus_bestfit == 1 || (kinFitStatus_bestfit == 0 && kinFitChi2_bestfit < 1.e+2)) )
+  {
+    std::cerr << "WARNING: KinematicFit failed to converge !!" << std::endl;
+  }
+
   if ( verbosity_ >= 1 )
   {
     std::cout << "best fit:\n";
@@ -260,20 +273,32 @@ void EntanglementNtupleProducer::analyze(const edm::Event& evt, const edm::Event
   EntanglementNtuple* ntupleFiller = nullptr;
   if ( tauPlus_decaymode == reco::PFTau::kOneProng0PiZero && tauMinus_decaymode == reco::PFTau::kOneProng0PiZero )
   {
-    ntupleFiller = ntupleFiller_piPlus_piMinus_;
+    ntupleFiller = ntupleFiller_pi_pi_;
   }
-  else if ( tauPlus_decaymode == reco::PFTau::kOneProng0PiZero && tauMinus_decaymode == reco::PFTau::kOneProng1PiZero )
+  else if ( (tauPlus_decaymode == reco::PFTau::kOneProng0PiZero   && tauMinus_decaymode == reco::PFTau::kOneProng1PiZero  ) ||
+            (tauPlus_decaymode == reco::PFTau::kOneProng1PiZero   && tauMinus_decaymode == reco::PFTau::kOneProng0PiZero  ) )
   {
-    ntupleFiller = ntupleFiller_piPlus_rhoMinus_;
+    ntupleFiller = ntupleFiller_pi_rho_;
   }
-  else if ( tauPlus_decaymode == reco::PFTau::kOneProng1PiZero && tauMinus_decaymode == reco::PFTau::kOneProng0PiZero )
+  else if ( (tauPlus_decaymode == reco::PFTau::kOneProng0PiZero   && tauMinus_decaymode == reco::PFTau::kThreeProng0PiZero) ||
+            (tauPlus_decaymode == reco::PFTau::kThreeProng0PiZero && tauMinus_decaymode == reco::PFTau::kOneProng0PiZero  ) )
   {
-    ntupleFiller = ntupleFiller_rhoPlus_piMinus_;
+    ntupleFiller = ntupleFiller_pi_a1_;
   }
-  else if ( tauPlus_decaymode == reco::PFTau::kOneProng1PiZero && tauMinus_decaymode == reco::PFTau::kOneProng1PiZero )
+  else if (  tauPlus_decaymode == reco::PFTau::kOneProng1PiZero   && tauMinus_decaymode == reco::PFTau::kOneProng1PiZero  )
   {
-    ntupleFiller = ntupleFiller_rhoPlus_rhoMinus_;
+    ntupleFiller = ntupleFiller_rho_rho_;
   }
+  else if ( (tauPlus_decaymode == reco::PFTau::kOneProng1PiZero   && tauMinus_decaymode == reco::PFTau::kThreeProng0PiZero) ||
+            (tauPlus_decaymode == reco::PFTau::kThreeProng0PiZero && tauMinus_decaymode == reco::PFTau::kOneProng1PiZero  ) )
+  {
+    ntupleFiller = ntupleFiller_rho_a1_;
+  }
+  else if ( tauPlus_decaymode == reco::PFTau::kThreeProng0PiZero && tauMinus_decaymode == reco::PFTau::kThreeProng0PiZero )
+  {
+    ntupleFiller = ntupleFiller_a1_a1_;
+  }
+  
   if ( ntupleFiller )
   {
     ntupleFiller->fillBranches(

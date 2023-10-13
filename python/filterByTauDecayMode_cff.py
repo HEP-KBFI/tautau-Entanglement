@@ -15,17 +15,18 @@ import FWCore.ParameterSet.Config as cms
 #
 from PhysicsTools.JetMCAlgos.TauGenJets_cfi import tauGenJets
 #tauGenJets.GenParticles = cms.InputTag('genTaus')
+tauGenJets.verbose = cms.untracked.bool(True)
 
 from PhysicsTools.JetMCAlgos.TauGenJetsDecayModeSelectorAllHadrons_cfi import tauGenJetsSelectorAllHadrons
 tauGenJetsSelectorAllHadrons.select = cms.vstring(
     "oneProng0Pi0", 
     "oneProng1Pi0", 
-    #"oneProng2Pi0", 
-    #"oneProngOther",
+    "oneProng2Pi0", 
+    "oneProngOther",
     "threeProng0Pi0", 
-    #"threeProng1Pi0", 
-    #"threeProngOther", 
-    #"rare"
+    "threeProng1Pi0", 
+    "threeProngOther", 
+    "rare"
 )
 
 # CV: Reject tau decays with charged and neutral Kaons 
@@ -35,7 +36,9 @@ selectedGenHadTaus = cms.EDProducer("GenTauDecaySelector",
     maxNumChargedKaons = cms.int32(0),
     maxNumNeutralKaons = cms.int32(0),
     maxNumPhotons = cms.int32(-1),
-    maxSumPhotonEn = cms.double(0.5)
+    #maxSumPhotonEn = cms.double(0.5),
+    maxSumPhotonEn = cms.double(-1.),
+    verbosity = cms.untracked.int32(2)
 )
 
 selectedGenHadTauFilter = cms.EDFilter("CandViewCountFilter",

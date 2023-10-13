@@ -32,6 +32,8 @@ class GenTauDecaySelector : public edm::stream::EDProducer<>
   int maxNumNeutralKaons_;
   int maxNumPhotons_;
   double maxSumPhotonEn_;
+
+  int verbosity_;
 };
 
 #endif // TauAnalysis_Entanglement_GenTauDecaySelector_h

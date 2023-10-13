@@ -102,7 +102,7 @@ if applyTauPairMassSelection:
 
 if applyTauDecayModeSelection:
     process.load("TauAnalysis.Entanglement.filterByTauDecayMode_cff")
-    process.tauGenJetsSelectorAllHadrons.select = cms.vstring("oneProng0Pi0")
+    #process.tauGenJetsSelectorAllHadrons.select = cms.vstring("oneProng0Pi0")
     process.analysisSequence += process.filterByTauDecayMode
 
 if applyVisPtAndEtaSelection:
