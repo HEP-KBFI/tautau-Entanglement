@@ -253,7 +253,7 @@ class KinFitAlgo
         std::cout << d << "\n";
         std::cout << "|d (@alpha)| = " << d_mag << "\n";
       }
-      if ( !alpha_isNaN && d_mag < 1.e-2 )
+      if ( !alpha_isNaN && !constraint.get_errorFlag() && d_mag < 1.e-1 )
       {
         if ( status == -1 || chi2 < min_chi2 )
         {
@@ -283,10 +283,10 @@ class KinFitAlgo
     {
       hasConverged = true;
     }
-    if ( !hasConverged )
-    {
-      std::cerr << "WARNING: KinematicFit failed to converge !!" << std::endl;
-    }
+    //if ( !hasConverged )
+    //{
+    //  std::cerr << "WARNING: KinematicFit failed to converge !!" << std::endl;
+    //}
 
     if ( verbosity_ >= 1 )
     {
