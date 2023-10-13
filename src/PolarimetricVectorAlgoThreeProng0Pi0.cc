@@ -152,7 +152,6 @@ PolarimetricVectorAlgoThreeProng0Pi0::operator()(const KinematicEvent& evt, int 
   reco::Candidate::LorentzVector tauP4_hf = getP4_hf(tauP4_ttrf, r, n, k);
   ROOT::Math::Boost boost_trf = ROOT::Math::Boost(tauP4_hf.BoostToCM());
 
-  //reco::Candidate::Vector h = getPolarimetricVec_ThreeProng0PiZero(tauP4, *daughters, boost_ttrf, r, n, k, boost_trf, verbosity_, cartesian_);
-  reco::Candidate::Vector h;
+  reco::Candidate::Vector h = getPolarimetricVec_ThreeProng0PiZero(tauP4, *daughters, boost_ttrf, r, n, k, boost_trf, verbosity_, cartesian_);
   return h;
 }
