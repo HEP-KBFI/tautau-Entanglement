@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 # Example usage:
-# ./test/produceNtuples.py -v 2023Oct06_wSmearing -s dy_lo_pythia8 -j local
+# ./test/produceNtuples.py -v 2023Oct12_wSmearing -s dy_lo_pythia8_ext -j cluster
 
 import argparse
 import getpass
@@ -118,6 +118,8 @@ for sampleName, sample in samples.items():
         'outputFileName' : outputFileName,
         'logFileName'    : logFileName,
       }
+if whitelist and len(jobOptions.keys()) == 0:
+  raise ValueError("Invalid Configuration parameter 'whitelist' = '%s', no samples selected !!" % whitelist)
 
 message  = "Finished building config files."
 if run_makefile:
@@ -142,5 +144,5 @@ else:
   sbatchSubmissionFileName = os.path.join(configDir, "sbatch_submission.sh")
   build_sbatchSubmission(sbatchSubmissionFileName, jobOptions, 'produceEntanglementNtuple')
   os.chmod(sbatchSubmissionFileName, 0o755)
-  message += " Now execute '%s' to submit the jobs to SLURM." % sbatchSubmissionFileName
+  message += " Now execute 'source %s' to submit the jobs to SLURM." % sbatchSubmissionFileName
 print(message)

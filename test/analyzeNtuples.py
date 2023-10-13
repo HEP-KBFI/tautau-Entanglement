@@ -12,12 +12,12 @@ modes = [ "gen", "gen_smeared", "startPos", "kinFit" ]
 hAxes = [ "beam" ]
 #collider = "LHC"
 collider = "SuperKEKB"
-decayModes = [ "piPlus_piMinus", "piPlus_rhoMinus", "rhoPlus_piMinus", "rhoPlus_rhoMinus" ]
+decayModes = [ "pi_pi", "pi_rho", "pi_a1", "rho_rho", "rho_a1", "a1_a1" ]
 #decayModes = [ "piPlus_piMinus" ]
-spinAnalyzers = [ "by_summation", "by_mlfit", "by_differentialXsec1d", "by_differentialXsec2d", "by_asymmetry" ]
-#spinAnalyzers = [ "by_summation" ]
+#spinAnalyzers = [ "by_summation", "by_mlfit", "by_differentialXsec1d", "by_differentialXsec2d", "by_asymmetry" ]
+spinAnalyzers = [ "by_summation" ]
 
-version = "2023Sep18_wSmearing"
+version = "2023Oct12_wSmearing"
 
 samples = None
 if collider == "LHC":
