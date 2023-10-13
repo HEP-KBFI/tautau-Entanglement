@@ -1,24 +1,25 @@
 #include "TauAnalysis/Entanglement/interface/StartPosAlgo1.h"
 
-#include "DataFormats/Candidate/interface/Candidate.h"             // reco::Candidate::LorentzVector
-#include "DataFormats/Math/interface/deltaR.h"                     // deltaR2()
-#include "DataFormats/Math/interface/Matrix.h"                     // math::Matrix
-#include "DataFormats/Math/interface/Vector.h"                     // math::Vector
-#include "DataFormats/TauReco/interface/PFTau.h"                   // reco::PFTau::hadronicDecayMode
+#include "DataFormats/Candidate/interface/Candidate.h"                    // reco::Candidate::LorentzVector
+#include "DataFormats/Math/interface/deltaR.h"                            // deltaR2()
+#include "DataFormats/Math/interface/Matrix.h"                            // math::Matrix
+#include "DataFormats/Math/interface/Vector.h"                            // math::Vector
+#include "DataFormats/TauReco/interface/PFTau.h"                          // reco::PFTau::hadronicDecayMode
 
-#include "TauAnalysis/Entanglement/interface/comp_PCA_line2line.h" // comp_PCA_line2line()
-#include "TauAnalysis/Entanglement/interface/constants.h"          // mChargedPion, mHiggs, mTau
-#include "TauAnalysis/Entanglement/interface/cmsException.h"       // cmsException
-#include "TauAnalysis/Entanglement/interface/cube.h"               // cube()
-#include "TauAnalysis/Entanglement/interface/fixMass.h"            // fixNuMass(), fixTauMass()
-#include "TauAnalysis/Entanglement/interface/get_decayMode.h"      // is1Prong()
-#include "TauAnalysis/Entanglement/interface/get_leadTrack.h"      // get_leadTrack()
-#include "TauAnalysis/Entanglement/interface/printLorentzVector.h" // printLorentzVector()
-#include "TauAnalysis/Entanglement/interface/square.h"             // square()
+#include "TauAnalysis/Entanglement/interface/comp_PCA_line2line.h"        // comp_PCA_line2line()
+#include "TauAnalysis/Entanglement/interface/constants.h"                 // ct, mChargedPion, mHiggs, mTau
+#include "TauAnalysis/Entanglement/interface/cmsException.h"              // cmsException
+#include "TauAnalysis/Entanglement/interface/cube.h"                      // cube()
+#include "TauAnalysis/Entanglement/interface/fixMass.h"                   // fixNuMass(), fixTauMass()
+#include "TauAnalysis/Entanglement/interface/get_decayMode.h"             // is1Prong()
+#include "TauAnalysis/Entanglement/interface/get_localCoordinateSystem.h" // get_localCoordinateSystem()
+#include "TauAnalysis/Entanglement/interface/get_leadTrack.h"             // get_leadTrack()
+#include "TauAnalysis/Entanglement/interface/printLorentzVector.h"        // printLorentzVector()
+#include "TauAnalysis/Entanglement/interface/square.h"                    // square()
 
-#include <cmath>                                                   // std::sqrt()
-#include <utility>                                                 // std::make_pair()
-#include <iostream>                                                // std::cout
+#include <cmath>                                                          // std::sqrt()
+#include <utility>                                                        // std::make_pair()
+#include <iostream>                                                       // std::cout
 
 namespace math
 {
@@ -200,6 +201,32 @@ namespace
     double tipPerp = std::fabs(e_perp.Dot(flightlength));
     return tipPerp;
   }
+
+  void
+  fixSV(const reco::Candidate::LorentzVector& tauP4,
+        const reco::Candidate::Point& pv, reco::Candidate::Point& sv,
+        int collider,
+        int verbosity, bool cartesian)
+  {
+    // CV: ensure that decay distance sv - pv is always positive,
+    //     i.e. that vector from pv to sv points in tau flight direction;
+    //     this fix is necessary, because the linear constraint equations in the kinematic fit cannot handle the case
+    //     that the decay distance sv - pv points in direction opposite to the tau flight direction
+
+    auto flightlength = sv - pv;
+
+    reco::Candidate::Vector r, n, k; 
+    get_localCoordinateSystem(tauP4, nullptr, nullptr, kBeam, collider, r, n, k);
+
+    double flightlength_r = flightlength.Dot(r);
+    double flightlength_n = flightlength.Dot(n);
+    double flightlength_k = flightlength.Dot(k);
+    double min_d = 0.5*ct*tauP4.energy()/mTau;
+    if ( flightlength_k < min_d ) flightlength_k = min_d;
+
+    flightlength = flightlength_r*r + flightlength_n*n + flightlength_k*k;
+    sv = pv + flightlength;
+  }          
 }
 
 std::vector<KinematicEvent>
@@ -377,6 +404,10 @@ StartPosAlgo1::operator()(const KinematicEvent& kineEvt)
       kineEvt_startpos.svTauPlus_ = comp_PCA_line2line(kineEvt_startpos.pv(), tauPlusP4, tauPlus_tipPCA, tauPlus_leadTrack->p4(), verbosity_);
       kineEvt_startpos.svTauPlus_isValid_ = true;
     }
+    //else
+    //{
+    //  fixSV(tauPlusP4, kineEvt_startpos.pv_, kineEvt_startpos.svTauPlus_, collider_, verbosity_, cartesian_);
+    //}
  
     kineEvt_startpos.tauMinusP4_ = tauMinusP4;
     kineEvt_startpos.tauMinusP4_isValid_ = true;
@@ -391,6 +422,10 @@ StartPosAlgo1::operator()(const KinematicEvent& kineEvt)
       kineEvt_startpos.svTauMinus_ = comp_PCA_line2line(kineEvt_startpos.pv(), tauMinusP4, tauMinus_tipPCA, tauMinus_leadTrack->p4(), verbosity_);
       kineEvt_startpos.svTauMinus_isValid_ = true;
     }
+    //else
+    //{
+    //  fixSV(tauMinusP4, kineEvt_startpos.pv_, kineEvt_startpos.svTauMinus_, collider_, verbosity_, cartesian_);
+    //}
 
     kineEvts_startpos.push_back(kineEvt_startpos);
   }
