@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 # Example usage:
-# ./test/produceNtuples.py -v 2023Oct12_wSmearing -s dy_lo_pythia8_ext -j cluster
+# ./test/produceNtuples.py -v 2023Oct14_wSmearing -s dy_lo_pythia8_ext -j cluster
 
 import argparse
 import getpass

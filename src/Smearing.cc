@@ -8,6 +8,7 @@
 #include "TauAnalysis/Entanglement/interface/get_leadTrack.h"             // get_leadTrack()
 #include "TauAnalysis/Entanglement/interface/get_localCoordinateSystem.h" // get_localCoordinateSystem()
 #include "TauAnalysis/Entanglement/interface/KinematicParticle.h"         // KinematicParticle
+#include "TauAnalysis/Entanglement/interface/rotateVector.h"              // rotateVector()
 #include "TauAnalysis/Entanglement/interface/square.h"                    // square()
 
 #include <TMath.h>                                                        // TMath::Pi()
@@ -134,6 +135,13 @@ Smearing::operator()(const KinematicEvent& kineEvt)
   if ( kineEvt.svTauPlus_isValid() )
   {
     kineEvt_smeared.svTauPlus_ = smear_sv(kineEvt.visTauPlusP4(), kineEvt.svTauPlus());
+    if ( verbosity_ >= 3 )
+    {
+      auto svTauPlus_dxyz = kineEvt_smeared.svTauPlus_ - kineEvt.svTauPlus();
+      auto svTauPlus_drnk = rotateVector(svTauPlus_dxyz, kineEvt.tauPlus_rotMatrix_xyz2rnk());
+      std::cout << "svTauPlus: dx = " << svTauPlus_dxyz.x() << ", dy = " << svTauPlus_dxyz.y() << ", dz = " << svTauPlus_dxyz.z() << "\n";
+      std::cout << " (dr = " << svTauPlus_drnk.x() << ", dn = " << svTauPlus_drnk.y() << ", dk = " << svTauPlus_drnk.z() << ")\n";
+    }
   }
   const std::vector<KinematicParticle>& daughtersTauPlus = kineEvt.daughtersTauPlus();
   kineEvt_smeared.daughtersTauPlus_.clear();
@@ -159,6 +167,13 @@ Smearing::operator()(const KinematicEvent& kineEvt)
   if ( kineEvt.svTauMinus_isValid() )
   {
     kineEvt_smeared.svTauMinus_ = smear_sv(kineEvt.visTauMinusP4(), kineEvt.svTauMinus());
+    if ( verbosity_ >= 3 )
+    {
+      auto svTauMinus_dxyz = kineEvt_smeared.svTauMinus_ - kineEvt.svTauMinus();
+      auto svTauMinus_drnk = rotateVector(svTauMinus_dxyz, kineEvt.tauMinus_rotMatrix_xyz2rnk());
+      std::cout << "svTauMinus: dx = " << svTauMinus_dxyz.x() << ", dy = " << svTauMinus_dxyz.y() << ", dz = " << svTauMinus_dxyz.z() << "\n";
+      std::cout << " (dr = " << svTauMinus_drnk.x() << ", dn = " << svTauMinus_drnk.y() << ", dk = " << svTauMinus_drnk.z() << ")\n";
+    }
   }
   const std::vector<KinematicParticle>& daughtersTauMinus = kineEvt.daughtersTauMinus();
   kineEvt_smeared.daughtersTauMinus_.clear();

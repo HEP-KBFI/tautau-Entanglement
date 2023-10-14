@@ -15,7 +15,8 @@ import FWCore.ParameterSet.Config as cms
 #
 from PhysicsTools.JetMCAlgos.TauGenJets_cfi import tauGenJets
 #tauGenJets.GenParticles = cms.InputTag('genTaus')
-tauGenJets.verbose = cms.untracked.bool(True)
+#tauGenJets.verbose = cms.untracked.bool(True)
+tauGenJets.verbose = cms.untracked.bool(False)
 
 from PhysicsTools.JetMCAlgos.TauGenJetsDecayModeSelectorAllHadrons_cfi import tauGenJetsSelectorAllHadrons
 tauGenJetsSelectorAllHadrons.select = cms.vstring(
@@ -38,7 +39,8 @@ selectedGenHadTaus = cms.EDProducer("GenTauDecaySelector",
     maxNumPhotons = cms.int32(-1),
     #maxSumPhotonEn = cms.double(0.5),
     maxSumPhotonEn = cms.double(-1.),
-    verbosity = cms.untracked.int32(2)
+    #verbosity = cms.untracked.int32(2)
+    verbosity = cms.untracked.int32(-1)
 )
 
 selectedGenHadTauFilter = cms.EDFilter("CandViewCountFilter",

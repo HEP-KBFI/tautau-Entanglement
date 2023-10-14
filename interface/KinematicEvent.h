@@ -66,6 +66,21 @@ class KinematicEvent
   bool
   nuTauPlusCov_isValid() const;
 
+  const reco::Candidate::Vector&
+  tauPlus_r() const;
+
+  const reco::Candidate::Vector
+  tauPlus_n() const;
+
+  const reco::Candidate::Vector&
+  tauPlus_k() const;
+
+  const math::Matrix3x3&
+  tauPlus_rotMatrix_xyz2rnk() const;
+
+  const math::Matrix3x3&
+  tauPlus_rotMatrix_rnk2xyz() const;
+
   int
   tauPlus_decayMode() const;
 
@@ -113,6 +128,21 @@ class KinematicEvent
 
   bool
   nuTauMinusCov_isValid() const;
+
+  const reco::Candidate::Vector&
+  tauMinus_r() const;
+
+  const reco::Candidate::Vector
+  tauMinus_n() const;
+
+  const reco::Candidate::Vector&
+  tauMinus_k() const;
+
+  const math::Matrix3x3&
+  tauMinus_rotMatrix_xyz2rnk() const;
+
+  const math::Matrix3x3&
+  tauMinus_rotMatrix_rnk2xyz() const;
 
   int
   tauMinus_decayMode() const;
@@ -172,6 +202,11 @@ class KinematicEvent
   bool nuTauPlusP4_isValid_;
   math::Matrix3x3 nuTauPlusCov_;
   bool nuTauPlusCov_isValid_;
+  reco::Candidate::Vector tauPlus_r_;
+  reco::Candidate::Vector tauPlus_n_;
+  reco::Candidate::Vector tauPlus_k_;
+  math::Matrix3x3 tauPlus_rotMatrix_xyz2rnk_;
+  math::Matrix3x3 tauPlus_rotMatrix_rnk2xyz_;
   int tauPlus_decayMode_;
   std::vector<KinematicParticle> daughtersTauPlus_;
   reco::Candidate::Point tipPCATauPlus_;
@@ -189,6 +224,11 @@ class KinematicEvent
   bool nuTauMinusP4_isValid_;
   math::Matrix3x3 nuTauMinusCov_;
   bool nuTauMinusCov_isValid_;
+  reco::Candidate::Vector tauMinus_r_;
+  reco::Candidate::Vector tauMinus_n_;
+  reco::Candidate::Vector tauMinus_k_;
+  math::Matrix3x3 tauMinus_rotMatrix_xyz2rnk_;
+  math::Matrix3x3 tauMinus_rotMatrix_rnk2xyz_;
   int tauMinus_decayMode_;
   std::vector<KinematicParticle> daughtersTauMinus_;
   reco::Candidate::Point tipPCATauMinus_;

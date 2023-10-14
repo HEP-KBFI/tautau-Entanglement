@@ -100,6 +100,36 @@ KinematicEvent::nuTauPlusCov_isValid() const
   return nuTauPlusCov_isValid_;
 }
 
+const reco::Candidate::Vector&
+KinematicEvent::tauPlus_r() const
+{
+  return tauPlus_r_;
+}
+ 
+const reco::Candidate::Vector
+KinematicEvent::tauPlus_n() const
+{
+  return tauPlus_n_;
+}
+
+const reco::Candidate::Vector&
+KinematicEvent::tauPlus_k() const
+{
+  return tauPlus_k_;
+}
+
+const math::Matrix3x3&
+KinematicEvent::tauPlus_rotMatrix_xyz2rnk() const
+{
+  return tauPlus_rotMatrix_xyz2rnk_;
+}
+
+const math::Matrix3x3&
+KinematicEvent::tauPlus_rotMatrix_rnk2xyz() const
+{
+  return tauPlus_rotMatrix_rnk2xyz_;
+}
+
 int
 KinematicEvent::tauPlus_decayMode() const
 {
@@ -188,6 +218,36 @@ bool
 KinematicEvent::nuTauMinusCov_isValid() const
 {
   return nuTauMinusCov_isValid_;
+}
+
+const reco::Candidate::Vector&
+KinematicEvent::tauMinus_r() const
+{
+  return tauMinus_r_;
+}
+ 
+const reco::Candidate::Vector
+KinematicEvent::tauMinus_n() const
+{
+  return tauMinus_n_;
+}
+
+const reco::Candidate::Vector&
+KinematicEvent::tauMinus_k() const
+{
+  return tauMinus_k_;
+}
+
+const math::Matrix3x3&
+KinematicEvent::tauMinus_rotMatrix_xyz2rnk() const
+{
+  return tauMinus_rotMatrix_xyz2rnk_;
+}
+
+const math::Matrix3x3&
+KinematicEvent::tauMinus_rotMatrix_rnk2xyz() const
+{
+  return tauMinus_rotMatrix_rnk2xyz_;
 }
 
 int

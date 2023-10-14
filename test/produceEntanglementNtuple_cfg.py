@@ -34,8 +34,8 @@ outputFileName = "entanglementNtuple_aodsim_1_sel_piPlus_piMinus.root"
 #collider = "LHC"
 collider = "SuperKEKB"
 
-applyTauPairMassSelection  = False
-applyTauDecayModeSelection = False
+applyTauPairMassSelection  = True
+applyTauDecayModeSelection = True
 applyVisPtAndEtaSelection  = False
 
 ##inputFilePath = None
