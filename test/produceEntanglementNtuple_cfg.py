@@ -45,11 +45,11 @@ process.GlobalTag = GlobalTag(process.GlobalTag, '124X_dataRun2_v2', '')
 
 process.analysisSequence = cms.Sequence()
 
-process.dumpGenParticles = cms.EDAnalyzer("ParticleListDrawer",
-    src = cms.InputTag(srcGenParticles),
-    maxEventsToPrint = cms.untracked.int32(10) 
-)
-process.analysisSequence += process.dumpGenParticles
+# process.dumpGenParticles = cms.EDAnalyzer("ParticleListDrawer",
+#     src = cms.InputTag(srcGenParticles),
+#     maxEventsToPrint = cms.untracked.int32(10)
+# )
+# process.analysisSequence += process.dumpGenParticles
 
 #--------------------------------------------------------------------------------
 # apply event selection
