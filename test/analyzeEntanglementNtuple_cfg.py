@@ -42,7 +42,7 @@ process.analyzeEntanglementNtuple = cms.PSet(
     par_gen = cms.vdouble(),
 
     spinAnalyzer = cms.string('by_summation'), # CV: either 'by_summation' or 'by_mlfit'
-    numBootstrapSamples = cms.uint32(1000),
+    numBootstrapSamples = cms.uint32(100),
 
     mlfit_outputFileName = cms.string(""),
     mlfit_scan_likelihood = cms.bool(False),
