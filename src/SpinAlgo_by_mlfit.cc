@@ -15,7 +15,7 @@
 
 const size_t npar = 15;
 
-static const spin::Dataset* gDataset = nullptr;
+static const spin::DatasetPtrs* gDataset = nullptr;
 static const spin::Dataset* gDataset_norm_passed = nullptr;
 static const spin::Dataset* gDataset_norm_failed = nullptr;
 static const std::vector<double>* gpar_gen = nullptr;
@@ -174,7 +174,7 @@ namespace
     double logL = 0.;
     for ( size_t idxEntry = 0; idxEntry < gDataset->size(); ++idxEntry )
     {
-      const spin::Data& entry = gDataset->at(idxEntry);
+      const spin::Data& entry = *(gDataset->at(idxEntry));
 
       double p = get_p(par, entry);
 
@@ -343,7 +343,7 @@ namespace
 }
 
 spin::Measurement
-SpinAlgo_by_mlfit::operator()(const spin::Dataset& dataset)
+SpinAlgo_by_mlfit::operator()(const spin::DatasetPtrs& dataset)
 {
   if ( verbosity_ >= 3 )
   {

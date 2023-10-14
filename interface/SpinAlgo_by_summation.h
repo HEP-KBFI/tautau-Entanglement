@@ -17,7 +17,7 @@ class SpinAlgo_by_summation : public SpinAlgoBase
   ~SpinAlgo_by_summation();
 
   spin::Measurement
-  operator()(const spin::Dataset& dataset);
+  operator()(const spin::DatasetPtrs& dataset);
 };
 
 }

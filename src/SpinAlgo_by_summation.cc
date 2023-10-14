@@ -12,7 +12,7 @@ SpinAlgo_by_summation::~SpinAlgo_by_summation()
 {}
 
 spin::Measurement
-SpinAlgo_by_summation::operator()(const spin::Dataset& dataset)
+SpinAlgo_by_summation::operator()(const spin::DatasetPtrs& dataset)
 {
   if ( verbosity_ >= 3 )
   {
@@ -26,7 +26,7 @@ SpinAlgo_by_summation::operator()(const spin::Dataset& dataset)
   size_t numEntries = dataset.size();
   for ( size_t idxEntry = 0; idxEntry < numEntries; ++idxEntry )
   {
-    const spin::Data& entry = dataset.at(idxEntry);
+    const spin::Data& entry = *(dataset.at(idxEntry));
 
     double hPlus_n = entry.get_hPlus_n();
     double hPlus_r = entry.get_hPlus_r();

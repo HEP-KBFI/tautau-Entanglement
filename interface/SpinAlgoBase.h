@@ -21,7 +21,7 @@ class SpinAlgoBase
 
   virtual
   spin::Measurement
-  operator()(const spin::Dataset& dataset) = 0;
+  operator()(const spin::DatasetPtrs& dataset) = 0;
 
  protected:
   void

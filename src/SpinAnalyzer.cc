@@ -47,16 +47,17 @@ SpinAnalyzer::set_verbosity(int verbosity)
 
 namespace
 {
-  spin::Dataset
-  build_bootstrap_sample(const spin::Dataset& dataset, TRandom& rnd, int maxEvents_afterCuts = -1)
+  spin::DatasetPtrs
+  build_bootstrap_sample(const spin::Dataset& dataset, TRandom * rnd, int maxEvents_afterCuts = -1)
   {
-    spin::Dataset bootstrap_sample(dataset, 0);
-    size_t sampleSize = ( maxEvents_afterCuts > 0 ) ? maxEvents_afterCuts : dataset.size();
+    spin::DatasetPtrs bootstrap_sample;
+    const size_t sampleSize = ( maxEvents_afterCuts > 0 ) ? maxEvents_afterCuts : dataset.size();
+    bootstrap_sample.reserve(sampleSize);
     for ( size_t idxSample = 0; idxSample < sampleSize; ++idxSample )
     {
-      size_t idxEntry = rnd.Integer(dataset.size());
+      const size_t idxEntry = rnd ? rnd->Integer(dataset.size()) : idxSample;
       const spin::Data& entry = dataset.at(idxEntry);
-      bootstrap_sample.push_back(entry);
+      bootstrap_sample.push_back(&entry);
     }
     return bootstrap_sample;
   }
@@ -185,7 +186,7 @@ namespace
 spin::Measurement
 SpinAnalyzer::build_measurement(const spin::Dataset& dataset, int maxEvents_afterCuts, int verbosity) const
 {
-  spin::Dataset nominal_sample(dataset, maxEvents_afterCuts);
+  spin::DatasetPtrs nominal_sample = build_bootstrap_sample(dataset, nullptr, maxEvents_afterCuts);
   algo_->set_verbosity(verbosity);
   spin::Measurement nominal_measurement = (*algo_)(nominal_sample);
 
@@ -205,7 +206,7 @@ SpinAnalyzer::build_measurement(const spin::Dataset& dataset, int maxEvents_afte
         std::cout << " Processing " << idxBootstrapSample << "th sample\n";
       }
     }
-    spin::Dataset bootstrap_sample = build_bootstrap_sample(dataset, rnd_, maxEvents_afterCuts);
+    spin::DatasetPtrs bootstrap_sample = build_bootstrap_sample(dataset, &rnd_, maxEvents_afterCuts);
     algo_->set_verbosity(-1);
     spin::Measurement bootstrap_measurement = (*algo_)(bootstrap_sample);
     bootstrap_measurements.push_back(bootstrap_measurement);

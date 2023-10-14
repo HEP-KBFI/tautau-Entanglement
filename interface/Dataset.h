@@ -41,6 +41,7 @@ class Dataset : public TObject
   size_t numEntries_;
 };
 
+typedef std::vector<const Data *> DatasetPtrs;
 }
 
 #endif // TauAnalysis_Entanglement_Dataset_h

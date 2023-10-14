@@ -17,7 +17,7 @@ class SpinAlgo_by_asymmetry : public SpinAlgoBase
   ~SpinAlgo_by_asymmetry();
 
   spin::Measurement
-  operator()(const spin::Dataset& dataset);
+  operator()(const spin::DatasetPtrs& dataset);
 };
 
 }
