@@ -225,7 +225,7 @@ void EntanglementNtupleProducer::analyze(const edm::Event& evt, const edm::Event
       }
     }
   }
-  if ( !(kinFitStatus_bestfit == 1 || (kinFitStatus_bestfit == 0 && kinFitChi2_bestfit < 1.e+2)) )
+  if ( !(kinFitStatus_bestfit == 1 || (kinFitStatus_bestfit == 0 && kinFitChi2_bestfit < 1.e+2)) && verbosity_ >= 0 )
   {
     std::cerr << "WARNING: KinematicFit failed to converge !!" << std::endl;
   }

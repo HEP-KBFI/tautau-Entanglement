@@ -107,7 +107,7 @@ KinematicFit::operator()(const KinematicEvent& kineEvt)
   double signTauPlus = get_sign(kineEvt.visTauPlusP4(), kineEvt.nuTauPlusP4(), signTauPlus_errorFlag, verbosity_);
   bool signTauMinus_errorFlag = false;
   double signTauMinus = get_sign(kineEvt.visTauMinusP4(), kineEvt.nuTauMinusP4(), signTauMinus_errorFlag, verbosity_);
-  if ( signTauPlus_errorFlag || signTauMinus_errorFlag )
+  if ( (signTauPlus_errorFlag || signTauMinus_errorFlag ) && verbosity_ >= 0 )
   {
     std::cerr << "WARNING: Failed to reproduce the neutrino Pz of the start position !!\n";
     return kineEvt_kinFit;

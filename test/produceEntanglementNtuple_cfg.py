@@ -15,6 +15,8 @@ process.load('Configuration.StandardSequences.MagneticField_cff')
 process.load('Configuration.StandardSequences.Reconstruction_cff')
 process.load('Configuration.StandardSequences.FrontierConditions_GlobalTag_cff')
 
+process.MessageLogger.cerr.FwkReport.reportEvery = 1000
+
 process.maxEvents = cms.untracked.PSet(
     input = cms.untracked.int32(-1)
 )

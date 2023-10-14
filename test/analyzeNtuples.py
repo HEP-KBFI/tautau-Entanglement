@@ -27,8 +27,8 @@ parser.add_argument('-S', '--spin-analyzers', nargs = '*', type = str, choices =
 parser.add_argument('-d', '--decay-modes', nargs = '*', type = str, choices = decayMode_choices, default = decayMode_choices, help = 'Tau decay modes')
 parser.add_argument('-m', '--modes', nargs = '*', type = str, choices = mode_choices, default = mode_choices, help = 'Input data')
 parser.add_argument('-s', '--samples', nargs = '*', default = [], help = 'Whitelisted samples')
-parser.add_argument('-b', '--bootstrap-size', type = int, default = 2000, help = 'Size of bootstrap dataset (use -1 to consider all events from the input sample)')
-parser.add_argument('-B', '--bootstrap-count', type = positive_int_type, default = 1000, help = 'Number of bootstrap datasets')
+parser.add_argument('-b', '--bootstrap-size', type = int, default = -1, help = 'Size of bootstrap dataset (use -1 to consider all events from the input sample)')
+parser.add_argument('-B', '--bootstrap-count', type = positive_int_type, default = 100, help = 'Number of bootstrap datasets')
 parser.add_argument('-j', '--job-type', type = str, choices = ['local', 'cluster'], required = True, help = 'Job type')
 args = parser.parse_args()
 
