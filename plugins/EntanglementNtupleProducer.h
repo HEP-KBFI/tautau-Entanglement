@@ -48,17 +48,23 @@ class EntanglementNtupleProducer : public edm::one::EDAnalyzer<>
   vInputTag srcWeights_;
   std::vector<edm::EDGetTokenT<double>> tokenWeights_;
 
-  TTree* ntuple_piPlus_piMinus_;
-  EntanglementNtuple* ntupleFiller_piPlus_piMinus_;
+  TTree* ntuple_pi_pi_;
+  EntanglementNtuple* ntupleFiller_pi_pi_;
 
-  TTree* ntuple_piPlus_rhoMinus_;
-  EntanglementNtuple* ntupleFiller_piPlus_rhoMinus_;
+  TTree* ntuple_pi_rho_;
+  EntanglementNtuple* ntupleFiller_pi_rho_;
 
-  TTree* ntuple_rhoPlus_piMinus_;
-  EntanglementNtuple* ntupleFiller_rhoPlus_piMinus_;
+  TTree* ntuple_pi_a1_;
+  EntanglementNtuple* ntupleFiller_pi_a1_;
 
-  TTree* ntuple_rhoPlus_rhoMinus_;
-  EntanglementNtuple* ntupleFiller_rhoPlus_rhoMinus_;
+  TTree* ntuple_rho_rho_;
+  EntanglementNtuple* ntupleFiller_rho_rho_;
+
+  TTree* ntuple_rho_a1_;
+  EntanglementNtuple* ntupleFiller_rho_a1_;
+
+  TTree* ntuple_a1_a1_;
+  EntanglementNtuple* ntupleFiller_a1_a1_;
 
   TTree* ntuple_had_had_;
   EntanglementNtuple* ntupleFiller_had_had_;

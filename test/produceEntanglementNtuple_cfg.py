@@ -61,7 +61,6 @@ process.analysisSequence += process.filterByTauPairMass
 
 {% if apply_decay_mode %}
 process.load("TauAnalysis.Entanglement.filterByTauDecayMode_cff")
-process.tauGenJetsSelectorAllHadrons.select = cms.vstring("oneProng0Pi0")
 process.analysisSequence += process.filterByTauDecayMode
 {% endif %}
 

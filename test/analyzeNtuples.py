@@ -15,7 +15,7 @@ from TauAnalysis.Entanglement.tools.jobTools import getInputFileNames, build_Mak
 mode_choices = [ "gen", "gen_smeared", "startPos", "kinFit" ]
 hAxes_choices = [ "beam", "higgs" ]
 collider_choices = [ "LHC", "SuperKEKB" ]
-decayMode_choices = [ "piPlus_piMinus", "piPlus_rhoMinus", "rhoPlus_piMinus", "rhoPlus_rhoMinus" ]
+decayMode_choices = [ "piPlus_piMinus", "piPlus_rhoMinus", "rhoPlus_piMinus", "rhoPlus_rhoMinus" ] #TODO to be changed
 spinAnalyzer_choices = [ "by_summation", "by_mlfit", "by_differentialXsec1d", "by_differentialXsec2d", "by_asymmetry" ]
 
 parser = argparse.ArgumentParser(formatter_class = argparse.ArgumentDefaultsHelpFormatter)
@@ -53,6 +53,8 @@ elif collider == "SuperKEKB":
       MAX_SUM_PHOTON_EN_SUPERKEKB as maxSumPhotonEn
 else:
     assert(False)
+# Karl: ignore FSR cut, see commit d5e08c353cb1d91639f804198e349667ec312e16
+maxSumPhotonEn = -1
 
 if not whitelist:
   run_all_samples = query_yes_no(
