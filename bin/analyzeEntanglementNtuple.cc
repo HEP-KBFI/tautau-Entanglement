@@ -309,6 +309,7 @@ int main(int argc, char* argv[])
     delete inputFile;
   }
 
+  clock.Start("spinAnalyzer");
   std::cout << "Processing Summary:\n";
   std::cout << " processedInputFiles = " << processedInputFiles << " (out of " << numInputFiles << ")\n";
   std::cout << " analyzedEntries = " << analyzedEntries << " (weighted = " << analyzedEntries_weighted << ")\n";
@@ -364,11 +365,13 @@ int main(int argc, char* argv[])
     double steerability_exp = comp_steerability(C_exp, 360, 360);
     std::cout << "steerability = " << steerability_exp << "\n";
   }
+  clock.Show("spinAnalyzer");
 
   if ( spinAnalyzer_algo == "by_summation" )
   {
     // CV: compute binned measurements only if spinAnalyzer is set to 'by_summation' mode,
     //     as running the binned measurements in 'by_mlfit' mode is too time-consuming
+    clock.Start("spinAnalyzer_binned");
 
     //std::cout << "Processing binned measurement as function of zPlus...\n";
     //spin::BinnedMeasurement1d binnedMeasurement_zPlus = spinAnalyzer(binnedDataset_zPlus);
@@ -406,6 +409,7 @@ int main(int argc, char* argv[])
     TH2* histogram_Rchsh_vs_visPlusPt_vs_visMinusPt = binnedMeasurement_visPlusPt_vs_visMinusPt.get_histogram("Rchsh");
     addToOutputFile(fs, histogram_Rchsh_vs_visPlusPt_vs_visMinusPt);
     std::cout << " Done.\n";
+    clock.Show("spinAnalyzer_binned");
   }
 
   clock.Show("analyzeEntanglementNtuple");
