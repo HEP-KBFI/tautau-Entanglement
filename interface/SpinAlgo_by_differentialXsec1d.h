@@ -17,7 +17,7 @@ class SpinAlgo_by_differentialXsec1d : public SpinAlgoBase
   ~SpinAlgo_by_differentialXsec1d();
 
   spin::Measurement
-  operator()(const spin::Dataset& dataset);
+  operator()(const spin::DatasetWrapper& dataset);
 };
 
 }

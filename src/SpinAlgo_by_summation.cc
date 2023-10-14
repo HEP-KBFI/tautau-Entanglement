@@ -12,7 +12,7 @@ SpinAlgo_by_summation::~SpinAlgo_by_summation()
 {}
 
 spin::Measurement
-SpinAlgo_by_summation::operator()(const spin::Dataset& dataset)
+SpinAlgo_by_summation::operator()(const spin::DatasetWrapper& dataset)
 {
   if ( verbosity_ >= 3 )
   {

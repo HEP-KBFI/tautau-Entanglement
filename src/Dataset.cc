@@ -16,12 +16,8 @@ Dataset::Dataset(const Dataset& dataset, int maxEvents_afterCuts)
   {
     if ( maxEvents_afterCuts > 0 && maxEvents_afterCuts < (int)dataset.data_.size() )
     {
-      size_t numEntries = dataset.data_.size();
-      for ( size_t idxEntry = 0; idxEntry < numEntries; ++idxEntry )
-      {
-        const Data& entry = dataset.data_.at(idxEntry);
-        data_.push_back(entry);
-      }
+      // Karl: is this intended behavior that we're not copying the first maxEvents_afterCuts elements?
+      std::copy(dataset.data_.begin(), dataset.data_.end(), data_.begin());
     }
     else
     {

@@ -93,7 +93,7 @@ namespace
 }
 
 spin::Measurement
-SpinAlgo_by_asymmetry::operator()(const spin::Dataset& dataset)
+SpinAlgo_by_asymmetry::operator()(const spin::DatasetWrapper& dataset)
 {
   if ( verbosity_ >= 3 )
   {

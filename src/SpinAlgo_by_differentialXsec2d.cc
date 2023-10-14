@@ -95,7 +95,7 @@ namespace
 }
 
 spin::Measurement
-SpinAlgo_by_differentialXsec2d::operator()(const spin::Dataset& dataset)
+SpinAlgo_by_differentialXsec2d::operator()(const spin::DatasetWrapper& dataset)
 {
   if ( verbosity_ >= 3 )
   {

@@ -41,6 +41,48 @@ class Dataset : public TObject
   size_t numEntries_;
 };
 
+class DatasetWrapper
+{
+public:
+  DatasetWrapper()
+    : data_(nullptr)
+  {}
+  DatasetWrapper(const Dataset& dataset)
+    : data_(&dataset)
+  {}
+  ~DatasetWrapper()
+  {
+    data_ = nullptr;
+    remappedIndices_.clear();
+  }
+
+  void
+  push_back(std::size_t idx)
+  {
+    remappedIndices_.push_back(idx);
+  }
+
+  inline
+  const Data&
+  at(size_t idx) const
+  {
+    return data_->at(remappedIndices_.empty() ? idx : remappedIndices_.at(idx));
+  }
+
+  inline
+  std::size_t
+  size() const
+  {
+    return data_->size();
+  }
+
+  friend class SpinAnalyzer;
+
+private:
+  const Dataset * data_;
+  std::vector<int> remappedIndices_;
+};
+
 }
 
 #endif // TauAnalysis_Entanglement_Dataset_h

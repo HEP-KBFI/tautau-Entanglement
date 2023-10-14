@@ -31,7 +31,7 @@ class SpinAlgo_by_mlfit : public SpinAlgoBase
   set_dataset_norm_failed(const spin::Dataset* dataset);
 
   spin::Measurement
-  operator()(const spin::Dataset& dataset);
+  operator()(const spin::DatasetWrapper& dataset);
 
  private:
   ROOT::Math::Minimizer* mlfit_;
