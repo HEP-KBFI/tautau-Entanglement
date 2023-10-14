@@ -56,22 +56,22 @@ def build_sbatchSubmission(sbatchSubmissionFileName, jobOptions, job_type):
 
       # cannot copy to /scratch/persistent from comp nodes -> copy to local instead and create a symlink
       output_dir = jobOptions[job_key]['outputFilePath']
-      assert(re.match(OUTPUT_PATTERN, output_dir))
-      output_dir_old = output_dir
-      output_dir = re.sub(OUTPUT_PATTERN, "/local/", output_dir)
-      if not os.path.isdir(output_dir):
-        os.makedirs(output_dir)
-      if os.path.isdir(output_dir_old) and not os.path.islink(output_dir_old):
-        os.rmdir(output_dir_old)
-        os.symlink(output_dir, output_dir_old)
+      if re.match(OUTPUT_PATTERN, output_dir):
+        output_dir_old = output_dir
+        output_dir = re.sub(OUTPUT_PATTERN, "/local/", output_dir)
+        if not os.path.isdir(output_dir):
+          os.makedirs(output_dir)
+        if os.path.isdir(output_dir_old) and not os.path.islink(output_dir_old):
+          os.rmdir(output_dir_old)
+          os.symlink(output_dir, output_dir_old)
 
       sbatchSubmissionFile.write(
-        "sbatch --partition=main --output={log} run_cluster_job.sh {tmp} {out} {cfg} {ins}\n".format(
+        "sbatch --partition=main --output={log} run_cluster_job.sh {tmp} {out} {cmd} {cfg}\n".format(
+          cmd = jobOptions[job_key]['cmd'],
           log = jobOptions[job_key]['logFileName'],
           tmp = os.path.join('/scratch', 'local', os.getenv('USER'), job_type, job_key),
           out = os.path.join(output_dir, jobOptions[job_key]['outputFileName']),
           cfg = jobOptions[job_key]['cfgFileName'],
-          ins = ' '.join(jobOptions[job_key]['inputFileNames']),
         )
       )
     sbatchSubmissionFile.write('\n')

@@ -103,9 +103,10 @@ for sampleName, sample in samples.items():
         'outputFilePath' : outputDir,
         'outputFileName' : outputFileName,
         'logFileName'    : logFileName,
+        'cmd'            : 'cmsRun',
       }
 
-message  = "Finished building config files."
+message = f"Finished building config files for {len(jobOptions)} job(s)."
 if run_makefile:
   jobOptions_Makefile = []
   for job_key, job in jobOptions.items():

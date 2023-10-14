@@ -10,7 +10,7 @@ import os
 # ./test/produceNtuples.py -v 2023Oct06 -s dy_lo_pythia8
 
 from TauAnalysis.Entanglement.tools.jobTools import getInputFileNames, build_Makefile, query_yes_no, \
-  build_cfg, mkdir, read_contents, save_cmd, positive_int_type
+  build_cfg, mkdir, read_contents, save_cmd, positive_int_type, build_sbatchSubmission
 
 mode_choices = [ "gen", "gen_smeared", "startPos", "kinFit" ]
 hAxes_choices = [ "beam", "higgs" ]
@@ -29,6 +29,7 @@ parser.add_argument('-m', '--modes', nargs = '*', type = str, choices = mode_cho
 parser.add_argument('-s', '--samples', nargs = '*', default = [], help = 'Whitelisted samples')
 parser.add_argument('-b', '--bootstrap-size', type = int, default = 2000, help = 'Size of bootstrap dataset (use -1 to consider all events from the input sample)')
 parser.add_argument('-B', '--bootstrap-count', type = positive_int_type, default = 1000, help = 'Number of bootstrap datasets')
+parser.add_argument('-j', '--job-type', type = str, choices = ['local', 'cluster'], required = True, help = 'Job type')
 args = parser.parse_args()
 
 version = args.version
@@ -44,6 +45,7 @@ spinAnalyzers = args.spin_analyzers
 whitelist = args.samples
 bootstrap_size = args.bootstrap_size
 bootstrap_count = args.bootstrap_count
+run_makefile = args.job_type == 'local'
 
 if collider == "LHC":
     from TauAnalysis.Entanglement.samples import samples_LHC as samples, PAR_GEN_LHC as par_gen, \
@@ -79,9 +81,16 @@ outputDir  = os.path.join("/scratch/persistent", getpass.getuser(), "Entanglemen
 testDir    = os.path.dirname(os.path.abspath(__file__))
 cmsswDir   = os.getenv('CMSSW_BASE')
 
+outputDir_ctrlPlots = os.path.join(configDir, "plots")
+outputDir_resPlots = os.path.join(configDir, "plots")
+
 analyzeNtuple_template = read_contents(os.path.join(testDir, "analyzeEntanglementNtuple_cfg.py"))
 makeControlPlot_template = read_contents(os.path.join(testDir, "makeControlPlots_cfg.py"))
 makeResolutionPlot_template = read_contents(os.path.join(testDir, "makeResolutionPlots_cfg.py"))
+
+analyzeEntanglementNtuple_cmd = 'analyzeEntanglementNtuple'
+makeControlPlots_cmd = 'makeControlPlots'
+makeResolutionPlots_cmd = 'makeResolutionPlots'
 
 mkdir(configDir)
 mkdir(os.path.join(configDir, "plots"))
@@ -163,13 +172,14 @@ for sampleName, sample in samples.items():
               'outputFilePath' : outputDir,
               'outputFileName' : outputFileName_analysis,
               'logFileName'    : logFileName_analysis,
+              'cmd'            : analyzeEntanglementNtuple_cmd,
             }
         cfgFileName_ctrlPlots_modified = os.path.join(
           configDir, f"makeControlPlots_{sampleName}_{mode}Mode_{hAxis}Axis_{decayMode}DecayMode_cfg.py"
         )
-        outputFileName_ctrlPlots = os.path.join(
-          configDir, "plots", f"makeControlPlots_{sampleName}_{mode}Mode_{hAxis}Axis_{decayMode}DecayMode.root"
-        )
+        outputFileName_ctrlPlots = f"makeControlPlots_{sampleName}_{mode}Mode_{hAxis}Axis_{decayMode}DecayMode.root"
+        if run_makefile:
+          outputFileName_ctrlPlots = os.path.join(outputDir_ctrlPlots, outputFileName_ctrlPlots)
         args_ctrlPlots = {
           'inputFileNames'  : inputFileNames,
           'mode'            : mode,
@@ -188,17 +198,19 @@ for sampleName, sample in samples.items():
         jobOptions_ctrlPlots[job_key_ctrlPlots] = {
           'inputFileNames' : dependencies_ctrlPlots,
           'cfgFileName'    : cfgFileName_ctrlPlots_modified,
-          'outputFilePath' : outputDir,
+          'outputFilePath' : outputDir_ctrlPlots,
           'outputFileName' : outputFileName_ctrlPlots,
           'logFileName'    : logFileName_ctrlPlots,
+          'cmd'            : makeControlPlots_cmd,
         }
         if mode != "gen":
           cfgFileName_resPlots_modified = os.path.join(
             configDir, f"makeResolutionPlots_{sampleName}_{mode}Mode_{hAxis}Axis_{decayMode}DecayMode_cfg.py"
           )
-          outputFileName_resPlots = os.path.join(
-            configDir, "plots", f"makeResolutionPlots_{sampleName}_{mode}Mode_{hAxis}Axis_{decayMode}DecayMode.root"
-          )
+
+          outputFileName_resPlots = f"makeResolutionPlots_{sampleName}_{mode}Mode_{hAxis}Axis_{decayMode}DecayMode.root"
+          if run_makefile:
+            outputFileName_resPlots = os.path.join(outputDir_resPlots, outputFileName_resPlots)
           args_resPlots = {
             'inputFileNames'  : inputFileNames,
             'mode'            : mode,
@@ -220,13 +232,14 @@ for sampleName, sample in samples.items():
             'outputFilePath' : outputDir,
             'outputFileName' : outputFileName_resPlots,
             'logFileName'    : logFileName_resPlots,
+            'cmd'            : makeResolutionPlots_cmd,
           }
 
 jobOptions_Makefile = []
 for job_key, job in jobOptions_analysis.items():
   commands = []
   commands.append('rm -f {}'.format(job['outputFileName']))
-  commands.append('/usr/bin/time --verbose analyzeEntanglementNtuple {} &> {}'.format(job['cfgFileName'], job['logFileName']))
+  commands.append('/usr/bin/time --verbose {} {} &> {}'.format(analyzeEntanglementNtuple_cmd, job['cfgFileName'], job['logFileName']))
   commands.append('cp -v {} {}'.format(job['outputFileName'], os.path.join(outputDir, job['outputFileName'])))
   commands.append('rm -f {}'.format(job['outputFileName']))
   jobOptions_Makefile.append({
@@ -238,7 +251,7 @@ for job_key, job in jobOptions_analysis.items():
 for job_key, job in jobOptions_ctrlPlots.items():
   commands = []
   commands.append('rm -f {}'.format(job['outputFileName']))
-  commands.append('/usr/bin/time --verbose makeControlPlots {} &> {}'.format(job['cfgFileName'], job['logFileName']))
+  commands.append('/usr/bin/time --verbose {} {} &> {}'.format(makeControlPlots_cmd, job['cfgFileName'], job['logFileName']))
   jobOptions_Makefile.append({
     'target'          : os.path.join(outputDir, job['outputFileName']),
     'dependencies'    : [ inputFileName.replace("file:", "") for inputFileName in job['inputFileNames'] ],
@@ -248,16 +261,24 @@ for job_key, job in jobOptions_ctrlPlots.items():
 for job_key, job in jobOptions_resPlots.items():
   commands = []
   commands.append('rm -f {}'.format(job['outputFileName']))
-  commands.append('/usr/bin/time --verbose makeResolutionPlots {} &> {}'.format(job['cfgFileName'], job['logFileName']))
+  commands.append('/usr/bin/time --verbose {} {} &> {}'.format(makeResolutionPlots_cmd, job['cfgFileName'], job['logFileName']))
   jobOptions_Makefile.append({
     'target'          : os.path.join(outputDir, job['outputFileName']),
     'dependencies'    : [ inputFileName.replace("file:", "") for inputFileName in job['inputFileNames'] ],
     'commands'        : commands,
     'outputFileNames' : [ os.path.join(outputDir, job['outputFileName']) ],
   })
-makeFileName = os.path.join(configDir, "Makefile")
-build_Makefile(makeFileName, jobOptions_Makefile)
 
-message  = "Finished building config files."
-message += f" Now execute 'make -j 12 -f {makeFileName}' to start the jobs."
+jobOptions = { **jobOptions_analysis, **jobOptions_ctrlPlots, **jobOptions_resPlots }
+message = f"Finished building config files for {len(jobOptions)} job(s)."
+if run_makefile:
+  makeFileName = os.path.join(configDir, "Makefile")
+  build_Makefile(makeFileName, jobOptions_Makefile)
+  message += f" Now execute 'make -j 12 -f {makeFileName}' to start the jobs."
+else:
+  sbatchSubmissionFileName = os.path.join(configDir, "sbatch_submission.sh")
+  build_sbatchSubmission(sbatchSubmissionFileName, jobOptions, 'produceEntanglementNtuple')
+  os.chmod(sbatchSubmissionFileName, 0o755)
+  message += f" Now execute '{sbatchSubmissionFileName}' to submit the jobs to SLURM."
+
 print(message)
