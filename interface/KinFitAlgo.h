@@ -168,7 +168,10 @@ class KinFitAlgo
       MatrixCxC V_D = Vinv_D.Inverse(V_D_errorFlag);
       if ( V_D_errorFlag != 0 )
       {
-        printCovMatrix("Vinv_D", Vinv_D);
+        if ( verbosity_ >= 0 )
+        {
+          printCovMatrix("Vinv_D", Vinv_D);
+        }
         throw cmsException("KinFitAlgo::operator()", __LINE__) 
           << "Failed to invert matrix Vinv_D !!\n";
       }
