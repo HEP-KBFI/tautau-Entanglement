@@ -201,32 +201,6 @@ namespace
     double tipPerp = std::fabs(e_perp.Dot(flightlength));
     return tipPerp;
   }
-
-  void
-  fixSV(const reco::Candidate::LorentzVector& tauP4,
-        const reco::Candidate::Point& pv, reco::Candidate::Point& sv,
-        int collider,
-        int verbosity, bool cartesian)
-  {
-    // CV: ensure that decay distance sv - pv is always positive,
-    //     i.e. that vector from pv to sv points in tau flight direction;
-    //     this fix is necessary, because the linear constraint equations in the kinematic fit cannot handle the case
-    //     that the decay distance sv - pv points in direction opposite to the tau flight direction
-
-    auto flightlength = sv - pv;
-
-    reco::Candidate::Vector r, n, k; 
-    get_localCoordinateSystem(tauP4, nullptr, nullptr, kBeam, collider, r, n, k);
-
-    double flightlength_r = flightlength.Dot(r);
-    double flightlength_n = flightlength.Dot(n);
-    double flightlength_k = flightlength.Dot(k);
-    double min_d = 0.5*ct*tauP4.energy()/mTau;
-    if ( flightlength_k < min_d ) flightlength_k = min_d;
-
-    flightlength = flightlength_r*r + flightlength_n*n + flightlength_k*k;
-    sv = pv + flightlength;
-  }          
 }
 
 std::vector<KinematicEvent>
@@ -404,10 +378,6 @@ StartPosAlgo1::operator()(const KinematicEvent& kineEvt)
       kineEvt_startpos.svTauPlus_ = comp_PCA_line2line(kineEvt_startpos.pv(), tauPlusP4, tauPlus_tipPCA, tauPlus_leadTrack->p4(), verbosity_);
       kineEvt_startpos.svTauPlus_isValid_ = true;
     }
-    //else
-    //{
-    //  fixSV(tauPlusP4, kineEvt_startpos.pv_, kineEvt_startpos.svTauPlus_, collider_, verbosity_, cartesian_);
-    //}
  
     kineEvt_startpos.tauMinusP4_ = tauMinusP4;
     kineEvt_startpos.tauMinusP4_isValid_ = true;
@@ -422,10 +392,6 @@ StartPosAlgo1::operator()(const KinematicEvent& kineEvt)
       kineEvt_startpos.svTauMinus_ = comp_PCA_line2line(kineEvt_startpos.pv(), tauMinusP4, tauMinus_tipPCA, tauMinus_leadTrack->p4(), verbosity_);
       kineEvt_startpos.svTauMinus_isValid_ = true;
     }
-    //else
-    //{
-    //  fixSV(tauMinusP4, kineEvt_startpos.pv_, kineEvt_startpos.svTauMinus_, collider_, verbosity_, cartesian_);
-    //}
 
     kineEvts_startpos.push_back(kineEvt_startpos);
   }
