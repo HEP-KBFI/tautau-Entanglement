@@ -2,7 +2,10 @@
 
 #include "FWCore/Framework/interface/ConsumesCollector.h"             // edm::ConsumesCollector
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wshadow"
 #include "DataFormats/HepMCCandidate/interface/GenParticle.h"         // reco::GenParticle
+#pragma GCC diagnostic pop
 
 #include "TauAnalysis/Entanglement/interface/comp_visP4.h"            // comp_visP4()
 #include "TauAnalysis/Entanglement/interface/get_particles_of_type.h" // get_chargedHadrons(), get_neutralPions(), get_neutrinos()

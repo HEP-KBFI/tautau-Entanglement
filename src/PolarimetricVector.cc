@@ -1,6 +1,10 @@
 #include "TauAnalysis/Entanglement/interface/PolarimetricVector.h"
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wshadow"
+#pragma GCC diagnostic ignored "-Wswitch-enum"
 #include "DataFormats/TauReco/interface/PFTau.h"                           // reco::PFTau::hadronicDecayMode
+#pragma GCC diagnostic pop
 
 #include "TauAnalysis/Entanglement/interface/cmsException.h"               // cmsException
 #include "TauAnalysis/Entanglement/interface/get_localCoordinateSystem.h"  // kBeam, kHiggs

@@ -1,7 +1,10 @@
 #ifndef TauAnalysis_Entanglement_GenKinematicEventBuilder_h
 #define TauAnalysis_Entanglement_GenKinematicEventBuilder_h
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wshadow"
 #include "DataFormats/HepMCCandidate/interface/GenParticle.h"      // reco::GenParticle
+#pragma GCC diagnostic pop
 #include "DataFormats/HepMCCandidate/interface/GenParticleFwd.h"   // reco::GenParticleCollection
 
 #include "TauAnalysis/Entanglement/interface/KinematicEvent.h"     // KinematicEvent

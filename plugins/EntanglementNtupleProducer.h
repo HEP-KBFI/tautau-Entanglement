@@ -7,7 +7,10 @@
 #include "FWCore/ParameterSet/interface/ParameterSet.h"                  // edm::ParameterSet
 #include "FWCore/Utilities/interface/InputTag.h"                         // edm::InputTag<>
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wshadow"
 #include "DataFormats/HepMCCandidate/interface/GenParticle.h"            // reco::GenParticle
+#pragma GCC diagnostic pop
 #include "DataFormats/HepMCCandidate/interface/GenParticleFwd.h"         // reco::GenParticleCollection
 
 #include "TauAnalysis/Entanglement/interface/EntanglementNtuple.h"       // EntanglementNtuple

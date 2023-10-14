@@ -418,7 +418,6 @@ SpinAlgo_by_mlfit::operator()(const spin::Dataset& dataset)
   if ( scanLikelihood_ )
   {
     double mlfitMin = mlfit_->MinValue();
-    std::map<size_t, std::string> parNames = get_parNames();
     std::vector<size_t> parsToScan = { 6, 10, 14 };
     for ( size_t i = 0; i < parsToScan.size(); ++i )
     {
@@ -432,8 +431,8 @@ SpinAlgo_by_mlfit::operator()(const spin::Dataset& dataset)
       showGraphs(1150, 950,
                  mlfitScan_fixed,    "Fixed",
                  mlfitScan_profiled, "Profiled",
-                 0.040, 0.48, 0.78, 0.22, 0.14, 
-	         xMin, xMax, parNames[parToScan], 1.2,
+                 0.040, 0.48, 0.78, 0.22, 0.14,
+                 xMin, xMax, parNames[parToScan], 1.2,
                  false, 0., 2.5e+1, "-2 log(L)", 1.4,
                  mlfitScan_outputFileName);
       std::cout << " Done.\n";

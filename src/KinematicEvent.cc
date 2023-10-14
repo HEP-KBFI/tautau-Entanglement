@@ -296,8 +296,8 @@ printKinematicEvent(const std::string& label,
   for ( size_t idx = 0; idx < daughtersTauPlus.size(); ++idx )
   {
     const KinematicParticle& daughter = daughtersTauPlus[idx];
-    std::string label = Form("#%i", (int)idx);
-    printKinematicParticle(label, daughter, cartesian);
+    std::string idxLabel = Form("#%i", (int)idx);
+    printKinematicParticle(idxLabel, daughter, cartesian);
   }
   double tauPlus_cosThetaGJ = comp_cosThetaGJ(kineEvt.tauPlusP4(), kineEvt.visTauPlusP4(), nullptr, verbosity);
   std::cout << "Gottfied-Jackson angle = " << std::acos(tauPlus_cosThetaGJ) << " "
@@ -349,8 +349,8 @@ printKinematicEvent(const std::string& label,
   for ( size_t idx = 0; idx < daughtersTauMinus.size(); ++idx )
   {
     const KinematicParticle& daughter = daughtersTauMinus[idx];
-    std::string label = Form("#%i", (int)idx);
-    printKinematicParticle(label, daughter, cartesian);
+    std::string idxLabel = Form("#%i", (int)idx);
+    printKinematicParticle(idxLabel, daughter, cartesian);
   }
   double tauMinus_cosThetaGJ = comp_cosThetaGJ(kineEvt.tauMinusP4(), kineEvt.visTauMinusP4(), nullptr, verbosity);
   std::cout << "Gottfied-Jackson angle = " << std::acos(tauMinus_cosThetaGJ) << " "

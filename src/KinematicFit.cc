@@ -5,7 +5,11 @@
 #include "DataFormats/Math/interface/deltaPhi.h"                          // deltaPhi()
 #include "DataFormats/Math/interface/Matrix.h"                            // math::Matrix
 #include "DataFormats/Math/interface/Vector.h"                            // math::Vector
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wshadow"
+#pragma GCC diagnostic ignored "-Wswitch-enum"
 #include "DataFormats/TauReco/interface/PFTau.h"                          // reco::PFTau::kOneProng0PiZero
+#pragma GCC diagnostic pop
 
 #include "TauAnalysis/Entanglement/interface/cmsException.h"              // cmsException
 #include "TauAnalysis/Entanglement/interface/comp_nuPz.h"                 // build_nuP4(), comp_nuPz()

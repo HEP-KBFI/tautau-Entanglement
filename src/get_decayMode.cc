@@ -1,6 +1,10 @@
 #include "TauAnalysis/Entanglement/interface/get_decayMode.h"
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wshadow"
+#pragma GCC diagnostic ignored "-Wswitch-enum"
 #include "DataFormats/TauReco/interface/PFTau.h" // reco::PFTau::hadronicDecayMode
+#pragma GCC diagnostic pop
 
 int
 get_decayMode(const std::vector<const reco::GenParticle*>& tau_ch,

@@ -4,7 +4,11 @@
 #include "DataFormats/Math/interface/deltaR.h"                     // deltaR2()
 #include "DataFormats/Math/interface/Matrix.h"                     // math::Matrix
 #include "DataFormats/Math/interface/Vector.h"                     // math::Vector
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wshadow"
+#pragma GCC diagnostic ignored "-Wswitch-enum"
 #include "DataFormats/TauReco/interface/PFTau.h"                   // reco::PFTau::hadronicDecayMode
+#pragma GCC diagnostic pop
 
 #include "TauAnalysis/Entanglement/interface/comp_PCA_line2line.h" // comp_PCA_line2line()
 #include "TauAnalysis/Entanglement/interface/constants.h"          // mChargedPion, mHiggs, mTau
