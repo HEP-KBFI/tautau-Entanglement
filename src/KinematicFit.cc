@@ -215,7 +215,10 @@ KinematicFit::operator()(const KinematicEvent& kineEvt)
     }
     catch ( const cms::Exception& )
     {
-      std::cerr << "Error in <KinematicFit::operator()>: Caught exception from KinFitAlgo !!\n";
+      if ( verbosity_ >= 0 )
+      {
+        std::cerr << "Error in <KinematicFit::operator()>: Caught exception from KinFitAlgo !!\n";
+      }
       return kineEvt_kinFit;
     }
   }
