@@ -25,6 +25,7 @@
 #include "TauAnalysis/Entanglement/interface/showHistogram1d.h"       // showHistogram1d()
 #include "TauAnalysis/Entanglement/interface/SpinAlgo_by_mlfit.h"     // SpinAlgo_by_mlfit
 #include "TauAnalysis/Entanglement/interface/SpinAnalyzer.h"          // spin::SpinAnalyzer
+#include "TauAnalysis/Entanglement/interface/dumpJSON.h"              // dumpJSON()
 
 #include <TAxis.h>                                                    // TAxis
 #include <TBenchmark.h>                                               // TBenchmark
@@ -42,6 +43,7 @@
 #include <iostream>                                                   // std::cout
 #include <string>                                                     // std::string
 #include <vector>                                                     // std::vector<>
+#include <fstream>                                                    // std::ofstream
 
 const size_t npar = 15;
 
@@ -366,6 +368,16 @@ int main(int argc, char* argv[])
     std::cout << "steerability = " << steerability_exp << "\n";
   }
   clock.Show("spinAnalyzer");
+
+  // Save the results to a JSON file
+  const std::string jsonOutoutFileName = cfg_analyze.getParameter<std::string>("jsonOutoutFileName");
+  std::ofstream jsonOutputFile(jsonOutoutFileName);
+  if ( ! jsonOutputFile )
+  {
+    throw cmsException(argv[0], __LINE__) << "Could not create file: " << jsonOutoutFileName;
+  }
+  jsonOutputFile << dumpJSON(measurement) << '\n';
+  jsonOutputFile.close();
 
   if ( spinAnalyzer_algo == "by_summation" )
   {

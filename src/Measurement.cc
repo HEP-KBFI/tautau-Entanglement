@@ -3,8 +3,22 @@
 using namespace spin;
 
 Measurement::Measurement()
-  : Rchsh_(0.)
+  : concurrence_(0.)
+  , concurrenceMedian_(0.)
+  , concurrenceErr_(0.)
+  , Ek_(0.)
+  , EkMedian_(0.)
+  , EkErr_(0.)
+  , Rchsh_(0.)
+  , RchshMedian_(0.)
   , RchshErr_(0.)
+  , steerability_(0.)
+  , steerabilityMedian_(0.)
+  , steerabilityErr_(0.)
+  , sample_size_(0)
+  , num_bootstrap_samples_(0)
+  , boostrap_size_(0)
+  , num_concurrence_failures_(0)
 {}
 
 Measurement::Measurement(const math::Vector3& Bp, const math::Vector3& Bm, const math::Matrix3x3& C)
@@ -12,64 +26,98 @@ Measurement::Measurement(const math::Vector3& Bp, const math::Vector3& Bm, const
   , Bm_(Bm)
   , C_(C)
   , concurrence_(0.)
+  , concurrenceMedian_(0.)
   , concurrenceErr_(0.)
   , Ek_(0.)
+  , EkMedian_(0.)
   , EkErr_(0.)
   , Rchsh_(0.)
+  , RchshMedian_(0.)
   , RchshErr_(0.)
   , steerability_(0.)
+  , steerabilityMedian_(0.)
   , steerabilityErr_(0.)
+  , sample_size_(0)
+  , num_bootstrap_samples_(0)
+  , boostrap_size_(0)
+  , num_concurrence_failures_(0)
 {}
 
 Measurement::~Measurement()
 {}
 
 void
-Measurement::set_BpErr(const math::Vector3& BpErr)
+Measurement::set_Bp_medianErr(const math::Vector3& BpMedian,
+                              const math::Vector3& BpErr)
 {
+  BpMedian_ = BpMedian;
   BpErr_ = BpErr;
 }
 
 void
-Measurement::set_BmErr(const math::Vector3& BmErr)
+Measurement::set_Bm_medianErr(const math::Vector3& BmMedian,
+                              const math::Vector3& BmErr)
 {
+  BmMedian_ = BmMedian;
   BmErr_ = BmErr;
 }
 
 void
-Measurement::set_CErr(const math::Matrix3x3& CErr)
+Measurement::set_C_medianErr(const math::Matrix3x3& CMedian,
+                             const math::Matrix3x3& CErr)
 {
+  CMedian_ = CMedian;
   CErr_ = CErr;
 }
 
 void
-Measurement::set_concurrenceErr(double concurrenceErr)
+Measurement::set_concurrence_medianErr(double concurrenceMedian,
+                                       double concurrenceErr)
 {
+  concurrenceMedian_ = concurrenceMedian;
   concurrenceErr_ = concurrenceErr;
 }
 
 void
-Measurement::set_EkErr(double EkErr)
+Measurement::set_Ek_medianErr(double EkMedian,
+                              double EkErr)
 {
+  EkMedian_ = EkMedian;
   EkErr_ = EkErr;
 }
 
 void
-Measurement::set_RchshErr(double RchshErr)
+Measurement::set_Rchsh_medianErr(double RchshMedian,
+                                 double RchshErr)
 {
+  RchshMedian_ = RchshMedian;
   RchshErr_ = RchshErr;
 }
 
 void
-Measurement::set_steerabilityErr(double steerabilityErr)
+Measurement::set_steerability_medianErr(double steerabilityMedian,
+                                        double steerabilityErr)
 {
+  steerabilityMedian_ = steerabilityMedian;
   steerabilityErr_ = steerabilityErr;
 }
 
-const math::Vector3&
-Measurement::get_Bp() const
+void
+Measurement::set_metadata(std::size_t sample_size,
+             std::size_t num_bootstrap_samples,
+             std::size_t boostrap_size,
+             std::size_t num_concurrence_failures)
 {
-  return Bp_;
+  sample_size_ = sample_size;
+  num_bootstrap_samples_ = num_bootstrap_samples;
+  boostrap_size_ = boostrap_size;
+  num_concurrence_failures_ = num_concurrence_failures;
+}
+
+const math::Vector3&
+Measurement::get_Bp(bool isMedian) const
+{
+  return isMedian ? BpMedian_ : Bp_;
 }
 
 const math::Vector3&
@@ -79,9 +127,9 @@ Measurement::get_BpErr() const
 }
 
 const math::Vector3&
-Measurement::get_Bm() const
+Measurement::get_Bm(bool isMedian) const
 {
-  return Bm_;
+  return isMedian ? BmMedian_ : Bm_;
 }
 
 const math::Vector3&
@@ -91,9 +139,9 @@ Measurement::get_BmErr() const
 }
 
 const math::Matrix3x3&
-Measurement::get_C() const
+Measurement::get_C(bool isMedian) const
 {
-  return C_;
+  return isMedian ? CMedian_ : C_;
 }
  
 const math::Matrix3x3&
@@ -103,9 +151,9 @@ Measurement::get_CErr() const
 }
 
 double
-Measurement::get_concurrence() const
+Measurement::get_concurrence(bool isMedian) const
 {
-  return concurrence_;
+  return isMedian ? concurrenceMedian_ : concurrence_;
 }
 
 double
@@ -115,9 +163,9 @@ Measurement::get_concurrenceErr() const
 }
 
 double
-Measurement::get_Ek() const
+Measurement::get_Ek(bool isMedian) const
 {
-  return Ek_;
+  return isMedian ? EkMedian_ : Ek_;
 }
 
 double
@@ -127,9 +175,9 @@ Measurement::get_EkErr() const
 }
 
 double
-Measurement::get_Rchsh() const
+Measurement::get_Rchsh(bool isMedian) const
 {
-  return Rchsh_;
+  return isMedian ? RchshMedian_ : Rchsh_;
 }
 
 double
@@ -139,13 +187,37 @@ Measurement::get_RchshErr() const
 }
 
 double
-Measurement::get_steerability() const
+Measurement::get_steerability(bool isMedian) const
 {
-  return steerability_;
+  return isMedian ? steerabilityMedian_ : steerability_;
 }
 
 double
 Measurement::get_steerabilityErr() const
 {
   return steerabilityErr_;
+}
+
+std::size_t
+Measurement::get_sample_size() const
+{
+  return sample_size_;
+}
+
+std::size_t
+Measurement::get_num_bootstrap_samples() const
+{
+  return num_bootstrap_samples_;
+}
+
+std::size_t
+Measurement::get_boostrap_size() const
+{
+  return boostrap_size_;
+}
+
+std::size_t
+Measurement::get_num_concurrence_failures() const
+{
+  return num_concurrence_failures_;
 }

@@ -91,7 +91,7 @@ process.ntupleProducer.smearing.rndSeed = cms.uint64({{ rndSeed }})
 process.ntupleProducer.startPosFinder.applyHiggsMassConstraint = cms.bool(startPosFinder_applyHiggsMassConstraint)
 process.ntupleProducer.startPosFinder.skip = cms.bool(False)
 process.ntupleProducer.kinematicFit.skip = cms.bool(False)
-process.ntupleProducer.verbosity = cms.untracked.int32(-1)
+process.ntupleProducer.verbosity = cms.untracked.int32({{ verbosity }})
 process.analysisSequence += process.ntupleProducer
 
 process.TFileService = cms.Service("TFileService", 

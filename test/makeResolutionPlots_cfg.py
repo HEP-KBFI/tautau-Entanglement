@@ -37,5 +37,5 @@ process.makeResolutionPlots = cms.PSet(
     branchName_evtWeight = cms.string('evtWeight'),
     apply_evtWeight = cms.bool({{ apply_evtWeight }}),
 
-    isDEBUG = cms.bool(False)
+    isDEBUG = cms.bool({{ is_debug }})
 )

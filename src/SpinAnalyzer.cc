@@ -139,7 +139,8 @@ namespace
                       double& concurrence_median, double& concurrenceErr,
                       double& Ek_median, double& EkErr,
                       double& Rchsh_median, double& RchshErr,
-                      double& steerability_median, double& steerabilityErr)
+                      double& steerability_median, double& steerabilityErr,
+                      std::size_t num_concurrence_failures)
   {
     std::vector<math::Vector3> measuredBp;
     std::vector<math::Vector3> measuredBm;
@@ -148,12 +149,25 @@ namespace
     std::vector<double> measuredEk;
     std::vector<double> measuredRchsh;
     std::vector<double> measured_steerability;
+    num_concurrence_failures = 0;
     for ( const spin::Measurement& measurement : measurements )
     {
       measuredBp.push_back(measurement.get_Bp());
       measuredBm.push_back(measurement.get_Bm());
       measuredC.push_back(measurement.get_C());
-      measured_concurrence.push_back(measurement.get_concurrence());
+      const double concurrence_measurement = measurement.get_concurrence();
+      if ( concurrence_measurement >= 0 )
+      {
+        // Karl: the calculation of concurrence can fail if solving related eigenvalue problem fails
+        //       or if the eigenvalues have significant imaginary component. If that's the case then
+        //       concurrence is set to unphysical value of -1. We can ignore such cases as they sway
+        //       the overall uncertainty.
+        measured_concurrence.push_back(concurrence_measurement);
+      }
+      else
+      {
+        ++num_concurrence_failures;
+      }
       measuredEk.push_back(measurement.get_Ek());
       measuredRchsh.push_back(measurement.get_Rchsh());
       measured_steerability.push_back(measurement.get_steerability());
@@ -217,6 +231,7 @@ SpinAnalyzer::build_measurement(const spin::Dataset& dataset, int maxEvents_afte
   math::Vector3 Bp_median, BpErr, Bm_median, BmErr;
   math::Matrix3x3 C_median, CErr;
   double concurrence_median, concurrenceErr, Ek_median, EkErr, Rchsh_median, RchshErr, steerability_median, steerabilityErr;
+  std::size_t num_concurrence_failures = 0;
   comp_median_and_Err(bootstrap_measurements, 
     Bp_median, BpErr,
     Bm_median, BmErr,
@@ -224,15 +239,20 @@ SpinAnalyzer::build_measurement(const spin::Dataset& dataset, int maxEvents_afte
     concurrence_median, concurrenceErr,
     Ek_median, EkErr,
     Rchsh_median, RchshErr,
-    steerability_median, steerabilityErr);
-  nominal_measurement.set_BpErr(BpErr);
-  nominal_measurement.set_BmErr(BmErr);
-  nominal_measurement.set_CErr(CErr);
-  nominal_measurement.set_concurrenceErr(concurrenceErr);
-  nominal_measurement.set_EkErr(EkErr);
-  nominal_measurement.set_RchshErr(RchshErr);
-  nominal_measurement.set_steerabilityErr(steerabilityErr);
-  
+    steerability_median, steerabilityErr,
+    num_concurrence_failures
+  );
+  nominal_measurement.set_Bp_medianErr(Bp_median, BpErr);
+  nominal_measurement.set_Bm_medianErr(Bm_median, BmErr);
+  nominal_measurement.set_C_medianErr(C_median, CErr);
+  nominal_measurement.set_concurrence_medianErr(concurrence_median, concurrenceErr);
+  nominal_measurement.set_Ek_medianErr(Ek_median, EkErr);
+  nominal_measurement.set_Rchsh_medianErr(Rchsh_median, RchshErr);
+  nominal_measurement.set_steerability_medianErr(steerability_median, steerabilityErr);
+  nominal_measurement.set_metadata(
+    dataset.size(), numBootstrapSamples_, maxEvents_afterCuts > 0 ? maxEvents_afterCuts : dataset.size(), num_concurrence_failures
+  );
+
   return nominal_measurement;
 }
 

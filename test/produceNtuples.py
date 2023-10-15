@@ -19,6 +19,7 @@ parser.add_argument('-a', '--axes', nargs = '*', type = str, choices = ['beam', 
 parser.add_argument('-s', '--samples', nargs = '*', default = [], help = 'Whitelisted samples')
 parser.add_argument('-j', '--job-type', type = str, choices = ['local', 'cluster'], required = True, help = 'Job type')
 parser.add_argument('-f', '--filter', nargs = '*', choices = [ 'inv_mass', 'decay_mode', 'pt_eta' ], default = [], help = 'Event selection filters')
+parser.add_argument('-w', '--verbosity', type = int, default = -1, help = 'Verbosity level')
 args = parser.parse_args()
 
 hAxes = args.axes
@@ -29,6 +30,7 @@ apply_inv_mass = 'inv_mass' in args.filter
 apply_decay_mode = 'decay_mode' in args.filter
 apply_pt_eta = 'pt_eta' in args.filter
 run_makefile = args.job_type == 'local'
+verbosity = args.verbosity
 
 samples = None
 if collider == "LHC":
@@ -91,6 +93,7 @@ for sampleName, sample in samples.items():
         'apply_inv_mass'          : apply_inv_mass,
         'apply_decay_mode'        : apply_decay_mode,
         'apply_pt_eta'            : apply_pt_eta,
+        'verbosity'               : verbosity,
       }
       build_cfg(produceNtuple_template, cfgFileName_modified, cfg_args)
       logFileName = cfgFileName_modified.replace("_cfg.py", ".log")

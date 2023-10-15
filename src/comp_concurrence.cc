@@ -77,7 +77,7 @@ namespace {
   Eigen::Vector4d
   find_sqrtEigenValues(const Eigen::Matrix4cd& R,
                        int & errorBit,
-                       double threshold = 1e-6,
+                       double threshold = 1e-5,
                        int verbosity = -1)
   {
 

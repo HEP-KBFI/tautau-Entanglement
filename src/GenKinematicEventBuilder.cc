@@ -446,13 +446,14 @@ GenKinematicEventBuilder::operator()(const reco::GenParticleCollection& genParti
   kineEvt.recoilP4_ = recoilP4;
   kineEvt.recoilCov_ = recoilCov;
 
-  if ( !applySmearing_ )
-  {
+// https://github.com/HEP-KBFI/tautau-Entanglement/issues/4#issuecomment-1763476375
+//  if ( !applySmearing_ )
+//  {
     kineEvt.tauPlusP4_ = tauPlusP4;
     kineEvt.tauPlusP4_isValid_ = true;
     kineEvt.nuTauPlusP4_ = nuTauPlusP4;
     kineEvt.nuTauPlusP4_isValid_ = true;
-  }
+//  }
   kineEvt.nuTauPlusCov_ = nuTauPlusCov;
   kineEvt.nuTauPlusCov_isValid_ = true;
   kineEvt.visTauPlusP4_ = visTauPlusP4;
@@ -464,13 +465,14 @@ GenKinematicEventBuilder::operator()(const reco::GenParticleCollection& genParti
   kineEvt.svTauPlus_isValid_ = true;
   kineEvt.svTauPlusCov_ = svTauPlusCov;
 
-  if ( !applySmearing_ )
-  {
+// https://github.com/HEP-KBFI/tautau-Entanglement/issues/4#issuecomment-1763476375
+//  if ( !applySmearing_ )
+//  {
     kineEvt.tauMinusP4_ = tauMinusP4;
     kineEvt.tauMinusP4_isValid_ = true;
     kineEvt.nuTauMinusP4_ = nuTauMinusP4;
     kineEvt.nuTauMinusP4_isValid_ = true;
-  }
+//  }
   kineEvt.nuTauMinusCov_ = nuTauMinusCov;
   kineEvt.nuTauMinusCov_isValid_ = true;
   kineEvt.visTauMinusP4_ = visTauMinusP4;

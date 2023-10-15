@@ -5,6 +5,7 @@ import argparse
 import getpass
 import sys
 import os
+import re
 
 # Example usage:
 # ./test/produceNtuples.py -v 2023Oct06 -s dy_lo_pythia8
@@ -15,7 +16,7 @@ from TauAnalysis.Entanglement.tools.jobTools import getInputFileNames, build_Mak
 mode_choices = [ "gen", "gen_smeared", "startPos", "kinFit" ]
 hAxes_choices = [ "beam", "higgs" ]
 collider_choices = [ "LHC", "SuperKEKB" ]
-decayMode_choices = [ "piPlus_piMinus", "piPlus_rhoMinus", "rhoPlus_piMinus", "rhoPlus_rhoMinus" ] #TODO to be changed
+decayMode_choices = [ "pi_pi", "pi_rho", "pi_a1", "rho_rho", "rho_a1", "a1_a1", "had_had" ]
 spinAnalyzer_choices = [ "by_summation", "by_mlfit", "by_differentialXsec1d", "by_differentialXsec2d", "by_asymmetry" ]
 
 parser = argparse.ArgumentParser(formatter_class = argparse.ArgumentDefaultsHelpFormatter)
@@ -24,12 +25,13 @@ parser.add_argument('-V', '--ntuple-version', type = str, default = '', help = '
 parser.add_argument('-c', '--collider', type = str, choices = collider_choices, default = 'SuperKEKB', help = 'Collider')
 parser.add_argument('-a', '--axes', nargs = '*', type = str, choices = collider_choices, default = [ 'beam' ], help = 'Axes')
 parser.add_argument('-S', '--spin-analyzers', nargs = '*', type = str, choices = spinAnalyzer_choices, default = spinAnalyzer_choices, help = 'Spin analyzers')
-parser.add_argument('-d', '--decay-modes', nargs = '*', type = str, choices = decayMode_choices, default = decayMode_choices, help = 'Tau decay modes')
+parser.add_argument('-d', '--decay-modes', nargs = '*', type = str, choices = decayMode_choices, default = [ "pi_pi", "pi_rho", "rho_rho" ], help = 'Tau decay modes')
 parser.add_argument('-m', '--modes', nargs = '*', type = str, choices = mode_choices, default = mode_choices, help = 'Input data')
 parser.add_argument('-s', '--samples', nargs = '*', default = [], help = 'Whitelisted samples')
 parser.add_argument('-b', '--bootstrap-size', type = int, default = -1, help = 'Size of bootstrap dataset (use -1 to consider all events from the input sample)')
 parser.add_argument('-B', '--bootstrap-count', type = positive_int_type, default = 100, help = 'Number of bootstrap datasets')
 parser.add_argument('-j', '--job-type', type = str, choices = ['local', 'cluster'], required = True, help = 'Job type')
+parser.add_argument('-w', '--verbosity', type = int, default = 1, help = 'Verbosity level')
 args = parser.parse_args()
 
 version = args.version
@@ -46,6 +48,7 @@ whitelist = args.samples
 bootstrap_size = args.bootstrap_size
 bootstrap_count = args.bootstrap_count
 run_makefile = args.job_type == 'local'
+verbosity = args.verbosity
 
 if collider == "LHC":
     from TauAnalysis.Entanglement.samples import samples_LHC as samples, PAR_GEN_LHC as par_gen, \
@@ -147,6 +150,9 @@ for sampleName, sample in samples.items():
               configDir, f"analyzeEntanglementNtuple_{sampleName}_{mode}Mode_{hAxis}Axis_{decayMode}DecayMode_{spinAnalyzer}_cfg.py"
             )
             outputFileName_analysis = f"analyzeEntanglementNtuple_{sampleName}_{mode}Mode_{hAxis}Axis_{decayMode}DecayMode_{spinAnalyzer}.root"
+            jsonOutputFileName_analysis = os.path.join(
+              configDir, re.sub(r'.root$', '.json', outputFileName_analysis)
+            )
             args_analysis = {
               'inputFileNames'      : inputFileNames,
               'par_gen'             : par_gen,
@@ -159,6 +165,8 @@ for sampleName, sample in samples.items():
               'bootstrapSize'       : bootstrap_size,
               'numBootstrapSamples' : bootstrap_count,
               'outputFileName'      : outputFileName_analysis,
+              'verbosity'           : verbosity,
+              'jsonOutputFileName'  : jsonOutputFileName_analysis,
             }
             build_cfg(analyzeNtuple_template, cfgFileName_analysis_modified, args_analysis)
 
@@ -188,6 +196,7 @@ for sampleName, sample in samples.items():
           'apply_evtWeight' : sample['apply_evtWeight'],
           'maxSumPhotonEn'  : maxSumPhotonEn,
           'outputFileName'  : outputFileName_ctrlPlots,
+          'is_debug'        : False, #verbosity >= 0,
         }
         build_cfg(makeControlPlot_template, cfgFileName_ctrlPlots_modified, args_ctrlPlots)
 
@@ -219,6 +228,7 @@ for sampleName, sample in samples.items():
             'apply_evtWeight' : sample['apply_evtWeight'],
             'maxSumPhotonEn'  : maxSumPhotonEn,
             'outputFileName'  : outputFileName_resPlots,
+            'is_debug'        : False, #verbosity >= 0,
           }
           build_cfg(makeResolutionPlot_template, cfgFileName_resPlots_modified, args_resPlots)
 

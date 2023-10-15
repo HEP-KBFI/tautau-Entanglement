@@ -107,6 +107,7 @@ int main(int argc, char* argv[])
   std::cout << " branchName_evtWeight = " << branchName_evtWeight << "\n";
 
   bool apply_evtWeight = cfg_resPlots.getParameter<bool>("apply_evtWeight");
+  bool isDEBUG = cfg_resPlots.getParameter<bool>("apply_evtWeight");
 
   std::string collider_string = cfg_resPlots.getParameter<std::string>("collider");
   int collider = -1;
@@ -500,23 +501,23 @@ int main(int argc, char* argv[])
       histogram_res_higgs_py->Fill(rec_higgs_p4.py() - gen_higgs_p4.py(), evtWeight);
       histogram_res_higgs_pz->Fill(rec_higgs_p4.pz() - gen_higgs_p4.pz(), evtWeight);
 
-      if ( std::fabs(rec_hPlus_dot_hMinus - gen_hPlus_dot_hMinus) > 0.1 )
+      if (( std::fabs(rec_hPlus_dot_hMinus - gen_hPlus_dot_hMinus) > 0.1 ) && isDEBUG )
       {
         std::cout << "run = " << run << ", lumi = " << lumi << ", event = " << event << "\n";
         std::cout << "hPlus (r,n,k):\n";
-        std::cout << "gen = (" << rec_hPlus_r << "," << rec_hPlus_n << "," << rec_hPlus_k << ")\n";
+        std::cout << "gen = (" << gen_hPlus_r << ',' << gen_hPlus_n << ',' << gen_hPlus_k << ")\n";
         if ( mode == "kinFit" )
         {
-          std::cout << "startPos = (" << startPos_hPlus_r << "," << startPos_hPlus_n << "," << startPos_hPlus_k << ")\n";
+          std::cout << "startPos = (" << startPos_hPlus_r << ',' << startPos_hPlus_n << ',' << startPos_hPlus_k << ")\n";
         }
-        std::cout << mode << " = (" << rec_hPlus_r << "," << rec_hPlus_n << "," << rec_hPlus_k << ")\n";
+        std::cout << mode << " = (" << rec_hPlus_r << ',' << rec_hPlus_n << ',' << rec_hPlus_k << ")\n";
         std::cout << "hMinus (r,n,k):\n";
-        std::cout << "gen = (" << rec_hMinus_r << "," << rec_hMinus_n << "," << rec_hMinus_k << ")\n";
+        std::cout << "gen = (" << gen_hMinus_r << ',' << gen_hMinus_n << ',' << gen_hMinus_k << ")\n";
         if ( mode == "kinFit" )
         {
-          std::cout << "startPos = (" << startPos_hMinus_r << "," << startPos_hMinus_n << "," << startPos_hMinus_k << ")\n";
+          std::cout << "startPos = (" << startPos_hMinus_r << ',' << startPos_hMinus_n << ',' << startPos_hMinus_k << ")\n";
         }
-        std::cout << mode << " = (" << rec_hMinus_r << "," << rec_hMinus_n << "," << rec_hMinus_k << ")\n";
+        std::cout << mode << " = (" << rec_hMinus_r << ',' << rec_hMinus_n << ',' << rec_hMinus_k << ")\n";
       }
 
       ++selectedEntries;
