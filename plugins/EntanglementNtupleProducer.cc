@@ -14,6 +14,9 @@
 #include "TauAnalysis/Entanglement/interface/findLastTau.h"           // findLastTau()
 #include "TauAnalysis/Entanglement/interface/get_decayMode.h"         // get_decayMode()
 #include "TauAnalysis/Entanglement/interface/get_particles_of_type.h" // get_chargedKaons(), get_neutralKaons(), get_photons()
+#include "TauAnalysis/Entanglement/interface/get_tipPerp.h"           // get_tipPerp()
+
+#include <TString.h>                                                  // Form()
 
 #include <iostream>                                                   // std::cout
 
@@ -78,6 +81,12 @@ EntanglementNtupleProducer::EntanglementNtupleProducer(const edm::ParameterSet& 
     startPosFinders_.push_back(new StartPosFinder(cfg_startPosFinder_algo));
   }
 
+  std::string resolveSignAmbiguity = cfg_startPosFinder.getParameter<std::string>("resolveSignAmbiguity");
+  if      ( resolveSignAmbiguity == "TIP"         ) startPosFinder_resolveSignAmbiguity_ = kTIP;
+  else if ( resolveSignAmbiguity == "kinFit_chi2" ) startPosFinder_resolveSignAmbiguity_ = kKinFit_chi2;
+  else throw cmsException("StartPosFinder::StartPosFinder", __LINE__) 
+    << "Invalid Configuration parameter 'resolveSignAmbiguity' = " << resolveSignAmbiguity << " !!\n";
+
   edm::ParameterSet cfg_kinematicFit = cfg.getParameter<edm::ParameterSet>("kinematicFit");
   cfg_kinematicFit.addParameter<edm::ParameterSet>("resolutions", cfg_resolutions);
   cfg_kinematicFit.addParameter<std::string>("hAxis", hAxis);
@@ -136,6 +145,19 @@ void EntanglementNtupleProducer::beginJob()
   ntupleFiller_had_had_ = new EntanglementNtuple(ntuple_had_had_);
 }
 
+namespace
+{
+  bool
+  isLowerTIPperp(const KinematicEvent& kineEvt1, const KinematicEvent& kineEvt2)
+  {
+    double tipPerp1 = get_tipPerp(kineEvt1.tauPlusP4(), kineEvt1.visTauPlusP4(), kineEvt1.pv(), kineEvt1.tipPCATauPlus())
+                     + get_tipPerp(kineEvt1.tauMinusP4(), kineEvt1.visTauMinusP4(), kineEvt1.pv(), kineEvt1.tipPCATauMinus());
+    double tipPerp2 = get_tipPerp(kineEvt2.tauPlusP4(), kineEvt2.visTauPlusP4(), kineEvt2.pv(), kineEvt2.tipPCATauPlus())
+                     + get_tipPerp(kineEvt2.tauMinusP4(), kineEvt2.visTauMinusP4(), kineEvt2.pv(), kineEvt2.tipPCATauMinus());
+    return tipPerp1 < tipPerp2;
+  }
+}
+
 void EntanglementNtupleProducer::analyze(const edm::Event& evt, const edm::EventSetup& es)
 {
   if ( verbosity_ >= 1 )
@@ -171,54 +193,72 @@ void EntanglementNtupleProducer::analyze(const edm::Event& evt, const edm::Event
     printKinematicEvent("kineEvt_gen_smeared", kineEvt_gen_smeared, verbosity_, cartesian_);
   }
 
-  KinematicEvent kineEvt_startPos_bestfit;
-  KinematicEvent kineEvt_kinFit_bestfit;
-  double kinFitChi2_bestfit = -1.;
-  int kinFitStatus_bestfit = -1;
-  bool isFirst = true;
+  std::vector<KinematicEvent> kineEvts_startPos;
   for ( StartPosFinder* startPosFinder : startPosFinders_ )
   {
     if ( verbosity_ >= 1 )
     {
       std::cout << "executing startPosFinder algo #" << startPosFinder->get_algo() << "...";
     }
-    std::vector<KinematicEvent> kineEvts_startPos = (*startPosFinder)(kineEvt_gen_smeared);
 
-    size_t numSolutions = kineEvts_startPos.size();
+    std::vector<KinematicEvent> startPosFinder_solutions  = (*startPosFinder)(kineEvt_gen_smeared);
+    size_t numSolutions = startPosFinder_solutions.size();
     if ( verbosity_ >= 1 )
     {
       std::cout << "#solutions = " << numSolutions<< "\n";
     }
     for ( size_t idxSolution = 0; idxSolution < numSolutions; ++idxSolution )
     {
-      const KinematicEvent& kineEvt_startPos = kineEvts_startPos.at(idxSolution);
+      KinematicEvent& kineEvt_startPos = startPosFinder_solutions.at(idxSolution);
+      std::string label = Form("kineEvt_startPos (algo #%i, solution #%lu)", startPosFinder->get_algo(), idxSolution);
+      kineEvt_startPos.label_ = label;
+      kineEvts_startPos.push_back(kineEvt_startPos);
+    }
+  }
 
-      if ( verbosity_ >= 1 )
-      {
-        std::cout << "executing KinematicFit for startPosFinder algo #" << startPosFinder->get_algo() << ", solution #" << idxSolution << "...\n";
-        printKinematicEvent("kineEvt_startPos", kineEvt_startPos, verbosity_, cartesian_);
-      }
-      KinematicEvent kineEvt_kinFit = (*kinematicFit_)(kineEvt_startPos);
+  // CV: sort solutions by decreasing compatibility with transverse impact parameters;
+  //     the transverse impact parameter-compatibility of solutions is computed as described in the paper arXiv:hep-ph/9307269 
+  std::sort(kineEvts_startPos.begin(), kineEvts_startPos.end(), isLowerTIPperp);
 
-      if ( verbosity_ >= 1 )
-      {
-        printKinematicEvent("kineEvt_kinFit", kineEvt_kinFit, verbosity_, cartesian_);
-      }
+  // CV: choose solution with best transverse impact parameter-compatibility
+  //    (and run kinematic fit only for this solution)
+  if ( startPosFinder_resolveSignAmbiguity_ == kTIP )
+  {
+    if ( kineEvts_startPos.size() >= 1 ) kineEvts_startPos = { kineEvts_startPos.front() };
+  }
+
+  KinematicEvent kineEvt_startPos_bestfit;
+  KinematicEvent kineEvt_kinFit_bestfit;
+  double kinFitChi2_bestfit = -1.;
+  int kinFitStatus_bestfit = -1;
+  bool isFirst = true;
+  for ( const KinematicEvent& kineEvt_startPos : kineEvts_startPos )
+  {
+    if ( verbosity_ >= 1 )
+    {
+      std::cout << "executing KinematicFit for " << kineEvt_startPos.label() << "...\n";
+      printKinematicEvent("kineEvt_startPos", kineEvt_startPos, verbosity_, cartesian_);
+    }
+
+    KinematicEvent kineEvt_kinFit = (*kinematicFit_)(kineEvt_startPos);
+    if ( verbosity_ >= 1 )
+    {
+      printKinematicEvent("kineEvt_kinFit", kineEvt_kinFit, verbosity_, cartesian_);
+    }
  
-      bool isBetterFit = kineEvt_kinFit.kinFitStatus() >  kinFitStatus_bestfit || 
-                        (kineEvt_kinFit.kinFitStatus() == kinFitStatus_bestfit && kineEvt_kinFit.kinFitChi2() < kinFitChi2_bestfit);
-      if ( verbosity_ >= 1 )
-      {
-        std::cout << "isBetterFit = " << isBetterFit << "\n";
-      }
-      if ( isFirst || isBetterFit )
-      {
-        kineEvt_startPos_bestfit = kineEvt_startPos;
-        kineEvt_kinFit_bestfit = kineEvt_kinFit;
-        kinFitChi2_bestfit = kineEvt_kinFit.kinFitChi2();
-        kinFitStatus_bestfit = kineEvt_kinFit.kinFitStatus();
-        isFirst = false;
-      }
+    bool isBetterFit = kineEvt_kinFit.kinFitStatus() >  kinFitStatus_bestfit || 
+                      (kineEvt_kinFit.kinFitStatus() == kinFitStatus_bestfit && kineEvt_kinFit.kinFitChi2() < kinFitChi2_bestfit);
+    if ( verbosity_ >= 1 )
+    {
+      std::cout << "isBetterFit = " << isBetterFit << "\n";
+    }
+    if ( isFirst || isBetterFit )
+    {
+      kineEvt_startPos_bestfit = kineEvt_startPos;
+      kineEvt_kinFit_bestfit = kineEvt_kinFit;
+      kinFitChi2_bestfit = kineEvt_kinFit.kinFitChi2();
+      kinFitStatus_bestfit = kineEvt_kinFit.kinFitStatus();
+      isFirst = false;
     }
   }
   if ( !(kinFitStatus_bestfit == 1 || (kinFitStatus_bestfit == 0 && kinFitChi2_bestfit < 1.e+2)) )
