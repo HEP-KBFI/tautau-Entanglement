@@ -15,6 +15,7 @@ ntupleProducer = cms.EDAnalyzer("EntanglementNtupleProducer",
         algos = cms.vint32(1),
         applyHiggsMassConstraint = cms.bool(True),
         applyRecoilEnergy_and_PzConstraint = cms.bool(True),
+        resolveSignAmbiguity = cms.string("TIP"), # CV: either "TIP" or "kinFit_chi2"
         skip = cms.bool(False)
     ),
     kinematicFit = cms.PSet(
