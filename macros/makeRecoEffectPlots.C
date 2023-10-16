@@ -275,6 +275,18 @@ makeRecoEffectPlots()
 
     TH1* histogram_noNeutralKaonCut = loadHistogram(inputFile_noNeutralKaonCut, histogramName);
 
+    if ( rebin[*observable] > 1 )
+    {
+      histogram_baseline->Rebin(rebin[*observable]);
+
+      histogram_minVisTauPtGt0p5->Rebin(rebin[*observable]);
+      histogram_minVisTauPtGt1p0->Rebin(rebin[*observable]);
+      histogram_minVisTauPtGt2p0->Rebin(rebin[*observable]);
+      histogram_minVisTauPtGt3p0->Rebin(rebin[*observable]);
+
+      histogram_noNeutralKaonCut->Rebin(rebin[*observable]);
+    }
+
     double normFactor = 1./histogram_baseline->Integral();
     histogram_baseline->Scale(normFactor);
 
@@ -284,18 +296,6 @@ makeRecoEffectPlots()
     histogram_minVisTauPtGt3p0->Scale(normFactor);
 
     histogram_noNeutralKaonCut->Scale(normFactor);
-
-    if ( rebin[*observable] > 1 )
-    {
-      histogram_baseline->Rebin();
-
-      histogram_minVisTauPtGt0p5->Rebin();
-      histogram_minVisTauPtGt1p0->Rebin();
-      histogram_minVisTauPtGt2p0->Rebin();
-      histogram_minVisTauPtGt3p0->Rebin();
-
-      histogram_noNeutralKaonCut->Rebin();
-    }
 
     std::string outputFileName_minVisTauPt = Form("makeRecoEffectPlots_%s_minVisTauPt.png", observable->c_str());
     showHistograms(1150, 950,
