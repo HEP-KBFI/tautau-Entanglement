@@ -1,6 +1,6 @@
 #include "TauAnalysis/Entanglement/interface/StartPosAlgo1.h"
 
-#include "DataFormats/Candidate/interface/Candidate.h"                    // reco::Candidate::LorentzVector
+#include "DataFormats/Candidate/interface/Candidate.h"                    // reco::Candidate::LorentzVector, reco::Candidate::Point
 #include "DataFormats/Math/interface/deltaR.h"                            // deltaR2()
 #include "DataFormats/Math/interface/Matrix.h"                            // math::Matrix
 #include "DataFormats/Math/interface/Vector.h"                            // math::Vector
@@ -14,9 +14,11 @@
 #include "TauAnalysis/Entanglement/interface/get_decayMode.h"             // is1Prong()
 #include "TauAnalysis/Entanglement/interface/get_localCoordinateSystem.h" // get_localCoordinateSystem()
 #include "TauAnalysis/Entanglement/interface/get_leadTrack.h"             // get_leadTrack()
+#include "TauAnalysis/Entanglement/interface/get_tipPerp.h"               // get_tipPerp()
 #include "TauAnalysis/Entanglement/interface/printLorentzVector.h"        // printLorentzVector()
 #include "TauAnalysis/Entanglement/interface/square.h"                    // square()
 
+#include <algorithm>                                                      // std::sort()
 #include <cmath>                                                          // std::sqrt()
 #include <utility>                                                        // std::make_pair()
 #include <iostream>                                                       // std::cout
@@ -187,19 +189,6 @@ namespace
       d.push_back(0.);
     }
     return d;
-  }
-  
-  double
-  get_tipPerp(const reco::Candidate::LorentzVector& tauP4, 
-              const reco::Candidate::LorentzVector& visTauP4, 
-              const reco::Candidate::Point& pv, const reco::Candidate::Point& tipPCA)
-  {
-    reco::Candidate::Vector e_tau  = tauP4.Vect().unit();
-    reco::Candidate::Vector e_vis  = visTauP4.Vect().unit();
-    reco::Candidate::Vector e_perp = e_tau.Cross(e_vis).unit();
-    reco::Candidate::Vector flightlength = tipPCA - pv;
-    double tipPerp = std::fabs(e_perp.Dot(flightlength));
-    return tipPerp;
   }
 }
 
