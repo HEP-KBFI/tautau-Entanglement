@@ -450,6 +450,8 @@ GenKinematicEventBuilder::operator()(const reco::GenParticleCollection& genParti
 
   KinematicEvent kineEvt;
 
+  kineEvt.label_ = ( applySmearing_ ) ? "kineEvt_gen_smeared" : "kineEvt_gen";
+
   kineEvt.pv_ = pv;
   kineEvt.pvCov_ = pvCov;
 
