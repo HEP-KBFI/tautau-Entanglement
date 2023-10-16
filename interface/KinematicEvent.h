@@ -30,6 +30,9 @@ class KinematicEvent
   KinematicEvent();
   ~KinematicEvent();
 
+  const std::string&
+  label() const;
+
   const reco::Candidate::Point&
   pv() const;
 
@@ -180,6 +183,7 @@ class KinematicEvent
   bool
   kinFit_isValid() const;
 
+  friend class EntanglementNtupleProducer;
   friend class GenKinematicEventBuilder;
   friend class KinematicFit;
   friend class StartPosFinder;
@@ -188,6 +192,8 @@ class KinematicEvent
   friend class Smearing;
 
  private:
+  std::string label_;
+
   reco::Candidate::Point pv_;
   math::Matrix3x3 pvCov_;
 

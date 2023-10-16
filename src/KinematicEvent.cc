@@ -28,6 +28,12 @@ KinematicEvent::KinematicEvent()
 KinematicEvent::~KinematicEvent()
 {}
 
+const std::string&
+KinematicEvent::label() const
+{
+  return label_;
+}
+
 const reco::Candidate::Point&
 KinematicEvent::pv() const
 {
