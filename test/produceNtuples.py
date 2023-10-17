@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 # Example usage:
-# ./test/produceNtuples.py -v 2023Oct06_wSmearing -s dy_lo_pythia8 -j local
+# ./test/produceNtuples.py -v 2023Oct14_wSmearing -s dy_lo_pythia8_ext -j cluster
 
 import datetime
 import argparse
@@ -108,6 +108,8 @@ for sampleName, sample in samples.items():
         'logFileName'    : logFileName,
         'cmd'            : 'cmsRun',
       }
+if whitelist and len(jobOptions.keys()) == 0:
+  raise ValueError("Invalid Configuration parameter 'whitelist' = '%s', no samples selected !!" % whitelist)
 
 message = f"Finished building config files for {len(jobOptions)} job(s)."
 if run_makefile:

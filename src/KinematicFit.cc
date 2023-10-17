@@ -20,6 +20,8 @@
 #include "TauAnalysis/Entanglement/interface/Matrix_and_Vector.h"         // math::Matrix*, math::Vector*
 #include "TauAnalysis/Entanglement/interface/printCovMatrix.h"            // printCovMatrix()
 #include "TauAnalysis/Entanglement/interface/printLorentzVector.h"        // printLorentzVector()
+#include "TauAnalysis/Entanglement/interface/rotateCovMatrix.h"           // rotateCovMatrix()
+#include "TauAnalysis/Entanglement/interface/rotateVector.h"              // rotateVector()
 #include "TauAnalysis/Entanglement/interface/square.h"                    // square()
 
 #include "Math/Functions.h"                                               // ROOT::Math::Dot(), ROOT::Math::Similarity(), ROOT::Math::Transpose() 
@@ -74,6 +76,31 @@ namespace kinFit
     }
   }
 
+  reco::Candidate::Point
+  get_svStartPos(const reco::Candidate::Point& pv, const reco::Candidate::Point& sv, const math::Matrix3x3& rotMatrix_xyz2rnk, int verbosity)
+  {
+    auto flightlength_xyz = sv - pv;
+    auto flightlength_rnk = rotateVector(flightlength_xyz, rotMatrix_xyz2rnk);
+    // CV: set flightlength to at least 10 micrometer
+    //     in direction of visible decay products
+    const double epsilon = 1.e-3;
+    if ( flightlength_rnk.z() < epsilon )
+    {
+      double sf = epsilon/flightlength_rnk.z();
+      if ( verbosity >= 3 )
+      {
+        std::cout << "WARNING: Component k of flightlength vector small or negative "
+                  << " -> scaling flightlength vector by factor = " << sf << " !!\n";
+        std::cout << "flightlength (before scaling): r = " << flightlength_rnk.x() << "," 
+                  << " n = " << flightlength_rnk.y() << ", k = " << flightlength_rnk.z() << "\n";
+        std::cout << "flightlength (after  scaling): r = " << sf*flightlength_rnk.x() << "," 
+                  << " n = " << sf*flightlength_rnk.y() << ", k = " << sf*flightlength_rnk.z() << "\n";
+      }
+      flightlength_rnk *= sf;
+    }
+    return reco::Candidate::Point(flightlength_rnk.x(), flightlength_rnk.y(), flightlength_rnk.z());
+  }
+
   math::Matrix3x3
   build_nuCov(const math::Matrix2x2& cov2x2, double nu_dPzdPx, double nu_dPzdPy)
   {
@@ -123,13 +150,17 @@ KinematicFit::operator()(const KinematicEvent& kineEvt)
   const reco::Candidate::LorentzVector& startPos_visTauPlusP4 = kineEvt.visTauPlusP4();
   const reco::Candidate::LorentzVector& startPos_nuTauPlusP4 = kineEvt.nuTauPlusP4();
   Matrix2x2 nuTauPlusCov = kineEvt.nuTauPlusCov().Sub<Matrix2x2>(0,0);
-  const reco::Candidate::Point& startPos_svTauPlus = kineEvt.svTauPlus();
-  const Matrix3x3& svTauPlusCov = kineEvt.svTauPlusCov();
+  // CV: tau+ decay vertex is represented by flightlength = sv - pv in the kinematic fit
+  //     and given in helicity-frame coordinates { r, n, k }
+  reco::Candidate::Point startPos_svTauPlus = get_svStartPos(kineEvt.pv(), kineEvt.svTauPlus(), kineEvt.tauPlus_rotMatrix_xyz2rnk(), verbosity_);
+  const Matrix3x3& svTauPlusCov = rotateCovMatrix(kineEvt.svTauPlusCov(), kineEvt.tauPlus_rotMatrix_xyz2rnk());
   const reco::Candidate::LorentzVector& startPos_visTauMinusP4 = kineEvt.visTauMinusP4();
   const reco::Candidate::LorentzVector& startPos_nuTauMinusP4 = kineEvt.nuTauMinusP4();
   Matrix2x2 nuTauMinusCov = kineEvt.nuTauMinusCov().Sub<Matrix2x2>(0,0);
-  const reco::Candidate::Point& startPos_svTauMinus = kineEvt.svTauMinus();
-  const Matrix3x3& svTauMinusCov = kineEvt.svTauMinusCov();
+  // CV: tau- decay vertex is represented by flightlength = sv - pv in the kinematic fit
+  //     and given in helicity-frame coordinates { r, n, k }
+  reco::Candidate::Point startPos_svTauMinus = get_svStartPos(kineEvt.pv(), kineEvt.svTauMinus(), kineEvt.tauMinus_rotMatrix_xyz2rnk(), verbosity_);
+  const Matrix3x3& svTauMinusCov = rotateCovMatrix(kineEvt.svTauMinusCov(), kineEvt.tauMinus_rotMatrix_xyz2rnk());
   const reco::Candidate::LorentzVector& startPos_recoilP4 = kineEvt.recoilP4();
   const Matrix4x4& recoilCov = kineEvt.recoilCov();
 
@@ -232,7 +263,7 @@ KinematicFit::operator()(const KinematicEvent& kineEvt)
   double fitResult_nuTauPlus_dPzdPx, fitResult_nuTauPlus_dPzdPy;
   bool fitResult_nuTauPlus_errorFlag = false;
   double fitResult_nuTauPlusPz = comp_nuPz(
-           kineEvt.visTauPlusP4_, fitResult_nuTauPlusPx, fitResult_nuTauPlusPy, signTauPlus,
+           startPos_visTauPlusP4, fitResult_nuTauPlusPx, fitResult_nuTauPlusPy, signTauPlus,
            fitResult_nuTauPlus_dPzdPx, fitResult_nuTauPlus_dPzdPy,
 	   fitResult_nuTauPlus_errorFlag,
            verbosity_);
@@ -241,7 +272,7 @@ KinematicFit::operator()(const KinematicEvent& kineEvt)
   double fitResult_nuTauMinus_dPzdPx, fitResult_nuTauMinus_dPzdPy;
   bool fitResult_nuTauMinus_errorFlag = false;
   double fitResult_nuTauMinusPz = comp_nuPz(
-           kineEvt.visTauMinusP4_, fitResult_nuTauMinusPx, fitResult_nuTauMinusPy, signTauMinus,
+           startPos_visTauMinusP4, fitResult_nuTauMinusPx, fitResult_nuTauMinusPy, signTauMinus,
            fitResult_nuTauMinus_dPzdPx, fitResult_nuTauMinus_dPzdPy,
 	   fitResult_nuTauMinus_errorFlag,
            verbosity_);
@@ -258,17 +289,21 @@ KinematicFit::operator()(const KinematicEvent& kineEvt)
     kineEvt_kinFit.nuTauPlusP4_ = build_nuP4(fitResult_nuTauPlusPx, fitResult_nuTauPlusPy, fitResult_nuTauPlusPz);
     kineEvt_kinFit.nuTauPlusP4_isValid_ = true;
     kineEvt_kinFit.nuTauPlusCov_ = build_nuCov(fitResult_V_alpha.Sub<Matrix2x2>(3,3), fitResult_nuTauPlus_dPzdPx, fitResult_nuTauPlus_dPzdPy);
-    kineEvt_kinFit.tauPlusP4_ = kineEvt.visTauPlusP4_ + kineEvt.nuTauPlusP4_;
+    kineEvt_kinFit.tauPlusP4_ = startPos_visTauPlusP4 + kineEvt_kinFit.nuTauPlusP4_;
     kineEvt_kinFit.tauPlusP4_isValid_ = true;
-    kineEvt_kinFit.svTauPlus_ = reco::Candidate::Point(fitResult_alpha(5), fitResult_alpha(6), fitResult_alpha(7));
-    kineEvt_kinFit.svTauPlusCov_ = fitResult_V_alpha.Sub<Matrix3x3>(5,5);        
+    reco::Candidate::Point fitResult_svTauPlus = reco::Candidate::Point(fitResult_alpha(5), fitResult_alpha(6), fitResult_alpha(7));
+    kineEvt_kinFit.svTauPlus_ = rotateVector(fitResult_svTauPlus, kineEvt.tauPlus_rotMatrix_rnk2xyz()) 
+      + reco::Candidate::Vector(startPos_pv.x(), startPos_pv.y(), startPos_pv.z());
+    kineEvt_kinFit.svTauPlusCov_ = rotateCovMatrix(fitResult_V_alpha.Sub<Matrix3x3>(5,5), kineEvt.tauPlus_rotMatrix_rnk2xyz());        
     kineEvt_kinFit.nuTauMinusP4_ = build_nuP4(fitResult_nuTauMinusPx, fitResult_nuTauMinusPy, fitResult_nuTauMinusPz);
     kineEvt_kinFit.nuTauMinusP4_isValid_ = true;       
     kineEvt_kinFit.nuTauMinusCov_ = build_nuCov(fitResult_V_alpha.Sub<Matrix2x2>(8,8), fitResult_nuTauMinus_dPzdPx, fitResult_nuTauMinus_dPzdPy);
-    kineEvt_kinFit.tauMinusP4_ = kineEvt.visTauMinusP4_ + kineEvt.nuTauMinusP4_;
+    kineEvt_kinFit.tauMinusP4_ = startPos_visTauMinusP4 + kineEvt_kinFit.nuTauMinusP4_;
     kineEvt_kinFit.tauMinusP4_isValid_ = true;
-    kineEvt_kinFit.svTauMinus_ = reco::Candidate::Point(fitResult_alpha(10), fitResult_alpha(11), fitResult_alpha(12));
-    kineEvt_kinFit.svTauMinusCov_ = fitResult_V_alpha.Sub<Matrix3x3>(10,10);
+    reco::Candidate::Point fitResult_svTauMinus = reco::Candidate::Point(fitResult_alpha(10), fitResult_alpha(11), fitResult_alpha(12));
+    kineEvt_kinFit.svTauMinus_ = rotateVector(fitResult_svTauMinus, kineEvt.tauMinus_rotMatrix_rnk2xyz())
+      + reco::Candidate::Vector(startPos_pv.x(), startPos_pv.y(), startPos_pv.z());
+    kineEvt_kinFit.svTauMinusCov_ = rotateCovMatrix(fitResult_V_alpha.Sub<Matrix3x3>(10,10), kineEvt.tauMinus_rotMatrix_rnk2xyz());
     kineEvt_kinFit.kinFitCov_ = fitResult_V_alpha;
     kineEvt_kinFit.kinFitStatus_ = fitResult.get_status();
     kineEvt_kinFit.kinFitChi2_ = fitResult.get_chi2();

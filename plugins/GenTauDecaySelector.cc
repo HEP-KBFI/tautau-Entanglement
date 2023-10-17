@@ -17,6 +17,7 @@ GenTauDecaySelector::GenTauDecaySelector(const edm::ParameterSet& cfg)
   , maxNumNeutralKaons_(cfg.getParameter<int>("maxNumNeutralKaons"))
   , maxNumPhotons_(cfg.getParameter<int>("maxNumPhotons"))
   , maxSumPhotonEn_(cfg.getParameter<double>("maxSumPhotonEn"))
+  , verbosity_(cfg.getUntrackedParameter<int>("verbosity"))
 {
   src_ = cfg.getParameter<edm::InputTag>("src");
   token_ = consumes<reco::GenJetCollection>(src_);
@@ -30,8 +31,17 @@ GenTauDecaySelector::~GenTauDecaySelector()
 void
 GenTauDecaySelector::produce(edm::Event& evt, const edm::EventSetup& es)
 {
+  if ( verbosity_ >= 1 )
+  {
+    std::cout << "<GenTauDecaySelector::produce>:" << "\n";
+  }
+
   edm::Handle<reco::GenJetCollection> genTaus;
   evt.getByToken(token_, genTaus);
+  if ( verbosity_ >= 1 )
+  {
+    std::cout << "#genTaus = " << genTaus->size() << "\n";
+  }
 
   std::unique_ptr<reco::GenJetCollection> selectedGenTaus(new reco::GenJetCollection());
 
@@ -39,6 +49,10 @@ GenTauDecaySelector::produce(edm::Event& evt, const edm::EventSetup& es)
   for ( size_t idxGenTau = 0; idxGenTau < numGenTaus; ++idxGenTau )
   {
     const reco::GenJet& genTau = genTaus->at(idxGenTau);
+    if ( verbosity_ >= 2 )
+    {
+      std::cout << "genTau #" << idxGenTau << ": pT = " << genTau.pt() << ", theta = " << genTau.theta() << ", phi = " << genTau.phi() << "\n";
+    }
 
     std::vector<const reco::GenParticle*> daughters = genTau.getGenConstituents();
     int numChargedKaons = get_chargedKaons(daughters).size();
@@ -46,6 +60,13 @@ GenTauDecaySelector::produce(edm::Event& evt, const edm::EventSetup& es)
     std::vector<const reco::GenParticle*> photons = get_photons(daughters);
     int numPhotons = photons.size();
     double sumPhotonEn = comp_visP4(photons).energy();
+    if ( verbosity_ >= 2 )
+    {
+      std::cout << "numChargedKaons = " << numChargedKaons << " (maxNumChargedKaons = " << maxNumChargedKaons_ << ")\n";
+      std::cout << "numNeutralKaons = " << numNeutralKaons << " (maxNumNeutralKaons = " << maxNumNeutralKaons_ << ")\n";
+      std::cout << "numPhotons = " << numPhotons << " (maxNumPhotons = " << maxNumPhotons_ << ")\n";
+      std::cout << "sumPhotonEn = " << sumPhotonEn << " (maxSumPhotonEn = " << maxSumPhotonEn_ << ")\n";
+    }
 
     if ( (maxNumChargedKaons_ == -1  || numChargedKaons <= maxNumChargedKaons_) &&
          (maxNumNeutralKaons_ == -1  || numNeutralKaons <= maxNumNeutralKaons_) &&
@@ -53,6 +74,10 @@ GenTauDecaySelector::produce(edm::Event& evt, const edm::EventSetup& es)
          (maxSumPhotonEn_     <   0. || sumPhotonEn     <= maxSumPhotonEn_    ) ) {
       selectedGenTaus->push_back(genTau);
     }
+  }
+  if ( verbosity_ >= 1 )
+  {
+    std::cout << "#selectedGenTaus = " << selectedGenTaus->size() << "\n";
   }
 
   evt.put(std::move(selectedGenTaus));
@@ -67,6 +92,7 @@ GenTauDecaySelector::fillDescriptions(edm::ConfigurationDescriptions& descriptio
   desc.add<int>("maxNumNeutralKaons", 0);
   desc.add<int>("maxNumPhotons", -1);
   desc.add<double>("maxSumPhotonEn", 0.5);
+  desc.addUntracked<int>("verbosity", 0);
   descriptions.add("genTauDecaySelector", desc);
 }
 

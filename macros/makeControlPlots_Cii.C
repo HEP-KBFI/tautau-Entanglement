@@ -33,20 +33,6 @@ openFile(const std::string& inputFilePath, const std::string& inputFileName)
   return inputFile;
 }
 
-double
-compIntegral(const TH1* histogram, bool includeUnderflowBin = false, bool includeOverflowBin = false)
-{
-  int firstBin = 1;
-  if ( includeUnderflowBin ) firstBin -= 1;
-  int lastBin = histogram->GetNbinsX();
-  if ( includeOverflowBin ) lastBin += 1;
-  double integral = 0.;
-  for ( int idxBin = firstBin; idxBin <= lastBin; ++idxBin ) {
-    integral += histogram->GetBinContent(idxBin);
-  }
-  return integral;
-}
-
 TH1*
 loadHistogram(TFile* inputFile, const std::string& histogramName)
 {
@@ -179,7 +165,7 @@ showHistograms(double canvasSizeX, double canvasSizeY,
 }
 
 void
-makeRecoEffectPlots()
+makeControlPlots_Cii()
 {
 //--- stop ROOT from keeping references to all histograms
   TH1::AddDirectory(false);
@@ -187,73 +173,42 @@ makeRecoEffectPlots()
 //--- suppress the output canvas 
   gROOT->SetBatch(true);
 
-  std::string inputFilePath = "/home/veelken/Entanglement/studyRecoEffects/SuperKEKB/2023Sep14_wSmearing/plots/";
-  std::string inputFileName_baseline = "makeControlPlots_dy_lo_pythia8_genMode_beamAxis_piPlus_piMinusDecayMode_noVisTauPtCut.root";
-  TFile* inputFile_baseline = openFile(inputFilePath, inputFileName_baseline);
+  std::string inputFilePath = "/home/veelken/Entanglement/analysis/SuperKEKB/2023Oct15_wSmearing/plots/";
 
-  std::string inputFileName_minVisTauPtGt0p5 = "makeControlPlots_dy_lo_pythia8_genMode_beamAxis_piPlus_piMinusDecayMode_minVisTauPtGt0p5.root";
-  TFile* inputFile_minVisTauPtGt0p5 = openFile(inputFilePath, inputFileName_minVisTauPtGt0p5);
-  std::string inputFileName_minVisTauPtGt1p0 = "makeControlPlots_dy_lo_pythia8_genMode_beamAxis_piPlus_piMinusDecayMode_minVisTauPtGt1p0.root";
-  TFile* inputFile_minVisTauPtGt1p0 = openFile(inputFilePath, inputFileName_minVisTauPtGt1p0);
-  std::string inputFileName_minVisTauPtGt2p0 = "makeControlPlots_dy_lo_pythia8_genMode_beamAxis_piPlus_piMinusDecayMode_minVisTauPtGt2p0.root";
-  TFile* inputFile_minVisTauPtGt2p0 = openFile(inputFilePath, inputFileName_minVisTauPtGt2p0);
-  std::string inputFileName_minVisTauPtGt3p0 = "makeControlPlots_dy_lo_pythia8_genMode_beamAxis_piPlus_piMinusDecayMode_minVisTauPtGt3p0.root";
-  TFile* inputFile_minVisTauPtGt3p0 = openFile(inputFilePath, inputFileName_minVisTauPtGt3p0);
+  std::vector<std::string> modes;
+  modes.push_back("gen");
+  modes.push_back("startPos");
+  modes.push_back("kinFit");
 
-  std::string inputFileName_noNeutralKaonCut = "makeControlPlots_dy_lo_pythia8_genMode_beamAxis_piPlus_piMinusDecayMode_noNeutralKaonCut.root";
-  TFile* inputFile_noNeutralKaonCut = openFile(inputFilePath, inputFileName_noNeutralKaonCut);
+  std::map<std::string, TFile*> inputFiles;
+  for ( std::vector<std::string>::const_iterator mode = modes.begin(); mode != modes.end(); ++mode )
+  {
+    std::string inputFileName = Form("makeControlPlots_dy_lo_pythia8_ext_%sMode_beamAxis_pi_piDecayMode.root", mode->c_str());
+    TFile* inputFile = openFile(inputFilePath, inputFileName);
+    inputFiles[*mode] = inputFile;
+  }
 
   std::vector<std::string> observables;
-  observables.push_back("Bp_n");
-  observables.push_back("Bp_r");
-  observables.push_back("Bp_k");
-  observables.push_back("Bm_n");
-  observables.push_back("Bm_r");
-  observables.push_back("Bm_k");
   observables.push_back("C_rr");
   observables.push_back("C_nn");
   observables.push_back("C_kk");
 
   std::map<std::string, int> rebin; // key = observable
-  rebin["Bp_n"]                =   1;
-  rebin["Bp_r"]                =   1;
-  rebin["Bp_k"]                =   1;
-  rebin["Bm_n"]                =   1;
-  rebin["Bm_r"]                =   1;
-  rebin["Bm_k"]                =   1;
   rebin["C_rr"]                =   1;
   rebin["C_nn"]                =   1;
   rebin["C_kk"]                =   1;
 
   std::map<std::string, double> xMin; // key = observable
-  xMin["Bp_n"]                 =  -3.;
-  xMin["Bp_r"]                 =  -3.;
-  xMin["Bp_k"]                 =  -3.;
-  xMin["Bm_n"]                 =  -3.;
-  xMin["Bm_r"]                 =  -3.;
-  xMin["Bm_k"]                 =  -3.;
   xMin["C_rr"]                 =  -9.;
   xMin["C_nn"]                 =  -9.;
   xMin["C_kk"]                 =  -9.;
 
   std::map<std::string, double> xMax; // key = observable
-  xMax["Bp_n"]                 =  +3.;
-  xMax["Bp_r"]                 =  +3.;
-  xMax["Bp_k"]                 =  +3.;
-  xMax["Bm_n"]                 =  +3.;
-  xMax["Bm_r"]                 =  +3.;
-  xMax["Bm_k"]                 =  +3.;
   xMax["C_rr"]                 =  +9.;
   xMax["C_nn"]                 =  +9.;
   xMax["C_kk"]                 =  +9.;
   
   std::map<std::string, std::string> xAxisTitles; // key = observable
-  xAxisTitles["Bp_n"]          = "B^{+}_{n}";
-  xAxisTitles["Bp_r"]          = "B^{+}_{r}";
-  xAxisTitles["Bp_k"]          = "B^{+}_{k}";
-  xAxisTitles["Bm_n"]          = "B^{-}_{n}";
-  xAxisTitles["Bm_r"]          = "B^{-}_{r}";
-  xAxisTitles["Bm_k"]          = "B^{-}_{k}";
   xAxisTitles["C_rr"]          = "C_{rr}";
   xAxisTitles["C_nn"]          = "C_{nn}";
   xAxisTitles["C_kk"]          = "C_{kk}";
@@ -262,77 +217,47 @@ makeRecoEffectPlots()
   int lineStyles[6]   = {  1,  1,  1,  1,  1,  1 };
   int markerStyles[6] = { 22, 32, 20, 24, 21, 25 };
 
-  for ( std::vector<std::string>::const_iterator observable = observables.begin();
-	observable != observables.end(); ++observable ) {
-    std::string histogramName = observable->c_str();
+  std::vector<std::string> histograms;
+  histograms.push_back("Crr");
+  histograms.push_back("Cnn");
+  histograms.push_back("Ckk");
 
-    TH1* histogram_baseline = loadHistogram(inputFile_baseline, histogramName);
-
-    TH1* histogram_minVisTauPtGt0p5 = loadHistogram(inputFile_minVisTauPtGt0p5, histogramName);
-    TH1* histogram_minVisTauPtGt1p0 = loadHistogram(inputFile_minVisTauPtGt1p0, histogramName);
-    TH1* histogram_minVisTauPtGt2p0 = loadHistogram(inputFile_minVisTauPtGt2p0, histogramName);
-    TH1* histogram_minVisTauPtGt3p0 = loadHistogram(inputFile_minVisTauPtGt3p0, histogramName);
-
-    TH1* histogram_noNeutralKaonCut = loadHistogram(inputFile_noNeutralKaonCut, histogramName);
-
-    if ( rebin[*observable] > 1 )
+  for ( std::vector<std::string>::const_iterator observable = observables.begin(); observable != observables.end(); ++observable )
+  {
+    std::map<std::string, TH1*> histograms;
+    for ( std::vector<std::string>::const_iterator mode = modes.begin(); mode != modes.end(); ++mode )
     {
-      histogram_baseline->Rebin(rebin[*observable]);
+      TFile* inputFile = inputFiles[*mode];
+      assert(inputFile);
 
-      histogram_minVisTauPtGt0p5->Rebin(rebin[*observable]);
-      histogram_minVisTauPtGt1p0->Rebin(rebin[*observable]);
-      histogram_minVisTauPtGt2p0->Rebin(rebin[*observable]);
-      histogram_minVisTauPtGt3p0->Rebin(rebin[*observable]);
+      TH1* histogram = loadHistogram(inputFile, *observable);
+      if ( rebin[*observable] > 1 )
+      {
+        histogram->Rebin(rebin[*observable]);
+      }
+      histogram->Scale(1./histogram->Integral());
 
-      histogram_noNeutralKaonCut->Rebin(rebin[*observable]);
+      histograms[*mode] = histogram;
     }
 
-    double normFactor = 1./histogram_baseline->Integral();
-    histogram_baseline->Scale(normFactor);
-
-    histogram_minVisTauPtGt0p5->Scale(normFactor);
-    histogram_minVisTauPtGt1p0->Scale(normFactor);
-    histogram_minVisTauPtGt2p0->Scale(normFactor);
-    histogram_minVisTauPtGt3p0->Scale(normFactor);
-
-    histogram_noNeutralKaonCut->Scale(normFactor);
-
-    std::string outputFileName_minVisTauPt = Form("makeRecoEffectPlots_%s_minVisTauPt.png", observable->c_str());
+    std::string outputFileName = Form("makeControlPlots_%s.png", observable->c_str());
     showHistograms(1150, 950,
-                   histogram_baseline,         "No cut",
-                   histogram_minVisTauPtGt0p5, "p_{T}^{vis} > 0.5 GeV",
-                   histogram_minVisTauPtGt1p0, "p_{T}^{vis} > 1.0 GeV",
-                   histogram_minVisTauPtGt2p0, "p_{T}^{vis} > 2.0 GeV",
-                   histogram_minVisTauPtGt3p0, "p_{T}^{vis} > 3.0 GeV",
+                   histograms["gen"],      "gen",
+                   histograms["startPos"], "startPos",
+                   histograms["kinFit"],   "kinFit",
+		   0, "",
+		   0, "",
 		   0, "",
 		   colors, lineStyles, 
 		   0.040, 0.68, 0.64, 0.22, 0.30, 
 		   xMin[*observable], xMax[*observable], xAxisTitles[*observable], 1.2, 
 		   true, 1.e-4, 1.99, "Events", 1.4, 
-		   outputFileName_minVisTauPt);
-
-    std::string outputFileName_noNeutralKaonCut = Form("makeRecoEffectPlots_%s_noNeutralKaonCut.png", observable->c_str());
-    showHistograms(1150, 950,
-                   histogram_baseline,         "Num. K^{0} = 0",
-                   histogram_noNeutralKaonCut, "No cut",
-		   0, "",
-		   0, "",
-		   0, "",
-		   0, "",
-		   colors, lineStyles, 
-		   0.040, 0.68, 0.78, 0.22, 0.14, 
-		   xMin[*observable], xMax[*observable], xAxisTitles[*observable], 1.2, 
-		   true, 1.e-4, 1.99, "Events", 1.4, 
-		   outputFileName_noNeutralKaonCut);
+		   outputFileName);
   }
 
-  delete inputFile_baseline;
-
-  delete inputFile_minVisTauPtGt0p5;
-  delete inputFile_minVisTauPtGt1p0;
-  delete inputFile_minVisTauPtGt2p0;
-  delete inputFile_minVisTauPtGt3p0;
-
-  delete inputFile_noNeutralKaonCut;
+  for ( std::vector<std::string>::const_iterator mode = modes.begin(); mode != modes.end(); ++mode )
+  {
+    delete inputFiles[*mode];
+  }
 }
 

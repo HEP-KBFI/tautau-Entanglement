@@ -43,7 +43,7 @@ namespace
                                      const ROOT::Math::Boost& boost_trf,
                                      int verbosity = 0, bool cartesian = true)
   {
-    if ( verbosity >= 2 )
+    if ( verbosity >= 4 )
     {
       std::cout << "<getPolarimetricVec_OneProng1PiZero>:\n";
     }
@@ -62,7 +62,7 @@ namespace
       }
     }
     if ( !ch )
-      throw cmsException("getPolarimetricVec_OneProng0PiZero", __LINE__)
+      throw cmsException("getPolarimetricVec_OneProng1PiZero", __LINE__)
         << "Failed to find charged pion !!\n";
     if ( !pi0 )
       throw cmsException("getPolarimetricVec_OneProng1PiZero", __LINE__)
@@ -72,7 +72,7 @@ namespace
     //       Comput.Phys.Commun. 64 (1990) 275
     reco::Candidate::LorentzVector chP4 = ch->p4();
     reco::Candidate::LorentzVector q1 = getP4_ttrf_hf_trf(chP4, boost_ttrf, r, n, k, boost_trf);
-    if ( verbosity >= 2 )
+    if ( verbosity >= 4 )
     { 
       printLorentzVector("chP4", chP4, cartesian);
       printLorentzVector("q1", q1, cartesian);
@@ -80,7 +80,7 @@ namespace
 
     reco::Candidate::LorentzVector pi0P4 = pi0->p4();
     reco::Candidate::LorentzVector q2 = getP4_ttrf_hf_trf(pi0P4, boost_ttrf, r, n, k, boost_trf);
-    if ( verbosity >= 2 )
+    if ( verbosity >= 4 )
     {
       printLorentzVector("pi0P4", pi0P4, cartesian);
       printLorentzVector("q2", q2, cartesian);
@@ -93,7 +93,7 @@ namespace
     //     while keeping the Px, Py, Pz momentum components fixed
     reco::Candidate::LorentzVector nuP4 = fixNeutrinoMass(tauP4 - visTauP4);
     reco::Candidate::LorentzVector N = fixNeutrinoMass(getP4_ttrf_hf_trf(nuP4, boost_ttrf, r, n, k, boost_trf));
-    if ( verbosity >= 2 )
+    if ( verbosity >= 4 )
     {
       printLorentzVector("nuP4", nuP4, cartesian);
       std::cout << " mass = " << nuP4.mass() << "\n";
@@ -103,7 +103,7 @@ namespace
     assert(nuP4.energy() >= 0. && N.energy() >= 0.);
 
     reco::Candidate::LorentzVector P = getP4_ttrf_hf_trf(tauP4, boost_ttrf, r, n, k, boost_trf);
-    if ( verbosity >= 2 )
+    if ( verbosity >= 4 )
     {
       printLorentzVector("P", P, cartesian);
     }
@@ -113,7 +113,7 @@ namespace
     // CV: term 2.*|f2|^2 appears in expression for h as well as in expression for omega
     //     and drops out
     reco::Candidate::Vector h = -(gamma_va*mTau/omega)*(2.*(q.Dot(N))*q.Vect() - q.mass2()*N.Vect());
-    if ( verbosity >= 2 )
+    if ( verbosity >= 4 )
     { 
       printVector("h", h, cartesian);
     }
@@ -124,7 +124,7 @@ namespace
 reco::Candidate::Vector
 PolarimetricVectorAlgoOneProng1Pi0::operator()(const KinematicEvent& evt, int tau)
 {
-  if ( verbosity_ >= 2 )
+  if ( verbosity_ >= 4 )
   {
     std::cout << "<PolarimetricVectorAlgoOneProng1Pi0::operator()>:\n";
   }
@@ -145,7 +145,7 @@ PolarimetricVectorAlgoOneProng1Pi0::operator()(const KinematicEvent& evt, int ta
     visTauP4 = evt.visTauMinusP4();
   }
   else assert(0);
-  if ( verbosity_ >= 2 )
+  if ( verbosity_ >= 4 )
   {
     printLorentzVector("tauP4", tauP4);
     std::cout << " mass = " << tauP4.mass() << "\n";
@@ -153,14 +153,14 @@ PolarimetricVectorAlgoOneProng1Pi0::operator()(const KinematicEvent& evt, int ta
     std::cout << " mass = " << visTauP4.mass() << "\n";
   } 
   reco::Candidate::LorentzVector higgsP4 = evt.tauPlusP4() + evt.tauMinusP4();
-  if ( verbosity_ >= 2 )
+  if ( verbosity_ >= 4 )
   {
     printLorentzVector("higgsP4", higgsP4);
     std::cout << " mass = " << higgsP4.mass() << "\n";
   }
   ROOT::Math::Boost boost_ttrf = ROOT::Math::Boost(higgsP4.BoostToCM());
   reco::Candidate::LorentzVector tauP4_ttrf = fixTauMass(getP4_rf(tauP4, boost_ttrf));
-  if ( verbosity_ >= 2 )
+  if ( verbosity_ >= 4 )
   {
     printLorentzVector("tauP4_ttrf", tauP4_ttrf);
     std::cout << " mass = " << tauP4_ttrf.mass() << "\n";
@@ -168,7 +168,7 @@ PolarimetricVectorAlgoOneProng1Pi0::operator()(const KinematicEvent& evt, int ta
   reco::Candidate::Vector r, n, k;
   get_localCoordinateSystem(evt.tauMinusP4(), &higgsP4, &boost_ttrf, hAxis_, collider_, r, n, k, verbosity_, cartesian_);
   reco::Candidate::LorentzVector tauP4_hf = fixTauMass(getP4_hf(tauP4_ttrf, r, n, k));
-  if ( verbosity_ >= 2 )
+  if ( verbosity_ >= 4 )
   {
     printLorentzVector("tauP4_hf", tauP4_hf);
     std::cout << " mass = " << tauP4_hf.mass() << "\n";
@@ -176,6 +176,5 @@ PolarimetricVectorAlgoOneProng1Pi0::operator()(const KinematicEvent& evt, int ta
   ROOT::Math::Boost boost_trf = ROOT::Math::Boost(tauP4_hf.BoostToCM());
 
   reco::Candidate::Vector h = getPolarimetricVec_OneProng1PiZero(tauP4, *daughters, visTauP4, boost_ttrf, r, n, k, boost_trf, verbosity_, cartesian_);
-assert(getP4_hf(tauP4_ttrf, r, n, k).mass() >= 0.);
   return h;
 }
