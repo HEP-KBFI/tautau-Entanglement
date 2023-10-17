@@ -13,11 +13,11 @@
 #include "TauAnalysis/Entanglement/interface/constants.h"                         // kLHC, kSuperKEKB
 #include "TauAnalysis/Entanglement/interface/findDecayProducts.h"                 // findDecayProducts()
 #include "TauAnalysis/Entanglement/interface/findLastTau.h"                       // findLastTau()
-#include "TauAnalysis/Entanglement/interface/getCov_hf.h"                         // getCov_hf()
 #include "TauAnalysis/Entanglement/interface/get_decayMode.h"                     // get_decayMode()
 #include "TauAnalysis/Entanglement/interface/get_leadTrack.h"                     // get_leadTrack()
 #include "TauAnalysis/Entanglement/interface/get_localCoordinateSystem.h"         // get_localCoordinateSystem()
 #include "TauAnalysis/Entanglement/interface/get_particles_of_type.h"             // get_chargedHadrons(), get_neutralPions(), get_neutrinos()
+#include "TauAnalysis/Entanglement/interface/get_rotationMatrix.h"                // get_rotationMatrix()
 #include "TauAnalysis/Entanglement/interface/Matrix_and_Vector.h"                 // math::Matrix*, math::Vector*
 #include "TauAnalysis/Entanglement/interface/KinematicParticle.h"                 // KinematicParticle
 #include "TauAnalysis/Entanglement/interface/printCovMatrix.h"                    // printCovMatrix()
@@ -29,6 +29,7 @@
 #include "TauAnalysis/Entanglement/interface/printPoint.h"                        // printPoint()
 #include "TauAnalysis/Entanglement/interface/printVector.h"                       // printVector()
 #include "TauAnalysis/Entanglement/interface/PolarimetricVectorAlgoBase.h"        // ePolarimetricVector::kTauPlus, PolarimetricVector::kTauMinus
+#include "TauAnalysis/Entanglement/interface/rotateCovMatrix.h"                   // rotateCovMatrix()
 #include "TauAnalysis/Entanglement/interface/square.h"                            // square()
 
 #include <TMath.h>                                                                // TMath::Pi()
@@ -162,6 +163,19 @@ namespace
       printPoint("pca", pca);
     }
     return pca;
+  }
+
+  math::Matrix3x3
+  getCov_hf(double dk, double dr, double dn,
+            const reco::Candidate::Vector& r, const reco::Candidate::Vector& n, const reco::Candidate::Vector& k)
+  {
+    math::Matrix3x3 cov_rnk;
+    cov_rnk(0,0) = square(dr);
+    cov_rnk(1,1) = square(dn);
+    cov_rnk(2,2) = square(dk);
+    math::Matrix3x3 rotMatrix_rnk2xyz = get_rotationMatrixInv(r, n, k);
+    math::Matrix3x3 cov_xyz = rotateCovMatrix(cov_rnk, rotMatrix_rnk2xyz);
+    return cov_xyz;
   }
 
   std::vector<KinematicParticle>
@@ -440,6 +454,8 @@ GenKinematicEventBuilder::operator()(const reco::GenParticleCollection& genParti
 
   KinematicEvent kineEvt;
 
+  kineEvt.label_ = ( applySmearing_ ) ? "kineEvt_gen_smeared" : "kineEvt_gen";
+
   kineEvt.pv_ = pv;
   kineEvt.pvCov_ = pvCov;
 
@@ -458,6 +474,13 @@ GenKinematicEventBuilder::operator()(const reco::GenParticleCollection& genParti
   kineEvt.nuTauPlusCov_isValid_ = true;
   kineEvt.visTauPlusP4_ = visTauPlusP4;
   kineEvt.visTauPlusCov_ = comp_visTauCov(visTauPlusP4, daughtersTauPlus);
+  reco::Candidate::Vector tauPlus_r, tauPlus_n, tauPlus_k; 
+  get_localCoordinateSystem(visTauPlusP4, nullptr, nullptr, kBeam, collider_, tauPlus_r, tauPlus_n, tauPlus_k);
+  kineEvt.tauPlus_r_ = tauPlus_r;
+  kineEvt.tauPlus_n_ = tauPlus_n;
+  kineEvt.tauPlus_k_ = tauPlus_k;
+  kineEvt.tauPlus_rotMatrix_xyz2rnk_ = get_rotationMatrix(tauPlus_r, tauPlus_n, tauPlus_k);
+  kineEvt.tauPlus_rotMatrix_rnk2xyz_ = get_rotationMatrixInv(tauPlus_r, tauPlus_n, tauPlus_k);
   kineEvt.tauPlus_decayMode_ = tauPlus_decayMode;
   kineEvt.daughtersTauPlus_ = daughtersTauPlus;
   kineEvt.tipPCATauPlus_ = comp_PCA_line2point(pv, tauPlus_leadTrack, verbosity_);
@@ -477,6 +500,13 @@ GenKinematicEventBuilder::operator()(const reco::GenParticleCollection& genParti
   kineEvt.nuTauMinusCov_isValid_ = true;
   kineEvt.visTauMinusP4_ = visTauMinusP4;
   kineEvt.visTauMinusCov_ = comp_visTauCov(visTauMinusP4, daughtersTauMinus);
+  reco::Candidate::Vector tauMinus_r, tauMinus_n, tauMinus_k; 
+  get_localCoordinateSystem(visTauMinusP4, nullptr, nullptr, kBeam, collider_, tauMinus_r, tauMinus_n, tauMinus_k);
+  kineEvt.tauMinus_r_ = tauMinus_r;
+  kineEvt.tauMinus_n_ = tauMinus_n;
+  kineEvt.tauMinus_k_ = tauMinus_k;
+  kineEvt.tauMinus_rotMatrix_xyz2rnk_ = get_rotationMatrix(tauMinus_r, tauMinus_n, tauMinus_k);
+  kineEvt.tauMinus_rotMatrix_rnk2xyz_ = get_rotationMatrixInv(tauMinus_r, tauMinus_n, tauMinus_k);
   kineEvt.tauMinus_decayMode_ = tauMinus_decayMode;
   kineEvt.daughtersTauMinus_ = daughtersTauMinus;
   kineEvt.tipPCATauMinus_ = comp_PCA_line2point(pv, tauMinus_leadTrack, verbosity_);

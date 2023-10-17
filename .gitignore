@@ -6,6 +6,14 @@
 *.creator.user*
 *.cxxflags
 *.cflags
+*.png
+*.root
+*.log
+*.pdf
+*.lhe
+*.d
+*.so
+*ACLiC*
 .qtc_clangd
 .idea/
 .gdb_history

@@ -50,10 +50,10 @@ PolarimetricVector::operator()(const KinematicEvent& kineEvt, int tau)
     {
       h = algoOneProng1Pi0_(kineEvt, tau);
     }
-    //else if ( tau_decayMode == reco::PFTau::kThreeProng0PiZero )
-    //{
-    //  h = algoThreeProng0Pi0_(kineEvt, tau);
-    //}
+    else if ( tau_decayMode == reco::PFTau::kThreeProng0PiZero )
+    {
+      h = algoThreeProng0Pi0_(kineEvt, tau);
+    }
   }
   if ( verbosity_ >= 1 )
   {

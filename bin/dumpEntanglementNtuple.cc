@@ -66,6 +66,8 @@ int main(int argc, char* argv[])
   std::cout << " minVisTauPt = " << minVisTauPt << "\n";
   float maxAbsVisTauEta = cfg_dump.getParameter<double>("maxAbsVisTauEta");
   std::cout << " maxAbsVisTauEta = " << maxAbsVisTauEta << "\n";
+  float minVisTauZ = cfg_dump.getParameter<double>("minVisTauZ");
+  std::cout << " minVisTauZ = " << minVisTauZ << "\n";
   float minTauTIP = cfg_dump.getParameter<double>("minTauTIP");
   std::cout << " minTauTIP = " << minTauTIP << "\n";
   int maxNumChargedKaons = cfg_dump.getParameter<int>("maxNumChargedKaons");
@@ -159,7 +161,9 @@ int main(int argc, char* argv[])
     inputTree->SetBranchAddress("gen_tauMinus_nPhotons", &tauMinus_nPhotons);
     inputTree->SetBranchAddress("gen_tauMinus_sumPhotonEn", &tauMinus_sumPhotonEn);
 
-    Float_t cosThetaStar;
+    Float_t zPlus, zMinus, cosThetaStar;
+    inputTree->SetBranchAddress(Form("%s_zPlus", mode.c_str()), &zPlus);
+    inputTree->SetBranchAddress(Form("%s_zMinus", mode.c_str()), &zMinus);
     inputTree->SetBranchAddress(Form("%s_cosThetaStar", mode.c_str()), &cosThetaStar);
 
     Float_t evtWeight = 1.;
@@ -180,18 +184,20 @@ int main(int argc, char* argv[])
         std::cout << "processing Entry " << analyzedEntries << "\n";
       }
 
-      //if ( !(visPlus_pt  > minVisTauPt && std::fabs(visPlus_eta)  < maxAbsVisTauEta) ) continue;
-      //if ( !(tauPlus_tip > minTauTIP) ) continue;
-      //if ( maxNumChargedKaons       != -1  && tauPlus_nChargedKaons  > maxNumChargedKaons            ) continue;
-      //if ( maxNumNeutralKaons       != -1  && tauPlus_nNeutralKaons  > maxNumNeutralKaons            ) continue;
-      //if ( maxNumPhotons            != -1  && tauPlus_nPhotons       > maxNumPhotons                 ) continue;
-      //if ( maxSumPhotonEn           >=  0. && tauPlus_sumPhotonEn    > maxSumPhotonEn                ) continue;
-      //if ( !(visMinus_pt > minVisTauPt && std::fabs(visMinus_eta) < maxAbsVisTauEta) ) continue;
-      //if ( !(tauMinus_tip > minTauTIP) ) continue;
-      //if ( maxNumChargedKaons       != -1  && tauMinus_nChargedKaons > maxNumChargedKaons            ) continue;
-      //if ( maxNumNeutralKaons       != -1  && tauMinus_nNeutralKaons > maxNumNeutralKaons            ) continue;
-      //if ( maxNumPhotons            != -1  && tauMinus_nPhotons      > maxNumPhotons                 ) continue;
-      //if ( maxSumPhotonEn           >=  0. && tauMinus_sumPhotonEn   > maxSumPhotonEn                ) continue;
+      if ( !(visPlus_pt  > minVisTauPt && std::fabs(visPlus_eta)  < maxAbsVisTauEta) ) continue;
+      if ( !(zPlus > minVisTauZ) ) continue;
+      if ( !(tauPlus_tip > minTauTIP) ) continue;
+      if ( maxNumChargedKaons       != -1  && tauPlus_nChargedKaons  > maxNumChargedKaons            ) continue;
+      if ( maxNumNeutralKaons       != -1  && tauPlus_nNeutralKaons  > maxNumNeutralKaons            ) continue;
+      if ( maxNumPhotons            != -1  && tauPlus_nPhotons       > maxNumPhotons                 ) continue;
+      if ( maxSumPhotonEn           >=  0. && tauPlus_sumPhotonEn    > maxSumPhotonEn                ) continue;
+      if ( !(visMinus_pt > minVisTauPt && std::fabs(visMinus_eta) < maxAbsVisTauEta) ) continue;
+      if ( !(zPlus > minVisTauZ) ) continue;
+      if ( !(tauMinus_tip > minTauTIP) ) continue;
+      if ( maxNumChargedKaons       != -1  && tauMinus_nChargedKaons > maxNumChargedKaons            ) continue;
+      if ( maxNumNeutralKaons       != -1  && tauMinus_nNeutralKaons > maxNumNeutralKaons            ) continue;
+      if ( maxNumPhotons            != -1  && tauMinus_nPhotons      > maxNumPhotons                 ) continue;
+      if ( maxSumPhotonEn           >=  0. && tauMinus_sumPhotonEn   > maxSumPhotonEn                ) continue;
       
       // CV: compute spin correlation matrix C according to Eq. (25)
       //     in the paper arXiv:2211.10513

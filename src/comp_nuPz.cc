@@ -20,7 +20,8 @@ comp_nuPz(const reco::Candidate::LorentzVector& visP4, double nuPx, double nuPy,
     //printLorentzVector(" vis", visP4, false);
     std::cout << " nu: Px = " << nuPx << ", Py = " << nuPy << "\n"; 
     //std::cout << " nu: pT = " << std::sqrt(square(nuPx) + square(nuPy)) << ", phi = " << std::atan2(nuPy, nuPx) << "\n";
-    std::cout << " mT = " << comp_mT(visP4.mass(), visP4.px(), visP4.py(), 0., nuPx, nuPy) << "\n";
+    std::cout << " sign = " << sign << "\n";
+    std::cout << "(mT = " << comp_mT(visP4.mass(), visP4.px(), visP4.py(), 0., nuPx, nuPy) << ")\n";
   }
 
   double visPx    = visP4.px();
@@ -49,18 +50,20 @@ comp_nuPz(const reco::Candidate::LorentzVector& visP4, double nuPx, double nuPy,
     nuPz = (1./(2.*term1))*(term2 + sign*visE*sqrt(term3));
     nu_dPzdPx = (1./term1)*(visPx*visPz + sign*(visE/std::sqrt(term3))*(mTau2*visPx - visMass2*(2.*nuPx + visPx) + 2.*visPx*nuPy*visPy - 2.*nuPx*square(visPy)));
     nu_dPzdPy = (1./term1)*(visPy*visPz + sign*(visE/std::sqrt(term3))*(mTau2*visPy - visMass2*(2.*nuPy + visPy) + 2.*visPy*nuPx*visPx - 2.*nuPy*square(visPx)));
-    errorFlag = false;
   }
   else
   {
     nuPz = (1./(2.*term1))*term2;
     nu_dPzdPx = (1./term1)*visPx*visPz;
     nu_dPzdPy = (1./term1)*visPy*visPz;
-    if ( verbosity >= 2 )
+    if ( term3 < -1.e-1*square(term2/visE) )
     {
-      std::cerr << "WARNING: Returning approximate solution for neutrino Pz, because term3/visE = " << term3/visE << " !!\n";
+      if ( verbosity >= 2 )
+      {
+        std::cerr << "WARNING: Returning approximate solution for neutrino Pz, because term3/visE = " << term3/visE << " !!\n";
+      }
+      errorFlag = true;
     }
-    errorFlag = true;
   }  
   if ( verbosity >= 3 )
   {

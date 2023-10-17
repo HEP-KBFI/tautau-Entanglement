@@ -1,7 +1,7 @@
 #ifndef TauAnalysis_Entanglement_get_localCoordinateSystem_h
 #define TauAnalysis_Entanglement_get_localCoordinateSystem_h
 
-#include "DataFormats/Candidate/interface/Candidate.h"         // Candidate::LorentzVector, Candidate::Point, Candidate::Vector
+#include "DataFormats/Candidate/interface/Candidate.h"         // reco::Candidate::LorentzVector, reco::Candidate::Point, reco::Candidate::Vector
 
 #include "TauAnalysis/Entanglement/interface/KinematicEvent.h" // KinematicEvent
 

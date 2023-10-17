@@ -42,6 +42,9 @@ class EntanglementNtupleProducer : public edm::one::EDAnalyzer<>
   GenKinematicEventBuilder* genKineEvtBuilder_wSmearing_;
 
   std::vector<StartPosFinder*> startPosFinders_;
+ 
+  enum { kTIP, kKinFit_chi2 };
+  int startPosFinder_resolveSignAmbiguity_;
 
   KinematicFit* kinematicFit_;
 
