@@ -12,6 +12,7 @@ comp_Rchsh(const math::Matrix3x3& C, int verbosity)
 {
   // CV: compute observable Rchsh according to Eq. (10)
   //     in the paper arXiv:2211.10513
+  // Karl (18/10/23): we quote its square in the paper, hence no square root operation in [*]
   if ( verbosity >= 3 )
   {
     std::cout << "<comp_Rchsh>:\n";
@@ -40,7 +41,7 @@ comp_Rchsh(const math::Matrix3x3& C, int verbosity)
     printEigenVectors_and_EigenValues(EigenVectors_and_EigenValues);
   }
   assert(EigenVectors_and_EigenValues.size() == 3);
-  double Rchsh = std::sqrt(EigenVectors_and_EigenValues[0].second + EigenVectors_and_EigenValues[1].second);
+  double Rchsh = EigenVectors_and_EigenValues[0].second + EigenVectors_and_EigenValues[1].second; // [*]
   if ( verbosity >= 3 )
   {
     std::cout << "Rchsh = " << Rchsh << "\n";

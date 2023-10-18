@@ -2,7 +2,7 @@
 
 # Example usage:
 #
-# get_latex_tables.py -i ~/Entanglement/analysis/SuperKEKB/2023Oct17 -s dy_lo_pythia8_ext --square-Rchsh
+# get_latex_tables.py -i ~/Entanglement/analysis/SuperKEKB/2023Oct17 -s dy_lo_pythia8_ext
 #
 # To colorize the terminal output, pipe it to: pygmentize -l latex
 
@@ -81,7 +81,7 @@ def fmt(s, repl_plus = False):
 jinja2_env.filters['fmt'] = fmt
 jinja2_env.filters['ljust'] = lambda s, pad: s.ljust(pad)
 
-def read_data(input_dir, sample_name, square_Rchsh, modes = None, dms = None, spin_analyzers = None, axis = DEFAULT_AXIS):
+def read_data(input_dir, sample_name, modes = None, dms = None, spin_analyzers = None, axis = DEFAULT_AXIS):
   assert(sample_name)
   assert(os.path.isdir(input_dir))
   assert(axis in AXIS_CHOICES)
@@ -109,15 +109,7 @@ def read_data(input_dir, sample_name, square_Rchsh, modes = None, dms = None, sp
         if not os.path.isfile(fp):
           raise RuntimeError("No such file: {}".format(fp))
         with open(fp, 'r') as f:
-          data_tmp = json.load(f)
-          if square_Rchsh:
-            assert('Rchsh' in data_tmp)
-            Rchsh_data = data_tmp['Rchsh']
-            Rchsh_data['error'] = (Rchsh_data['median'] + Rchsh_data['error'])**2 - Rchsh_data['median']**2
-            Rchsh_data['median'] = Rchsh_data['median']**2
-            Rchsh_data['nominal'] = Rchsh_data['nominal'] ** 2
-            data_tmp['Rchsh'] = Rchsh_data
-          data[mode][dm][spin_analyzer] = data_tmp
+          data[mode][dm][spin_analyzer] = json.load(f)
   return data
 
 def get_Cmatrix(data, spin_analyzer = DEFAULT_SPIN_ANALYZER, central = DEFAULT_CENTRAL, coordinates = None, comment = ''):
@@ -174,22 +166,16 @@ if __name__ == '__main__':
   parser.add_argument('-S', '--spin-analyzer', type = str, choices = SPIN_ANALYZER_CHOICES, default = DEFAULT_SPIN_ANALYZER, help = 'Default spin analyzer')
   parser.add_argument('-d', '--decay-modes', nargs = '*', type = str, choices = DM_CHOICES.keys(), default = DM_CHOICES.keys(), help = 'Decay modes')
   parser.add_argument('-a', '--axis', type = str, choices = AXIS_CHOICES, default = DEFAULT_AXIS, help = 'Coordinate system')
-  group = parser.add_mutually_exclusive_group()
-  group.add_argument("--square-Rchsh", action = "store_true", help = "Square Rchsh")
-  group.add_argument("--keep-Rchsh", action = "store_true", help = "Keep Rchsh as it is")
   args = parser.parse_args()
 
-  if not (args.square_Rchsh or args.keep_Rchsh):
-    parser.error("Specify either --square-Rchsh or --keep-Rchsh")
   input_dir = args.input
   sample_name = args.sample_name
   central = args.central
   spin_analyzer = args.spin_analyzer
   decay_modes = collections.OrderedDict([ (dm, DM_CHOICES[dm]) for dm in args.decay_modes ])
   axis = args.axis
-  square_Rchsh = args.square_Rchsh
 
-  data = read_data(input_dir, sample_name, square_Rchsh, modes = [ 'gen', 'kinFit' ], dms = decay_modes, axis = axis)
+  data = read_data(input_dir, sample_name, modes = [ 'gen', 'kinFit' ], dms = decay_modes, axis = axis)
   print(get_Cmatrix(data['gen']['pi_pi'], spin_analyzer, central, comment = 'Table 2'))
   print(get_entanglementVariables(data['gen']['pi_pi'], central, comment = 'Table 3'))
   #print(get_entanglementVariables(data['gen']['pi_pi'], central, comment = 'Table 4')) #TODO: needs a cut
