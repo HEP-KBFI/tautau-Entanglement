@@ -793,7 +793,7 @@ PolarimetricA1::Mass(string type){
 }
 
 
-double PolarimetricA1::ppi(double QQ){  if(QQ < 4*mpi*mpi) std::cout<<"Warning! Can not compute ppi(Q); root square <0 ; return nan  "; return 0.5*sqrt(QQ - 4*mpi*mpi);}
+double PolarimetricA1::ppi(double QQ){  if(QQ < 4*mpi*mpi) std::cout<<"Warning! Can not compute ppi(Q); root square <0 ; return nan\n"; return 0.5*sqrt(QQ - 4*mpi*mpi);}
 
 
  double PolarimetricA1::getf(){
