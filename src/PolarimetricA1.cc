@@ -496,8 +496,9 @@ PolarimetricA1::PVC(){
    TLorentzVector CLV =  CLVEC(HADCUR,HADCURC,N );
    TLorentzVector CLA =  CLAXI(HADCUR,HADCURC,N );
 
-   TComplex BWProd1 = f3(a1.M())*BreitWigner(sqrt(s2),"rho");
-   TComplex BWProd2 = f3(a1.M())*BreitWigner(sqrt(s1),"rho");
+   // Karl: commenting out because causing warning yet none of those variables are actually used to calculate the returned value
+   //TComplex BWProd1 = f3(a1.M())*BreitWigner(sqrt(s2),"rho");
+   //TComplex BWProd2 = f3(a1.M())*BreitWigner(sqrt(s1),"rho");
  
    double omega = P*CLV - P*CLA;
    return (P.M()*P.M()*  (CLA - CLV)  -  P*(  P*CLA -  P*CLV))*(1/omega/P.M());
