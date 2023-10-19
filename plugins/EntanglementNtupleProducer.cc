@@ -351,14 +351,14 @@ void EntanglementNtupleProducer::analyze(const edm::Event& evt, const edm::Event
       tauMinus_nChargedKaons, tauMinus_nNeutralKaons, tauMinus_nPhotons, tauMinus_sumPhotonEn,
       &kineEvt_gen_smeared, &kineEvt_startPos_bestfit, &kineEvt_kinFit_bestfit,
       evtWeight);
+    ntupleFiller_had_had_->fillBranches(
+      evt,
+      &kineEvt_gen,
+      tauPlus_nChargedKaons, tauPlus_nNeutralKaons, tauPlus_nPhotons, tauPlus_sumPhotonEn,
+      tauMinus_nChargedKaons, tauMinus_nNeutralKaons, tauMinus_nPhotons, tauMinus_sumPhotonEn,
+      &kineEvt_gen_smeared, &kineEvt_startPos_bestfit, &kineEvt_kinFit_bestfit,
+      evtWeight);
   }
-  ntupleFiller_had_had_->fillBranches(
-    evt, 
-    &kineEvt_gen,
-    tauPlus_nChargedKaons, tauPlus_nNeutralKaons, tauPlus_nPhotons, tauPlus_sumPhotonEn,
-    tauMinus_nChargedKaons, tauMinus_nNeutralKaons, tauMinus_nPhotons, tauMinus_sumPhotonEn,
-    &kineEvt_gen_smeared, &kineEvt_startPos_bestfit, &kineEvt_kinFit_bestfit,
-    evtWeight);
 }
 
 #include "FWCore/Framework/interface/MakerMacros.h"
