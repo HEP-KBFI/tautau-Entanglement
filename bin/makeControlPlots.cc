@@ -1,35 +1,36 @@
 
-#include "DataFormats/FWLite/interface/InputSource.h"                 // fwlite::InputSource
-#include "DataFormats/FWLite/interface/OutputFiles.h"                 // fwlite::OutputFiles
-#include "FWCore/ParameterSet/interface/ParameterSet.h"               // edm::ParameterSet
-#include "FWCore/ParameterSetReader/interface/ParameterSetReader.h"   // edm::readPSetsFrom()
-#include "FWCore/PluginManager/interface/PluginManager.h"             // edmplugin::PluginManager::configure()
-#include "FWCore/PluginManager/interface/standard.h"                  // edmplugin::standard::config()
-#include "PhysicsTools/FWLite/interface/TFileService.h"               // fwlite::TFileService
+#include "DataFormats/FWLite/interface/InputSource.h"                    // fwlite::InputSource
+#include "DataFormats/FWLite/interface/OutputFiles.h"                    // fwlite::OutputFiles
+#include "FWCore/ParameterSet/interface/ParameterSet.h"                  // edm::ParameterSet
+#include "FWCore/ParameterSetReader/interface/ParameterSetReader.h"      // edm::readPSetsFrom()
+#include "FWCore/PluginManager/interface/PluginManager.h"                // edmplugin::PluginManager::configure()
+#include "FWCore/PluginManager/interface/standard.h"                     // edmplugin::standard::config()
+#include "PhysicsTools/FWLite/interface/TFileService.h"                  // fwlite::TFileService
 
-#include "TauAnalysis/Entanglement/interface/bookHistogram1d.h"       // bookHistogram1d()
-#include "TauAnalysis/Entanglement/interface/bookHistogram2d.h"       // bookHistogram2d()
-#include "TauAnalysis/Entanglement/interface/cmsException.h"          // cmsException
-#include "TauAnalysis/Entanglement/interface/format_vT.h"             // format_vint(), vdouble, vint
-#include "TauAnalysis/Entanglement/interface/passesStatusSelection.h" // passesStatusSelection()
-#include "TauAnalysis/Entanglement/interface/scaleHistogram.h"        // scaleHistogram()
-#include "TauAnalysis/Entanglement/interface/showHistogram1d.h"       // showHistogram1d()
-#include "TauAnalysis/Entanglement/interface/showHistogram2d.h"       // showHistogram2d()
+#include "TauAnalysis/Entanglement/interface/bookHistogram1d.h"          // bookHistogram1d()
+#include "TauAnalysis/Entanglement/interface/bookHistogram2d.h"          // bookHistogram2d()
+#include "TauAnalysis/Entanglement/interface/cmsException.h"             // cmsException
+#include "TauAnalysis/Entanglement/interface/format_vT.h"                // format_vint(), vdouble, vint
+#include "TauAnalysis/Entanglement/interface/passesStatusSelection.h"    // passesStatusSelection()
+#include "TauAnalysis/Entanglement/interface/scaleHistogram.h"           // scaleHistogram()
+#include "TauAnalysis/Entanglement/interface/showHistogram1d.h"          // showHistogram1d()
+#include "TauAnalysis/Entanglement/interface/showHistogram2d.h"          // showHistogram2d()
+#include "TauAnalysis/Entanglement/interface/BranchAddressInitializer.h" // BranchAddressInitializer
 
-#include <TBenchmark.h>                                               // TBenchmark
-#include <TError.h>                                                   // gErrorAbortLevel, kError
-#include <TH1.h>                                                      // TH1
-#include <TH2.h>                                                      // TH2
-#include <TString.h>                                                  // Form()
-#include <TTree.h>                                                    // TTree
+#include <TBenchmark.h>                                                  // TBenchmark
+#include <TError.h>                                                      // gErrorAbortLevel, kError
+#include <TH1.h>                                                         // TH1
+#include <TH2.h>                                                         // TH2
+#include <TString.h>                                                     // Form()
+#include <TTree.h>                                                       // TTree
 
-#include <assert.h>                                                   // assert()
-#include <cmath>                                                      // std::fabs()
-#include <cstdlib>                                                    // EXIT_SUCCESS, EXIT_FAILURE
-#include <fstream>                                                    // std::ofstream
-#include <iostream>                                                   // std::cout
-#include <string>                                                     // std::string
-#include <vector>                                                     // std::vector<>
+#include <assert.h>                                                      // assert()
+#include <cmath>                                                         // std::fabs()
+#include <cstdlib>                                                       // EXIT_SUCCESS, EXIT_FAILURE
+#include <fstream>                                                       // std::ofstream
+#include <iostream>                                                      // std::cout
+#include <string>                                                        // std::string
+#include <vector>                                                        // std::vector<>
 
 int main(int argc, char* argv[])
 {
@@ -120,7 +121,7 @@ int main(int argc, char* argv[])
   TH1* histogram_Bm_r          = bookHistogram1d(fs, "Bm_r",         40, -3.,  +3.);
   TH1* histogram_Bm_k          = bookHistogram1d(fs, "Bm_k",         40, -3.,  +3.);
   TH1* histogram_C_nn          = bookHistogram1d(fs, "C_nn",         72, -9.,  +9.);
-  TH1* histogram_C_rr          = bookHistogram1d(fs, "C_rr",         72, -9.,  +9.);  
+  TH1* histogram_C_rr          = bookHistogram1d(fs, "C_rr",         72, -9.,  +9.);
   TH1* histogram_C_kk          = bookHistogram1d(fs, "C_kk",         72, -9.,  +9.);
 
   TH2* histogram_zPlus_vs_zMinus = bookHistogram2d(fs, "zPlus_vs_zMinus", 20, 0., 1., 20, 0., 1.);
@@ -138,71 +139,78 @@ int main(int argc, char* argv[])
     std::cout << "Opening #" << idxInputFile << " file " << inputFileName << '\n';
     TFile* inputFile = TFile::Open(inputFileName.c_str());
     if ( !inputFile )
-      throw cmsException("analyzeEntanglementNtuple", __LINE__) 
-        << "The file " << inputFileName << " failed to open !!";
-   
+      throw cmsException("analyzeEntanglementNtuple", __LINE__)
+          << "The file " << inputFileName << " failed to open !!";
+
     TTree* inputTree = dynamic_cast<TTree*>(inputFile->Get(treeName.c_str()));
     if ( !inputTree )
-      throw cmsException("analyzeEntanglementNtuple", __LINE__) 
-        << "The file " << inputFileName << " does not contain a TTree named '" << treeName << "' !!";
+      throw cmsException("analyzeEntanglementNtuple", __LINE__)
+          << "The file " << inputFileName << " does not contain a TTree named '" << treeName << "' !!";
     std::cout << "The file " << inputFileName << " contains " << inputTree->GetEntries() << " entries\n";
 
     ++processedInputFiles;
+    BranchAddressInitializer bai(inputTree);
 
     Float_t tauPlus_pt, tauPlus_eta, tauPlus_tip;
-    inputTree->SetBranchAddress(Form("%s_tauPlus_pt", mode.c_str()), &tauPlus_pt);
-    inputTree->SetBranchAddress(Form("%s_tauPlus_eta", mode.c_str()), &tauPlus_eta);
-    inputTree->SetBranchAddress(Form("%s_tauPlus_tip", mode.c_str()), &tauPlus_tip);
+    bai.setBranchAddress(tauPlus_pt, Form("%s_tauPlus_pt", mode.c_str()));
+    bai.setBranchAddress(tauPlus_eta, Form("%s_tauPlus_eta", mode.c_str()));
+    bai.setBranchAddress(tauPlus_tip, Form("%s_tauPlus_tip", mode.c_str()));
     Float_t visPlus_pt, visPlus_eta;
-    inputTree->SetBranchAddress(Form("%s_visPlus_pt", mode.c_str()), &visPlus_pt);
-    inputTree->SetBranchAddress(Form("%s_visPlus_eta", mode.c_str()), &visPlus_eta);
+    bai.setBranchAddress(visPlus_pt, Form("%s_visPlus_pt", mode.c_str()));
+    bai.setBranchAddress(visPlus_eta, Form("%s_visPlus_eta", mode.c_str()));
     Int_t tauPlus_nChargedKaons, tauPlus_nNeutralKaons, tauPlus_nPhotons;
     Float_t tauPlus_sumPhotonEn;
-    inputTree->SetBranchAddress("gen_tauPlus_nChargedKaons", &tauPlus_nChargedKaons);
-    inputTree->SetBranchAddress("gen_tauPlus_nNeutralKaons", &tauPlus_nNeutralKaons);
-    inputTree->SetBranchAddress("gen_tauPlus_nPhotons", &tauPlus_nPhotons);
-    inputTree->SetBranchAddress("gen_tauPlus_sumPhotonEn", &tauPlus_sumPhotonEn);
+    bai.setBranchAddress(tauPlus_nChargedKaons, "gen_tauPlus_nChargedKaons");
+    bai.setBranchAddress(tauPlus_nNeutralKaons, "gen_tauPlus_nNeutralKaons");
+    bai.setBranchAddress(tauPlus_nPhotons, "gen_tauPlus_nPhotons");
+    bai.setBranchAddress(tauPlus_sumPhotonEn, "gen_tauPlus_sumPhotonEn");
     Float_t hPlus_n, hPlus_r, hPlus_k;
-    inputTree->SetBranchAddress(Form("%s_hPlus_n", mode.c_str()), &hPlus_n);
-    inputTree->SetBranchAddress(Form("%s_hPlus_r", mode.c_str()), &hPlus_r);
-    inputTree->SetBranchAddress(Form("%s_hPlus_k", mode.c_str()), &hPlus_k);
+    bai.setBranchAddress(hPlus_n, Form("%s_hPlus_n", mode.c_str()));
+    bai.setBranchAddress(hPlus_r, Form("%s_hPlus_r", mode.c_str()));
+    bai.setBranchAddress(hPlus_k, Form("%s_hPlus_k", mode.c_str()));
 
     Float_t tauMinus_pt, tauMinus_eta, tauMinus_tip;
-    inputTree->SetBranchAddress(Form("%s_tauMinus_pt", mode.c_str()), &tauMinus_pt);
-    inputTree->SetBranchAddress(Form("%s_tauMinus_eta", mode.c_str()), &tauMinus_eta);
-    inputTree->SetBranchAddress(Form("%s_tauMinus_tip", mode.c_str()), &tauMinus_tip);
+    bai.setBranchAddress(tauMinus_pt, Form("%s_tauMinus_pt", mode.c_str()));
+    bai.setBranchAddress(tauMinus_eta, Form("%s_tauMinus_eta", mode.c_str()));
+    bai.setBranchAddress(tauMinus_tip, Form("%s_tauMinus_tip", mode.c_str()));
     Float_t visMinus_pt, visMinus_eta;
-    inputTree->SetBranchAddress(Form("%s_visMinus_pt", mode.c_str()), &visMinus_pt);
-    inputTree->SetBranchAddress(Form("%s_visMinus_eta", mode.c_str()), &visMinus_eta);
+    bai.setBranchAddress(visMinus_pt, Form("%s_visMinus_pt", mode.c_str()));
+    bai.setBranchAddress(visMinus_eta, Form("%s_visMinus_eta", mode.c_str()));
     Int_t tauMinus_nChargedKaons, tauMinus_nNeutralKaons, tauMinus_nPhotons;
     Float_t tauMinus_sumPhotonEn;
-    inputTree->SetBranchAddress("gen_tauMinus_nChargedKaons", &tauMinus_nChargedKaons);
-    inputTree->SetBranchAddress("gen_tauMinus_nNeutralKaons", &tauMinus_nNeutralKaons);
-    inputTree->SetBranchAddress("gen_tauMinus_nPhotons", &tauMinus_nPhotons);
-    inputTree->SetBranchAddress("gen_tauMinus_sumPhotonEn", &tauMinus_sumPhotonEn);
+    bai.setBranchAddress(tauMinus_nChargedKaons, "gen_tauMinus_nChargedKaons");
+    bai.setBranchAddress(tauMinus_nNeutralKaons, "gen_tauMinus_nNeutralKaons");
+    bai.setBranchAddress(tauMinus_nPhotons, "gen_tauMinus_nPhotons");
+    bai.setBranchAddress(tauMinus_sumPhotonEn, "gen_tauMinus_sumPhotonEn");
     Float_t hMinus_n, hMinus_r, hMinus_k;
-    inputTree->SetBranchAddress(Form("%s_hMinus_n", mode.c_str()), &hMinus_n);
-    inputTree->SetBranchAddress(Form("%s_hMinus_r", mode.c_str()), &hMinus_r);
-    inputTree->SetBranchAddress(Form("%s_hMinus_k", mode.c_str()), &hMinus_k);
+    bai.setBranchAddress(hMinus_n, Form("%s_hMinus_n", mode.c_str()));
+    bai.setBranchAddress(hMinus_r, Form("%s_hMinus_r", mode.c_str()));
+    bai.setBranchAddress(hMinus_k, Form("%s_hMinus_k", mode.c_str()));
 
     Float_t mTauTau, mVis, cosThetaStar;
-    inputTree->SetBranchAddress(Form("%s_mTauTau", mode.c_str()), &mTauTau);
-    inputTree->SetBranchAddress(Form("%s_mVis", mode.c_str()), &mVis);
-    inputTree->SetBranchAddress(Form("%s_cosThetaStar", mode.c_str()), &cosThetaStar);
+    bai.setBranchAddress(mTauTau, Form("%s_mTauTau", mode.c_str()));
+    bai.setBranchAddress(mVis, Form("%s_mVis", mode.c_str()));
+    bai.setBranchAddress(cosThetaStar, Form("%s_cosThetaStar", mode.c_str()));
 
     Float_t zPlus, zMinus;
-    inputTree->SetBranchAddress(Form("%s_zPlus", mode.c_str()), &zPlus);
-    inputTree->SetBranchAddress(Form("%s_zMinus", mode.c_str()), &zMinus);
+    bai.setBranchAddress(zPlus, Form("%s_zPlus", mode.c_str()));
+    bai.setBranchAddress(zMinus, Form("%s_zMinus", mode.c_str()));
 
     Float_t kinFit_chi2;
-    inputTree->SetBranchAddress("kinFit_chi2", &kinFit_chi2);
+    bai.setBranchAddress(kinFit_chi2, "kinFit_chi2");
     Int_t kinFit_status;
-    inputTree->SetBranchAddress("kinFit_status", &kinFit_status);
+    bai.setBranchAddress(kinFit_status, "kinFit_status");
 
     Float_t evtWeight = 1.;
     if ( branchName_evtWeight != "" && apply_evtWeight )
     {
-      inputTree->SetBranchAddress(branchName_evtWeight.c_str(), &evtWeight);
+      bai.setBranchAddress(evtWeight, branchName_evtWeight.c_str());
+    }
+
+    inputTree->SetBranchStatus("*", 0);
+    for(const std::string & boundBranchName: bai.getBoundBranchNames())
+    {
+      inputTree->SetBranchStatus(boundBranchName.c_str(), 1);
     }
 
     int numEntries = inputTree->GetEntries();
