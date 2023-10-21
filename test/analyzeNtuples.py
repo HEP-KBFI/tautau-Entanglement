@@ -20,6 +20,7 @@ decayMode_choices = [ "pi_pi", "pi_rho", "pi_a1", "rho_rho", "rho_a1", "a1_a1" ]
 decayMode_choices_all = decayMode_choices + [ "had_had" ]
 spinAnalyzer_choices = [ "by_summation", "by_mlfit", "by_differentialXsec1d", "by_differentialXsec2d", "by_asymmetry" ]
 analysis_choices = [ "inclusive", "scan", "optimal" ]
+plot_choices = [ "makeResolutionPlots", "makeControlPlots" ]
 
 parser = argparse.ArgumentParser(formatter_class = argparse.ArgumentDefaultsHelpFormatter)
 parser.add_argument('-v', '--version', type = str, required = True, help = f'Version, e.g. {datetime.datetime.now().strftime("%Y%b%d")}')
@@ -37,6 +38,7 @@ parser.add_argument('-b', '--bootstrap-size', type = int, default = -1, help = '
 parser.add_argument('-B', '--bootstrap-count', type = positive_int_type, default = 100, help = 'Number of bootstrap datasets')
 parser.add_argument('-j', '--job-type', type = str, choices = ['local', 'cluster'], required = True, help = 'Job type')
 parser.add_argument('-w', '--verbosity', type = int, default = 1, help = 'Verbosity level')
+parser.add_argument('-p', '--plots', nargs = '*', type = str, choices = plot_choices, default = [], help = 'Plots')
 args = parser.parse_args()
 
 version = args.version
@@ -57,6 +59,7 @@ bootstrap_size = args.bootstrap_size
 bootstrap_count = args.bootstrap_count
 run_makefile = args.job_type == 'local'
 verbosity = args.verbosity
+plots = args.plots
 
 if 0 < max_events < bootstrap_size:
   parser.error("Max events cannot be smaller than bootstrap size if both are specified!")
@@ -230,37 +233,38 @@ for sampleName, sample in samples.items():
                   'logFileName'    : logFileName_analysis,
                   'cmd'            : analyzeEntanglementNtuple_cmd,
                 }
-        cfgFileName_ctrlPlots_modified = os.path.join(
-          configDir, f"makeControlPlots_{sampleName}_{mode}Mode_{hAxis}Axis_{decayMode}DecayMode_cfg.py"
-        )
-        outputFileName_ctrlPlots = f"makeControlPlots_{sampleName}_{mode}Mode_{hAxis}Axis_{decayMode}DecayMode.root"
-        if run_makefile:
-          outputFileName_ctrlPlots = os.path.join(outputDir_ctrlPlots, outputFileName_ctrlPlots)
-        args_ctrlPlots = {
-          'inputFileNames'  : inputFileNames,
-          'mode'            : mode,
-          'collider'        : collider,
-          'decayMode'       : decayMode,
-          'apply_evtWeight' : sample['apply_evtWeight'],
-          'maxSumPhotonEn'  : maxSumPhotonEn,
-          'outputFileName'  : outputFileName_ctrlPlots,
-          'is_debug'        : False, #verbosity >= 0,
-        }
-        build_cfg(makeControlPlot_template, cfgFileName_ctrlPlots_modified, args_ctrlPlots)
+        if "makeControlPlots" in plots:
+          cfgFileName_ctrlPlots_modified = os.path.join(
+            configDir, f"makeControlPlots_{sampleName}_{mode}Mode_{hAxis}Axis_{decayMode}DecayMode_cfg.py"
+          )
+          outputFileName_ctrlPlots = f"makeControlPlots_{sampleName}_{mode}Mode_{hAxis}Axis_{decayMode}DecayMode.root"
+          if run_makefile:
+            outputFileName_ctrlPlots = os.path.join(outputDir_ctrlPlots, outputFileName_ctrlPlots)
+          args_ctrlPlots = {
+            'inputFileNames'  : inputFileNames,
+            'mode'            : mode,
+            'collider'        : collider,
+            'decayMode'       : decayMode,
+            'apply_evtWeight' : sample['apply_evtWeight'],
+            'maxSumPhotonEn'  : maxSumPhotonEn,
+            'outputFileName'  : outputFileName_ctrlPlots,
+            'is_debug'        : False, #verbosity >= 0,
+          }
+          build_cfg(makeControlPlot_template, cfgFileName_ctrlPlots_modified, args_ctrlPlots)
 
-        logFileName_ctrlPlots = cfgFileName_ctrlPlots_modified.replace("_cfg.py", ".log")
-        job_key_ctrlPlots = f'{sampleName}_{mode}_{hAxis}_{decayMode}_ctrlPlots'
-        dependencies_ctrlPlots = [ cfgFileName_ctrlPlots_modified ]
-        dependencies_ctrlPlots.extend(inputFileNames) 
-        jobOptions_ctrlPlots[job_key_ctrlPlots] = {
-          'inputFileNames' : dependencies_ctrlPlots,
-          'cfgFileName'    : cfgFileName_ctrlPlots_modified,
-          'outputFilePath' : outputDir_ctrlPlots,
-          'outputFileName' : outputFileName_ctrlPlots,
-          'logFileName'    : logFileName_ctrlPlots,
-          'cmd'            : makeControlPlots_cmd,
-        }
-        if mode != "gen":
+          logFileName_ctrlPlots = cfgFileName_ctrlPlots_modified.replace("_cfg.py", ".log")
+          job_key_ctrlPlots = f'{sampleName}_{mode}_{hAxis}_{decayMode}_ctrlPlots'
+          dependencies_ctrlPlots = [ cfgFileName_ctrlPlots_modified ]
+          dependencies_ctrlPlots.extend(inputFileNames)
+          jobOptions_ctrlPlots[job_key_ctrlPlots] = {
+            'inputFileNames' : dependencies_ctrlPlots,
+            'cfgFileName'    : cfgFileName_ctrlPlots_modified,
+            'outputFilePath' : outputDir_ctrlPlots,
+            'outputFileName' : outputFileName_ctrlPlots,
+            'logFileName'    : logFileName_ctrlPlots,
+            'cmd'            : makeControlPlots_cmd,
+          }
+        if "makeResolutionPlots" in plots and mode != "gen":
           cfgFileName_resPlots_modified = os.path.join(
             configDir, f"makeResolutionPlots_{sampleName}_{mode}Mode_{hAxis}Axis_{decayMode}DecayMode_cfg.py"
           )
