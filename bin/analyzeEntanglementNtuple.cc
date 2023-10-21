@@ -3,8 +3,6 @@
 #include "DataFormats/FWLite/interface/OutputFiles.h"                    // fwlite::OutputFiles
 #include "FWCore/ParameterSet/interface/ParameterSet.h"                  // edm::ParameterSet
 #include "FWCore/ParameterSetReader/interface/ParameterSetReader.h"      // edm::readPSetsFrom()
-#include "FWCore/PluginManager/interface/PluginManager.h"                // edmplugin::PluginManager::configure()
-#include "FWCore/PluginManager/interface/standard.h"                     // edmplugin::standard::config()
 #include "PhysicsTools/FWLite/interface/TFileService.h"                  // fwlite::TFileService
 
 #include "TauAnalysis/Entanglement/interface/bookHistogram1d.h"          // bookHistogram1d()
@@ -14,15 +12,11 @@
 #include "TauAnalysis/Entanglement/interface/comp_Ek.h"                  // comp_Ek()
 #include "TauAnalysis/Entanglement/interface/comp_Rchsh.h"               // comp_Rchsh()
 #include "TauAnalysis/Entanglement/interface/comp_steerability.h"        // comp_steerability()
-#include "TauAnalysis/Entanglement/interface/BinnedDataset.h"            // spin::BinnedDataset
-#include "TauAnalysis/Entanglement/interface/BinnedMeasurement.h"        // spin::BinnedMeasurement
 #include "TauAnalysis/Entanglement/interface/Dataset.h"                  // spin::Dataset
-#include "TauAnalysis/Entanglement/interface/fillWithOverFlow.h"         // fillWithOverFlow1D()
 #include "TauAnalysis/Entanglement/interface/format_vT.h"                // format_vint(), vdouble, vint
 #include "TauAnalysis/Entanglement/interface/Matrix_and_Vector.h"        // math::Matrix3x3, math::Vector3
 #include "TauAnalysis/Entanglement/interface/Measurement.h"              // spin::Measurement
 #include "TauAnalysis/Entanglement/interface/passesStatusSelection.h"    // passesStatusSelection()
-#include "TauAnalysis/Entanglement/interface/showHistogram1d.h"          // showHistogram1d()
 #include "TauAnalysis/Entanglement/interface/SpinAlgo_by_mlfit.h"        // SpinAlgo_by_mlfit
 #include "TauAnalysis/Entanglement/interface/SpinAnalyzer.h"             // spin::SpinAnalyzer
 #include "TauAnalysis/Entanglement/interface/dumpJSON.h"                 // dumpJSON()
@@ -146,6 +140,7 @@ int main(int argc, char* argv[])
   std::cout << " branchName_evtWeight = " << branchName_evtWeight << "\n";
   
   bool apply_evtWeight = cfg_analyze.getParameter<bool>("apply_evtWeight");
+  const double absCosTheta_cut = cfg_analyze.getParameter<double>("absCosTheta_cut");
 
   std::vector<double> par_gen = cfg_analyze.getParameter<vdouble>("par_gen");
   if ( par_gen.size() != npar )
@@ -170,15 +165,6 @@ int main(int argc, char* argv[])
   
   spin::Dataset dataset_passed;
   spin::Dataset dataset_failed;
-
-  //spin::BinnedDataset1d binnedDataset_zPlus("zPlus",               20,  0.,  1.);
-  //spin::BinnedDataset1d binnedDataset_zMinus("zMinus",             20,  0.,  1.);
-  //spin::BinnedDataset1d binnedDataset_cosThetaStar("cosThetaStar", 20, -1., +1.);
-
-  //spin::BinnedDataset2d binnedDataset_zPlus_vs_cosThetaStar("zPlus_vs_cosThetaStar",     10, -1., +1., 10,  0.,  1.);
-  //spin::BinnedDataset2d binnedDataset_zMinus_vs_cosThetaStar("zMinus_vs_cosThetaStar",   10, -1., +1., 10,  0.,  1.);
-  //spin::BinnedDataset2d binnedDataset_zPlus_vs_zMinus("zPlus_vs_zMinus",                 10,  0.,  1., 10,  0.,  1.);
-  //spin::BinnedDataset2d binnedDataset_visPlusPt_vs_visMinusPt("visPlusPt_vs_visMinusPt", 12,  0.,  6., 12,  0.,  6.);
 
   int analyzedEntries = 0;
   double analyzedEntries_weighted = 0.;
@@ -287,6 +273,7 @@ int main(int argc, char* argv[])
         if ( maxChi2                != -1  && kinFit_chi2            > maxChi2                       ) continue;
         if ( statusSelection.size() >   0  && !passesStatusSelection(kinFit_status, statusSelection) ) continue;
       }
+      if ( absCosTheta_cut > 0. && cosThetaStar > absCosTheta_cut )                                    continue;
 
       spin::Data entry(hPlus_n, hPlus_r, hPlus_k, hMinus_n, hMinus_r, hMinus_k, evtWeight);
 
@@ -294,15 +281,6 @@ int main(int argc, char* argv[])
            visMinus_pt > minVisTauPt && std::fabs(visMinus_eta) < maxAbsVisTauEta )
       {
         dataset_passed.push_back(entry);
-        
-        //binnedDataset_zPlus.push_back(zPlus, entry);
-        //binnedDataset_zMinus.push_back(zMinus, entry);
-        //binnedDataset_cosThetaStar.push_back(cosThetaStar, entry);
-
-        //binnedDataset_zPlus_vs_cosThetaStar.push_back(cosThetaStar, zPlus, entry);
-        //binnedDataset_zMinus_vs_cosThetaStar.push_back(cosThetaStar, zMinus, entry);
-        //binnedDataset_zPlus_vs_zMinus.push_back(zMinus, zPlus,  entry);
-        //binnedDataset_visPlusPt_vs_visMinusPt.push_back(visMinus_pt, visPlus_pt, entry);
 
         ++selectedEntries;
         selectedEntries_weighted += evtWeight;
@@ -384,53 +362,8 @@ int main(int argc, char* argv[])
   {
     throw cmsException(argv[0], __LINE__) << "Could not create file: " << jsonOutoutFileName;
   }
-  jsonOutputFile << dumpJSON(measurement) << '\n';
+  jsonOutputFile << dumpJSON(measurement, absCosTheta_cut) << '\n';
   jsonOutputFile.close();
-
-  if ( spinAnalyzer_algo == "by_summation" )
-  {
-    // CV: compute binned measurements only if spinAnalyzer is set to 'by_summation' mode,
-    //     as running the binned measurements in 'by_mlfit' mode is too time-consuming
-    clock.Start("spinAnalyzer_binned");
-
-    //std::cout << "Processing binned measurement as function of zPlus...\n";
-    //spin::BinnedMeasurement1d binnedMeasurement_zPlus = spinAnalyzer(binnedDataset_zPlus);
-    //TH1* histogram_Rchsh_vs_zPlus = binnedMeasurement_zPlus.get_histogram("Rchsh");
-    //addToOutputFile(fs, histogram_Rchsh_vs_zPlus);
-    //std::cout << " Done.\n";
-    //std::cout << "Processing binned measurement as function of zMinus...\n";
-    //spin::BinnedMeasurement1d binnedMeasurement_zMinus = spinAnalyzer(binnedDataset_zMinus);
-    //TH1* histogram_Rchsh_vs_zMinus = binnedMeasurement_zMinus.get_histogram("Rchsh");
-    //addToOutputFile(fs, histogram_Rchsh_vs_zMinus);
-    //std::cout << " Done.\n";
-    //std::cout << "Processing binned measurement as function of cosThetaStar...\n";
-    //spin::BinnedMeasurement1d binnedMeasurement_cosThetaStar = spinAnalyzer(binnedDataset_cosThetaStar);
-    //TH1* histogram_Rchsh_vs_cosThetaStar = binnedMeasurement_cosThetaStar.get_histogram("Rchsh");
-    //addToOutputFile(fs, histogram_Rchsh_vs_cosThetaStar);
-    //std::cout << " Done.\n";
-
-    //std::cout << "Processing binned measurement as function of zPlus and cosThetaStar...\n";
-    //spin::BinnedMeasurement2d binnedMeasurement_zPlus_vs_cosThetaStar = spinAnalyzer(binnedDataset_zPlus_vs_cosThetaStar);
-    //TH2* histogram_Rchsh_vs_zPlus_and_cosThetaStar = binnedMeasurement_zPlus_vs_cosThetaStar.get_histogram("Rchsh");
-    //addToOutputFile(fs, histogram_Rchsh_vs_zPlus_and_cosThetaStar);
-    //std::cout << " Done.\n";
-    //std::cout << "Processing binned measurement as function of zMinus and cosThetaStar...\n";
-    //spin::BinnedMeasurement2d binnedMeasurement_zMinus_vs_cosThetaStar = spinAnalyzer(binnedDataset_zMinus_vs_cosThetaStar);
-    //TH2* histogram_Rchsh_vs_zMinus_vs_cosThetaStar = binnedMeasurement_zMinus_vs_cosThetaStar.get_histogram("Rchsh");
-    //addToOutputFile(fs, histogram_Rchsh_vs_zMinus_vs_cosThetaStar);
-    //std::cout << " Done.\n";
-    //std::cout << "Processing binned measurement as function of zPlus and zMinus...\n";
-    //spin::BinnedMeasurement2d binnedMeasurement_zPlus_vs_zMinus = spinAnalyzer(binnedDataset_zPlus_vs_zMinus);
-    //TH2* histogram_Rchsh_vs_zPlus_vs_zMinus = binnedMeasurement_zPlus_vs_zMinus.get_histogram("Rchsh");
-    //addToOutputFile(fs, histogram_Rchsh_vs_zPlus_vs_zMinus);
-    //std::cout << " Done.\n";
-    //std::cout << "Processing binned measurement as function of visPlusPt and visMinusPt...\n";
-    //spin::BinnedMeasurement2d binnedMeasurement_visPlusPt_vs_visMinusPt = spinAnalyzer(binnedDataset_visPlusPt_vs_visMinusPt);
-    //TH2* histogram_Rchsh_vs_visPlusPt_vs_visMinusPt = binnedMeasurement_visPlusPt_vs_visMinusPt.get_histogram("Rchsh");
-    //addToOutputFile(fs, histogram_Rchsh_vs_visPlusPt_vs_visMinusPt);
-    //std::cout << " Done.\n";
-    clock.Show("spinAnalyzer_binned");
-  }
 
   clock.Show("analyzeEntanglementNtuple");
 

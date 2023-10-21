@@ -16,8 +16,10 @@ from TauAnalysis.Entanglement.tools.jobTools import getInputFileNames, build_Mak
 mode_choices = [ "gen", "gen_smeared", "startPos", "kinFit" ]
 hAxes_choices = [ "beam", "higgs" ]
 collider_choices = [ "LHC", "SuperKEKB" ]
-decayMode_choices = [ "pi_pi", "pi_rho", "pi_a1", "rho_rho", "rho_a1", "a1_a1", "had_had" ]
+decayMode_choices = [ "pi_pi", "pi_rho", "pi_a1", "rho_rho", "rho_a1", "a1_a1" ]
+decayMode_choices_all = decayMode_choices + [ "had_had" ]
 spinAnalyzer_choices = [ "by_summation", "by_mlfit", "by_differentialXsec1d", "by_differentialXsec2d", "by_asymmetry" ]
+analysis_choices = [ "inclusive", "scan", "optimal" ]
 
 parser = argparse.ArgumentParser(formatter_class = argparse.ArgumentDefaultsHelpFormatter)
 parser.add_argument('-v', '--version', type = str, required = True, help = f'Version, e.g. {datetime.datetime.now().strftime("%Y%b%d")}')
@@ -25,8 +27,10 @@ parser.add_argument('-V', '--ntuple-version', type = str, default = '', help = '
 parser.add_argument('-c', '--collider', type = str, choices = collider_choices, default = 'SuperKEKB', help = 'Collider')
 parser.add_argument('-a', '--axes', nargs = '*', type = str, choices = collider_choices, default = [ 'beam' ], help = 'Axes')
 parser.add_argument('-S', '--spin-analyzers', nargs = '*', type = str, choices = spinAnalyzer_choices, default = spinAnalyzer_choices, help = 'Spin analyzers')
-parser.add_argument('-d', '--decay-modes', nargs = '*', type = str, choices = decayMode_choices, default = [ "pi_pi", "pi_rho", "rho_rho" ], help = 'Tau decay modes')
+parser.add_argument('-d', '--decay-modes', nargs = '*', type = str, choices = decayMode_choices_all, default = decayMode_choices, help = 'Tau decay modes')
 parser.add_argument('-m', '--modes', nargs = '*', type = str, choices = mode_choices, default = mode_choices, help = 'Input data')
+parser.add_argument('-M', '--analysis-modes', nargs = '*', type = str, choices = analysis_choices, default = [ 'inclusive' ], help = 'Binned analysis')
+parser.add_argument('-N', '--nbins', type = positive_int_type, default = 20, help = 'Number of bins in |cos(theta)|')
 parser.add_argument('-s', '--samples', nargs = '*', default = [], help = 'Whitelisted samples')
 parser.add_argument('-n', '--max-events', type = int, default = -1, help = 'Max number of events considered')
 parser.add_argument('-b', '--bootstrap-size', type = int, default = -1, help = 'Size of bootstrap dataset (use -1 to consider all events from the input sample)')
@@ -43,6 +47,8 @@ if not ntuple_version:
 hAxes = args.axes
 collider = args.collider
 modes = args.modes
+analysis_modes = args.analysis_modes
+nbins = args.nbins
 decayModes = args.decay_modes
 spinAnalyzers = args.spin_analyzers
 whitelist = args.samples
@@ -55,14 +61,30 @@ verbosity = args.verbosity
 if 0 < max_events < bootstrap_size:
   parser.error("Max events cannot be smaller than bootstrap size if both are specified!")
 
+absCosTheta_acceptanceCut = -1
 if collider == "LHC":
     from TauAnalysis.Entanglement.samples import samples_LHC as samples, PAR_GEN_LHC as par_gen, \
       MAX_SUM_PHOTON_EN_LHC as maxSumPhotonEn
 elif collider == "SuperKEKB":
     from TauAnalysis.Entanglement.samples import samples_SuperKEKB as samples, PAR_GEN_SUPERKEKB as par_gen, \
       MAX_SUM_PHOTON_EN_SUPERKEKB as maxSumPhotonEn
+    absCosTheta_acceptanceCut = 0.92 # obtained with acceptanceCalculator
+    #absCosTheta_optimalCut = -1 #TODO TBD
 else:
     assert(False)
+
+absCosTheta_bins = None
+if "scan" in analysis_modes:
+  absCosTheta_bins =  [ (nbins - binIdx) / nbins for binIdx in range(nbins) ]
+  if absCosTheta_acceptanceCut > 0:
+    # Impose cuts starting from the acceptance cut
+    assert(absCosTheta_acceptanceCut < 1)
+    absCosTheta_bins_new = [ binEdge for binEdge in absCosTheta_bins if binEdge < absCosTheta_acceptanceCut ]
+    absCosTheta_bins_new.insert(0, absCosTheta_acceptanceCut)
+    if len(absCosTheta_bins_new) < len(absCosTheta_bins):
+      print(f"Switched from {len(absCosTheta_bins)} bins to {len(absCosTheta_bins_new)} bins")
+    absCosTheta_bins = absCosTheta_bins_new
+
 # Karl: ignore the FSR cut, see commit d5e08c353cb1d91639f804198e349667ec312e16
 maxSumPhotonEn = -1
 
@@ -151,43 +173,63 @@ for sampleName, sample in samples.items():
       for decayMode in decayModes:
         if mode != "gen_smeared":
           for spinAnalyzer in spinAnalyzers:
-            cfgFileName_analysis_modified = os.path.join(
-              configDir, f"analyzeEntanglementNtuple_{sampleName}_{mode}Mode_{hAxis}Axis_{decayMode}DecayMode_{spinAnalyzer}_cfg.py"
-            )
-            outputFileName_analysis = f"analyzeEntanglementNtuple_{sampleName}_{mode}Mode_{hAxis}Axis_{decayMode}DecayMode_{spinAnalyzer}.root"
-            jsonOutputFileName_analysis = os.path.join(
-              configDir, re.sub(r'.root$', '.json', outputFileName_analysis)
-            )
-            args_analysis = {
-              'inputFileNames'      : inputFileNames,
-              'par_gen'             : par_gen,
-              'mode'                : mode,
-              'collider'            : collider,
-              'decayMode'           : decayMode,
-              'apply_evtWeight'     : sample['apply_evtWeight'],
-              'spinAnalyzer'        : spinAnalyzer,
-              'maxSumPhotonEn'      : maxSumPhotonEn,
-              'bootstrapSize'       : bootstrap_size,
-              'numBootstrapSamples' : bootstrap_count,
-              'outputFileName'      : outputFileName_analysis,
-              'verbosity'           : verbosity,
-              'jsonOutputFileName'  : jsonOutputFileName_analysis,
-              'max_events'          : max_events,
-            }
-            build_cfg(analyzeNtuple_template, cfgFileName_analysis_modified, args_analysis)
+            for analysis_mode in analysis_modes:
+              absCosTheta_cuts = None
+              if analysis_mode == 'inclusive':
+                absCosTheta_cuts = [ -1 ]
+              elif analysis_mode == 'scan':
+                absCosTheta_cuts = absCosTheta_bins
+              elif analysis_mode == 'optimal':
+                #TODO
+                raise ValueError(f"Not implemented: {analysis_mode}")
+              else:
+                assert(False)
+              for absCosTheta_cut in absCosTheta_cuts:
+                if analysis_mode != "inclusive":
+                  assert(absCosTheta_cut > 0)
+                suffix = ""
+                if analysis_mode == "scan":
+                  suffix = f"absCosTheta{absCosTheta_cut:.2f}".replace(".", "p")
+                elif analysis_mode == "optimal":
+                  suffix = "opt"
+                cfg_baseName = f"analyzeEntanglementNtuple_{sampleName}_{mode}Mode_{hAxis}Axis_{decayMode}DecayMode_{spinAnalyzer}"
+                if suffix:
+                  cfg_baseName += f"_{suffix}"
+                cfgFileName_analysis_modified = os.path.join(configDir, f"{cfg_baseName}_cfg.py")
+                outputFileName_analysis = f"{cfg_baseName}.root"
+                jsonOutputFileName_analysis = os.path.join(
+                  configDir, re.sub(r'.root$', '.json', outputFileName_analysis)
+                )
+                args_analysis = {
+                  'inputFileNames'      : inputFileNames,
+                  'par_gen'             : par_gen,
+                  'mode'                : mode,
+                  'collider'            : collider,
+                  'decayMode'           : decayMode,
+                  'apply_evtWeight'     : sample['apply_evtWeight'],
+                  'spinAnalyzer'        : spinAnalyzer,
+                  'maxSumPhotonEn'      : maxSumPhotonEn,
+                  'bootstrapSize'       : bootstrap_size,
+                  'numBootstrapSamples' : bootstrap_count,
+                  'outputFileName'      : outputFileName_analysis,
+                  'verbosity'           : verbosity,
+                  'jsonOutputFileName'  : jsonOutputFileName_analysis,
+                  'max_events'          : max_events,
+                  'absCosTheta_cut'     : absCosTheta_cut,
+                }
+                build_cfg(analyzeNtuple_template, cfgFileName_analysis_modified, args_analysis)
 
-            logFileName_analysis = cfgFileName_analysis_modified.replace("_cfg.py", ".log")
-            job_key_analysis = f'{sampleName}_{mode}_{hAxis}_{decayMode}_{spinAnalyzer}_analysis'
-            dependencies_analysis = [ cfgFileName_analysis_modified ]
-            dependencies_analysis.extend(inputFileNames)
-            jobOptions_analysis[job_key_analysis] = {
-              'inputFileNames' : dependencies_analysis,
-              'cfgFileName'    : cfgFileName_analysis_modified,
-              'outputFilePath' : outputDir,
-              'outputFileName' : outputFileName_analysis,
-              'logFileName'    : logFileName_analysis,
-              'cmd'            : analyzeEntanglementNtuple_cmd,
-            }
+                logFileName_analysis = cfgFileName_analysis_modified.replace("_cfg.py", ".log")
+                dependencies_analysis = [ cfgFileName_analysis_modified ]
+                dependencies_analysis.extend(inputFileNames)
+                jobOptions_analysis[cfg_baseName] = {
+                  'inputFileNames' : dependencies_analysis,
+                  'cfgFileName'    : cfgFileName_analysis_modified,
+                  'outputFilePath' : outputDir,
+                  'outputFileName' : outputFileName_analysis,
+                  'logFileName'    : logFileName_analysis,
+                  'cmd'            : analyzeEntanglementNtuple_cmd,
+                }
         cfgFileName_ctrlPlots_modified = os.path.join(
           configDir, f"makeControlPlots_{sampleName}_{mode}Mode_{hAxis}Axis_{decayMode}DecayMode_cfg.py"
         )

@@ -46,7 +46,9 @@ process.analyzeEntanglementNtuple = cms.PSet(
     mlfit_outputFileName = cms.string("{{ outputFileName }}"),
     mlfit_scan_likelihood = cms.bool(False),
 
+    absCosTheta_cut = cms.double({{ absCosTheta_cut }}),
+
     jsonOutoutFileName = cms.string('{{ jsonOutputFileName }}'),
 
-    verbosity = cms.untracked.int32({{ verbosity }})
+    verbosity = cms.untracked.int32({{ verbosity }}),
 )

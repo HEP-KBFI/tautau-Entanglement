@@ -4,6 +4,7 @@
 #include "TauAnalysis/Entanglement/interface/Measurement.h" // Measurement
 
 std::string
-dumpJSON(const spin::Measurement & measurement);
+dumpJSON(const spin::Measurement & measurement,
+         double absCosTheta_cut);
 
 #endif // TauAnalysis_Entanglement_dumpJSON_h

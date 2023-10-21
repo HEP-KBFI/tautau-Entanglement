@@ -3,7 +3,8 @@
 #include "nlohmann/json.hpp" // nlohmann::json
 
 std::string
-dumpJSON(const spin::Measurement & measurement)
+dumpJSON(const spin::Measurement & measurement,
+         double absCosTheta_cut)
 {
   // Elements ordered as: n, r, k
   const std::size_t n = 0;
@@ -132,6 +133,7 @@ dumpJSON(const spin::Measurement & measurement)
     { "num_bootstrap_samples",    measurement.get_num_bootstrap_samples() },
     { "boostrap_size",            measurement.get_boostrap_size() },
     { "num_concurrence_failures", measurement.get_num_concurrence_failures() },
+    { "abs_cos_theta_cut",        absCosTheta_cut },
   };
   return j.dump(2, ' ', true);
 }
