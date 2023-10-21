@@ -46,7 +46,6 @@ double
 comp_concurrence(const math::Vector3& Bplus,
                  const math::Vector3& Bminus,
                  const math::Matrix3x3& C,
-                 double threshold = 1e-6,
                  int verbosity = -1);
 
 /**

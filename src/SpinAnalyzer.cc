@@ -64,6 +64,7 @@ namespace
   std::pair<double, double>
   comp_median_and_Err(const std::vector<double>& measuredValues)
   {
+    assert(! measuredValues.empty());
     std::vector<double> tmp = measuredValues;
     // CV: sort measured values into ascending order
     std::sort(tmp.begin(), tmp.end());
@@ -140,7 +141,7 @@ namespace
                       double& Ek_median, double& EkErr,
                       double& Rchsh_median, double& RchshErr,
                       double& steerability_median, double& steerabilityErr,
-                      std::size_t num_concurrence_failures)
+                      std::size_t& num_concurrence_failures)
   {
     std::vector<math::Vector3> measuredBp;
     std::vector<math::Vector3> measuredBm;
@@ -181,9 +182,17 @@ namespace
     std::pair<math::Matrix3x3, math::Matrix3x3> C_median_and_Err = comp_median_and_Err(measuredC);
     C_median = C_median_and_Err.first;
     CErr = C_median_and_Err.second;
-    std::pair<double, double> concurrence_median_and_Err = comp_median_and_Err(measured_concurrence);
-    concurrence_median = concurrence_median_and_Err.first;
-    concurrenceErr = concurrence_median_and_Err.second;
+    if ( ! measured_concurrence.empty() )
+    {
+      std::pair<double, double> concurrence_median_and_Err = comp_median_and_Err(measured_concurrence);
+      concurrence_median = concurrence_median_and_Err.first;
+      concurrenceErr = concurrence_median_and_Err.second;
+    }
+    else
+    {
+      concurrence_median = -1.;
+      concurrenceErr = 0.;
+    }
     std::pair<double, double> Ek_median_and_Err = comp_median_and_Err(measuredEk);
     Ek_median = Ek_median_and_Err.first;
     EkErr = Ek_median_and_Err.second;
@@ -220,7 +229,7 @@ SpinAnalyzer::build_measurement(const spin::Dataset& dataset, int maxEvents_afte
       }
     }
     spin::Dataset bootstrap_sample = build_bootstrap_sample(dataset, rnd_, maxEvents_afterCuts);
-    algo_->set_verbosity(-1);
+    algo_->set_verbosity(verbosity);
     spin::Measurement bootstrap_measurement = (*algo_)(bootstrap_sample);
     bootstrap_measurements.push_back(bootstrap_measurement);
   }

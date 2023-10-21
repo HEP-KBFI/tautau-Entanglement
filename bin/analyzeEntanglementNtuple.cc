@@ -368,7 +368,7 @@ int main(int argc, char* argv[])
     std::cout << C_exp << "\n";
     double Ek_exp = comp_Ek(C_exp);
     std::cout << "Ek = " << Ek_exp << "\n";
-    double concurrence_exp = comp_concurrence(Bp_exp, Bm_exp, C_exp, 1e-6, verbosity);
+    double concurrence_exp = comp_concurrence(Bp_exp, Bm_exp, C_exp, verbosity);
     std::cout << "concurrence = " << concurrence_exp << "\n";
     double Rchsh_exp = comp_Rchsh(C_exp);
     std::cout << "Rchsh = " << Rchsh_exp << "\n";

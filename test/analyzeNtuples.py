@@ -28,6 +28,7 @@ parser.add_argument('-S', '--spin-analyzers', nargs = '*', type = str, choices =
 parser.add_argument('-d', '--decay-modes', nargs = '*', type = str, choices = decayMode_choices, default = [ "pi_pi", "pi_rho", "rho_rho" ], help = 'Tau decay modes')
 parser.add_argument('-m', '--modes', nargs = '*', type = str, choices = mode_choices, default = mode_choices, help = 'Input data')
 parser.add_argument('-s', '--samples', nargs = '*', default = [], help = 'Whitelisted samples')
+parser.add_argument('-n', '--max-events', type = int, default = -1, help = 'Max number of events considered')
 parser.add_argument('-b', '--bootstrap-size', type = int, default = -1, help = 'Size of bootstrap dataset (use -1 to consider all events from the input sample)')
 parser.add_argument('-B', '--bootstrap-count', type = positive_int_type, default = 100, help = 'Number of bootstrap datasets')
 parser.add_argument('-j', '--job-type', type = str, choices = ['local', 'cluster'], required = True, help = 'Job type')
@@ -45,10 +46,14 @@ modes = args.modes
 decayModes = args.decay_modes
 spinAnalyzers = args.spin_analyzers
 whitelist = args.samples
+max_events = args.max_events
 bootstrap_size = args.bootstrap_size
 bootstrap_count = args.bootstrap_count
 run_makefile = args.job_type == 'local'
 verbosity = args.verbosity
+
+if 0 < max_events < bootstrap_size:
+  parser.error("Max events cannot be smaller than bootstrap size if both are specified!")
 
 if collider == "LHC":
     from TauAnalysis.Entanglement.samples import samples_LHC as samples, PAR_GEN_LHC as par_gen, \
@@ -58,7 +63,7 @@ elif collider == "SuperKEKB":
       MAX_SUM_PHOTON_EN_SUPERKEKB as maxSumPhotonEn
 else:
     assert(False)
-# Karl: ignore FSR cut, see commit d5e08c353cb1d91639f804198e349667ec312e16
+# Karl: ignore the FSR cut, see commit d5e08c353cb1d91639f804198e349667ec312e16
 maxSumPhotonEn = -1
 
 if not whitelist:
@@ -167,6 +172,7 @@ for sampleName, sample in samples.items():
               'outputFileName'      : outputFileName_analysis,
               'verbosity'           : verbosity,
               'jsonOutputFileName'  : jsonOutputFileName_analysis,
+              'max_events'          : max_events,
             }
             build_cfg(analyzeNtuple_template, cfgFileName_analysis_modified, args_analysis)
 

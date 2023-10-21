@@ -9,7 +9,7 @@ process = cms.PSet()
 
 process.fwliteInput = cms.PSet(
     fileNames = cms.vstring({{ inputFileNames }}),
-    maxEvents_beforeCuts = cms.int32(-1),
+    maxEvents_beforeCuts = cms.int32({{ max_events }}),
     maxEvents_afterCuts = cms.int32({{ bootstrapSize }}),
     outputEvery = cms.uint32(10000)
 )

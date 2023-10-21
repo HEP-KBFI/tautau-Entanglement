@@ -70,14 +70,12 @@ namespace {
    * @brief Finds eigenvalues of a complex 4x4 matrix
    * @param R Input matrix
    * @param errorBit For detecting errors
-   * @param threshold Upper limit for the imaginary components of the eigenvalues
    * @param verbosity Verbosity level
    * @return Square root of the eigenvalues of the input matrix, sorted in descending order
    */
   Eigen::Vector4d
   find_sqrtEigenValues(const Eigen::Matrix4cd& R,
                        int & errorBit,
-                       double threshold = 1e-5,
                        int verbosity = -1)
   {
 
@@ -86,7 +84,16 @@ namespace {
 
     for(int i = 0; i < 4; ++i)
     {
-      if(std::fabs(evals(i).imag()) < threshold)
+      // TODO
+      // This the point where the calculation of concurrence fails: either the imaginary parts become too large
+      // or the real parts become negative. This isn't the norm, but when it happens it usually affects only
+      // the last two eigenvalues. However, the magnitude of those offending eigenvalues is much smaller than
+      // that of the leading two eigenvalues, which means that we could in fact ignore the problematic eigenvalues.
+      // Therefore, we could consider implementing the following alternative:
+      // 1) if the real part is significant (e.g. >= 1e-2), then require the imaginart component to be very small (< 1e-6)
+      // 2) however, if the real part is not as significant (e.g. < 1e-2), then set the eigenvalue to zero
+
+      if(std::fabs(evals(i).imag()) < 1e-6)
       {
         evals(i) = evals(i).real();
       }
@@ -124,7 +131,6 @@ double
 comp_concurrence(const math::Vector3& Bplus,
                  const math::Vector3& Bminus,
                  const math::Matrix3x3& C,
-                 double threshold,
                  int verbosity)
 {
   const Eigen::Matrix4cd rho = ::density_op(Bplus, Bminus, C);
@@ -136,7 +142,7 @@ comp_concurrence(const math::Vector3& Bplus,
   // root of them. That's what we're also doing here.
 
   int errorBit = 0;
-  const Eigen::Vector4d eta = ::find_sqrtEigenValues(R2, errorBit, threshold, verbosity);
+  const Eigen::Vector4d eta = ::find_sqrtEigenValues(R2, errorBit, verbosity);
   return ! errorBit ? std::max(0.0, eta(0) - eta(1) - eta(2) - eta(3)) : -1;
 }
 

@@ -23,7 +23,7 @@ SpinAlgoBase::set_verbosity(int verbosity)
 void
 SpinAlgoBase::addEntanglementVariables(spin::Measurement& measurement)
 {
-  measurement.concurrence_ = comp_concurrence(measurement.Bp_, measurement.Bm_, measurement.C_, 1e-6, verbosity_);
+  measurement.concurrence_ = comp_concurrence(measurement.Bp_, measurement.Bm_, measurement.C_, verbosity_);
   measurement.Ek_ = comp_Ek(measurement.C_);
   measurement.Rchsh_ = comp_Rchsh(measurement.C_, verbosity_);
   measurement.steerability_ = comp_steerability(measurement.C_, 360, 360);

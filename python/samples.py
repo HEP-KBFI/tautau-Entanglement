@@ -40,7 +40,7 @@ samples_SuperKEKB = {
     'apply_evtWeight' : False,
   },
   'dy_lo_tauola' : {
-    'inputFilePath' : '/local/karl/belle_eeToTauTau/aod/unwgt_tauola_sanc_fine/',
+    'inputFilePath' : '/local/karl/belle_eeToTauTau/aod/unwgt_tauola_sanc_fine_v2_10M/',
     'numJobs' : 100,
     'apply_evtWeight' : False,
   },

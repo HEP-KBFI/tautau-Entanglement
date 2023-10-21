@@ -142,8 +142,12 @@ def get_entanglementVariables(data, central = DEFAULT_CENTRAL, spin_analyzers = 
     comment = comment,
   )
 
-def get_decayModes(data, central = DEFAULT_CENTRAL, spin_analyzer = DEFAULT_SPIN_ANALYZER, dms = None, comment = ''):
+def get_decayModes(data, central = DEFAULT_CENTRAL, entanglement_vars = None, spin_analyzer = None, dms = None, comment = ''):
   assert(central in CENTRAL_CHOICES)
+  if entanglement_vars is None:
+    entanglement_vars = ENTANGLEMENT_VARS
+  else:
+    assert(all(entanglement_var in ENTANGLEMENT_VARS for entanglement_var in entanglement_vars) and len(entanglement_vars) == len(set(entanglement_vars)))
   assert(spin_analyzer in SPIN_ANALYZER_CHOICES)
   if dms is None:
     dms = DM_CHOICES
@@ -152,7 +156,7 @@ def get_decayModes(data, central = DEFAULT_CENTRAL, spin_analyzer = DEFAULT_SPIN
   return jinja2_env.from_string(TABLE5_TEMPLATE).render(
     D = data,
     C = central,
-    E = ENTANGLEMENT_VARS,
+    E = entanglement_vars,
     S = spin_analyzer,
     M = dms,
     comment = comment,
@@ -163,21 +167,25 @@ if __name__ == '__main__':
   parser.add_argument('-i', '--input', type = str, required = True, help = 'Directory where the JSON files are')
   parser.add_argument('-s', '--sample-name', type = str, required = True, help = 'Sample name')
   parser.add_argument('-c', '--central', type = str, choices = CENTRAL_CHOICES, default = DEFAULT_CENTRAL, help = 'What to quote as the central value')
-  parser.add_argument('-S', '--spin-analyzer', type = str, choices = SPIN_ANALYZER_CHOICES, default = DEFAULT_SPIN_ANALYZER, help = 'Default spin analyzer')
+  parser.add_argument('-S', '--default-spin-analyzer', type = str, choices = SPIN_ANALYZER_CHOICES, default = DEFAULT_SPIN_ANALYZER, help = 'Default spin analyzer')
+  parser.add_argument('-a', '--spin-analyzers', nargs = '*', choices = SPIN_ANALYZER_CHOICES, default = SPIN_ANALYZER_CHOICES, help = 'Spin analyzers')
   parser.add_argument('-d', '--decay-modes', nargs = '*', type = str, choices = DM_CHOICES.keys(), default = DM_CHOICES.keys(), help = 'Decay modes')
-  parser.add_argument('-a', '--axis', type = str, choices = AXIS_CHOICES, default = DEFAULT_AXIS, help = 'Coordinate system')
+  parser.add_argument('-e', '--entanglement-vars', nargs = '*', choices = ENTANGLEMENT_VARS, default = ENTANGLEMENT_VARS, help = 'Entanglement variables')
+  parser.add_argument('-A', '--axis', type = str, choices = AXIS_CHOICES, default = DEFAULT_AXIS, help = 'Coordinate system')
   args = parser.parse_args()
 
   input_dir = args.input
   sample_name = args.sample_name
   central = args.central
-  spin_analyzer = args.spin_analyzer
+  default_spin_analyzer = args.default_spin_analyzer
+  spin_analyzers = args.spin_analyzers
   decay_modes = collections.OrderedDict([ (dm, DM_CHOICES[dm]) for dm in args.decay_modes ])
+  entanglement_vars = args.entanglement_vars
   axis = args.axis
 
-  data = read_data(input_dir, sample_name, modes = [ 'gen', 'kinFit' ], dms = decay_modes, axis = axis)
-  print(get_Cmatrix(data['gen']['pi_pi'], spin_analyzer, central, comment = 'Table 2'))
-  print(get_entanglementVariables(data['gen']['pi_pi'], central, comment = 'Table 3'))
-  #print(get_entanglementVariables(data['gen']['pi_pi'], central, comment = 'Table 4')) #TODO: needs a cut
-  print(get_decayModes(data['gen'], central, spin_analyzer, decay_modes, comment = 'Table 5')) #TODO: needs a cut
-  print(get_decayModes(data['kinFit'], central, spin_analyzer, decay_modes, comment = 'Table 6')) #TODO: needs a cut
+  data = read_data(input_dir, sample_name, modes = [ 'gen', 'kinFit' ], dms = decay_modes, spin_analyzers = spin_analyzers, axis = axis)
+  print(get_Cmatrix(data['gen']['pi_pi'], default_spin_analyzer, central, comment = 'Table 2'))
+  print(get_entanglementVariables(data['gen']['pi_pi'], central, spin_analyzers = spin_analyzers, comment = 'Table 3'))
+  #print(get_entanglementVariables(data['gen']['pi_pi'], central, spin_analyzers = spin_analyzers, comment = 'Table 4')) #TODO: needs a cut
+  print(get_decayModes(data['gen'], central, entanglement_vars, default_spin_analyzer, decay_modes, comment = 'Table 5')) #TODO: needs a cut
+  print(get_decayModes(data['kinFit'], central, entanglement_vars, default_spin_analyzer, decay_modes, comment = 'Table 6')) #TODO: needs a cut
