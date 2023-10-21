@@ -1,3 +1,8 @@
+<bin file="acceptanceCalculator.cc" name="acceptanceCalculator">
+  <use name="TauAnalysis/Entanglement"/>
+  <use name="DataFormats/Candidate"/>
+  <use name="root"/>
+</bin>
 <bin file="analyzeEntanglementNtuple.cc" name="analyzeEntanglementNtuple">
   <use name="DataFormats/FWLite"/>
   <use name="FWCore/FWLite"/>
