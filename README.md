@@ -55,8 +55,7 @@ plot_entanglement_vars.py -i ~/Entanglement/analysis/SuperKEKB/2023Oct22 \
 get_latex_tables.py -i ~/Entanglement/analysis/SuperKEKB/2023Oct22 \
                        ~/Entanglement/analysis/SuperKEKB/2023Oct22_hadHad
 # to produce tables for a particular cut in |cos(theta)|
-# note: "opt" works only if you have run the analysis with -M opt
 get_latex_tables.py -i ~/Entanglement/analysis/SuperKEKB/2023Oct22 \
                        ~/Entanglement/analysis/SuperKEKB/2023Oct22_hadHad \
-                    -c opt # or "absCosTheta0p55"
+                    -C absCosTheta0p55 # or "opt" if you have run the analysis with -M opt
 ```
