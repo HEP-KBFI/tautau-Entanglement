@@ -6,13 +6,11 @@
 #
 # In case the JSON files are stored in multiple directories, you can list those directories as argument to
 # -i/--input as long as there are no files with the same name in those directories.
-# If you want to produce Latex tables for a particular cut in |cos(theta)|, you can do that by adding
+# If you want to produce Latex tables for a particular cut in |cos(theta)|, you can do that by adding, e.g.,
 #
-# -c <cut>
+# -c absCosTheta0p55
 #
-# to the command, where <cut> can be "opt" if you want tables for the optimal cut, or something like
-# "absCosTheta0p55" if you want tables for the cut |cos(theta)| <= 0.55.
-#
+# if you want tables for the cut |cos(theta)| <= 0.55.
 # To colorize the terminal output, pipe it to: pygmentize -l latex
 
 import argparse

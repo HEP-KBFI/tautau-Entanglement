@@ -19,7 +19,7 @@ collider_choices = [ "LHC", "SuperKEKB" ]
 decayMode_choices = [ "pi_pi", "pi_rho", "pi_a1", "rho_rho", "rho_a1", "a1_a1" ]
 decayMode_choices_all = decayMode_choices + [ "had_had" ]
 spinAnalyzer_choices = [ "by_summation", "by_mlfit", "by_differentialXsec1d", "by_differentialXsec2d", "by_asymmetry" ]
-analysis_choices = [ "inclusive", "scan", "optimal" ]
+analysis_choices = [ "inclusive", "scan" ]
 plot_choices = [ "makeResolutionPlots", "makeControlPlots" ]
 
 parser = argparse.ArgumentParser(formatter_class = argparse.ArgumentDefaultsHelpFormatter)
@@ -72,7 +72,6 @@ elif collider == "SuperKEKB":
     from TauAnalysis.Entanglement.samples import samples_SuperKEKB as samples, PAR_GEN_SUPERKEKB as par_gen, \
       MAX_SUM_PHOTON_EN_SUPERKEKB as maxSumPhotonEn
     absCosTheta_acceptanceCut = 0.92 # obtained with acceptanceCalculator
-    absCosTheta_optimalCut = -1 #TODO TBD
 else:
     assert(False)
 
@@ -182,9 +181,6 @@ for sampleName, sample in samples.items():
                 absCosTheta_cuts = [ -1 ]
               elif analysis_mode == 'scan':
                 absCosTheta_cuts = absCosTheta_bins
-              elif analysis_mode == 'optimal':
-                assert(absCosTheta_optimalCut > 0)
-                absCosTheta_cuts = [ absCosTheta_optimalCut ]
               else:
                 assert(False)
               for absCosTheta_cut in absCosTheta_cuts:
@@ -193,8 +189,6 @@ for sampleName, sample in samples.items():
                 suffix = ""
                 if analysis_mode == "scan":
                   suffix = f"absCosTheta{absCosTheta_cut:.2f}".replace(".", "p")
-                elif analysis_mode == "optimal":
-                  suffix = "opt"
                 cfg_baseName = f"analyzeEntanglementNtuple_{sampleName}_{mode}Mode_{hAxis}Axis_{decayMode}DecayMode_{spinAnalyzer}"
                 if suffix:
                   cfg_baseName += f"_{suffix}"
