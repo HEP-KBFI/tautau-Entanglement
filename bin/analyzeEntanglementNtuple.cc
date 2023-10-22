@@ -273,7 +273,7 @@ int main(int argc, char* argv[])
         if ( maxChi2                != -1  && kinFit_chi2            > maxChi2                       ) continue;
         if ( statusSelection.size() >   0  && !passesStatusSelection(kinFit_status, statusSelection) ) continue;
       }
-      if ( absCosTheta_cut > 0. && cosThetaStar > absCosTheta_cut )                                    continue;
+      if ( absCosTheta_cut > 0. && std::fabs(cosThetaStar) > absCosTheta_cut )                         continue;
 
       spin::Data entry(hPlus_n, hPlus_r, hPlus_k, hMinus_n, hMinus_r, hMinus_k, evtWeight);
 
