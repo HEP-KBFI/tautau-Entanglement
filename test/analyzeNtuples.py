@@ -72,7 +72,7 @@ elif collider == "SuperKEKB":
     from TauAnalysis.Entanglement.samples import samples_SuperKEKB as samples, PAR_GEN_SUPERKEKB as par_gen, \
       MAX_SUM_PHOTON_EN_SUPERKEKB as maxSumPhotonEn
     absCosTheta_acceptanceCut = 0.92 # obtained with acceptanceCalculator
-    #absCosTheta_optimalCut = -1 #TODO TBD
+    absCosTheta_optimalCut = -1 #TODO TBD
 else:
     assert(False)
 
@@ -183,8 +183,8 @@ for sampleName, sample in samples.items():
               elif analysis_mode == 'scan':
                 absCosTheta_cuts = absCosTheta_bins
               elif analysis_mode == 'optimal':
-                #TODO
-                raise ValueError(f"Not implemented: {analysis_mode}")
+                assert(absCosTheta_optimalCut > 0)
+                absCosTheta_cuts = [ absCosTheta_optimalCut ]
               else:
                 assert(False)
               for absCosTheta_cut in absCosTheta_cuts:

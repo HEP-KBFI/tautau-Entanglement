@@ -2,12 +2,18 @@
 
 # Example usage:
 #
-# get_latex_tables.py -i ~/Entanglement/analysis/SuperKEKB/2023Oct17 -s dy_lo_pythia8_ext
+# get_latex_tables.py -i ~/Entanglement/analysis/SuperKEKB/2023Oct17
+#
+# In case the JSON files are stored in multiple directories, you can list those directories as argument to
+# -i/--input as long as there are no files with the same name in those directories.
+# If you want to produce Latex tables for a particular cut in |cos(theta)|, you can do that by adding
+#
+# -c <cut>
+#
+# to the command, where <cut> can be "opt" if you want tables for the optimal cut, or something like
+# "0p40" if you want tables for the cut |cos(theta)| <= 0.4.
 #
 # To colorize the terminal output, pipe it to: pygmentize -l latex
-
-#TODO:
-# - present the results after applying a cut on cos(theta)
 
 import argparse
 import jinja2
@@ -81,9 +87,9 @@ def fmt(s, repl_plus = False):
 jinja2_env.filters['fmt'] = fmt
 jinja2_env.filters['ljust'] = lambda s, pad: s.ljust(pad)
 
-def read_data(input_dir, sample_name, modes = None, dms = None, spin_analyzers = None, axis = DEFAULT_AXIS):
+def read_data(input_dirs, sample_name, modes = None, dms = None, spin_analyzers = None, axis = DEFAULT_AXIS, cut = ''):
   assert(sample_name)
-  assert(os.path.isdir(input_dir))
+  assert(all(os.path.isdir(input_dir) for input_dir in input_dirs))
   assert(axis in AXIS_CHOICES)
   if modes is None:
     modes = MODE_CHOICES
@@ -104,10 +110,20 @@ def read_data(input_dir, sample_name, modes = None, dms = None, spin_analyzers =
     for dm in dms:
       data[mode][dm] = {}
       for spin_analyzer in spin_analyzers:
-        fn = f'analyzeEntanglementNtuple_{sample_name}_{mode}Mode_{axis}Axis_{dm}DecayMode_by_{spin_analyzer}.json'
-        fp = os.path.join(input_dir, fn)
-        if not os.path.isfile(fp):
-          raise RuntimeError("No such file: {}".format(fp))
+        fn = f'analyzeEntanglementNtuple_{sample_name}_{mode}Mode_{axis}Axis_{dm}DecayMode_by_{spin_analyzer}'
+        if cut:
+          fn += f'_{cut}'
+        fn += '.json'
+        input_dir_selected = []
+        for input_dir in input_dirs:
+          fp = os.path.join(input_dir, fn)
+          if os.path.isfile(fp):
+            input_dir_selected.append(input_dir)
+        if not input_dir_selected:
+          raise RuntimeError("Could not find {} in none of the following dirs: {}".format(fn, ', '.join(input_dirs)))
+        if len(input_dir_selected) > 1:
+          raise RuntimeError("Found multiple instances of {} in these dirs: {}".format(fn, ', '.join(input_dir_selected)))
+        fp = os.path.join(input_dir_selected[0], fn)
         with open(fp, 'r') as f:
           data[mode][dm][spin_analyzer] = json.load(f)
   return data
@@ -164,17 +180,18 @@ def get_decayModes(data, central = DEFAULT_CENTRAL, entanglement_vars = None, sp
 
 if __name__ == '__main__':
   parser = argparse.ArgumentParser(formatter_class = argparse.ArgumentDefaultsHelpFormatter)
-  parser.add_argument('-i', '--input', type = str, required = True, help = 'Directory where the JSON files are')
-  parser.add_argument('-s', '--sample-name', type = str, required = True, help = 'Sample name')
+  parser.add_argument('-i', '--input', nargs = '*', required = True, help = 'List of directories containing the JSON files')
+  parser.add_argument('-s', '--sample-name', type = str, default = 'dy_lo_pythia8_ext', help = 'Sample name')
   parser.add_argument('-c', '--central', type = str, choices = CENTRAL_CHOICES, default = DEFAULT_CENTRAL, help = 'What to quote as the central value')
   parser.add_argument('-S', '--default-spin-analyzer', type = str, choices = SPIN_ANALYZER_CHOICES, default = DEFAULT_SPIN_ANALYZER, help = 'Default spin analyzer')
   parser.add_argument('-a', '--spin-analyzers', nargs = '*', choices = SPIN_ANALYZER_CHOICES, default = SPIN_ANALYZER_CHOICES, help = 'Spin analyzers')
   parser.add_argument('-d', '--decay-modes', nargs = '*', type = str, choices = DM_CHOICES.keys(), default = DM_CHOICES.keys(), help = 'Decay modes')
   parser.add_argument('-e', '--entanglement-vars', nargs = '*', choices = ENTANGLEMENT_VARS, default = ENTANGLEMENT_VARS, help = 'Entanglement variables')
   parser.add_argument('-A', '--axis', type = str, choices = AXIS_CHOICES, default = DEFAULT_AXIS, help = 'Coordinate system')
+  parser.add_argument('-C', '--cut', type = str, default = '', help = 'Print tables after applying a cut')
   args = parser.parse_args()
 
-  input_dir = args.input
+  input_dirs = args.input
   sample_name = args.sample_name
   central = args.central
   default_spin_analyzer = args.default_spin_analyzer
@@ -182,10 +199,14 @@ if __name__ == '__main__':
   decay_modes = collections.OrderedDict([ (dm, DM_CHOICES[dm]) for dm in args.decay_modes ])
   entanglement_vars = args.entanglement_vars
   axis = args.axis
+  cut = args.cut
 
-  data = read_data(input_dir, sample_name, modes = [ 'gen', 'kinFit' ], dms = decay_modes, spin_analyzers = spin_analyzers, axis = axis)
+  data = read_data(input_dirs, sample_name, modes = [ 'gen', 'kinFit' ], dms = decay_modes, spin_analyzers = spin_analyzers, axis = axis)
+  if cut:
+    data_cut = read_data(input_dirs, sample_name, modes = [ 'gen', 'kinFit' ], dms = decay_modes, spin_analyzers = spin_analyzers, axis = axis, cut = cut)
   print(get_Cmatrix(data['gen']['pi_pi'], default_spin_analyzer, central, comment = 'Table 2'))
   print(get_entanglementVariables(data['gen']['pi_pi'], central, spin_analyzers = spin_analyzers, comment = 'Table 3'))
-  #print(get_entanglementVariables(data['gen']['pi_pi'], central, spin_analyzers = spin_analyzers, comment = 'Table 4')) #TODO: needs a cut
-  print(get_decayModes(data['gen'], central, entanglement_vars, default_spin_analyzer, decay_modes, comment = 'Table 5')) #TODO: needs a cut
-  print(get_decayModes(data['kinFit'], central, entanglement_vars, default_spin_analyzer, decay_modes, comment = 'Table 6')) #TODO: needs a cut
+  if cut:
+    print(get_entanglementVariables(data_cut['gen']['pi_pi'], central, spin_analyzers = spin_analyzers, comment = 'Table 4'))
+    print(get_decayModes(data_cut['gen'], central, entanglement_vars, default_spin_analyzer, decay_modes, comment = 'Table 5'))
+    print(get_decayModes(data_cut['kinFit'], central, entanglement_vars, default_spin_analyzer, decay_modes, comment = 'Table 6'))
