@@ -11,7 +11,7 @@
 # -c <cut>
 #
 # to the command, where <cut> can be "opt" if you want tables for the optimal cut, or something like
-# "0p40" if you want tables for the cut |cos(theta)| <= 0.4.
+# "absCosTheta0p55" if you want tables for the cut |cos(theta)| <= 0.55.
 #
 # To colorize the terminal output, pipe it to: pygmentize -l latex
 
