@@ -66,12 +66,13 @@ def build_sbatchSubmission(sbatchSubmissionFileName, jobOptions, job_type):
           os.symlink(output_dir, output_dir_old)
 
       sbatchSubmissionFile.write(
-        "sbatch --partition=main --output={log} run_cluster_job.sh {tmp} {out} {cmd} {cfg}\n".format(
+        "sbatch --partition=main --output={log} {opt} run_cluster_job.sh {tmp} {out} {cmd} {cfg}\n".format(
           cmd = jobOptions[job_key]['cmd'],
           log = jobOptions[job_key]['logFileName'],
           tmp = os.path.join('/scratch', 'local', os.getenv('USER'), job_type, job_key),
           out = os.path.join(output_dir, jobOptions[job_key]['outputFileName']),
           cfg = jobOptions[job_key]['cfgFileName'],
+          opt = jobOptions[job_key]['options'] if 'options' in jobOptions[job_key] else '',
         )
       )
     sbatchSubmissionFile.write('\n')

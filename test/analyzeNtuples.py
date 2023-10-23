@@ -219,6 +219,14 @@ for sampleName, sample in samples.items():
                 logFileName_analysis = cfgFileName_analysis_modified.replace("_cfg.py", ".log")
                 dependencies_analysis = [ cfgFileName_analysis_modified ]
                 dependencies_analysis.extend(inputFileNames)
+                sbatch_options = ''
+                if decayMode == 'had_had':
+                  if 0 < absCosTheta_cut < 0.3:
+                    pass
+                  elif 0.3 <= absCosTheta_cut < 0.8:
+                    sbatch_options = '--mem 4000M'
+                  else:
+                    sbatch_options = '--mem 6000M'
                 jobOptions_analysis[cfg_baseName] = {
                   'inputFileNames' : dependencies_analysis,
                   'cfgFileName'    : cfgFileName_analysis_modified,
@@ -226,6 +234,7 @@ for sampleName, sample in samples.items():
                   'outputFileName' : outputFileName_analysis,
                   'logFileName'    : logFileName_analysis,
                   'cmd'            : analyzeEntanglementNtuple_cmd,
+                  'options'        : sbatch_options,
                 }
         if "makeControlPlots" in plots:
           cfgFileName_ctrlPlots_modified = os.path.join(
