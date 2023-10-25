@@ -27,7 +27,12 @@ def build_Makefile(makeFileName, jobOptions):
   lines_Makefile.append("")
   lines_Makefile.append("SHELL := /bin/bash")
   lines_Makefile.append("")
-  lines_Makefile.append("all: %s" % " ".join([ job['target'] for job in jobOptions ]))
+  lines_Makefile.append("all: \\")
+  for job_idx, job in enumerate(jobOptions):
+    target = f"  {job['target']}"
+    if job_idx < len(jobOptions) - 1:
+      target += " \\"
+    lines_Makefile.append(target)
   lines_Makefile.append("")
   for job in jobOptions:
     lines_Makefile.append("%s: %s" % (job['target'], " ".join(job['dependencies'])))
