@@ -65,7 +65,10 @@ namespace
   comp_median_and_Err(const std::vector<double>& measuredValues)
   {
     const size_t numMeasurements = measuredValues.size();
-    assert(numMeasurements > 2);
+    if ( numMeasurements < 3)
+    {
+      return std::make_pair(-999., -999.);
+    }
     std::vector<double> tmp = measuredValues;
     // CV: sort measured values into ascending order
     std::sort(tmp.begin(), tmp.end());
