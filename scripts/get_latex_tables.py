@@ -13,6 +13,8 @@
 # if you want tables for the cut |cos(theta)| <= 0.55.
 # To colorize the terminal output, pipe it to: pygmentize -l latex
 
+from TauAnalysis.Entanglement.tools.jobTools import positive_int_type
+
 import argparse
 import jinja2
 import json
@@ -44,13 +46,14 @@ COORDINATE_CHOICES = [ 'n', 'r', 'k' ]
 DEFAULT_CENTRAL = 'nominal'
 DEFAULT_AXIS = 'beam'
 DEFAULT_SPIN_ANALYZER = 'mlfit'
+DEFAULT_ENTANGLEMENT_VARS = [ 'Rchsh', 'concurrence' ]
 
 TABLE2_TEMPLATE = r"""
 <b>if comment</b>% <v>comment</v><b>endif</b>
 \begin{tabular}{c|r@{$ \,\,\pm\,\, $}rr@{$ \,\,\pm\,\, $}rr@{$ \,\,\pm\,\, $}r}
 Element <b>for i in range(3)</b> & \multicolumn{2}{c}{<v>A[i]</v>}<b>endfor</b> \\
 \hline
-<b>for i in range(3)</b><v>A[i]</v><b>for j in range(3)</b> & $<v>C[A[i]+A[j]]|fmt(1)</v>$ & $<v>E[A[i]+A[j]]|fmt(1)</v>$<b>endfor</b>\\
+<b>for i in range(3)</b><v>A[i]</v><b>for j in range(3)</b> & $<v>C[A[i]+A[j]]|fmt(1,N)</v>$ & $<v>E[A[i]+A[j]]|fmt(1,N)</v>$<b>endfor</b> \\
 <b>endfor</b>\end{tabular}
 """
 
@@ -59,7 +62,7 @@ TABLE3_TEMPLATE = r"""
 \begin{tabular}{l|r@{$ \,\,\pm\,\, $}rr@{$ \,\,\pm\,\, $}rr@{$ \,\,\pm\,\, $}rr@{$ \,\,\pm\,\, $}r}
 Method<b>for e in E</b> & \multicolumn{2}{c}{$\<v>e</v>$}<b>endfor</b> \\
 \hline
-<b>for s in S</b><v>S[s]|ljust(10)</v><b>for e in E</b> & $<v>D[s][e][C]|fmt</v>$ & $<v>D[s][e]["error"]|fmt</v>$<b>endfor</b> \\
+<b>for s in S</b><v>S[s]|ljust(10)</v><b>for e in E</b> & $<v>D[s][e][C]|fmt(0,N)</v>$ & $<v>D[s][e]["error"]|fmt(0,N)</v>$<b>endfor</b> \\
 <b>endfor</b>\end{tabular}
 """
 
@@ -68,7 +71,7 @@ TABLE5_TEMPLATE = r"""
 \begin{tabular}{c|r@{$ \,\,\pm\,\, $}rr@{$ \,\,\pm\,\, $}rr@{$ \,\,\pm\,\, $}rr@{$ \,\,\pm\,\, $}r}
 Decay channel<b>for e in E</b> & \multicolumn{2}{c}{$\<v>e</v>$}<b>endfor</b> \\
 \hline
-<b>for m in M</b><v>M[m]|ljust(14)</v><b>for e in E</b> & $<v>D[m][S][e][C]|fmt</v>$ & $<v>D[m][S][e]["error"]|fmt</v>$<b>endfor</b> \\
+<b>for m in M</b><v>M[m]|ljust(14)</v><b>for e in E</b> & $<v>D[m][S][e][C]|fmt(0,N)</v>$ & $<v>D[m][S][e]["error"]|fmt(0,N)</v>$<b>endfor</b> \\
 <b>endfor</b>\end{tabular}
 """
 
@@ -79,8 +82,8 @@ jinja2_env = jinja2.Environment(
   variable_end_string = '</v>',
 )
 
-def fmt(s, repl_plus = False):
-  return f"{s:+.2f}".replace('+', ' ') if repl_plus else f"{s:.2f}"
+def fmt(s, repl_plus = False, nof_decimal_places = 3):
+  return f"{s:+.{nof_decimal_places}f}".replace('+', ' ') if repl_plus else f"{s:.{nof_decimal_places}f}"
 
 jinja2_env.filters['fmt'] = fmt
 jinja2_env.filters['ljust'] = lambda s, pad: s.ljust(pad)
@@ -126,7 +129,7 @@ def read_data(input_dirs, sample_name, modes = None, dms = None, spin_analyzers 
           data[mode][dm][spin_analyzer] = json.load(f)
   return data
 
-def get_Cmatrix(data, spin_analyzer = DEFAULT_SPIN_ANALYZER, central = DEFAULT_CENTRAL, coordinates = None, comment = ''):
+def get_Cmatrix(data, spin_analyzer = DEFAULT_SPIN_ANALYZER, central = DEFAULT_CENTRAL, coordinates = None, comment = '', nof_decimal_places = 3):
   assert(central in CENTRAL_CHOICES)
   assert(spin_analyzer in SPIN_ANALYZER_CHOICES)
   if coordinates is None:
@@ -138,25 +141,31 @@ def get_Cmatrix(data, spin_analyzer = DEFAULT_SPIN_ANALYZER, central = DEFAULT_C
     C = Cmatrix_data[central],
     E = Cmatrix_data['error'],
     A = coordinates,
+    N = nof_decimal_places,
     comment = comment,
   )
 
-def get_entanglementVariables(data, central = DEFAULT_CENTRAL, spin_analyzers = None, comment = ''):
+def get_entanglementVariables(data, central = DEFAULT_CENTRAL, entanglement_vars = None, spin_analyzers = None, comment = '', nof_decimal_places = 3):
   assert(central in CENTRAL_CHOICES)
   if spin_analyzers is None:
     spin_analyzers = SPIN_ANALYZER_CHOICES
   else:
     assert(all(spin_analyzer in SPIN_ANALYZER_CHOICES for spin_analyzer in spin_analyzers) and \
            len(spin_analyzers) == len(set(spin_analyzers)))
+  if entanglement_vars is None:
+    entanglement_vars = ENTANGLEMENT_VARS
+  else:
+    assert(all(entanglement_var in ENTANGLEMENT_VARS for entanglement_var in entanglement_vars) and len(entanglement_vars) == len(set(entanglement_vars)))
   return jinja2_env.from_string(TABLE3_TEMPLATE).render(
     D = data,
     C = central,
-    E = ENTANGLEMENT_VARS,
+    E = entanglement_vars,
     S = spin_analyzers,
+    N = nof_decimal_places,
     comment = comment,
   )
 
-def get_decayModes(data, central = DEFAULT_CENTRAL, entanglement_vars = None, spin_analyzer = None, dms = None, comment = ''):
+def get_decayModes(data, central = DEFAULT_CENTRAL, entanglement_vars = None, spin_analyzer = None, dms = None, comment = '', nof_decimal_places = 3):
   assert(central in CENTRAL_CHOICES)
   if entanglement_vars is None:
     entanglement_vars = ENTANGLEMENT_VARS
@@ -173,6 +182,7 @@ def get_decayModes(data, central = DEFAULT_CENTRAL, entanglement_vars = None, sp
     E = entanglement_vars,
     S = spin_analyzer,
     M = dms,
+    N = nof_decimal_places,
     comment = comment,
   )
 
@@ -184,9 +194,10 @@ if __name__ == '__main__':
   parser.add_argument('-S', '--default-spin-analyzer', type = str, choices = SPIN_ANALYZER_CHOICES, default = DEFAULT_SPIN_ANALYZER, help = 'Default spin analyzer')
   parser.add_argument('-a', '--spin-analyzers', nargs = '*', choices = SPIN_ANALYZER_CHOICES, default = SPIN_ANALYZER_CHOICES, help = 'Spin analyzers')
   parser.add_argument('-d', '--decay-modes', nargs = '*', type = str, choices = DM_CHOICES.keys(), default = DM_CHOICES.keys(), help = 'Decay modes')
-  parser.add_argument('-e', '--entanglement-vars', nargs = '*', choices = ENTANGLEMENT_VARS, default = ENTANGLEMENT_VARS, help = 'Entanglement variables')
+  parser.add_argument('-e', '--entanglement-vars', nargs = '*', choices = ENTANGLEMENT_VARS, default = DEFAULT_ENTANGLEMENT_VARS, help = 'Entanglement variables')
   parser.add_argument('-A', '--axis', type = str, choices = AXIS_CHOICES, default = DEFAULT_AXIS, help = 'Coordinate system')
   parser.add_argument('-C', '--cut', type = str, default = '', help = 'Print tables after applying a cut')
+  parser.add_argument('-n', '--nof-decimal-places', type = positive_int_type, default = 3, help = 'Number of decimal places to display')
   args = parser.parse_args()
 
   input_dirs = args.input
@@ -198,13 +209,14 @@ if __name__ == '__main__':
   entanglement_vars = args.entanglement_vars
   axis = args.axis
   cut = args.cut
+  nof_decimal_places = args.nof_decimal_places
 
   data = read_data(input_dirs, sample_name, modes = [ 'gen', 'kinFit' ], dms = decay_modes, spin_analyzers = spin_analyzers, axis = axis)
   if cut:
     data_cut = read_data(input_dirs, sample_name, modes = [ 'gen', 'kinFit' ], dms = decay_modes, spin_analyzers = spin_analyzers, axis = axis, cut = cut)
-  print(get_Cmatrix(data['gen']['pi_pi'], default_spin_analyzer, central, comment = 'Table 2'))
-  print(get_entanglementVariables(data['gen']['pi_pi'], central, spin_analyzers = spin_analyzers, comment = 'Table 3'))
+  print(get_Cmatrix(data['gen']['pi_pi'], default_spin_analyzer, central, nof_decimal_places = nof_decimal_places, comment = 'Table 2'))
+  print(get_entanglementVariables(data['gen']['pi_pi'], central, entanglement_vars, spin_analyzers = spin_analyzers, nof_decimal_places = nof_decimal_places, comment = 'Table 3'))
   if cut:
-    print(get_entanglementVariables(data_cut['gen']['pi_pi'], central, spin_analyzers = spin_analyzers, comment = 'Table 4'))
-    print(get_decayModes(data_cut['gen'], central, entanglement_vars, default_spin_analyzer, decay_modes, comment = 'Table 5'))
-    print(get_decayModes(data_cut['kinFit'], central, entanglement_vars, default_spin_analyzer, decay_modes, comment = 'Table 6'))
+    print(get_entanglementVariables(data_cut['gen']['pi_pi'], central, spin_analyzers = spin_analyzers, nof_decimal_places = nof_decimal_places, comment = 'Table 4'))
+    print(get_decayModes(data_cut['gen'], central, entanglement_vars, default_spin_analyzer, decay_modes, nof_decimal_places = nof_decimal_places, comment = 'Table 5'))
+    print(get_decayModes(data_cut['kinFit'], central, entanglement_vars, default_spin_analyzer, decay_modes, nof_decimal_places = nof_decimal_places, comment = 'Table 6'))
