@@ -64,15 +64,21 @@ namespace
   std::pair<double, double>
   comp_median_and_Err(const std::vector<double>& measuredValues)
   {
-    assert(! measuredValues.empty());
+    const size_t numMeasurements = measuredValues.size();
+    assert(numMeasurements > 2);
     std::vector<double> tmp = measuredValues;
     // CV: sort measured values into ascending order
     std::sort(tmp.begin(), tmp.end());
-    size_t numMeasurements = measuredValues.size();
+
     int idxMedian = TMath::Nint(0.5*numMeasurements);
     double median = tmp[idxMedian];
     int idxPlus1Sigma = TMath::Nint(0.84*numMeasurements);
     int idxMinus1Sigma = TMath::Nint(0.16*numMeasurements);
+    if(numMeasurements == 3)
+    {
+      --idxMedian; // 2 -> 1
+      --idxPlus1Sigma; // 3 -> 2
+    }
     double Err = tmp[idxPlus1Sigma] - tmp[idxMinus1Sigma];
     assert(Err >= 0.);
     return std::make_pair(median, Err);
