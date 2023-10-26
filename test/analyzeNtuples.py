@@ -19,7 +19,7 @@ collider_choices = [ "LHC", "SuperKEKB" ]
 decayMode_choices = [ "pi_pi", "pi_rho", "pi_a1", "rho_rho", "rho_a1", "a1_a1" ]
 decayMode_choices_all = decayMode_choices + [ "had_had" ]
 spinAnalyzer_choices = [ "by_summation", "by_mlfit", "by_differentialXsec1d", "by_differentialXsec2d", "by_asymmetry" ]
-analysis_choices = [ "inclusive", "scan" ]
+analysis_modes = [ "inclusive", "scan" ]
 analysis_choices = [ "analyzeEntanglementNtuple", "makeResolutionPlots", "makeControlPlots" ]
 
 parser = argparse.ArgumentParser(formatter_class = argparse.ArgumentDefaultsHelpFormatter)
@@ -30,7 +30,7 @@ parser.add_argument('-a', '--axes', nargs = '*', type = str, choices = collider_
 parser.add_argument('-S', '--spin-analyzers', nargs = '*', type = str, choices = spinAnalyzer_choices, default = spinAnalyzer_choices, help = 'Spin analyzers')
 parser.add_argument('-d', '--decay-modes', nargs = '*', type = str, choices = decayMode_choices_all, default = decayMode_choices, help = 'Tau decay modes')
 parser.add_argument('-m', '--modes', nargs = '*', type = str, choices = mode_choices, default = mode_choices, help = 'Input data')
-parser.add_argument('-M', '--analysis-modes', nargs = '*', type = str, choices = analysis_choices, default = [ 'inclusive' ], help = 'Binned analysis')
+parser.add_argument('-M', '--analysis-modes', nargs = '*', type = str, choices = analysis_modes, default = [ 'inclusive' ], help = 'Binned analysis')
 parser.add_argument('-N', '--nbins', type = positive_int_type, default = 20, help = 'Number of bins in |cos(theta)|')
 parser.add_argument('-s', '--samples', nargs = '*', default = [], help = 'Whitelisted samples')
 parser.add_argument('-n', '--max-events', type = int, default = -1, help = 'Max number of events considered')
