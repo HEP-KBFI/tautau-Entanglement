@@ -113,8 +113,7 @@ outputDir  = os.path.join("/scratch/persistent", getpass.getuser(), "Entanglemen
 testDir    = os.path.dirname(os.path.abspath(__file__))
 cmsswDir   = os.getenv('CMSSW_BASE')
 
-outputDir_ctrlPlots = os.path.join(configDir, "plots")
-outputDir_resPlots = os.path.join(configDir, "plots")
+outputDir_plots = os.path.join(configDir, "plots")
 
 analyzeNtuple_template = read_contents(os.path.join(testDir, "analyzeEntanglementNtuple_cfg.py"))
 makeControlPlot_template = read_contents(os.path.join(testDir, "makeControlPlots_cfg.py"))
@@ -240,9 +239,9 @@ for sampleName, sample in samples.items():
           cfgFileName_ctrlPlots_modified = os.path.join(
             configDir, f"makeControlPlots_{sampleName}_{mode}Mode_{hAxis}Axis_{decayMode}DecayMode_cfg.py"
           )
-          outputFileName_ctrlPlots = f"makeControlPlots_{sampleName}_{mode}Mode_{hAxis}Axis_{decayMode}DecayMode.root"
-          if run_makefile:
-            outputFileName_ctrlPlots = os.path.join(outputDir_ctrlPlots, outputFileName_ctrlPlots)
+          outputFileName_ctrlPlots = os.path.join(
+            outputDir_plots, f"makeControlPlots_{sampleName}_{mode}Mode_{hAxis}Axis_{decayMode}DecayMode.root"
+          )
           args_ctrlPlots = {
             'inputFileNames'  : inputFileNames,
             'mode'            : mode,
@@ -262,7 +261,7 @@ for sampleName, sample in samples.items():
           jobOptions_ctrlPlots[job_key_ctrlPlots] = {
             'inputFileNames' : dependencies_ctrlPlots,
             'cfgFileName'    : cfgFileName_ctrlPlots_modified,
-            'outputFilePath' : outputDir_ctrlPlots,
+            'outputFilePath' : outputDir_plots,
             'outputFileName' : outputFileName_ctrlPlots,
             'logFileName'    : logFileName_ctrlPlots,
             'cmd'            : makeControlPlots_cmd,
@@ -271,10 +270,9 @@ for sampleName, sample in samples.items():
           cfgFileName_resPlots_modified = os.path.join(
             configDir, f"makeResolutionPlots_{sampleName}_{mode}Mode_{hAxis}Axis_{decayMode}DecayMode_cfg.py"
           )
-
-          outputFileName_resPlots = f"makeResolutionPlots_{sampleName}_{mode}Mode_{hAxis}Axis_{decayMode}DecayMode.root"
-          if run_makefile:
-            outputFileName_resPlots = os.path.join(outputDir_resPlots, outputFileName_resPlots)
+          outputFileName_resPlots = os.path.join(
+            outputDir_plots, f"makeResolutionPlots_{sampleName}_{mode}Mode_{hAxis}Axis_{decayMode}DecayMode.root"
+          )
           args_resPlots = {
             'inputFileNames'  : inputFileNames,
             'mode'            : mode,

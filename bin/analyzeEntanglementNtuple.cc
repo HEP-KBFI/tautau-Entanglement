@@ -156,8 +156,8 @@ int main(int argc, char* argv[])
   fwlite::InputSource inputFiles(cfg);
   unsigned reportEvery = inputFiles.reportAfter();
 
-  fwlite::OutputFiles outputFile(cfg);
-  fwlite::TFileService fs = fwlite::TFileService(outputFile.file().c_str());
+  //fwlite::OutputFiles outputFile(cfg);
+  //fwlite::TFileService fs = fwlite::TFileService(outputFile.file().c_str());
 
   std::vector<std::string> inputFileNames = inputFiles.files();
   size_t numInputFiles = inputFileNames.size();

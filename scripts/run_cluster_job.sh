@@ -46,7 +46,18 @@ EXIT_CODE=$?
 
 if [ $EXIT_CODE -eq 0 ]; then
   OUT_BASENAME=$(basename $OUT_FILENAME)
-  cp -v $OUT_BASENAME $OUT_DIRNAME
+  if [ -f $OUT_BASENAME ]; then
+    cp -v $OUT_BASENAME $OUT_DIRNAME
+  else
+    echo "Missing file: $OUT_BASENAME?"
+  fi
+
+  for ext in pdf png; do
+    if ls *.$ext 1> /dev/null 2>&1; then
+      cp -v *.$ext $OUT_DIRNAME
+    fi
+  done
+
 else
   echo "Job finished with non-zero exit code ($EXIT_CODE) -> not copying anything"
 fi

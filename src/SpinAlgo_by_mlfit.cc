@@ -329,9 +329,8 @@ namespace
     canvas->RedrawAxis();
 
     canvas->Update();
-    std::string outputFileName_plot = "plots/";
     size_t idx = outputFileName.find_last_of('.');
-    outputFileName_plot.append(std::string(outputFileName, 0, idx));
+    std::string outputFileName_plot = std::string(outputFileName, 0, idx);
     //if ( idx != std::string::npos ) canvas->Print(std::string(outputFileName_plot).append(std::string(outputFileName, idx)).data());
     canvas->Print(std::string(outputFileName_plot).append(".png").data());
     //canvas->Print(std::string(outputFileName_plot).append(".pdf").data());
