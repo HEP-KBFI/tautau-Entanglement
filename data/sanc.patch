@@ -1,0 +1,30 @@
+--- a/SANC/Makefile	2017-08-15 13:24:39.000000000 +0300
++++ b/SANC/Makefile	2023-10-28 20:15:00.284865600 +0300
+@@ -1,4 +1,6 @@
+-include ../make.inc
++#include ../make.inc
++
++F77=f95 -std=legacy -ffixed-line-length-132
+ 
+ LT_HOME = ./LoopTools-2.1
+ LT_INCLUDE = $(LT_HOME)/include
+@@ -80,13 +82,13 @@
+ 	$(CC) -fPIC -o SANCtable.o -c SANCtable.cxx
+ 	$(CC) -fPIC -o SANCinterface.o -c SANCinterface.cxx
+ 	gfortran -lstdc++ $(F77FLAGS) -I$(LT_INCLUDE) -I$(SANC_INCLUDE) -o SANCinterface.exe SANCinterface.o SANCinterfaceF.o SANCtable.o s2n_init.o $(FILES_1loop) -L$(LT_LIBRARY) -l$(LT_LIB) -L$(SANC_LIBRARY) -l$(SANC_LIB) -lstdc++
+-	./SANCinterface.exe
++	@echo "Run ./SANCinterface.exe"
+ 
+-../make.inc:
+-	@echo ""
+-	@echo "Please execute ./configure in TAUOLA directory first!"
+-	@echo ""
+-	@false
++#../make.inc:
++#	@echo ""
++#	@echo "Please execute ./configure in TAUOLA directory first!"
++#	@echo ""
++#	@false
+ 
+ clean:
+ 	rm -f *.out *.exe *.o $(MODULES)/*.o  $(MODULES)/*~

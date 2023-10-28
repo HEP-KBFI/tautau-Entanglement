@@ -148,8 +148,10 @@ def build_cfg(template_contents, output_filename, args):
   with open(output_filename, 'w') as output_file:
     output_file.write(jinja2.Template(template_contents).render(**args))
 
-def mkdir(dirname):
+def mkdir(dirname, verbose = False):
   if not os.path.isdir(dirname):
+    if verbose:
+      print(f"Creating directory: {dirname}")
     os.makedirs(dirname)
 
 def positive_int_type(value):

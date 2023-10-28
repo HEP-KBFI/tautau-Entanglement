@@ -1,0 +1,27 @@
+# File downloaded from:
+# https://github.com/belle2/basf2/blob/eee37dce021b29d78d3d266db0f3cc2c7863d8d4/generators/modules/fragmentation/data/pythia_belle2.dat
+# with additional comments added inline
+# Pythia8 version 8.306 documentation: https://pythia.org/manuals/pythia8306/Welcome.html
+
+StringFlav:etaSup=0.27              # The default is 0.6, suppresses eta production
+StringFlav:etaPrimeSup=0.12         # Already the default, suppresses eta' production
+StringFragmentation:stopMass=0.3    # The default is 1, ranges from 0 to 2, defines W_min = m_q1 + m_q2 + stopMass
+StringZ:aLund=0.32                  # The default is 0.68, ranges from 0 to 2, defines a parameter in Lund symmetric fragmentation function f(z) = (1/z) * (1-z)^a * exp(-b m_T^2 / z)
+StringZ:bLund=0.62                  # The default is 0.98, ranges from 0.2 to 2, defines a parameter in Lund symmetric fragmentation function f(z) = (1/z) * (1-z)^a * exp(-b m_T^2 / z)
+StringZ:usePetersonC=off            # Already default, does not "use Peterson" formula for c quark fragmentation
+StringZ:usePetersonB=off            # Already default, does not "use Peterson" formula for b quark fragmentation
+StringZ:usePetersonH=off            # Already default, does not "use Peterson" formula for the fragmentation of hypothetical heavier quarks
+StringZ:rFactC=1.0                  # The default is 1.32, ranges from 0 to 2, defines a parameter in Bowler modification 1/z^{r_Q * b * m_Q^2} to heavy quark fragmentation function
+
+ParticleDecays:multIncrease=4.5     # The default is 4, ranges from 2 to 6, regulates the multiplicity of hadrons in quark decays
+ParticleDecays:multIncreaseWeak=2.0 # The default is 2.5, ranges from 1 to 4, similar to the previous setting
+
+###################
+#control radiation
+###################
+
+## QCD showers on PartonLevel
+ParticleDecays:FSRinDecays=on       # Already the default, allows the PS to develop before the partonic system is hadronized (typical to Upsilon mesons)
+
+## QED radiation of quarks (FSR)
+TimeShower:QEDshowerByQ=on          # Already the default, enables photon radiation from quarks
