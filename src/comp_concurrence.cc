@@ -82,18 +82,12 @@ namespace {
     const Eigen::ComplexEigenSolver<Eigen::Matrix4cd> es(R);
     Eigen::Vector4cd evals = es.eigenvalues();
 
+    // [*] https://github.com/HEP-KBFI/tautau-Entanglement/issues/8
     for(int i = 0; i < 4; ++i)
     {
-      // TODO
-      // This the point where the calculation of concurrence fails: either the imaginary parts become too large
-      // or the real parts become negative. This isn't the norm, but when it happens it usually affects only
-      // the last two eigenvalues. However, the magnitude of those offending eigenvalues is much smaller than
-      // that of the leading two eigenvalues, which means that we could in fact ignore the problematic eigenvalues.
-      // Therefore, we could consider implementing the following alternative:
-      // 1) if the real part is significant (e.g. >= 1e-2), then require the imaginart component to be very small (< 1e-6)
-      // 2) however, if the real part is not as significant (e.g. < 1e-2), then set the eigenvalue to zero
-
-      if(std::fabs(evals(i).imag()) < 1e-6)
+      // Assume that the eigenvalue is real if it's imaginary component is already
+      // very small or if the real part is negligible. [*]
+      if((std::fabs(evals(i).imag()) < 1e-6) || (std::fabs(evals(i).real()) < 1e-4))
       {
         evals(i) = evals(i).real();
       }
@@ -103,7 +97,7 @@ namespace {
         if (verbosity >= 0)
         {
           std::cerr << "WARNING: Not all Eigenvalues are real !!\n";
-          std::cerr << " " << evals.transpose() << "\n";
+          std::cerr << ' ' << evals.transpose() << '\n';
         }
         errorBit = 1;
         return {};
@@ -111,10 +105,16 @@ namespace {
 
       if(evals(i).real() < 0)
       {
+        if(std::fabs(evals(i).real()) < 1e-6)
+        {
+          // Set those eigenvalues to zero that are negative but very small in absolute value. [*]
+          evals(i) = 0;
+          continue;
+        }
         if(verbosity >= 0)
         {
           std::cerr << "WARNING: Not all Eigenvalues are greater than or equal to zero !!\n";
-          std::cerr << " " << evals.transpose() << "\n";
+          std::cerr << ' ' << evals.transpose() << '\n';
         }
         errorBit = 2;
         return {};
