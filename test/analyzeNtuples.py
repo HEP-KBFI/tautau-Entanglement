@@ -87,9 +87,6 @@ if "scan" in analysis_modes:
       print(f"Switched from {len(absCosTheta_bins)} bins to {len(absCosTheta_bins_new)} bins")
     absCosTheta_bins = absCosTheta_bins_new
 
-# Karl: ignore the FSR cut, see commit d5e08c353cb1d91639f804198e349667ec312e16
-maxSumPhotonEn = -1
-
 if not whitelist:
   run_all_samples = query_yes_no(
     "Do you really want to process all those samples: {}?".format(', '.join(samples.keys())),
