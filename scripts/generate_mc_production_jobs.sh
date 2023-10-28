@@ -31,6 +31,12 @@ if [[ ! $SUBMISSION_SCRIPT == *.sh ]]; then
   exit 1;
 fi
 
+if [ -f $SUBMISSION_SCRIPT ]; then
+  echo "Submission script already exists: $SUBMISSION_SCRIPT";
+  echo "Either remove the file or provide a new name as 7th argument.";
+  exit 1;
+fi
+
 if [[ ! $DSTDIR == /local/* ]]; then
   echo "Invalid name for the destination directory: $DSTDIR";
   exit 1;
@@ -46,13 +52,18 @@ if ! [[ "$NOF_EVENTS_PER_JOB" =~ ^[0-9]+$ && $NOF_EVENTS_PER_JOB -gt 0 ]]; then
   exit 1;
 fi
 
+if [ ! -f $FRAGMENT ]; then
+  echo "No such fragment found: $3";
+  exit 1;
+fi
+
 CMSSW_BASE_SRC="$CMSSW_BASE/src";
 FRAGMENT_BASE="${FRAGMENT#$CMSSW_BASE_SRC/}"
 
+mkdir -pv $DSTDIR;
 if [ "$MODE" = "run" ]; then
   LOGDIR="${DSTDIR/local/home}/logs";
   mkdir -pv $LOGDIR;
-  mkdir -pv $DSTDIR;
 elif [ "$MODE" = "test" ]; then
   :
 else

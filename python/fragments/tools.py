@@ -18,11 +18,11 @@ def read_pythia_cfg(fn = 'pythia_belle2.dat'):
     for line in f:
       line_stripped = line.strip()
       # Skip comments
-      hashtag_idx = line_stripped.index('-1')
+      hashtag_idx = line_stripped.find('#')
       if hashtag_idx >= 0:
         line_stripped = line_stripped[:hashtag_idx]
       # Skip empty lines
       if not line_stripped:
         continue
-      lines.append(line_stripped)
+      lines.append(line_stripped.rstrip())
   return lines

@@ -110,6 +110,3 @@ process.AODSIMoutput.outputCommands.extend([
   'keep GenLumiInfoProduct_*_*_*',
   'keep GenEventInfoProduct_*_*_*',
 ])
-
-with open(outputFile.replace(FILE_PFX, '').replace('.root', '.dump'), 'w') as f:
-  print(process.dumpPython(), file = f)

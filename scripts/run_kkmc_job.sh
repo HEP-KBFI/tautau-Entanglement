@@ -16,10 +16,11 @@ JOB_NAME="job_kkmc_${SEED}_$(basename $DSTDIR)";
 echo "Host name is: `hostname`"
 
 if [ $HOSTNAME != manivald ]; then
-  OUTDIR=/scratch/local/$USER/mc_production/$JOB_NAME;
+  BIND_DIR=local;
 else
-  OUTDIR=/scratch/persistent/$USER/mc_production/$JOB_NAME;
+  BIND_DIR=persistent;
 fi
+OUTDIR=/scratch/$BIND_DIR/$USER/mc_production/$JOB_NAME;
 rm -rfv $OUTDIR
 mkdir -pv $OUTDIR
 cd $_
@@ -27,9 +28,10 @@ cd $_
 # Run MC production
 OUTFN=${MODE}_${SEED}
 
-singularity exec -B /local/ -B /scratch/local \
-  docker://ktht/basf2-centos7:v01-12-01-1df2691 \
-  /home/karl/sandbox/kkmc/run.sh $OUTFN $SEED $NOF_EVENTS $MODE
+singularity exec -B /local/ -B /scratch/$BIND_DIR \
+  docker://ktht/basf2-centos7:v01-12-01-1df2691   \
+  $CMSSW_BASE/bin/$SCRAM_ARCH/run_kkmc.sh         \
+  $OUTFN $SEED $NOF_EVENTS $MODE
 
 # Tarball the HepMC output file
 tar czf ${OUTFN}.tgz ${OUTFN}.hepmc

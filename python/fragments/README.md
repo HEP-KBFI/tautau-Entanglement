@@ -6,7 +6,7 @@ Execute the following outside of CMSSW:
 
 ```bash
 git clone -b ee2tt https://github.com/HEP-KBFI/genproductions.git
-cd genproductions_ee2tt/bin/MadGraph5_aMCatNLO
+cd genproductions/bin/MadGraph5_aMCatNLO
 
 # to generate e+ e- > ta+ ta- without decaying the taus
 ./gridpack_generation.sh ee2tt cards/production/ee2tt
@@ -37,7 +37,7 @@ for dm_tauPlus in dms:
     pfix = 'add process' if cmds else 'generate'
     sfix = 'EFT=1' if dm_tauPlus == 'a1_2' or dm_tauMinus == 'a1_2' else ''
     cmd = f'{pfix} e+ e- > ta+ ta-, (ta+ > {cmd_tauPlus}), (ta- > {cmd_tauMinus}) {sfix}'
-    cmds.append(cmd.rstrip())
+    cmds.append(cmd.lstrip())
 
 assert(len(cmds) == len(dms)**2)
 print('\n'.join(cmds))
@@ -45,19 +45,25 @@ print('\n'.join(cmds))
 
 ## Running MC sample production
 
+### MadGraph + Pythia or Tauola
+
 Example commands:
 
 ```bash
 # Pythia, 200M events
-generate_mc_production_jobs.sh 2000 100000 ee2tt_fragment_pythia.py /local/$USER/belle_eeToTauTau/aod/unwgt_pythia_extended aod run
+generate_mc_production_jobs.sh 2000 100000 ee2tt_fragment_pythia.py \
+  /local/$USER/belle_eeToTauTau/aod/unwgt_pythia_extended aod run
 
 # Tauola, 10M events
-generate_mc_production_jobs.sh 100 100000 ee2tt_fragment_tauola.py /local/$USER/belle_eeToTauTau/aod/unwgt_tauola aod run
+generate_mc_production_jobs.sh 100 100000 ee2tt_fragment_tauola.py \
+  /local/$USER/belle_eeToTauTau/aod/unwgt_tauola aod run
 
 # TauDecay, 10M events
-generate_mc_production_jobs.sh 100 100000 ee2tt_fragment_TauDecay.py /local/$USER/belle_eeToTauTau/aod/unwgt_taudecay aod run
+generate_mc_production_jobs.sh 100 100000 ee2tt_fragment_TauDecay.py \
+  /local/$USER/belle_eeToTauTau/aod/unwgt_taudecay aod run
 ```
 
+Note that if you run these commands in some other directory, you'd have to modify the path to the Pythia fragment (i.e., the 3rd argument) accordingly.
 Each of those commands creates a script called `submit.sh` (or whatever you would specify as the 7th argument), which you run in order to submit the jobs to the cluster.
 If you just want to generate config files but not run the jobs, then replace `run` with `test` in the above examples.
 
@@ -110,7 +116,7 @@ static const int NS1=100,NS2=100,NS3=100,NCOS=21;
 #TABLE="/local/karl/gridpacks/table11-11.txt.long" # works only if you recompile Tauola++
 ```
 
-## Generating the SANC tables
+#### Generating the SANC tables
 
 Assuming that you have already downloaded Tauola++ (but necessarily compiled or installed) as instructed in the previous section, you can produce your own SANC tables as follows:
 
@@ -130,13 +136,13 @@ make tables
 ./SANCinterface.exe
 ```
 
-## KKMC production
+### KKMC production
 
 Create a script that submits KKMC production jobs to the cluster:
 
 ```bash
 # Create a script called submit.sh that submits 10 KKMC production jobs to SLURM that each generate 10000 events.
-# The HepMC (version 2) files will be stored in the directory that's specified as the 4th argument in the following.
+# The output files will be stored in the directory that's specified as the 4th argument in the following.
 create_kkmc_jobs.py default 10 10000 /local/$USER/belle_eeToTauTau/kkmc/default_10jobs_10Kevents run
 ```
 
@@ -144,4 +150,4 @@ This would generate a file called `submit.sh` (or whatever you provide as the 5t
 You can replace `default` with `orig` or `bbb` (read [this](https://github.com/HEP-KBFI/tautau-Entanglement/issues/2#issuecomment-1746796984) to learn more about their differences).
 
 The jobs can fail if they are unable to fetch payloads via cURL, which does happen quite often.
-If you just want to test the code locally, replace `run` with `test` in the above example.
+If you just want to run the production interactively, use `test` instead of `run` as the 5th argument (cf the above example).

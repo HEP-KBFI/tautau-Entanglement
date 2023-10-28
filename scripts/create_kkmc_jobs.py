@@ -16,8 +16,8 @@ dst_dir            = sys.argv[4]
 job_type           = sys.argv[5]
 
 submission_filename = 'submit.sh'
-if len(sys.argv) > 5:
-  submission_filename = sys.argv[5]
+if len(sys.argv) > 6:
+  submission_filename = sys.argv[6]
 assert(not os.path.exists(submission_filename))
 
 assert(job_type in [ 'run', 'test' ])
@@ -36,4 +36,4 @@ with open(submission_filename, 'w') as submission_file:
     submission_file.write(f"{submission_cmd} run_kkmc_job.sh {mode} {job_idx} {nof_events_per_job} {dst_dir}\n".lstrip())
 
 os.chmod(submission_filename, 0o755)
-print("Run: {}".format(submission_filename))
+print("Run: {}".format(os.path.abspath(submission_filename)))

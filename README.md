@@ -18,6 +18,10 @@ cd TauAnalysis/Entanglement
 scram b -j 8
 ```
 
+## MC production
+
+Visit [this directory](python/fragments).
+
 ## Ntuple production
 
 ```bash
