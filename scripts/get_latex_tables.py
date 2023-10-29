@@ -46,7 +46,7 @@ COORDINATE_CHOICES = [ 'n', 'r', 'k' ]
 DEFAULT_CENTRAL = 'nominal'
 DEFAULT_AXIS = 'beam'
 DEFAULT_SPIN_ANALYZER = 'mlfit'
-DEFAULT_ENTANGLEMENT_VARS = [ 'Rchsh', 'concurrence' ]
+DEFAULT_ENTANGLEMENT_VARS = [ 'concurrence', 'Rchsh' ]
 DEFAULT_DMS = [ dm for dm in DM_CHOICES if dm != 'had_had' ]
 
 CMATRIX_TEMPLATE = r"""
@@ -58,7 +58,7 @@ CMATRIX_TEMPLATE = r"""
 
 TABLE_SPIN_ANALYZER_TEMPLATE = r"""
 <b>if comment</b>% <v>comment</v><b>endif</b>
-\begin{tabular}{l|r@{$ \,\,\pm\,\, $}rr@{$ \,\,\pm\,\, $}rr@{$ \,\,\pm\,\, $}rr@{$ \,\,\pm\,\, $}r}
+\begin{tabular}{l|<b>for e in E</b>r@{$ \,\,\pm\,\, $}r<b>endfor</b>}
 Method<b>for e in E</b> & \multicolumn{2}{c}{$\<v>e</v>$}<b>endfor</b> \\
 \hline
 <b>for s in S</b><v>S[s]|ljust(10)</v><b>for e in E</b> & $<v>D[s][e][C]|fmt(0,N[e])</v>$ & $<v>D[s][e]["error"]|fmt(0,N[e])</v>$<b>endfor</b> \\
@@ -67,7 +67,7 @@ Method<b>for e in E</b> & \multicolumn{2}{c}{$\<v>e</v>$}<b>endfor</b> \\
 
 TABLE_DM_TEMPLATE = r"""
 <b>if comment</b>% <v>comment</v><b>endif</b>
-\begin{tabular}{c|r@{$ \,\,\pm\,\, $}rr@{$ \,\,\pm\,\, $}rr@{$ \,\,\pm\,\, $}rr@{$ \,\,\pm\,\, $}r}
+\begin{tabular}{c|<b>for e in E</b>r@{$ \,\,\pm\,\, $}r<b>endfor</b>}
 Decay channel<b>for e in E</b> & \multicolumn{2}{c}{$\<v>e</v>$}<b>endfor</b> \\
 \hline
 <b>for m in M</b><v>M[m]|ljust(14)</v><b>for e in E</b> & $<v>D[m][S][e][C]|fmt(0,N[e])</v>$ & $<v>D[m][S][e]["error"]|fmt(0,N[e])</v>$<b>endfor</b> \\ <b>if m == 'comb'</b>% Weighted average<b>endif</b>
