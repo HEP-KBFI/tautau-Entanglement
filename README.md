@@ -52,7 +52,7 @@ plot_entanglement_vars.py -i ~/Entanglement/analysis/SuperKEKB/2023Oct22 \
   -o ~/Entanglement/analysis/SuperKEKB/2023Oct22/json_plots -E png
 ```
 
-## Latex tables
+## Latex tables & plots
 
 ```bash
 # note: multiple arguments
@@ -62,4 +62,7 @@ get_latex_tables.py -i ~/Entanglement/analysis/SuperKEKB/2023Oct22 \
 get_latex_tables.py -i ~/Entanglement/analysis/SuperKEKB/2023Oct22 \
                        ~/Entanglement/analysis/SuperKEKB/2023Oct22_hadHad \
                     -C absCosTheta0p55
+# plots
+plot_entanglement_vars.py -i ~/Entanglement/analysis/SuperKEKB/2023Oct22 \
+                          -o ~/Entanglement/analysis/SuperKEKB/2023Oct27_plots
 ```

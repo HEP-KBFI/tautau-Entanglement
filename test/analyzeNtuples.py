@@ -21,6 +21,9 @@ decayMode_choices_all = decayMode_choices + [ "had_had" ]
 spinAnalyzer_choices = [ "by_summation", "by_mlfit", "by_differentialXsec1d", "by_differentialXsec2d", "by_asymmetry" ]
 analysis_modes = [ "inclusive", "scan" ]
 analysis_choices = [ "analyzeEntanglementNtuple", "makeResolutionPlots", "makeControlPlots" ]
+measurement_choices = [
+  "zPlus", "zMinus", "cosThetaStar", "zPlus_vs_cosThetaStar", "zMinus_vs_cosThetaStar", "zPlus_vs_zMinus", "visPlusPt_vs_visMinusPt",
+]
 
 parser = argparse.ArgumentParser(formatter_class = argparse.ArgumentDefaultsHelpFormatter)
 parser.add_argument('-v', '--version', type = str, required = True, help = f'Version, e.g. {datetime.datetime.now().strftime("%Y%b%d")}')
@@ -39,6 +42,7 @@ parser.add_argument('-B', '--bootstrap-count', type = positive_int_type, default
 parser.add_argument('-j', '--job-type', type = str, choices = ['local', 'cluster'], required = True, help = 'Job type')
 parser.add_argument('-w', '--verbosity', type = int, default = 1, help = 'Verbosity level')
 parser.add_argument('-A', '--analysis', nargs = '*', type = str, choices = analysis_choices, default = [ "analyzeEntanglementNtuple" ], help = 'Analysis type')
+parser.add_argument('-x', '--binned-measurements', nargs = '*', type = str, choices = measurement_choices, default = [], help = "Binned measurements")
 args = parser.parse_args()
 
 version = args.version
@@ -60,6 +64,7 @@ bootstrap_count = args.bootstrap_count
 run_makefile = args.job_type == 'local'
 verbosity = args.verbosity
 analysis = args.analysis
+binned_measurements = args.binned_measurements
 
 if 0 < max_events < bootstrap_size:
   parser.error("Max events cannot be smaller than bootstrap size if both are specified!")
@@ -209,6 +214,7 @@ for sampleName, sample in samples.items():
                   'jsonOutputFileName'  : jsonOutputFileName_analysis,
                   'max_events'          : max_events,
                   'absCosTheta_cut'     : absCosTheta_cut,
+                  'binned_measurements' : binned_measurements,
                 }
                 build_cfg(analyzeNtuple_template, cfgFileName_analysis_modified, args_analysis)
 

@@ -79,6 +79,13 @@ addToOutputFile(fwlite::TFileService& fs, const TH2* histogram)
   }
 }
 
+bool
+contains(const vstring & list,
+         const std::string & element)
+{
+  return std::find(list.begin(), list.cend(), element) != list.end();
+}
+
 int main(int argc, char* argv[])
 {
 //--- throw an exception in case ROOT encounters an error
@@ -141,6 +148,7 @@ int main(int argc, char* argv[])
   
   bool apply_evtWeight = cfg_analyze.getParameter<bool>("apply_evtWeight");
   const double absCosTheta_cut = cfg_analyze.getParameter<double>("absCosTheta_cut");
+  vstring binned_measurements = cfg_analyze.getParameter<vstring>("binned_measurements");
 
   std::vector<double> par_gen = cfg_analyze.getParameter<vdouble>("par_gen");
   if ( par_gen.size() != npar )
@@ -156,8 +164,8 @@ int main(int argc, char* argv[])
   fwlite::InputSource inputFiles(cfg);
   unsigned reportEvery = inputFiles.reportAfter();
 
-  //fwlite::OutputFiles outputFile(cfg);
-  //fwlite::TFileService fs = fwlite::TFileService(outputFile.file().c_str());
+  fwlite::OutputFiles outputFile(cfg);
+  fwlite::TFileService fs = fwlite::TFileService(outputFile.file().c_str());
 
   std::vector<std::string> inputFileNames = inputFiles.files();
   size_t numInputFiles = inputFileNames.size();
@@ -165,6 +173,15 @@ int main(int argc, char* argv[])
   
   spin::Dataset dataset_passed;
   spin::Dataset dataset_failed;
+
+  spin::BinnedDataset1d * binnedDataset_zPlus        = contains(binned_measurements, "zPlus")        ? new spin::BinnedDataset1d("zPlus",        20,  0.,  1.) : nullptr;
+  spin::BinnedDataset1d * binnedDataset_zMinus       = contains(binned_measurements, "zMinus")       ? new spin::BinnedDataset1d("zMinus",       20,  0.,  1.) : nullptr;
+  spin::BinnedDataset1d * binnedDataset_cosThetaStar = contains(binned_measurements, "cosThetaStar") ? new spin::BinnedDataset1d("cosThetaStar", 20, -1., +1.) : nullptr;
+
+  spin::BinnedDataset2d * binnedDataset_zPlus_vs_cosThetaStar   = contains(binned_measurements, "zPlus_vs_cosThetaStar")   ? new spin::BinnedDataset2d("zPlus_vs_cosThetaStar",   10, -1., +1., 10, 0., 1.) : nullptr;
+  spin::BinnedDataset2d * binnedDataset_zMinus_vs_cosThetaStar  = contains(binned_measurements, "zMinus_vs_cosThetaStar")  ? new spin::BinnedDataset2d("zMinus_vs_cosThetaStar",  10, -1., +1., 10, 0., 1.) : nullptr;
+  spin::BinnedDataset2d * binnedDataset_zPlus_vs_zMinus         = contains(binned_measurements, "zPlus_vs_zMinus")         ? new spin::BinnedDataset2d("zPlus_vs_zMinus",         10,  0.,  1., 10, 0., 1.) : nullptr;
+  spin::BinnedDataset2d * binnedDataset_visPlusPt_vs_visMinusPt = contains(binned_measurements, "visPlusPt_vs_visMinusPt") ? new spin::BinnedDataset2d("visPlusPt_vs_visMinusPt", 12,  0.,  6., 12, 0., 6.) : nullptr;
 
   int analyzedEntries = 0;
   double analyzedEntries_weighted = 0.;
@@ -282,6 +299,15 @@ int main(int argc, char* argv[])
       {
         dataset_passed.push_back(entry);
 
+        if(binnedDataset_zPlus)        { binnedDataset_zPlus->push_back(zPlus, entry); }
+        if(binnedDataset_zMinus)       { binnedDataset_zMinus->push_back(zMinus, entry); }
+        if(binnedDataset_cosThetaStar) { binnedDataset_cosThetaStar->push_back(cosThetaStar, entry); }
+
+        if(binnedDataset_zPlus_vs_cosThetaStar)   { binnedDataset_zPlus_vs_cosThetaStar->push_back(cosThetaStar, zPlus, entry); }
+        if(binnedDataset_zMinus_vs_cosThetaStar)  { binnedDataset_zMinus_vs_cosThetaStar->push_back(cosThetaStar, zMinus, entry); }
+        if(binnedDataset_zPlus_vs_zMinus)         { binnedDataset_zPlus_vs_zMinus->push_back(zMinus, zPlus,  entry); }
+        if(binnedDataset_visPlusPt_vs_visMinusPt) { binnedDataset_visPlusPt_vs_visMinusPt->push_back(visMinus_pt, visPlus_pt, entry); }
+
         ++selectedEntries;
         selectedEntries_weighted += evtWeight;
       }
@@ -364,6 +390,66 @@ int main(int argc, char* argv[])
   }
   jsonOutputFile << dumpJSON(measurement, absCosTheta_cut) << '\n';
   jsonOutputFile.close();
+
+  // CV: compute binned measurements only if spinAnalyzer is set to 'by_summation' mode,
+  //     as running the binned measurements in 'by_mlfit' mode is too time-consuming
+  if(binnedDataset_zPlus)
+  {
+    std::cout << "Processing binned measurement as function of zPlus...\n";
+    spin::BinnedMeasurement1d binnedMeasurement_zPlus = spinAnalyzer(*binnedDataset_zPlus);
+    TH1* histogram_Rchsh_vs_zPlus = binnedMeasurement_zPlus.get_histogram("Rchsh");
+    addToOutputFile(fs, histogram_Rchsh_vs_zPlus);
+    std::cout << " Done.\n";
+  }
+  if(binnedDataset_zMinus)
+  {
+    std::cout << "Processing binned measurement as function of zMinus...\n";
+    spin::BinnedMeasurement1d binnedMeasurement_zMinus = spinAnalyzer(*binnedDataset_zMinus);
+    TH1* histogram_Rchsh_vs_zMinus = binnedMeasurement_zMinus.get_histogram("Rchsh");
+    addToOutputFile(fs, histogram_Rchsh_vs_zMinus);
+    std::cout << " Done.\n";
+  }
+  if(binnedDataset_cosThetaStar)
+  {
+    std::cout << "Processing binned measurement as function of cosThetaStar...\n";
+    spin::BinnedMeasurement1d binnedMeasurement_cosThetaStar = spinAnalyzer(*binnedDataset_cosThetaStar);
+    TH1* histogram_Rchsh_vs_cosThetaStar = binnedMeasurement_cosThetaStar.get_histogram("Rchsh");
+    addToOutputFile(fs, histogram_Rchsh_vs_cosThetaStar);
+    std::cout << " Done.\n";
+  }
+
+  if(binnedDataset_zPlus_vs_cosThetaStar)
+  {
+    std::cout << "Processing binned measurement as function of zPlus and cosThetaStar...\n";
+    spin::BinnedMeasurement2d binnedMeasurement_zPlus_vs_cosThetaStar = spinAnalyzer(*binnedDataset_zPlus_vs_cosThetaStar);
+    TH2* histogram_Rchsh_vs_zPlus_and_cosThetaStar = binnedMeasurement_zPlus_vs_cosThetaStar.get_histogram("Rchsh");
+    addToOutputFile(fs, histogram_Rchsh_vs_zPlus_and_cosThetaStar);
+    std::cout << " Done.\n";
+  }
+  if(binnedDataset_zMinus_vs_cosThetaStar)
+  {
+    std::cout << "Processing binned measurement as function of zMinus and cosThetaStar...\n";
+    spin::BinnedMeasurement2d binnedMeasurement_zMinus_vs_cosThetaStar = spinAnalyzer(*binnedDataset_zMinus_vs_cosThetaStar);
+    TH2* histogram_Rchsh_vs_zMinus_vs_cosThetaStar = binnedMeasurement_zMinus_vs_cosThetaStar.get_histogram("Rchsh");
+    addToOutputFile(fs, histogram_Rchsh_vs_zMinus_vs_cosThetaStar);
+    std::cout << " Done.\n";
+  }
+  if(binnedDataset_zPlus_vs_zMinus)
+  {
+    std::cout << "Processing binned measurement as function of zPlus and zMinus...\n";
+    spin::BinnedMeasurement2d binnedMeasurement_zPlus_vs_zMinus = spinAnalyzer(*binnedDataset_zPlus_vs_zMinus);
+    TH2* histogram_Rchsh_vs_zPlus_vs_zMinus = binnedMeasurement_zPlus_vs_zMinus.get_histogram("Rchsh");
+    addToOutputFile(fs, histogram_Rchsh_vs_zPlus_vs_zMinus);
+    std::cout << " Done.\n";
+  }
+  if(binnedDataset_visPlusPt_vs_visMinusPt)
+  {
+    std::cout << "Processing binned measurement as function of visPlusPt and visMinusPt...\n";
+    spin::BinnedMeasurement2d binnedMeasurement_visPlusPt_vs_visMinusPt = spinAnalyzer(*binnedDataset_visPlusPt_vs_visMinusPt);
+    TH2* histogram_Rchsh_vs_visPlusPt_vs_visMinusPt = binnedMeasurement_visPlusPt_vs_visMinusPt.get_histogram("Rchsh");
+    addToOutputFile(fs, histogram_Rchsh_vs_visPlusPt_vs_visMinusPt);
+    std::cout << " Done.\n";
+  }
 
   clock.Show("analyzeEntanglementNtuple");
 

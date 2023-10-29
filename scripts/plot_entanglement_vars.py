@@ -207,7 +207,7 @@ def plot(data, entanglement_var, is_significance, central = DEFAULT_CENTRAL, tit
       if DECAY_MODES[dm]['label'] == label:
         marker = DECAY_MODES[dm]['marker']
     if is_significance:
-      plt.plot(xcoords, ycoords, marker = marker, markersize = markersize, lw = linewidth, label = label)
+      plt.plot(xcoords, ycoords, marker = marker, markersize = 12 if marker == '*' else markersize, lw = linewidth, label = label)
     else:
       if any(yval < threshold for yval in ycoords):
         plot_threshold = True
@@ -236,7 +236,7 @@ def plot(data, entanglement_var, is_significance, central = DEFAULT_CENTRAL, tit
       bbox_to_anchor = (0, 1, 1, 0),
       loc = "lower left",
       mode = "expand",
-      fontsize = 18,
+      fontsize = 20,
       ncol = max(len(data) // 2, 1),
     )
     plt.setp(legend.get_title(), fontsize = 'x-small')
