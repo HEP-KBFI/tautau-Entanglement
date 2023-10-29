@@ -278,10 +278,24 @@ void EntanglementNtupleProducer::analyze(const edm::Event& evt, const edm::Event
 
   const reco::GenParticle* tauPlus  = nullptr;
   const reco::GenParticle* tauMinus = nullptr;
+  double tauPlus_enLoss = 0.;
+  double tauMinus_enLoss = 0.;
   for ( const reco::GenParticle& genParticle : *genParticles )
   {
-    if ( genParticle.pdgId() == -15 && !tauPlus  ) tauPlus  = findLastTau(&genParticle);
-    if ( genParticle.pdgId() == +15 && !tauMinus ) tauMinus = findLastTau(&genParticle);
+    if ( genParticle.pdgId() == -15 && !tauPlus  )
+    {
+      const double tauPlus_enBefore = genParticle.energy();
+      tauPlus  = findLastTau(&genParticle);
+      const double tauPlus_enAfter = tauPlus->energy();
+      tauPlus_enLoss = std::max(tauPlus_enBefore - tauPlus_enAfter, 0.);
+    }
+    if ( genParticle.pdgId() == +15 && !tauMinus )
+    {
+      const double tauMinus_enBefore = genParticle.energy();
+      tauMinus = findLastTau(&genParticle);
+      const double tauMinus_enAfter = tauMinus->energy();
+      tauMinus_enLoss = std::max(tauMinus_enBefore - tauMinus_enAfter, 0.);
+    }
   }
   if ( !(tauPlus && tauMinus) ) 
   {
@@ -299,7 +313,7 @@ void EntanglementNtupleProducer::analyze(const edm::Event& evt, const edm::Event
   int tauPlus_nNeutralKaons = get_neutralKaons(tauPlus_daughters).size();
   std::vector<const reco::GenParticle*> tauPlus_y = get_photons(tauPlus_daughters);
   int tauPlus_nPhotons = tauPlus_y.size();
-  double tauPlus_sumPhotonEn = comp_visP4(tauPlus_y).energy();
+  double tauPlus_sumPhotonEn = comp_visP4(tauPlus_y).energy() + tauPlus_enLoss;
 
   std::vector<const reco::GenParticle*> tauMinus_daughters;
   findDecayProducts(tauMinus, tauMinus_daughters);
@@ -311,7 +325,7 @@ void EntanglementNtupleProducer::analyze(const edm::Event& evt, const edm::Event
   int tauMinus_nNeutralKaons = get_neutralKaons(tauMinus_daughters).size();
   std::vector<const reco::GenParticle*> tauMinus_y = get_photons(tauMinus_daughters);
   int tauMinus_nPhotons = tauMinus_y.size();
-  double tauMinus_sumPhotonEn = comp_visP4(tauMinus_y).energy();
+  double tauMinus_sumPhotonEn = comp_visP4(tauMinus_y).energy() + tauMinus_enLoss;
 
   EntanglementNtuple* ntupleFiller = nullptr;
   if ( tauPlus_decaymode == reco::PFTau::kOneProng0PiZero && tauMinus_decaymode == reco::PFTau::kOneProng0PiZero )
