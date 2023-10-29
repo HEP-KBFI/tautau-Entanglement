@@ -14,6 +14,8 @@
 # 4) "spin_analyzer" -- if you want a plot that groups together all spin analyzer methods for a particular initialization and tau decay mode.
 # All four options are exercised by default. Options 2-4 allow to compare initialization modes, tau decay modes and spin analyzer methods.
 
+from TauAnalysis.Entanglement.tools.aux import ENTANGLEMENT_VARS
+
 import argparse
 import json
 import matplotlib.pyplot as plt
@@ -72,11 +74,6 @@ fn_rgx = re.compile(
 
 # key = entanglement variable
 # values = lower threshold for observing the QM effects; symbol in latex
-ENTANGLEMENT_VARS = {
-  'Rchsh'        : { 'threshold' : 1, 'symbol' : r'\mathfrak{m}_{12}' },
-  'concurrence'  : { 'threshold' : 0, 'symbol' : r'\mathcal{C}' },
-  'steerability' : { 'threshold' : 1, 'symbol' : r'S' },
-}
 CENTRAL_CHOICES = [ 'nominal', 'median' ]
 AXIS_CHOICES = [ 'beam', 'higgs' ]
 
@@ -84,28 +81,30 @@ SPIN_ANALYZERS = {
   'asymmetry'          : 'FB asymm.',
   'differentialXsec1d' : '1d distr.',
   'differentialXsec2d' : '2d distr.',
-  'mlfit'              : 'ML fit',
+  'mlfit'              : 'ML-fit',
   'summation'          : 'Exp. value',
 }
 DECAY_MODES = {
-  'pi_pi'   : r'$\pi^+\pi^-$',
-  'pi_rho'  : r'$\pi^\pm\rho^\mp$',
-  'pi_a1'   : r'$\pi^\pm a_1^\mp$',
-  'rho_rho' : r'$\rho^+\rho^-$',
-  'rho_a1'  : r'$\rho^\pm a_1^\mp$',
-  'a1_a1'   : r'$a_1^+a_1^-$',
-  'had_had' : 'All hadronic',
+  'pi_pi'   : { 'label' : r'$\pi^+\pi^-$',       'marker' : 'o' },
+  'pi_rho'  : { 'label' : r'$\pi^\pm\rho^\mp$',  'marker' : 'v' },
+  'pi_a1'   : { 'label' : r'$\pi^\pm a_1^\mp$',  'marker' : '^' },
+  'rho_rho' : { 'label' : r'$\rho^+\rho^-$',     'marker' : 's' },
+  'rho_a1'  : { 'label' : r'$\rho^\pm a_1^\mp$', 'marker' : 'X' },
+  'a1_a1'   : { 'label' : r'$a_1^+a_1^-$',       'marker' : 'd' },
+  'comb'    : { 'label' : 'Combination',         'marker' : '*' },
+#  'had_had' : { 'label' : 'All hadronic',        'marker' : 'r$\club$' },
 }
 INIT_METHODS = {
-  'gen'      : 'Generator-level',
-  'startPos' : 'Analytic',
-  'kinFit'   : 'Kinematic fit',
+  'gen'      : 'MC-truth level',
+#  'startPos' : 'Analytic',
+  'kinFit'   : 'KF after smearing',
 }
 PLOT_CHOICES = [ 'individual', 'init_method', 'decay_mode', 'spin_analyzer' ]
 EXTENSIONS = [ 'pdf', 'png' ]
 
-DEFAULT_CENTRAL = 'nominal'
+DEFAULT_CENTRAL = 'median'
 DEFAULT_AXIS = 'beam'
+PLOT_CHOICES_DEFAULT = [ "decay_mode" ]
 
 def str_to_float(s):
   return float(s.replace('p', '.'))
@@ -148,11 +147,49 @@ def read_data(input_dirs):
         for central in CENTRAL_CHOICES:
           json_data[entanglement_var][f'{central}_significance'] = comp_significance(json_data, entanglement_var, central)
       data[sample_name][axis][mode][dm][spin_analyzer][cut] = json_data
+  for sample_name in data:
+    for axis in data[sample_name]:
+      for mode in data[sample_name][axis]:
+        dms, spin_analyzers, cuts = [], [], []
+        for dm in data[sample_name][axis][mode]:
+          if dm not in dms:
+            dms.append(dm)
+          for spin_analyzer in data[sample_name][axis][mode][dm]:
+            if spin_analyzer not in spin_analyzers:
+              spin_analyzers.append(spin_analyzer)
+            for cut in data[sample_name][axis][mode][dm][spin_analyzer]:
+              if cut not in cuts:
+                cuts.append(cut)
+        for dm in dms:
+          for spin_analyzer in spin_analyzers:
+            if spin_analyzer not in data[sample_name][axis][mode][dm]:
+              print(f"Warning: no data found for sample_name={sample_name}, axis={axis}, mode={mode}, dm={dm} spin_analyzer={spin_analyzer}")
+              continue
+            for cut in cuts:
+              if cut not in data[sample_name][axis][mode][dm][spin_analyzer]:
+                print(f"Warning: no data found for sample_name={sample_name}, axis={axis}, mode={mode}, dm={dm} spin_analyzer={spin_analyzer} cut={cut}")
+        data[sample_name][axis][mode]['comb'] = {}
+        for spin_analyzer in spin_analyzers:
+          data[sample_name][axis][mode]['comb'][spin_analyzer] = {}
+          for cut in cuts:
+            data[sample_name][axis][mode]['comb'][spin_analyzer][cut] = {}
+            for entanglement_var in ENTANGLEMENT_VARS:
+              data[sample_name][axis][mode]['comb'][spin_analyzer][cut][entanglement_var] = {}
+              for central in CENTRAL_CHOICES:
+                label = f'{central}_significance'
+                data[sample_name][axis][mode]['comb'][spin_analyzer][cut][entanglement_var][label] = sum(
+                  data[sample_name][axis][mode][dm][spin_analyzer][cut][entanglement_var][label]**2 for dm in dms if \
+                  dm != 'had_had' and \
+                  spin_analyzer in data[sample_name][axis][mode][dm] and \
+                  cut in data[sample_name][axis][mode][dm][spin_analyzer]
+                )**0.5
   return data
 
 def plot(data, entanglement_var, is_significance, central = DEFAULT_CENTRAL, title = '', legend_title = '', output_fns = None):
   assert(central in CENTRAL_CHOICES)
-  
+
+  markersize = 10
+  linewidth = 2
   plt.figure(figsize = (10, 8), dpi = 100)
   plot_threshold = False
   threshold = ENTANGLEMENT_VARS[entanglement_var]['threshold']
@@ -165,23 +202,28 @@ def plot(data, entanglement_var, is_significance, central = DEFAULT_CENTRAL, tit
     ))
     xcoords = [ pair[0] for pair in plot_data ]
     ycoords = [ pair[1][entanglement_var][f'{central}_significance' if is_significance else central] for pair in plot_data ]
+    marker = 'o'
+    for dm in DECAY_MODES:
+      if DECAY_MODES[dm]['label'] == label:
+        marker = DECAY_MODES[dm]['marker']
     if is_significance:
-      p = plt.plot(xcoords, ycoords, marker = 'o', label = label)
+      plt.plot(xcoords, ycoords, marker = marker, markersize = markersize, lw = linewidth, label = label)
     else:
       if any(yval < threshold for yval in ycoords):
         plot_threshold = True
       yerr = [ pair[1][entanglement_var]['error'] for pair in plot_data ]
-      plt.errorbar(xcoords, ycoords, yerr, fmt = 'o', capsize = 4, label = label)
+      p = plt.scatter(xcoords, ycoords, marker = marker, s = markersize * 5, label = label)
+      plt.errorbar(xcoords, ycoords, yerr, fmt = marker, capsize = 4, color = p.get_facecolor())
     max_point_it = sorted(zip(xcoords, ycoords), key = lambda xy: xy[1], reverse = True)[0]
     if max_point_it[1] > max_point[1]:
       max_point = max_point_it
-  if max_point[1] > 0:
-    plt.plot(max_point[0], max_point[1], 'o', ms = 30, mec = 'lime', mfc = 'none', mew = 2)
+  # if max_point[1] > 0:
+  #   plt.plot(max_point[0], max_point[1], 'o', ms = 30, mec = 'lime', mfc = 'none', mew = 2)
   if plot_threshold:
     plt.axhline(y = threshold, ls = '--', color = 'black', lw = 2)
   plt.grid(True)
   plt.xlim(0, 1)
-  plt.xlabel(r'Cut on $|\cos\theta|$')
+  plt.xlabel(r'Upper limit on $\left|\cos\theta^*\right|$')
   ylabel = f"${ENTANGLEMENT_VARS[entanglement_var]['symbol']}$"
   if is_significance:
     ylabel = f'Significance of {ylabel}'
@@ -189,7 +231,14 @@ def plot(data, entanglement_var, is_significance, central = DEFAULT_CENTRAL, tit
   if title:
     plt.title(title, fontsize = 20)
   if len(data) > 1:
-    legend = plt.legend(title = legend_title, loc = 'best', fontsize = 16, ncol = max(len(data) // 3, 1))
+    legend = plt.legend(
+      title = legend_title,
+      bbox_to_anchor = (0, 1, 1, 0),
+      loc = "lower left",
+      mode = "expand",
+      fontsize = 18,
+      ncol = max(len(data) // 2, 1),
+    )
     plt.setp(legend.get_title(), fontsize = 'x-small')
   if output_fns:
     for output_fn in output_fns:
@@ -223,7 +272,7 @@ def construct_fns(entanglement_var, is_significance, output_dir, init_method = N
   return [ os.path.join(output_dir, f'{baseName}.{ext}') for ext in exts ]
 
 def plot_by(data, entanglement_var, is_significance, init_method = None, decay_mode = None, spin_analyzer = None, central = DEFAULT_CENTRAL,
-            output_dir = '', exts = None):
+            output_dir = '', exts = None, show_title = False):
   if init_method:
     assert(init_method in INIT_METHODS)
   if decay_mode:
@@ -233,17 +282,19 @@ def plot_by(data, entanglement_var, is_significance, init_method = None, decay_m
 
     assert(os.path.isdir(output_dir))
     assert(exts)
-  
+
+  if decay_mode == "comb" and not is_significance:
+    return False
   if init_method and decay_mode and spin_analyzer:
     if not has_data(data, init_method, decay_mode, spin_analyzer):
       print(f'Warning: could not find data for method = {init_method}, decay mode = {decay_mode} and spin analyzer = {spin_analyzer}')
       return False
-    title = f'{INIT_METHODS[init_method]}, {DECAY_MODES[decay_mode]} decay mode, {SPIN_ANALYZERS[spin_analyzer]} method'
+    title = f"{INIT_METHODS[init_method]}, {DECAY_MODES[decay_mode]['label']} decay mode, {SPIN_ANALYZERS[spin_analyzer]} method" if show_title else ''
     src = { title : data[init_method][decay_mode][spin_analyzer] }
     fns = construct_fns(entanglement_var, is_significance, output_dir, init_method, decay_mode, spin_analyzer, exts)
     plot(src, entanglement_var, is_significance, central, title = title, output_fns = fns)
   elif init_method and decay_mode:
-    title = f'{INIT_METHODS[init_method]}, {DECAY_MODES[decay_mode]} decay mode'
+    title = f"{INIT_METHODS[init_method]}, {DECAY_MODES[decay_mode]['label']} decay mode" if show_title else ''
     src = {}
     for spin_analyzer in SPIN_ANALYZERS:
       if has_data(data, init_method, decay_mode, spin_analyzer):
@@ -252,20 +303,22 @@ def plot_by(data, entanglement_var, is_significance, init_method = None, decay_m
       print(f'Warning: could not find data for method = {init_method} and decay mode = {decay_mode}')
       return False
     fns = construct_fns(entanglement_var, is_significance, output_dir, init_method, decay_mode, None, exts)
-    plot(src, entanglement_var, is_significance, central, title = title, legend_title = 'Spin analyzer', output_fns = fns)
+    plot(src, entanglement_var, is_significance, central, title = title, legend_title = 'Spin analyzer' if show_title else '', output_fns = fns)
   elif init_method and spin_analyzer:
-    title = f'{INIT_METHODS[init_method]}, {SPIN_ANALYZERS[spin_analyzer]} method'
+    title = f'{INIT_METHODS[init_method]}, {SPIN_ANALYZERS[spin_analyzer]} method' if show_title else ''
     src = {}
     for decay_mode in DECAY_MODES:
+      if decay_mode == 'comb' and not is_significance:
+        continue
       if has_data(data, init_method, decay_mode, spin_analyzer):
-        src[DECAY_MODES[decay_mode]] = data[init_method][decay_mode][spin_analyzer]
+        src[DECAY_MODES[decay_mode]['label']] = data[init_method][decay_mode][spin_analyzer]
     if not src:
       print(f'Warning: could not find data for method = {init_method} and spin analyzer = {spin_analyzer}')
       return False
     fns = construct_fns(entanglement_var, is_significance, output_dir, init_method, None, spin_analyzer, exts)
-    plot(src, entanglement_var, is_significance, central, title = title, legend_title = 'Decay mode', output_fns = fns)
+    plot(src, entanglement_var, is_significance, central, title = title, legend_title = 'Decay mode' if show_title else '', output_fns = fns)
   elif decay_mode and spin_analyzer:
-    title = f'{DECAY_MODES[decay_mode]} decay mode, {SPIN_ANALYZERS[spin_analyzer]} method'
+    title = f"{DECAY_MODES[decay_mode]['label']} decay mode, {SPIN_ANALYZERS[spin_analyzer]} method" if show_title else ''
     src = {}
     for init_method in INIT_METHODS:
       if has_data(data, init_method, decay_mode, spin_analyzer):
@@ -274,12 +327,12 @@ def plot_by(data, entanglement_var, is_significance, init_method = None, decay_m
       print(f'Warning: could not find data for decay mode = {decay_mode} and spin analyzer = {spin_analyzer}')
       return False
     fns = construct_fns(entanglement_var, is_significance, output_dir, None, decay_mode, spin_analyzer, exts)
-    plot(src, entanglement_var, is_significance, central, title = title, legend_title = 'Starting point', output_fns = fns)
+    plot(src, entanglement_var, is_significance, central, title = title, legend_title = 'Starting point' if show_title else '', output_fns = fns)
   else:
     raise ValueError("Need to specify at least two of the three following arguments: method, decay_mode, spin_analyzer")
   return True
 
-def plot_all(data, entanglement_vars, significance, by = None, exts = None, central = DEFAULT_CENTRAL, output_dir = ''):
+def plot_all(data, entanglement_vars, significance, by = None, exts = None, central = DEFAULT_CENTRAL, output_dir = '', show_title = False):
   if not by:
     by = PLOT_CHOICES
   else:
@@ -313,6 +366,7 @@ def plot_all(data, entanglement_vars, significance, by = None, exts = None, cent
           'central'          : central,
           'output_dir'       : output_dir_abspath,
           'exts'             : exts,
+          'show_title'       : show_title,
         }
         if init_method:
           arg['init_method'] = init_method
@@ -349,12 +403,13 @@ if __name__ == '__main__':
   parser.add_argument('-i', '--input', nargs = '*', required = True, help = 'List of directories containing the JSON files')
   parser.add_argument('-s', '--sample-name', type = str, default = 'dy_lo_pythia8_ext', help = 'Sample name')
   parser.add_argument('-c', '--central', type = str, choices = CENTRAL_CHOICES, default = DEFAULT_CENTRAL, help = 'What to use as the central value')
-  parser.add_argument('-e', '--entanglement-vars', nargs = '*', choices = ENTANGLEMENT_VARS.keys(), default = [ "Rchsh" ], help = 'Entanglement variables')
-  parser.add_argument('-p', '--plot-targets', nargs = '*', choices = PLOT_CHOICES, default = PLOT_CHOICES, help = 'What to plot')
-  parser.add_argument('-S', '--significance', type = str, choices = [ 'only', 'excluded', 'both' ], default = 'both', help = 'Entanglement variable or its significance')
+  parser.add_argument('-e', '--entanglement-vars', nargs = '*', choices = ENTANGLEMENT_VARS.keys(), default = [ "Rchsh", "concurrence" ], help = 'Entanglement variables')
+  parser.add_argument('-p', '--plot-targets', nargs = '*', choices = PLOT_CHOICES, default = PLOT_CHOICES_DEFAULT, help = 'What to plot')
+  parser.add_argument('-S', '--significance', type = str, choices = [ 'only', 'excluded', 'both' ], default = 'only', help = 'Entanglement variable or its significance')
   parser.add_argument('-o', '--output', type = str, required = True, help = 'Output directory')
   parser.add_argument('-a', '--axis', type = str, choices = AXIS_CHOICES, default = DEFAULT_AXIS, help = 'Coordinate system')
   parser.add_argument('-E', '--extensions', nargs = '*', choices = EXTENSIONS, default = EXTENSIONS, help = 'File extensions')
+  parser.add_argument('-t', '--show-title', action = 'store_true', default = False, help = 'Show title on every plot')
   args = parser.parse_args()
 
   # need to define:
@@ -367,9 +422,10 @@ if __name__ == '__main__':
   output_dir = args.output
   axis = args.axis
   exts = args.extensions
+  show_title = args.show_title
 
   data = read_data(input_dirs)
   assert(sample_name in data)
   assert(axis in data[sample_name])
   sample_data = data[sample_name][axis]
-  plot_all(sample_data, entanglement_vars, significance, by = plot_targets, exts = exts, central = central, output_dir = output_dir)
+  plot_all(sample_data, entanglement_vars, significance, by = plot_targets, exts = exts, central = central, output_dir = output_dir, show_title = show_title)
