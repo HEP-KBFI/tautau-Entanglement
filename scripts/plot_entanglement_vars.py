@@ -26,7 +26,7 @@ import matplotlib as mpl
 CMS = {
   "mathtext.default": "regular",
   "figure.figsize": (10.0, 10.0),
-  "font.size": 26,
+  "font.size": 20,
   "axes.labelsize": "medium",
   "axes.unicode_minus": False,
   "xtick.labelsize": "small",
@@ -185,7 +185,7 @@ def read_data(input_dirs):
                 )**0.5
   return data
 
-def plot(data, entanglement_var, is_significance, central = DEFAULT_CENTRAL, title = '', legend_title = '', output_fns = None):
+def plot(data, entanglement_var, is_significance, central = DEFAULT_CENTRAL, title = '', legend_title = '', output_fns = None, skip_legend = False):
   assert(central in CENTRAL_CHOICES)
 
   markersize = 10
@@ -230,7 +230,7 @@ def plot(data, entanglement_var, is_significance, central = DEFAULT_CENTRAL, tit
   plt.ylabel(ylabel)
   if title:
     plt.title(title, fontsize = 20)
-  if len(data) > 1:
+  if len(data) > 1 and not skip_legend:
     legend = plt.legend(
       title = legend_title,
       bbox_to_anchor = (0, 1, 1, 0),
@@ -272,7 +272,7 @@ def construct_fns(entanglement_var, is_significance, output_dir, init_method = N
   return [ os.path.join(output_dir, f'{baseName}.{ext}') for ext in exts ]
 
 def plot_by(data, entanglement_var, is_significance, init_method = None, decay_mode = None, spin_analyzer = None, central = DEFAULT_CENTRAL,
-            output_dir = '', exts = None, show_title = False):
+            output_dir = '', exts = None, show_title = False, skip_legend = False):
   if init_method:
     assert(init_method in INIT_METHODS)
   if decay_mode:
@@ -303,7 +303,7 @@ def plot_by(data, entanglement_var, is_significance, init_method = None, decay_m
       print(f'Warning: could not find data for method = {init_method} and decay mode = {decay_mode}')
       return False
     fns = construct_fns(entanglement_var, is_significance, output_dir, init_method, decay_mode, None, exts)
-    plot(src, entanglement_var, is_significance, central, title = title, legend_title = 'Spin analyzer' if show_title else '', output_fns = fns)
+    plot(src, entanglement_var, is_significance, central, title = title, legend_title = 'Spin analyzer' if show_title else '', output_fns = fns, skip_legend = skip_legend)
   elif init_method and spin_analyzer:
     title = f'{INIT_METHODS[init_method]}, {SPIN_ANALYZERS[spin_analyzer]} method' if show_title else ''
     src = {}
@@ -316,7 +316,7 @@ def plot_by(data, entanglement_var, is_significance, init_method = None, decay_m
       print(f'Warning: could not find data for method = {init_method} and spin analyzer = {spin_analyzer}')
       return False
     fns = construct_fns(entanglement_var, is_significance, output_dir, init_method, None, spin_analyzer, exts)
-    plot(src, entanglement_var, is_significance, central, title = title, legend_title = 'Decay mode' if show_title else '', output_fns = fns)
+    plot(src, entanglement_var, is_significance, central, title = title, legend_title = 'Decay mode' if show_title else '', output_fns = fns, skip_legend = skip_legend)
   elif decay_mode and spin_analyzer:
     title = f"{DECAY_MODES[decay_mode]['label']} decay mode, {SPIN_ANALYZERS[spin_analyzer]} method" if show_title else ''
     src = {}
@@ -327,12 +327,12 @@ def plot_by(data, entanglement_var, is_significance, init_method = None, decay_m
       print(f'Warning: could not find data for decay mode = {decay_mode} and spin analyzer = {spin_analyzer}')
       return False
     fns = construct_fns(entanglement_var, is_significance, output_dir, None, decay_mode, spin_analyzer, exts)
-    plot(src, entanglement_var, is_significance, central, title = title, legend_title = 'Starting point' if show_title else '', output_fns = fns)
+    plot(src, entanglement_var, is_significance, central, title = title, legend_title = 'Starting point' if show_title else '', output_fns = fns, skip_legend = skip_legend)
   else:
     raise ValueError("Need to specify at least two of the three following arguments: method, decay_mode, spin_analyzer")
   return True
 
-def plot_all(data, entanglement_vars, significance, by = None, exts = None, central = DEFAULT_CENTRAL, output_dir = '', show_title = False):
+def plot_all(data, entanglement_vars, significance, by = None, exts = None, central = DEFAULT_CENTRAL, output_dir = '', show_title = False, skip_legend = False):
   if not by:
     by = PLOT_CHOICES
   else:
@@ -367,6 +367,7 @@ def plot_all(data, entanglement_vars, significance, by = None, exts = None, cent
           'output_dir'       : output_dir_abspath,
           'exts'             : exts,
           'show_title'       : show_title,
+          'skip_legend'      : skip_legend,
         }
         if init_method:
           arg['init_method'] = init_method
@@ -410,6 +411,7 @@ if __name__ == '__main__':
   parser.add_argument('-a', '--axis', type = str, choices = AXIS_CHOICES, default = DEFAULT_AXIS, help = 'Coordinate system')
   parser.add_argument('-E', '--extensions', nargs = '*', choices = EXTENSIONS, default = EXTENSIONS, help = 'File extensions')
   parser.add_argument('-t', '--show-title', action = 'store_true', default = False, help = 'Show title on every plot')
+  parser.add_argument('-l', '--skip-legend', action = 'store_true', default = False, help = 'Skip legend')
   args = parser.parse_args()
 
   # need to define:
@@ -423,9 +425,10 @@ if __name__ == '__main__':
   axis = args.axis
   exts = args.extensions
   show_title = args.show_title
+  skip_legend = args.skip_legend
 
   data = read_data(input_dirs)
   assert(sample_name in data)
   assert(axis in data[sample_name])
   sample_data = data[sample_name][axis]
-  plot_all(sample_data, entanglement_vars, significance, by = plot_targets, exts = exts, central = central, output_dir = output_dir, show_title = show_title)
+  plot_all(sample_data, entanglement_vars, significance, by = plot_targets, exts = exts, central = central, output_dir = output_dir, show_title = show_title, skip_legend = skip_legend)
