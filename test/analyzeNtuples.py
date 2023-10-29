@@ -343,7 +343,7 @@ if run_makefile:
   message += f" Now execute 'make -j 12 -f {makeFileName}' to start the jobs."
 else:
   sbatchSubmissionFileName = os.path.join(configDir, "sbatch_submission.sh")
-  build_sbatchSubmission(sbatchSubmissionFileName, jobOptions, 'produceEntanglementNtuple')
+  build_sbatchSubmission(sbatchSubmissionFileName, jobOptions, 'analyzeEntanglementNtuple', version)
   os.chmod(sbatchSubmissionFileName, 0o755)
   message += f" Now execute '{sbatchSubmissionFileName}' to submit the jobs to SLURM."
 
