@@ -12,9 +12,9 @@ export SCRAM_ARCH=slc7_amd64_gcc10
 cmsrel CMSSW_12_4_8
 cd CMSSW_12_4_8/src/
 cmsenv
-git clone https://github.com/HEP-KBFI/tautau-Entanglement TauAnalysis/Entanglement
+git clone https://github.com/HEP-KBFI/tautau-Entanglement $CMSSW_BASE/src/TauAnalysis/Entanglement
+cd $CMSSW_BASE/src/TauAnalysis/Entanglement
 git remote set-url origin git+ssh://git@github.com/HEP-KBFI/tautau-Entanglement
-cd TauAnalysis/Entanglement
 scram b -j 8
 ```
 
