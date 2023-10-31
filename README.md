@@ -12,6 +12,7 @@ export SCRAM_ARCH=slc7_amd64_gcc10
 cmsrel CMSSW_12_4_8
 cd CMSSW_12_4_8/src/
 cmsenv
+git clone https://github.com/TTauSpin/PolarimetricVectorTau2a1 $CMSSW_BASE/src/TauAnalysis/PolarimetricVectorTau2a1
 git clone https://github.com/HEP-KBFI/tautau-Entanglement $CMSSW_BASE/src/TauAnalysis/Entanglement
 cd $CMSSW_BASE/src/TauAnalysis/Entanglement
 git remote set-url origin git+ssh://git@github.com/HEP-KBFI/tautau-Entanglement
