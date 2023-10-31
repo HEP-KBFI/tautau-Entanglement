@@ -8,48 +8,50 @@
 #include "TauAnalysis/Entanglement/interface/printDistance.h" // printDistance()
 #include "TauAnalysis/Entanglement/interface/printPoint.h"    // printPoint()
 
+#include <cmath>                                              // std::sqrt()
+
 namespace math
 {
   typedef Matrix<3,3>::type Matrix3x3;
   typedef Vector<3>::type   Vector3;
 }
 
-reco::Candidate::Point
-comp_PCA_line2line(const reco::Candidate::Point& pv,
-                   const reco::Candidate::LorentzVector& tauP4,
-                   const reco::Candidate::Point& sv,
-                   const reco::Candidate::LorentzVector& visTauP4,
+std::pair<reco::Candidate::Point, reco::Candidate::Point>
+comp_PCA_line2line(const reco::Candidate::Point& P1,
+                   const reco::Candidate::Vector& V1,
+                   const reco::Candidate::Point& P2,
+                   const reco::Candidate::Vector& V2,
                    int verbosity)
 {
   // CV: compute point of closest approach (PCA) between two straight lines in three dimensions;
   //     code based on https://math.stackexchange.com/questions/1993953/closest-points-between-two-lines
-  if ( verbosity >= 2 )
+  if ( verbosity >= 4 )
   {
     std::cout << "<comp_PCA_line2line>:" << std::endl;
   }
-  auto e_tau = tauP4.Vect().unit();
-  auto e_vis = visTauP4.Vect().unit();
-  reco::Candidate::Vector d = e_tau.Cross(e_vis).unit();
+  auto e1 = V1.unit();
+  auto e2 = V2.unit();
+  reco::Candidate::Vector d = e1.Cross(e2).unit();
   math::Matrix3x3 v;
-  v(0,0) =  e_tau.x();
-  v(0,1) = -e_vis.x();
+  v(0,0) =  e1.x();
+  v(0,1) = -e2.x();
   v(0,2) =  d.x();
-  v(1,0) =  e_tau.y();
-  v(1,1) = -e_vis.y();
+  v(1,0) =  e1.y();
+  v(1,1) = -e2.y();
   v(1,2) =  d.y();
-  v(2,0) =  e_tau.z();
-  v(2,1) = -e_vis.z();
+  v(2,0) =  e1.z();
+  v(2,1) = -e2.z();
   v(2,2) =  d.z();
-  if ( verbosity >= 2 )
+  if ( verbosity >= 4 )
   {
     std::cout << "v:\n";
     std::cout << v << "\n";
 
   }
   math::Vector3 r;
-  r(0) = -pv.x() + sv.x();
-  r(1) = -pv.y() + sv.y();
-  r(2) = -pv.z() + sv.z();
+  r(0) = -P1.x() + P2.x();
+  r(1) = -P1.y() + P2.y();
+  r(2) = -P1.z() + P2.z();
   if ( verbosity >= 2 )
   {
     std::cout << "r:\n";
@@ -63,30 +65,49 @@ comp_PCA_line2line(const reco::Candidate::Point& pv,
   if ( errorFlag != 0 )
     throw cmsException("comp_PCA_line2line", __LINE__)
        << "Failed to invert matrix v !!\n";
-  math::Vector3 lambda = vinv*r;
-  if ( verbosity >= 2 )
+  math::Vector3 t = vinv*r;
+  if ( verbosity >= 4 )
   {
-    std::cout << "lambda:\n";
-    std::cout << lambda << "\n";
-    reco::Candidate::Point pca1 = pv + lambda(0)*e_tau;
-    printPoint("pca1", pca1);
-    printDistance("pca1 - pv", pca1 - pv, true);
-    printDistance("pca1 - pv", pca1 - pv, false);
-    reco::Candidate::Point pca2 = sv + lambda(1)*e_vis;
-    printPoint("pca2", pca2);
-    printDistance("pca2 - sv", pca2 - sv, true);
-    printDistance("pca2 - sv", pca2 - sv, false);
-    std::cout << "|d| = " << std::sqrt((lambda(2)*d).mag2()) << "\n";      
+    std::cout << "t:\n";
+    std::cout << t << "\n";
   }
-  double min_lambda0 = 1.e-2*(tauP4.energy()/mTau)*ct;
-  double lambda0 = ( lambda(0) >= min_lambda0 ) ? lambda(0) : min_lambda0;
-  if ( verbosity >= 2 )
+
+  reco::Candidate::Point Q1 = P1 + t(0)*e1;
+  reco::Candidate::Point Q2 = P2 + t(1)*e2;
+  if ( verbosity >= 4 )
   {
-    std::cout << "min_lambda0 = " << min_lambda0 << "\n";
-    std::cout << "lambda0 = " << lambda0 << "\n";
+    printPoint("Q1", Q1);
+    printDistance("Q1 - P1", Q1 - P1, true);
+    printDistance("Q1 - P1", Q1 - P1, false);
+    printPoint("Q2", Q2);
+    printDistance("Q2 - P2", Q2 - P2, true);
+    printDistance("Q2 - P2", Q2 - P2, false);
   }
-  reco::Candidate::Point pca = pv + lambda0*e_tau;
-  if ( verbosity >= 2 )
+
+  return std::pair<reco::Candidate::Point, reco::Candidate::Point>(Q1, Q2);
+}
+
+reco::Candidate::Point
+comp_PCA_line2line(const reco::Candidate::Point& pv,
+                   const reco::Candidate::LorentzVector& tauP4,
+                   const reco::Candidate::Point& sv,
+                   const reco::Candidate::LorentzVector& visTauP4,
+                   int verbosity)
+{
+  std::pair<reco::Candidate::Point, reco::Candidate::Point> Qs = comp_PCA_line2line(pv, tauP4.Vect(), sv, visTauP4.Vect(), verbosity);
+  const reco::Candidate::Point& Q1 = Qs.first;
+  double t = std::sqrt((Q1 - pv).mag2());
+
+  auto e_tau = tauP4.Vect().unit();
+  double min_t = 1.e-2*(tauP4.energy()/mTau)*ct;
+  if ( t < min_t ) t = min_t;
+  if ( verbosity >= 4 )
+  {
+    std::cout << "min_t = " << min_t << "\n";
+    std::cout << "t = " << t << "\n";
+  }
+  reco::Candidate::Point pca = pv + t*e_tau;
+  if ( verbosity >= 4 )
   {
     printPoint("pca", pca);
     printDistance("pca - pv", pca - pv, true);
