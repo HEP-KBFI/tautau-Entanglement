@@ -13,7 +13,7 @@ class PolarimetricVectorAlgoOneProng0Pi0 : public PolarimetricVectorAlgoBase
   ~PolarimetricVectorAlgoOneProng0Pi0();
 
   reco::Candidate::Vector
-  operator()(const KinematicEvent& evt, int tau);
+  operator()(const KinematicEvent& evt, int tau) const;
 };
 
 #endif // TauAnalysis_Entanglement_PolarimetricVectorAlgoOneProng0Pi0_h

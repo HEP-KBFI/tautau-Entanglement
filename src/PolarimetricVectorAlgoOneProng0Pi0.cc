@@ -74,7 +74,7 @@ namespace
 }
 
 reco::Candidate::Vector
-PolarimetricVectorAlgoOneProng0Pi0::operator()(const KinematicEvent& evt, int tau)
+PolarimetricVectorAlgoOneProng0Pi0::operator()(const KinematicEvent& evt, int tau) const
 {
   if ( verbosity_ >= 4 )
   {

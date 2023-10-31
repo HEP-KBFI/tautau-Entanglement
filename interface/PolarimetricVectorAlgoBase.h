@@ -18,7 +18,7 @@ class PolarimetricVectorAlgoBase
 
   virtual
   reco::Candidate::Vector
-  operator()(const KinematicEvent& kineEvt, int tau) = 0;
+  operator()(const KinematicEvent& kineEvt, int tau) const = 0;
 
  protected:
   int hAxis_;

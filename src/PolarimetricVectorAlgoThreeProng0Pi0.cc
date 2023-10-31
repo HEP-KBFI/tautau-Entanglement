@@ -5,7 +5,6 @@
 #include "TauAnalysis/Entanglement/interface/getP4_hf.h"                  // getP4_hf()
 #include "TauAnalysis/Entanglement/interface/getP4_rf.h"                  // getP4_rf()
 #include "TauAnalysis/Entanglement/interface/getP4_ttrf_hf_trf.h"         // getP4_ttrf_hf_trf()
-#include "TauAnalysis/Entanglement/interface/PolarimetricA1.h"            // PolarimetricA1
 #include "TauAnalysis/Entanglement/interface/printLorentzVector.h"        // printLorentzVector()
 #include "TauAnalysis/Entanglement/interface/printVector.h"               // printVector()
 
@@ -38,12 +37,13 @@ namespace
   }
 
   reco::Candidate::Vector
-  getPolarimetricVec_ThreeProng0PiZero(const reco::Candidate::LorentzVector& tauP4,
-                                     const std::vector<KinematicParticle>& daughters,
-                                     const ROOT::Math::Boost& boost_ttrf,
-                                     const reco::Candidate::Vector& r, const reco::Candidate::Vector& n, const reco::Candidate::Vector& k,
-                                     const ROOT::Math::Boost& boost_trf,
-                                     int verbosity = 0, bool cartesian = true)
+  getPolarimetricVec_ThreeProng0PiZero(const PolarimetricVectorTau2a1& a1pol,
+                                       const reco::Candidate::LorentzVector& tauP4,
+                                       const std::vector<KinematicParticle>& daughters,
+                                       const ROOT::Math::Boost& boost_ttrf,
+                                       const reco::Candidate::Vector& r, const reco::Candidate::Vector& n, const reco::Candidate::Vector& k,
+                                       const ROOT::Math::Boost& boost_trf,
+                                       int verbosity = 0, bool cartesian = true)
   {
     if ( verbosity >= 4 )
     {
@@ -87,9 +87,13 @@ namespace
     { 
       std::cout << "in laboratory frame:\n";
       printLorentzVector("tauP4",   tauP4,       cartesian);
+      printLorentzVector("tauP4",   tauP4,       false);
       printLorentzVector("chOSP4",  chOSP4,      cartesian);
+      printLorentzVector("chOSP4",  chOSP4,      false);
       printLorentzVector("chSS1P4", chSS1P4,     cartesian);
+      printLorentzVector("chSS1P4", chSS1P4,     false);
       printLorentzVector("chSS2P4", chSS2P4,     cartesian);
+      printLorentzVector("chSS2P4", chSS2P4,     false);
     }
 
     reco::Candidate::LorentzVector tauP4_trf   = getP4_ttrf_hf_trf(tauP4,   boost_ttrf, r, n, k, boost_trf);
@@ -100,9 +104,13 @@ namespace
     {
       std::cout << "in tau restframe:\n";
       printLorentzVector("tauP4",   tauP4_trf,   cartesian);
+      printLorentzVector("tauP4",   tauP4_trf,   false);
       printLorentzVector("chOSP4",  chOSP4_trf,  cartesian);
+      printLorentzVector("chOSP4",  chOSP4_trf,  false);
       printLorentzVector("chSS1P4", chSS1P4_trf, cartesian);
+      printLorentzVector("chSS1P4", chSS1P4_trf, false);
       printLorentzVector("chSS2P4", chSS2P4_trf, cartesian);
+      printLorentzVector("chSS2P4", chSS2P4_trf, false);
     }
 
     std::vector<TLorentzVector> TauAndProd;
@@ -111,20 +119,18 @@ namespace
     TauAndProd.push_back(convert_to_TLorentzVector(chSS1P4_trf));
     TauAndProd.push_back(convert_to_TLorentzVector(chSS2P4_trf));
 
-    PolarimetricA1 a1pol;
-    a1pol.Configure(TauAndProd, charge_sum);
-    TVector3 h_tvector3 = a1pol.PVC().Vect();
-    reco::Candidate::Vector h(h_tvector3.Px(), h_tvector3.Py(), h_tvector3.Pz());
+    reco::Candidate::Vector h = a1pol(chSS1P4_trf, chSS2P4_trf, chOSP4_trf, charge_sum, PolarimetricVectorTau2a1::k3ChargedPi);
     if ( verbosity >= 4 )
     { 
       printVector("h", h, cartesian);
+      printVector("h", h, false);
     }
     return h.unit();
   }
 }
 
 reco::Candidate::Vector
-PolarimetricVectorAlgoThreeProng0Pi0::operator()(const KinematicEvent& evt, int tau)
+PolarimetricVectorAlgoThreeProng0Pi0::operator()(const KinematicEvent& evt, int tau) const
 {
   if ( verbosity_ >= 4 )
   {
@@ -152,6 +158,6 @@ PolarimetricVectorAlgoThreeProng0Pi0::operator()(const KinematicEvent& evt, int 
   reco::Candidate::LorentzVector tauP4_hf = getP4_hf(tauP4_ttrf, r, n, k);
   ROOT::Math::Boost boost_trf = ROOT::Math::Boost(tauP4_hf.BoostToCM());
 
-  reco::Candidate::Vector h = getPolarimetricVec_ThreeProng0PiZero(tauP4, *daughters, boost_ttrf, r, n, k, boost_trf, verbosity_, cartesian_);
+  reco::Candidate::Vector h = getPolarimetricVec_ThreeProng0PiZero(a1pol_, tauP4, *daughters, boost_ttrf, r, n, k, boost_trf, verbosity_, cartesian_);
   return h;
 }
