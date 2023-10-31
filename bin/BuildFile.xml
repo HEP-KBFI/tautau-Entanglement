@@ -48,3 +48,6 @@
 <bin file="testKinematicFit.cc" name="testKinematicFit">
   <use name="TauAnalysis/Entanglement"/>
 </bin>
+<bin file="testTIPCompatibility.cc" name="testTIPCompatibility">
+  <use name="TauAnalysis/Entanglement"/>
+</bin>
