@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 # Example usage:
-# ./test/produceNtuples.py -v 2023Oct14_wSmearing -s dy_lo_pythia8_ext -j cluster
+# ./test/produceNtuples.py -v 2023Oct31_wSmearing -s dy_lo_pythia8_ext -m 100 -j cluster
 
 import datetime
 import argparse
@@ -17,6 +17,7 @@ parser.add_argument('-v', '--version', type = str, required = True, help = f'Ver
 parser.add_argument('-c', '--collider', type = str, choices = ['LHC', 'SuperKEKB'], default = 'SuperKEKB', help = 'Collider')
 parser.add_argument('-a', '--axes', nargs = '*', type = str, choices = ['beam', 'higgs'], default = ['beam'], help = 'Axes')
 parser.add_argument('-s', '--samples', nargs = '*', default = [], help = 'Whitelisted samples')
+parser.add_argument('-m', '--max-input-files', type = int, default = -1, help = 'Maximum number of input files to be processed (use -1 to process all files)')
 parser.add_argument('-j', '--job-type', type = str, choices = ['local', 'cluster'], required = True, help = 'Job type')
 parser.add_argument('-f', '--filter', nargs = '*', choices = [ 'inv_mass', 'decay_mode', 'pt_eta' ], default = [], help = 'Event selection filters')
 parser.add_argument('-w', '--verbosity', type = int, default = -1, help = 'Verbosity level')
@@ -72,6 +73,11 @@ for sampleName, sample in samples.items():
   numInputFiles = len(inputFileNames)
   print(f"Found {numInputFiles} input files.")
   numJobs = sample['numJobs']
+  if args.max_input_files > 0 and args.max_input_files < numInputFiles:
+    numJobs = int((sample['numJobs'] * args.max_input_files)/numInputFiles)
+    print(f"Processing the first {args.max_input_files} input files, using {numJobs} jobs.")
+    inputFileNames = inputFileNames[:args.max_input_files]
+    numInputFiles = len(inputFileNames)
   is_kkmc = 'kkmc' in sampleName.lower()
   for hAxis in hAxes:
     for jobId in range(numJobs):
