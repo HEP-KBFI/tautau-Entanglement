@@ -20,6 +20,9 @@ KinematicEvent::KinematicEvent()
   , nuTauMinusCov_isValid_(false)
   , svTauMinus_isValid_(false)
   , hMinus_isValid_(false)
+  , startPosTIPCompatibility_(-1.)
+  , startPosSign_(0)
+  , startPosSign_isCorrect_(0)
   , kinFitStatus_(-1)
   , kinFitChi2_(-1.)
   , kinFit_isValid_(false)
@@ -302,6 +305,24 @@ bool
 KinematicEvent::hMinus_isValid() const
 {
   return hMinus_isValid_;
+}
+
+double
+KinematicEvent::startPosTIPCompatibility() const
+{
+  return startPosTIPCompatibility_;
+}
+
+int
+KinematicEvent::startPosSign() const
+{
+  return startPosSign_;
+}
+
+int
+KinematicEvent::startPosSign_isCorrect() const
+{
+  return startPosSign_isCorrect_;
 }
 
 int

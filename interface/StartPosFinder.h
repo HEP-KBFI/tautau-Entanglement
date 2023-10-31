@@ -12,7 +12,7 @@
 class StartPosFinder
 {
  public:
-  explicit StartPosFinder(const edm::ParameterSet&);
+  explicit StartPosFinder(const edm::ParameterSet& cfg);
   ~StartPosFinder();
    
   int

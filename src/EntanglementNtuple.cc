@@ -31,6 +31,7 @@ EntanglementNtuple::EntanglementNtuple(TTree* ntuple)
   branches_KinematicEvent_gen_smeared_.initBranches(ntuple);
 
   branches_KinematicEvent_startPos_.initBranches(ntuple);
+  createBranchI(ntuple_, "startPos", "isCorrectSign", &startPos_isCorrectSign_);
 
   branches_KinematicEvent_kinFit_.initBranches(ntuple);
   createBranchI(ntuple_, "kinFit", "status", &kinFit_status_);
@@ -83,6 +84,7 @@ EntanglementNtuple::fillBranches(const edm::Event& evt,
   if ( kineEvt_startPos )
   {
     branches_KinematicEvent_startPos_.fillBranches(*kineEvt_startPos);
+    startPos_isCorrectSign_ = kineEvt_startPos->startPosSign_isCorrect();
   }
 
   if ( kineEvt_kinFit )

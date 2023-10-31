@@ -171,6 +171,15 @@ class KinematicEvent
   bool
   hMinus_isValid() const;
 
+  double
+  startPosTIPCompatibility() const;
+
+  int
+  startPosSign() const;
+
+  int
+  startPosSign_isCorrect() const;
+
   int
   kinFitStatus() const;
 
@@ -243,6 +252,10 @@ class KinematicEvent
   bool svTauMinus_isValid_;
   reco::Candidate::Vector hMinus_;
   bool hMinus_isValid_;
+
+  double startPosTIPCompatibility_;
+  int startPosSign_;
+  int startPosSign_isCorrect_; // +1 if correct solution was taken, -1 if wrong solution was taken, 0 if solution is unique
 
   int kinFitStatus_;
   double kinFitChi2_;

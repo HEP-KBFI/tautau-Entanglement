@@ -18,7 +18,6 @@
 #include "TauAnalysis/Entanglement/interface/get_decayMode.h"             // is1Prong()
 #include "TauAnalysis/Entanglement/interface/get_localCoordinateSystem.h" // get_localCoordinateSystem()
 #include "TauAnalysis/Entanglement/interface/get_leadTrack.h"             // get_leadTrack()
-#include "TauAnalysis/Entanglement/interface/get_tipPerp.h"               // get_tipPerp()
 #include "TauAnalysis/Entanglement/interface/printLorentzVector.h"        // printLorentzVector()
 #include "TauAnalysis/Entanglement/interface/square.h"                    // square()
 
@@ -103,7 +102,7 @@ namespace
     return epsilon;
   }
 
-  std::vector<double>
+  std::vector<std::pair<double, int>>
   comp_d(double a, double b, double c, double x, double y, double z,
          const reco::Candidate::LorentzVector& higgsP4,
          const reco::Candidate::LorentzVector& visTauPlusP4, double mVisTauPlus2,
@@ -182,15 +181,15 @@ namespace
       std::cout << "d2 = " << d2 << "\n";
     }
 
-    std::vector<double> d;
+    std::vector<std::pair<double, int>> d;
     if ( d2 > 0. )
     {
-      d.push_back(+std::sqrt(d2));
-      d.push_back(-std::sqrt(d2));
+      d.push_back(std::pair<double, int>(+std::sqrt(d2), +1));
+      d.push_back(std::pair<double, int>(-std::sqrt(d2), -1));
     }
     else
     {
-      d.push_back(0.);
+      d.push_back(std::pair<double, int>(0., 0));
     }
     return d;
   }
@@ -334,11 +333,11 @@ StartPosAlgo1::operator()(const KinematicEvent& kineEvt)
   std::vector<KinematicEvent> kineEvts_startpos;
 
   reco::Candidate::LorentzVector qP4;
-  std::vector<double> d = comp_d(a, b, c, x, y, z, higgsP4, visTauPlusP4, mVisTauPlus2, visTauMinusP4, mVisTauMinus2, qP4, verbosity_, cartesian_);
+  std::vector<std::pair<double, int>> d = comp_d(a, b, c, x, y, z, higgsP4, visTauPlusP4, mVisTauPlus2, visTauMinusP4, mVisTauMinus2, qP4, verbosity_, cartesian_);
   for ( size_t idx = 0; idx < d.size(); ++idx )
   {
-    reco::Candidate::LorentzVector tauPlusP4  = 0.5*(1. - a)*higgsP4 + 0.5*b*visTauPlusP4 - 0.5*c*visTauMinusP4 + d[idx]*qP4;
-    reco::Candidate::LorentzVector tauMinusP4 = 0.5*(1. + a)*higgsP4 - 0.5*b*visTauPlusP4 + 0.5*c*visTauMinusP4 - d[idx]*qP4;
+    reco::Candidate::LorentzVector tauPlusP4  = 0.5*(1. - a)*higgsP4 + 0.5*b*visTauPlusP4 - 0.5*c*visTauMinusP4 + d[idx].first*qP4;
+    reco::Candidate::LorentzVector tauMinusP4 = 0.5*(1. + a)*higgsP4 - 0.5*b*visTauPlusP4 + 0.5*c*visTauMinusP4 - d[idx].first*qP4;
     if ( verbosity_ >= 1 )
     {
       std::cout << "solution #" << idx << ":\n";
@@ -351,9 +350,6 @@ StartPosAlgo1::operator()(const KinematicEvent& kineEvt)
       {
         std::cout << " mass = " << tauMinusP4.mass() << "\n";
       }
-      double tipPerp = get_tipPerp(tauPlusP4, visTauPlusP4, kineEvt.pv(), kineEvt.tipPCATauPlus())
-                      + get_tipPerp(tauMinusP4, visTauMinusP4, kineEvt.pv(), kineEvt.tipPCATauMinus());
-      std::cout << "tipPerp = " << tipPerp << "\n";
     }
 
     KinematicEvent kineEvt_startpos = kineEvt;
@@ -385,6 +381,8 @@ StartPosAlgo1::operator()(const KinematicEvent& kineEvt)
       kineEvt_startpos.svTauMinus_ = comp_PCA_line2line(kineEvt_startpos.pv(), tauMinusP4, tauMinus_tipPCA, tauMinus_leadTrack->p4(), verbosity_);
       kineEvt_startpos.svTauMinus_isValid_ = true;
     }
+
+    kineEvt_startpos.startPosSign_ = d[idx].second;
 
     kineEvts_startpos.push_back(kineEvt_startpos);
   }

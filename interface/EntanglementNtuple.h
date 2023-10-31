@@ -436,6 +436,7 @@ class EntanglementNtuple
   branchType_KinematicEvent branches_KinematicEvent_gen_smeared_;
 
   branchType_KinematicEvent branches_KinematicEvent_startPos_;
+  Int_t   startPos_isCorrectSign_;   // +1 if correct solution was taken, -1 if wrong solution was taken, 0 if solution is unique
 
   branchType_KinematicEvent branches_KinematicEvent_kinFit_;
   Int_t   kinFit_status_;            // status of kinematic fit: +1 = converged, -1 = failed

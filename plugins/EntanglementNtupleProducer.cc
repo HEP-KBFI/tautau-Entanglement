@@ -4,6 +4,7 @@
 #include "CommonTools/UtilAlgos/interface/TFileService.h"             // TFileService
 
 #include "DataFormats/Common/interface/Handle.h"                      // edm::Handle<>
+#include "DataFormats/Math/interface/angle.h"                         // angle()
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wshadow"
@@ -18,7 +19,6 @@
 #include "TauAnalysis/Entanglement/interface/findLastTau.h"           // findLastTau()
 #include "TauAnalysis/Entanglement/interface/get_decayMode.h"         // get_decayMode()
 #include "TauAnalysis/Entanglement/interface/get_particles_of_type.h" // get_chargedKaons(), get_neutralKaons(), get_photons()
-#include "TauAnalysis/Entanglement/interface/get_tipPerp.h"           // get_tipPerp()
 
 #include <TString.h>                                                  // Form()
 
@@ -28,6 +28,7 @@ EntanglementNtupleProducer::EntanglementNtupleProducer(const edm::ParameterSet& 
   : moduleLabel_(cfg.getParameter<std::string>("@module_label"))
   , genKineEvtBuilder_woSmearing_(nullptr)
   , genKineEvtBuilder_wSmearing_(nullptr)
+  , startPosTIPCompatibility_(cfg)
   , kinematicFit_(nullptr)
   , ntuple_pi_pi_(nullptr)
   , ntupleFiller_pi_pi_(nullptr)
@@ -151,13 +152,9 @@ void EntanglementNtupleProducer::beginJob()
 namespace
 {
   bool
-  isLowerTIPperp(const KinematicEvent& kineEvt1, const KinematicEvent& kineEvt2)
+  isHigherTIPCompatibility(const KinematicEvent& kineEvt1, const KinematicEvent& kineEvt2)
   {
-    double tipPerp1 = get_tipPerp(kineEvt1.tauPlusP4(), kineEvt1.visTauPlusP4(), kineEvt1.pv(), kineEvt1.tipPCATauPlus())
-                     + get_tipPerp(kineEvt1.tauMinusP4(), kineEvt1.visTauMinusP4(), kineEvt1.pv(), kineEvt1.tipPCATauMinus());
-    double tipPerp2 = get_tipPerp(kineEvt2.tauPlusP4(), kineEvt2.visTauPlusP4(), kineEvt2.pv(), kineEvt2.tipPCATauPlus())
-                     + get_tipPerp(kineEvt2.tauMinusP4(), kineEvt2.visTauMinusP4(), kineEvt2.pv(), kineEvt2.tipPCATauMinus());
-    return tipPerp1 < tipPerp2;
+    return kineEvt1.startPosTIPCompatibility() > kineEvt2.startPosTIPCompatibility();
   }
 }
 
@@ -204,24 +201,48 @@ void EntanglementNtupleProducer::analyze(const edm::Event& evt, const edm::Event
       std::cout << "executing startPosFinder algo #" << startPosFinder->get_algo() << "...";
     }
 
-    std::vector<KinematicEvent> startPosFinder_solutions  = (*startPosFinder)(kineEvt_gen_smeared);
-    size_t numSolutions = startPosFinder_solutions.size();
+    std::vector<KinematicEvent> startPosFinder_gen_solutions  = (*startPosFinder)(kineEvt_gen);
+    size_t numSolutions_gen = startPosFinder_gen_solutions.size();
+    for ( size_t idxSolution = 0; idxSolution < numSolutions_gen; ++idxSolution )
+    {
+      KinematicEvent& kineEvt_startPos = startPosFinder_gen_solutions.at(idxSolution);
+      double tauPlus_residual = angle(kineEvt_startPos.tauPlusP4().Vect(), kineEvt_gen.tauPlusP4().Vect());
+      double tauMinus_residual = angle(kineEvt_startPos.tauMinusP4().Vect(), kineEvt_gen.tauMinusP4().Vect());
+      // CV: large negative values of tipCompatibility indicate large residuals,
+      //     while a tipCompatibility of zero indicates a perfect match
+      kineEvt_startPos.startPosTIPCompatibility_ = -(pow(tauPlus_residual, 2) + pow(tauMinus_residual, 2));
+    }
+    std::sort(startPosFinder_gen_solutions.begin(), startPosFinder_gen_solutions.end(), isHigherTIPCompatibility);
+    int gen_startPosSign = startPosFinder_gen_solutions.front().startPosSign();
+    if ( verbosity_ >= 3 )
+    {
+      std::cout << "gen_startPosSign = " << gen_startPosSign << "\n";
+    }
+
+    std::vector<KinematicEvent> startPosFinder_gen_smeared_solutions  = (*startPosFinder)(kineEvt_gen_smeared);
+    size_t numSolutions_gen_smeared = startPosFinder_gen_smeared_solutions.size();
     if ( verbosity_ >= 1 )
     {
-      std::cout << "#solutions = " << numSolutions<< "\n";
+      std::cout << "#solutions = " << numSolutions_gen_smeared << "\n";
     }
-    for ( size_t idxSolution = 0; idxSolution < numSolutions; ++idxSolution )
+    for ( size_t idxSolution = 0; idxSolution < numSolutions_gen_smeared; ++idxSolution )
     {
-      KinematicEvent& kineEvt_startPos = startPosFinder_solutions.at(idxSolution);
+      KinematicEvent& kineEvt_startPos = startPosFinder_gen_smeared_solutions.at(idxSolution);
       std::string label = Form("kineEvt_startPos (algo #%i, solution #%lu)", startPosFinder->get_algo(), idxSolution);
       kineEvt_startPos.label_ = label;
+      kineEvt_startPos.startPosTIPCompatibility_ = startPosTIPCompatibility_(kineEvt_startPos);
+      if ( verbosity_ >= 3 )
+      {
+        std::cout << "solution #" << idxSolution << ": tipCompatibility = " << kineEvt_startPos.startPosTIPCompatibility_ << "\n";
+      }
+      kineEvt_startPos.startPosSign_isCorrect_ = ( kineEvt_startPos.startPosSign_ == gen_startPosSign ) ? true : false;
       kineEvts_startPos.push_back(kineEvt_startPos);
     }
   }
 
   // CV: sort solutions by decreasing compatibility with transverse impact parameters;
   //     the transverse impact parameter-compatibility of solutions is computed as described in the paper arXiv:hep-ph/9307269 
-  std::sort(kineEvts_startPos.begin(), kineEvts_startPos.end(), isLowerTIPperp);
+  std::sort(kineEvts_startPos.begin(), kineEvts_startPos.end(), isHigherTIPCompatibility);
 
   // CV: choose solution with best transverse impact parameter-compatibility
   //    (and run kinematic fit only for this solution)

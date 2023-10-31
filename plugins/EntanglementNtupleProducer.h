@@ -17,6 +17,7 @@
 #include "TauAnalysis/Entanglement/interface/GenKinematicEventBuilder.h" // GenKinematicEventBuilder
 #include "TauAnalysis/Entanglement/interface/KinematicFit.h"             // KinematicFit
 #include "TauAnalysis/Entanglement/interface/StartPosFinder.h"           // StartPosFinder
+#include "TauAnalysis/Entanglement/interface/StartPosTIPCompatibility.h" // StartPosTIPCompatibility
 
 #include <TTree.h>                                                       // TTree
 
@@ -42,7 +43,8 @@ class EntanglementNtupleProducer : public edm::one::EDAnalyzer<>
   GenKinematicEventBuilder* genKineEvtBuilder_wSmearing_;
 
   std::vector<StartPosFinder*> startPosFinders_;
- 
+  StartPosTIPCompatibility startPosTIPCompatibility_;
+
   enum { kTIP, kKinFit_chi2 };
   int startPosFinder_resolveSignAmbiguity_;
 
