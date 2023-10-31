@@ -16,4 +16,10 @@ get_localCoordinateSystem(const reco::Candidate::LorentzVector& p4,
                           reco::Candidate::Vector& r, reco::Candidate::Vector& n, reco::Candidate::Vector& k,
                           int verbosity = 0, bool cartesian = true);
 
+reco::Candidate::Vector
+get_n(const reco::Candidate::Vector& k, const reco::Candidate::Vector& r, int verbosity = 0, bool cartesian = true);
+
+reco::Candidate::Vector
+get_r(const reco::Candidate::Vector& k, const reco::Candidate::Vector& h, int verbosity = 0, bool cartesian = true);
+
 #endif // TauAnalysis_Entanglement_get_localCoordinateSystem_h

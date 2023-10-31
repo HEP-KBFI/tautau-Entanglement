@@ -84,44 +84,44 @@ namespace
     }
     return h;
   }
+}
 
-  reco::Candidate::Vector
-  get_r(const reco::Candidate::Vector& k, const reco::Candidate::Vector& h, int verbosity, bool cartesian)
+reco::Candidate::Vector
+get_r(const reco::Candidate::Vector& k, const reco::Candidate::Vector& h, int verbosity, bool cartesian)
+{
+  double cosTheta = k.Dot(h);
+  // CV: allow for small rounding errors
+  if ( cosTheta < -1.01 || cosTheta > +1.01 )
   {
-    double cosTheta = k.Dot(h);
-    // CV: allow for small rounding errors
-    if ( cosTheta < -1.01 || cosTheta > +1.01 )
-    {
-      std::cerr << "Error in <get_r>: cosTheta = " << cosTheta << " outside physical range !!\n";
-      assert(0);
-    }
-    if ( cosTheta < -1. ) cosTheta = -1.;
-    if ( cosTheta > +1. ) cosTheta = +1.;
-    double sinTheta = std::sqrt(1. - cosTheta*cosTheta);
-    reco::Candidate::Vector r = (h - k*cosTheta)*(1./sinTheta);
-    if ( verbosity >= 3 )
-    {
-      printVector("r", r, cartesian);
-    }
-    return r;
+    std::cerr << "Error in <get_r>: cosTheta = " << cosTheta << " outside physical range !!\n";
+    assert(0);
   }
+  if ( cosTheta < -1. ) cosTheta = -1.;
+  if ( cosTheta > +1. ) cosTheta = +1.;
+  double sinTheta = std::sqrt(1. - cosTheta*cosTheta);
+  reco::Candidate::Vector r = (h - k*cosTheta)*(1./sinTheta);
+  if ( verbosity >= 3 )
+  {
+    printVector("r", r, cartesian);
+  }
+  return r;
+}
 
-  reco::Candidate::Vector
-  get_n(const reco::Candidate::Vector& k, const reco::Candidate::Vector& r, int verbosity, bool cartesian)
+reco::Candidate::Vector
+get_n(const reco::Candidate::Vector& k, const reco::Candidate::Vector& r, int verbosity, bool cartesian)
+{
+  // CV: The ordering of r and k in the cross product has been agreed with Luca on 06/09/2023.
+  //     The definition n = r x k has been chosen for consistency with Eq. (2.5) in the paper arXiv:1508.05271,
+  //     which Luca and Marco have used in their previous papers on Entanglement.
+  //    (Whether one computes the vector n using n = r x k or using n = p x k makes no difference:
+  //     in both cases, the vector n refers to the direction perpendicular to the scattering plane
+  //     and the vectors { n, r, k } define a right-handed coordinate system)
+  reco::Candidate::Vector n = r.Cross(k);
+  if ( verbosity >= 3 )
   {
-    // CV: The ordering of r and k in the cross product has been agreed with Luca on 06/09/2023.
-    //     The definition n = r x k has been chosen for consistency with Eq. (2.5) in the paper arXiv:1508.05271,
-    //     which Luca and Marco have used in their previous papers on Entanglement.
-    //    (Whether one computes the vector n using n = r x k or using n = p x k makes no difference:
-    //     in both cases, the vector n refers to the direction perpendicular to the scattering plane
-    //     and the vectors { n, r, k } define a right-handed coordinate system)
-    reco::Candidate::Vector n = r.Cross(k);
-    if ( verbosity >= 3 )
-    {
-      printVector("n", n, cartesian);
-    }
-    return n;
+    printVector("n", n, cartesian);
   }
+  return n;
 }
 
 void
