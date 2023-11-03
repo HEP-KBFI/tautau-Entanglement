@@ -364,7 +364,13 @@ StartPosAlgo1::operator()(const KinematicEvent& kineEvt)
       const KinematicParticle* tauPlus_leadTrack = get_leadTrack(kineEvt_startpos.daughtersTauPlus());
       assert(tauPlus_leadTrack);
       const reco::Candidate::Point& tauPlus_tipPCA = kineEvt_startpos.tipPCATauPlus();
-      kineEvt_startpos.svTauPlus_ = comp_PCA_line2line(kineEvt_startpos.pv(), tauPlusP4, tauPlus_tipPCA, tauPlus_leadTrack->p4(), verbosity_);
+      kineEvt_startpos.svTauPlus_ = comp_PCA_line2line(
+        kineEvt_startpos.pv(), tauPlusP4.Vect(),
+        tauPlus_tipPCA, tauPlus_leadTrack->p4().Vect(), 
+        nullptr, 
+        -1.e+6, +1.e+6, -1.e+6, +1.e+6,
+        verbosity_).second;
+        //verbosity_).first;
       kineEvt_startpos.svTauPlus_isValid_ = true;
     }
  
@@ -378,7 +384,13 @@ StartPosAlgo1::operator()(const KinematicEvent& kineEvt)
       const KinematicParticle* tauMinus_leadTrack = get_leadTrack(kineEvt_startpos.daughtersTauMinus());
       assert(tauMinus_leadTrack);
       const reco::Candidate::Point& tauMinus_tipPCA = kineEvt_startpos.tipPCATauMinus();
-      kineEvt_startpos.svTauMinus_ = comp_PCA_line2line(kineEvt_startpos.pv(), tauMinusP4, tauMinus_tipPCA, tauMinus_leadTrack->p4(), verbosity_);
+      kineEvt_startpos.svTauMinus_ = comp_PCA_line2line(
+        kineEvt_startpos.pv(), tauMinusP4.Vect(),
+        tauMinus_tipPCA, tauMinus_leadTrack->p4().Vect(), 
+        nullptr, 
+        -1.e+6, +1.e+6, -1.e+6, +1.e+6,
+        verbosity_).second;
+        //verbosity_).first;
       kineEvt_startpos.svTauMinus_isValid_ = true;
     }
 

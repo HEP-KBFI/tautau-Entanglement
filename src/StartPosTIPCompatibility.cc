@@ -9,6 +9,8 @@
 
 #include "TauAnalysis/Entanglement/interface/cmsException.h"              // cmsException
 #include "TauAnalysis/Entanglement/interface/comp_PCA_line2line.h"        // comp_PCA_line2line()
+#include "TauAnalysis/Entanglement/interface/comp_PCA_line2point.h"       // comp_PCA_line2point()
+#include "TauAnalysis/Entanglement/interface/constants.h"                 // ct, mTau
 #include "TauAnalysis/Entanglement/interface/get_leadTrack.h"             // get_leadTrack()
 #include "TauAnalysis/Entanglement/interface/get_localCoordinateSystem.h" // get_n(), get_r()
 #include "TauAnalysis/Entanglement/interface/getP4_rf.h"                  // getP4_rf()
@@ -42,10 +44,16 @@ namespace
       printLorentzVector("tauP4", tauP4, cartesian);
     }
 
-    double flightlength = std::sqrt((sv - pv).mag2());
-    auto sv_exp = pv + flightlength*tauP4.Vect().unit();
-    auto residual = sv - sv_exp;
     math::Matrix3x3 cov = pvCov + svCov;
+    double flightlengthMin = 1.e-2*(tauP4.energy()/mTau)*ct;
+    reco::Candidate::Point pca = comp_PCA_line2point(
+      pv, tauP4.Vect(),
+      sv,
+      &cov,
+      //nullptr,
+      flightlengthMin, +1.e+6,
+      verbosity);
+    auto residual = sv - pca;
     int errorFlag = 0;
     math::Matrix3x3 covInv = cov.Inverse(errorFlag);
     if ( errorFlag != 0 )
@@ -76,11 +84,18 @@ namespace
       std::cout << "<comp_tipCompatibilityOneProng>:\n";
     }
 
-    std::pair<reco::Candidate::Point, reco::Candidate::Point> Qs = comp_PCA_line2line(pv, tauP4.Vect(), tipPCA, leadTrackP4.Vect(), verbosity);
-    const reco::Candidate::Point& Q1 = Qs.first;
-    const reco::Candidate::Point& Q2 = Qs.second;
-    auto residual = Q2 - Q1; 
     math::Matrix3x3 cov = pvCov + svCov;
+    double flightlengthMin = 1.e-2*(tauP4.energy()/mTau)*ct;
+    std::pair<reco::Candidate::Point, reco::Candidate::Point> pcas = comp_PCA_line2line(
+      pv, tauP4.Vect(),
+      tipPCA, leadTrackP4.Vect(),
+      //&cov,
+      nullptr,
+      flightlengthMin, +1.e+6, -1.e+6, +1.e+6, 
+      verbosity = -1);
+    const reco::Candidate::Point& pca1 = pcas.first;
+    const reco::Candidate::Point& pca2 = pcas.second;
+    auto residual = pca2 - pca1; 
     int errorFlag = 0;
     math::Matrix3x3 covInv = cov.Inverse(errorFlag);
     if ( errorFlag != 0 )

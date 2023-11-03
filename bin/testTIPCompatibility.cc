@@ -66,18 +66,18 @@ int main(int argc, char* argv[])
   printDistance("svTauMinus - tipPCATauMinus", svTauMinus - tipPCATauMinus, false);
   printLorentzVector("tauMinus_leadTrackP4", tauMinus_leadTrackP4, false);
 
-  std::pair<reco::Candidate::Point, reco::Candidate::Point> Qs = comp_PCA_line2line(svTauPlus, tauPlus_leadTrackP4.Vect(), svTauMinus, tauMinus_leadTrackP4.Vect());
-  const reco::Candidate::Point& Q1_1 = Qs.first;
-  const reco::Candidate::Point& Q2_1 = Qs.second;
-  printPoint("Q1@1", Q1_1);
-  printPoint("Q2@1", Q2_1);
-  std::cout << "(dmin = " << std::sqrt((Q2_1 - Q1_1).mag2()) << ")\n";
+  std::pair<reco::Candidate::Point, reco::Candidate::Point> pcas = comp_PCA_line2line(svTauPlus, tauPlus_leadTrackP4.Vect(), svTauMinus, tauMinus_leadTrackP4.Vect());
+  const reco::Candidate::Point& pca1_1 = pcas.first;
+  const reco::Candidate::Point& pca2_1 = pcas.second;
+  printPoint("pca1@1", pca1_1);
+  printPoint("pca2@1", pca2_1);
+  std::cout << "(dmin = " << std::sqrt((pca2_1 - pca1_1).mag2()) << ")\n";
 
   reco::Candidate::Vector e_tauPlus = tauPlus_leadTrackP4.Vect().unit();
   reco::Candidate::Vector e_tauMinus = tauMinus_leadTrackP4.Vect().unit();
 
-  reco::Candidate::Point Q1_2;
-  reco::Candidate::Point Q2_2;
+  reco::Candidate::Point pca1_2;
+  reco::Candidate::Point pca2_2;
   double dmin = 1.e+6;
   const int numSteps = 30000;
   for ( int idxStep1 = 0; idxStep1 < numSteps; ++idxStep1 )
@@ -89,15 +89,15 @@ int main(int argc, char* argv[])
       double d = std::sqrt((p1 - p2).mag2());
       if ( d < dmin )
       {
-        Q1_2 = p1;
-        Q2_2 = p2;
+        pca1_2 = p1;
+        pca2_2 = p2;
         dmin = d; 
       }
     }
   }
-  printPoint("Q1@2", Q1_2);
-  printPoint("Q2@2", Q2_2);
-  std::cout << "(dmin = " << std::sqrt((Q2_2 - Q1_2).mag2()) << ")\n";
+  printPoint("pca1@2", pca1_2);
+  printPoint("pca2@2", pca2_2);
+  std::cout << "(dmin = " << std::sqrt((pca2_2 - pca1_2).mag2()) << ")\n";
 
   clock.Show("testTIPCompatibility");
 

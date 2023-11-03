@@ -9,6 +9,7 @@
 
 #include "TauAnalysis/Entanglement/interface/cmsException.h"                      // cmsException
 #include "TauAnalysis/Entanglement/interface/comp_nuP4.h"                         // comp_nuP4()
+#include "TauAnalysis/Entanglement/interface/comp_PCA_line2point.h"               // comp_PCA_line2point()
 #include "TauAnalysis/Entanglement/interface/comp_visP4.h"                        // comp_visP4()
 #include "TauAnalysis/Entanglement/interface/constants.h"                         // kLHC, kSuperKEKB
 #include "TauAnalysis/Entanglement/interface/findDecayProducts.h"                 // findDecayProducts()
@@ -139,30 +140,6 @@ namespace
       }
     }
     return svTauCov;
-  }
-
-  reco::Candidate::Point
-  comp_PCA_line2point(const reco::Candidate::Point& pv, const reco::GenParticle* leadTrack, int verbosity)
-  {
-    // CV: compute point of closest approach (PCA) between primary event vertex and track
-    if ( verbosity >= 2 )
-    {
-      std::cout << "<comp_PCA_line2point>:" << std::endl;
-    }
-    reco::Candidate::Point sv = leadTrack->vertex();
-    auto flightlength = sv - pv;
-    if ( verbosity >= 2 )
-    {
-      printDistance("flightlength", flightlength, true);
-      printDistance("flightlength", flightlength, false);
-    }
-    auto e_trk = leadTrack->momentum().unit();
-    reco::Candidate::Point pca = pv + flightlength - flightlength.Dot(e_trk)*e_trk;
-    if ( verbosity >= 2 )
-    {
-      printPoint("pca", pca);
-    }
-    return pca;
   }
 
   math::Matrix3x3
@@ -483,7 +460,12 @@ GenKinematicEventBuilder::operator()(const reco::GenParticleCollection& genParti
   kineEvt.tauPlus_rotMatrix_rnk2xyz_ = get_rotationMatrixInv(tauPlus_r, tauPlus_n, tauPlus_k);
   kineEvt.tauPlus_decayMode_ = tauPlus_decayMode;
   kineEvt.daughtersTauPlus_ = daughtersTauPlus;
-  kineEvt.tipPCATauPlus_ = comp_PCA_line2point(pv, tauPlus_leadTrack, verbosity_);
+  kineEvt.tipPCATauPlus_ = comp_PCA_line2point(
+    tauPlus_leadTrack->vertex(), tauPlus_leadTrack->momentum(),
+    pv,
+    nullptr,
+    -1.e+6, +1.e+6,
+    verbosity_);
   kineEvt.svTauPlus_ = svTauPlus;
   kineEvt.svTauPlus_isValid_ = true;
   kineEvt.svTauPlusCov_ = svTauPlusCov;
@@ -509,7 +491,12 @@ GenKinematicEventBuilder::operator()(const reco::GenParticleCollection& genParti
   kineEvt.tauMinus_rotMatrix_rnk2xyz_ = get_rotationMatrixInv(tauMinus_r, tauMinus_n, tauMinus_k);
   kineEvt.tauMinus_decayMode_ = tauMinus_decayMode;
   kineEvt.daughtersTauMinus_ = daughtersTauMinus;
-  kineEvt.tipPCATauMinus_ = comp_PCA_line2point(pv, tauMinus_leadTrack, verbosity_);
+  kineEvt.tipPCATauMinus_ = comp_PCA_line2point(
+    tauMinus_leadTrack->vertex(), tauMinus_leadTrack->momentum(),
+    pv,
+    nullptr,
+    -1.e+6, +1.e+6,
+    verbosity_);
   kineEvt.svTauMinus_ = tauMinus_leadTrack->vertex();
   kineEvt.svTauMinus_isValid_ = true;
   kineEvt.svTauMinusCov_ = svTauMinusCov;
