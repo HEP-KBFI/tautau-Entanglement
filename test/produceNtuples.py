@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 # Example usage:
-# ./test/produceNtuples.py -v 2023Oct31_wSmearing -s dy_lo_pythia8_ext -m 100 -j cluster
+# ./test/produceNtuples.py -v 2023Oct31_p5InvertedSign_wSmearing -s dy_lo_pythia8_ext -m -1 -j cluster
 
 import datetime
 import argparse

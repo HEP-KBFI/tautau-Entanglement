@@ -1,5 +1,7 @@
 #include "TauAnalysis/Entanglement/interface/printEigenVectors_and_EigenValues.h"
 
+#include <iostream> // std::cout
+
 void
 printEigenVectors_and_EigenValues(const std::vector<std::pair<TVectorD, double>>& EigenVectors_and_EigenValues)
 {

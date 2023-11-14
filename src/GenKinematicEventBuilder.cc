@@ -21,15 +21,14 @@
 #include "TauAnalysis/Entanglement/interface/get_rotationMatrix.h"                // get_rotationMatrix()
 #include "TauAnalysis/Entanglement/interface/Matrix_and_Vector.h"                 // math::Matrix*, math::Vector*
 #include "TauAnalysis/Entanglement/interface/KinematicParticle.h"                 // KinematicParticle
-#include "TauAnalysis/Entanglement/interface/printCovMatrix.h"                    // printCovMatrix()
+#include "TauAnalysis/Entanglement/interface/printMatrix.h"                       // printMatrix()
 #include "TauAnalysis/Entanglement/interface/printDistance.h"                     // printDistance()
 #include "TauAnalysis/Entanglement/interface/printEigenVectors_and_EigenValues.h" // printEigenVectors_and_EigenValues()
 #include "TauAnalysis/Entanglement/interface/printGenParticles.h"                 // printGenParticles()
-#include "TauAnalysis/Entanglement/interface/printInverseCovMatrix.h"             // printInverseCovMatrix()
 #include "TauAnalysis/Entanglement/interface/printLorentzVector.h"                // printLorentzVector()
 #include "TauAnalysis/Entanglement/interface/printPoint.h"                        // printPoint()
 #include "TauAnalysis/Entanglement/interface/printVector.h"                       // printVector()
-#include "TauAnalysis/Entanglement/interface/PolarimetricVectorAlgoBase.h"        // ePolarimetricVector::kTauPlus, PolarimetricVector::kTauMinus
+#include "TauAnalysis/Entanglement/interface/PolarimetricVectorAlgoBase.h"        // PolarimetricVector::kTauPlus, PolarimetricVector::kTauMinus
 #include "TauAnalysis/Entanglement/interface/rotateCovMatrix.h"                   // rotateCovMatrix()
 #include "TauAnalysis/Entanglement/interface/square.h"                            // square()
 
@@ -343,7 +342,7 @@ GenKinematicEventBuilder::operator()(const reco::GenParticleCollection& genParti
       std::cout << " mass = " << visTauPlusP4.mass() << "\n";
     }
     std::cout << "tauPlus_decayMode = " << tauPlus_decayMode << "\n";
-    printCovMatrix("nuTauPlusCov", nuTauPlusCov);
+    printMatrix("nuTauPlusCov", nuTauPlusCov, true);
   }
   std::vector<KinematicParticle> daughtersTauPlus = build_kineDaughters(
     visTauPlusP4, tauPlus_decayMode, tauPlus_daughters, 
@@ -374,7 +373,7 @@ GenKinematicEventBuilder::operator()(const reco::GenParticleCollection& genParti
       std::cout << " mass = " << visTauMinusP4.mass() << "\n";
     }
     std::cout << "tauMinus_decayMode = " << tauMinus_decayMode << "\n";
-    printCovMatrix("nuTauMinusCov", nuTauMinusCov);
+    printMatrix("nuTauMinusCov", nuTauMinusCov, true);
   }
   std::vector<KinematicParticle> daughtersTauMinus = build_kineDaughters(
     visTauMinusP4, tauMinus_decayMode, tauMinus_daughters, 
@@ -395,7 +394,7 @@ GenKinematicEventBuilder::operator()(const reco::GenParticleCollection& genParti
   if ( verbosity_ >= 1 )
   {
     printPoint("pv", pv);
-    printCovMatrix("pvCov", pvCov);
+    printMatrix("pvCov", pvCov, true);
   }
 
   reco::Candidate::LorentzVector recoilP4 = tauPlusP4 + tauMinusP4;
@@ -403,7 +402,7 @@ GenKinematicEventBuilder::operator()(const reco::GenParticleCollection& genParti
   if ( verbosity_ >= 1 )
   {
     printLorentzVector("recoilP4", recoilP4, cartesian_);
-    printCovMatrix("recoilCov", recoilCov);
+    printMatrix("recoilCov", recoilCov, true);
   }
 
   const reco::GenParticle* tauPlus_leadTrack = get_leadTrack(tauPlus_daughters);
@@ -422,11 +421,11 @@ GenKinematicEventBuilder::operator()(const reco::GenParticleCollection& genParti
     printPoint("svTauPlus", svTauPlus);
     printDistance("svTauPlus - pv", svTauPlus - pv, cartesian_);
     printDistance("svTauPlus - pv", svTauPlus - pv, false);
-    printCovMatrix("svTauPlusCov", svTauPlusCov);
+    printMatrix("svTauPlusCov", svTauPlusCov, true);
     printPoint("svTauMinus", svTauMinus);
     printDistance("svTauMinus - pv", svTauMinus - pv, cartesian_);
     printDistance("svTauMinus - pv", svTauMinus - pv, false);
-    printCovMatrix("svTauMinusCov", svTauMinusCov);
+    printMatrix("svTauMinusCov", svTauMinusCov, true);
   }
 
   KinematicEvent kineEvt;

@@ -17,3 +17,11 @@ printVector(const std::string& label,
     std::cout << " p = " << p3.r() << ", pT = " << p3.rho() << ", theta = " << p3.theta() << ", phi = " << p3.phi() << "\n";
   }
 }
+
+void
+printVector(const std::string& label,
+            const TVectorD& v)
+{
+  std::cout << label << ":\n";
+  v.Print();
+}

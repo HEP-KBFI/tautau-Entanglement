@@ -15,7 +15,7 @@
 #include "TauAnalysis/Entanglement/interface/get_localCoordinateSystem.h" // get_n(), get_r()
 #include "TauAnalysis/Entanglement/interface/getP4_rf.h"                  // getP4_rf()
 #include "TauAnalysis/Entanglement/interface/Matrix_and_Vector.h"         // math::Matrix3x3, math::Vector3
-#include "TauAnalysis/Entanglement/interface/printCovMatrix.h"            // printCovMatrix()
+#include "TauAnalysis/Entanglement/interface/printMatrix.h"               // printMatrix()
 #include "TauAnalysis/Entanglement/interface/printDistance.h"             // printDistance()
 #include "TauAnalysis/Entanglement/interface/printLorentzVector.h"        // printLorentzVector()
 #include "TauAnalysis/Entanglement/interface/printVector.h"               // printVector()
@@ -60,7 +60,7 @@ namespace
     {
       if ( verbosity >= 0 )
       {
-        printCovMatrix("cov", cov);
+        printMatrix("cov", cov, true);
       }
       throw cmsException("comp_tipCompatibilityThreeProng", __LINE__) 
         << "Failed to invert matrix cov !!\n";
@@ -102,7 +102,7 @@ namespace
     {
       if ( verbosity >= 0 )
       {
-        printCovMatrix("cov", cov);
+        printMatrix("cov", cov, true);
       }
       throw cmsException("comp_tipCompatibilityOneProng", __LINE__) 
         << "Failed to invert matrix cov !!\n";

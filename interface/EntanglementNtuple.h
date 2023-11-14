@@ -428,10 +428,12 @@ class EntanglementNtuple
   Int_t tauPlus_nNeutralKaons_gen_;  // number of neutral Kaons produced in decay of tau-
   Int_t tauPlus_nPhotons_gen_;       // number of photons radiated from decay products of tau+
   Float_t tauPlus_sumPhotonEn_gen_;  // energy sum of photons radiated from decay products of tau+
+  Float_t tauPlus_mT_gen_;           // transverse mass of particles produced in decay of tau+
   Int_t tauMinus_nChargedKaons_gen_; // number of charged Kaons produced in decay of tau-
   Int_t tauMinus_nNeutralKaons_gen_; // number of neutral Kaons produced in decay of tau-
   Int_t tauMinus_nPhotons_gen_;      // number of photons radiated from decay products of tau-
   Float_t tauMinus_sumPhotonEn_gen_; // energy sum of photons radiated from decay products of tau-
+  Float_t tauMinus_mT_gen_;          // transverse mass of particles produced in decay of tau-
 
   branchType_KinematicEvent branches_KinematicEvent_gen_smeared_;
 

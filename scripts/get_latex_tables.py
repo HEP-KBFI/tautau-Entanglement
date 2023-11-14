@@ -231,10 +231,10 @@ if __name__ == '__main__':
   axis = args.axis
   cut = args.cut
 
-  data = read_data(input_dirs, sample_name, [ 'gen', 'kinFit' ], decay_modes, spin_analyzers, entanglement_vars, axis)
+  #data = read_data(input_dirs, sample_name, [ 'gen', 'kinFit' ], decay_modes, spin_analyzers, entanglement_vars, axis)
   if cut:
     data_cut = read_data(input_dirs, sample_name, [ 'gen', 'kinFit' ], decay_modes, spin_analyzers, entanglement_vars, axis, cut)
-  print(get_Cmatrix(data['gen']['pi_pi'], default_spin_analyzer, central, None, 4, 'Equation 4.5'))
+  #print(get_Cmatrix(data['gen']['pi_pi'], default_spin_analyzer, central, None, 4, 'Equation 4.5'))
   if cut:
     print(get_decayModes(data_cut['gen'], central, entanglement_vars, default_spin_analyzer, decay_modes, { 'Rchsh' : 3, 'concurrence' : 4 }, 'Table 2'))
     print(get_decayModes(data_cut['kinFit'], central, entanglement_vars, default_spin_analyzer, decay_modes, { 'Rchsh' : 3, 'concurrence' : 4 }, 'Table 3'))

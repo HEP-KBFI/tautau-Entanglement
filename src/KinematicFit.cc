@@ -1,41 +1,39 @@
 #include "TauAnalysis/Entanglement/interface/KinematicFit.h"
 
-#include "FWCore/Utilities/interface/Exception.h"                         // cms::Exception
+#include "FWCore/Utilities/interface/Exception.h"                                // cms::Exception
 
-#include "DataFormats/Math/interface/deltaPhi.h"                          // deltaPhi()
-#include "DataFormats/Math/interface/Matrix.h"                            // math::Matrix
-#include "DataFormats/Math/interface/Vector.h"                            // math::Vector
+#include "DataFormats/Math/interface/deltaPhi.h"                                 // deltaPhi()
+#include "DataFormats/Math/interface/Matrix.h"                                   // math::Matrix
+#include "DataFormats/Math/interface/Vector.h"                                   // math::Vector
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wshadow"
 #pragma GCC diagnostic ignored "-Wswitch-enum"
-#include "DataFormats/TauReco/interface/PFTau.h"                          // reco::PFTau::kOneProng0PiZero
+#include "DataFormats/TauReco/interface/PFTau.h"                                 // reco::PFTau::kOneProng0PiZero
 #pragma GCC diagnostic pop
 
-#include "TauAnalysis/Entanglement/interface/cmsException.h"              // cmsException
-#include "TauAnalysis/Entanglement/interface/comp_nuPz.h"                 // build_nuP4(), comp_nuPz()
-#include "TauAnalysis/Entanglement/interface/constants.h"                 // kLHC, kSuperKEKB
-#include "TauAnalysis/Entanglement/interface/KinFitAlgo.h"                // KinFitAlgo<>, KinFitSummary<>
-#include "TauAnalysis/Entanglement/interface/KinFitConstraint.h"          // KinFitConstraint<>
-#include "TauAnalysis/Entanglement/interface/KinFitParameters.h"          // kinFit::numParameters, math::MatrixPxP
-#include "TauAnalysis/Entanglement/interface/Matrix_and_Vector.h"         // math::Matrix*, math::Vector*
-#include "TauAnalysis/Entanglement/interface/printCovMatrix.h"            // printCovMatrix()
-#include "TauAnalysis/Entanglement/interface/printLorentzVector.h"        // printLorentzVector()
-#include "TauAnalysis/Entanglement/interface/rotateCovMatrix.h"           // rotateCovMatrix()
-#include "TauAnalysis/Entanglement/interface/rotateVector.h"              // rotateVector()
-#include "TauAnalysis/Entanglement/interface/square.h"                    // square()
+#include "TauAnalysis/Entanglement/interface/cmsException.h"                     // cmsException
+#include "TauAnalysis/Entanglement/interface/comp_nuPz.h"                        // build_nuP4(), comp_nuPz()
+#include "TauAnalysis/Entanglement/interface/constants.h"                        // kLHC, kSuperKEKB
+#include "TauAnalysis/Entanglement/interface/convert_to_TMatrixD.h"              // convert_to_TMatrixD()
+#include "TauAnalysis/Entanglement/interface/convert_to_SMatrix.h"               // convert_to_SMatrix()
+#include "TauAnalysis/Entanglement/interface/KinFitAlgo.h"                       // KinFitAlgo, KinFitSummary
+#include "TauAnalysis/Entanglement/interface/KinFitConstraint.h"                 // KinFitConstraint
+#include "TauAnalysis/Entanglement/interface/KinFitParameters_and_Constraints.h" // kinFit::numParameters
+#include "TauAnalysis/Entanglement/interface/Matrix_and_Vector.h"                // math::Matrix*, math::Vector*
+#include "TauAnalysis/Entanglement/interface/printMatrix.h"                      // printMatrix()
+#include "TauAnalysis/Entanglement/interface/printLorentzVector.h"               // printLorentzVector()
+#include "TauAnalysis/Entanglement/interface/printVector.h"                      // printVector()
+#include "TauAnalysis/Entanglement/interface/rotateCovMatrix.h"                  // rotateCovMatrix()
+#include "TauAnalysis/Entanglement/interface/rotateVector.h"                     // rotateVector()
+#include "TauAnalysis/Entanglement/interface/square.h"                           // square()
 
-#include "Math/Functions.h"                                               // ROOT::Math::Dot(), ROOT::Math::Similarity(), ROOT::Math::Transpose() 
-#include "TMath.h"                                                        // TMath::Pi() 
+#include "TMath.h"                                                               // TMath::Pi() 
+#include <TMatrixD.h>                                                            // TMatrixD
+#include <TVectorD.h>                                                            // TVectorD
 
-#include <cmath>                                                          // std::abs(), std::exp(), std::fabs(), std::isnan(), std::sin(), std::sqrt()
-#include <iostream>                                                       // std::cout
-#include <string>                                                         // std::string
-
-using namespace kinFit;
-using namespace math;
-
-const int numConstraints_LHC = 9;
-const int numConstraints_SuperKEKB = 8;
+#include <cmath>                                                                 // std::abs(), std::exp(), std::fabs(), std::isnan(), std::sin(), std::sqrt()
+#include <iostream>                                                              // std::cout
+#include <string>                                                                // std::string
 
 KinematicFit::KinematicFit(const edm::ParameterSet& cfg)
   : polarimetricVector_(cfg)
@@ -131,9 +129,9 @@ KinematicFit::operator()(const KinematicEvent& kineEvt)
   KinematicEvent kineEvt_kinFit = kineEvt;
 
   bool signTauPlus_errorFlag = false;
-  double signTauPlus = get_sign(kineEvt.visTauPlusP4(), kineEvt.nuTauPlusP4(), signTauPlus_errorFlag, verbosity_);
+  double signTauPlus = kinFit::get_sign(kineEvt.visTauPlusP4(), kineEvt.nuTauPlusP4(), signTauPlus_errorFlag, verbosity_);
   bool signTauMinus_errorFlag = false;
-  double signTauMinus = get_sign(kineEvt.visTauMinusP4(), kineEvt.nuTauMinusP4(), signTauMinus_errorFlag, verbosity_);
+  double signTauMinus = kinFit::get_sign(kineEvt.visTauMinusP4(), kineEvt.nuTauMinusP4(), signTauMinus_errorFlag, verbosity_);
   if ( (signTauPlus_errorFlag || signTauMinus_errorFlag ) && verbosity_ >= 0 )
   {
     std::cerr << "WARNING: Failed to reproduce the neutrino Pz of the start position !!\n";
@@ -146,25 +144,27 @@ KinematicFit::operator()(const KinematicEvent& kineEvt)
   }
 
   const reco::Candidate::Point& startPos_pv = kineEvt.pv();
-  const Matrix3x3& pvCov = kineEvt.pvCov();
+  const math::Matrix3x3& pvCov = kineEvt.pvCov();
   const reco::Candidate::LorentzVector& startPos_visTauPlusP4 = kineEvt.visTauPlusP4();
   const reco::Candidate::LorentzVector& startPos_nuTauPlusP4 = kineEvt.nuTauPlusP4();
-  Matrix2x2 nuTauPlusCov = kineEvt.nuTauPlusCov().Sub<Matrix2x2>(0,0);
+  math::Matrix2x2 nuTauPlusCov = kineEvt.nuTauPlusCov().Sub<math::Matrix2x2>(0,0);
   // CV: tau+ decay vertex is represented by flightlength = sv - pv in the kinematic fit
   //     and given in helicity-frame coordinates { r, n, k }
-  reco::Candidate::Point startPos_svTauPlus = get_svStartPos(kineEvt.pv(), kineEvt.svTauPlus(), kineEvt.tauPlus_rotMatrix_xyz2rnk(), verbosity_);
-  const Matrix3x3& svTauPlusCov = rotateCovMatrix(kineEvt.svTauPlusCov(), kineEvt.tauPlus_rotMatrix_xyz2rnk());
+  reco::Candidate::Point startPos_svTauPlus = kinFit::get_svStartPos(kineEvt.pv(), kineEvt.svTauPlus(), kineEvt.tauPlus_rotMatrix_xyz2rnk(), verbosity_);
+  const math::Matrix3x3& svTauPlusCov = rotateCovMatrix(kineEvt.svTauPlusCov(), kineEvt.tauPlus_rotMatrix_xyz2rnk());
   const reco::Candidate::LorentzVector& startPos_visTauMinusP4 = kineEvt.visTauMinusP4();
   const reco::Candidate::LorentzVector& startPos_nuTauMinusP4 = kineEvt.nuTauMinusP4();
-  Matrix2x2 nuTauMinusCov = kineEvt.nuTauMinusCov().Sub<Matrix2x2>(0,0);
+  math::Matrix2x2 nuTauMinusCov = kineEvt.nuTauMinusCov().Sub<math::Matrix2x2>(0,0);
   // CV: tau- decay vertex is represented by flightlength = sv - pv in the kinematic fit
   //     and given in helicity-frame coordinates { r, n, k }
-  reco::Candidate::Point startPos_svTauMinus = get_svStartPos(kineEvt.pv(), kineEvt.svTauMinus(), kineEvt.tauMinus_rotMatrix_xyz2rnk(), verbosity_);
-  const Matrix3x3& svTauMinusCov = rotateCovMatrix(kineEvt.svTauMinusCov(), kineEvt.tauMinus_rotMatrix_xyz2rnk());
+  reco::Candidate::Point startPos_svTauMinus = kinFit::get_svStartPos(kineEvt.pv(), kineEvt.svTauMinus(), kineEvt.tauMinus_rotMatrix_xyz2rnk(), verbosity_);
+  const math::Matrix3x3& svTauMinusCov = rotateCovMatrix(kineEvt.svTauMinusCov(), kineEvt.tauMinus_rotMatrix_xyz2rnk());
   const reco::Candidate::LorentzVector& startPos_recoilP4 = kineEvt.recoilP4();
-  const Matrix4x4& recoilCov = kineEvt.recoilCov();
+  const math::Matrix4x4& recoilCov = kineEvt.recoilCov();
 
-  VectorP alpha0;
+  const int Np = kinFit::numParameters;
+
+  TVectorD alpha0(Np);
   alpha0( 0) = startPos_pv.x();
   alpha0( 1) = startPos_pv.y();
   alpha0( 2) = startPos_pv.z();
@@ -184,79 +184,52 @@ KinematicFit::operator()(const KinematicEvent& kineEvt)
   alpha0(16) = startPos_recoilP4.energy();
   if ( verbosity_ >= 2 )
   {
-    std::cout << "alpha0:\n";
-    std::cout << alpha0 << "\n";
+    printVector("alpha0", alpha0);
   }
 
   // CV: build covariance matrix of all measured parameters;
   //     for the syntax of "embedding" a small covariance matrix into a larger one, 
   //     see Section "Accessing and setting methods" of the ROOT documentation https://root.cern.ch/doc/v608/SMatrixDoc.html
-  MatrixPxP V_alpha0;
-  V_alpha0.Place_at(pvCov        ,  0,  0);
-  V_alpha0.Place_at(nuTauPlusCov ,  3,  3);
-  V_alpha0.Place_at(svTauPlusCov ,  5,  5);
-  V_alpha0.Place_at(nuTauMinusCov,  8,  8);
-  V_alpha0.Place_at(svTauMinusCov, 10, 10);
-  V_alpha0.Place_at(recoilCov    , 13, 13);
+  TMatrixD V_alpha0(Np,Np);
+  V_alpha0.SetSub( 0,  0, convert_to_TMatrixD(pvCov));
+  V_alpha0.SetSub( 3,  3, convert_to_TMatrixD(nuTauPlusCov));
+  V_alpha0.SetSub( 5,  5, convert_to_TMatrixD(svTauPlusCov));
+  V_alpha0.SetSub( 8,  8, convert_to_TMatrixD(nuTauMinusCov));
+  V_alpha0.SetSub(10, 10, convert_to_TMatrixD(svTauMinusCov));
+  V_alpha0.SetSub(13, 13, convert_to_TMatrixD(recoilCov));
   if ( verbosity_ >= 2 )
   {
-    printCovMatrix("V_alpha0", V_alpha0);
+    printMatrix("V_alpha0", V_alpha0);
   }
 
-  VectorP alphaA = alpha0;
+  TVectorD alphaA = alpha0;
   if ( verbosity_ >= 2 )
   {
-    std::cout << "alphaA:\n";
-    std::cout << alphaA << "\n";
+    printVector("alphaA", alphaA);
   }
 
   // CV: compute solution to minimization problem
   //     using formulas given in Section 3 of https://www.phys.ufl.edu/~avery/fitting/kinematic.pdf
-  KinFitSummary<P> fitResult;
-  if ( collider_ == kLHC ) 
-  {
-    const int C = numConstraints_LHC;
-    KinFitConstraint<P,C> constraint(collider_, kineEvt, signTauPlus, signTauMinus, verbosity_);
-    edm::ParameterSet cfg_kinFit;
-    cfg_kinFit.addParameter<int>("verbosity", verbosity_);
-    KinFitAlgo<P,C> kinFit(cfg_kinFit);        
-    try
-    { 
-      fitResult = kinFit(alpha0, V_alpha0, constraint, alphaA);
-    }
-    catch ( const cms::Exception& )
-    {
-      if ( verbosity_ >= 0 )
-      {
-        std::cerr << "Error in <KinematicFit::operator()>: Caught exception from KinFitAlgo !!\n";
-      }
-      return kineEvt_kinFit;
-    }
-  }
-  else if ( collider_ == kSuperKEKB )
-  {
-    const int C = numConstraints_SuperKEKB;
-    KinFitConstraint<P,C> constraint(collider_, kineEvt, signTauPlus, signTauMinus, verbosity_);
-    edm::ParameterSet cfg_kinFit;
-    cfg_kinFit.addParameter<int>("verbosity", verbosity_);
-    KinFitAlgo<P,C> kinFit(cfg_kinFit);
-    try
-    { 
-      fitResult = kinFit(alpha0, V_alpha0, constraint, alphaA);
-    }
-    catch ( const cms::Exception& )
-    {
-      if ( verbosity_ >= 0 )
-      {
-        std::cerr << "Error in <KinematicFit::operator()>: Caught exception from KinFitAlgo !!\n";
-      }
-      return kineEvt_kinFit;
-    }
-  }
-  else assert(0);
+  KinFitConstraint constraint(collider_, kineEvt, signTauPlus, signTauMinus, verbosity_);
+  edm::ParameterSet cfg_kinFit;
+  cfg_kinFit.addParameter<int>("verbosity", verbosity_);
+  KinFitAlgo kinFit(cfg_kinFit);
+  KinFitSummary fitResult;
+  //try
+  //{ 
+    fitResult = kinFit(alpha0, V_alpha0, constraint, alphaA);
+  //}
+  //catch ( const cms::Exception& )
+  //{
+  //  if ( verbosity_ >= 0 )
+  //  {
+  //    std::cerr << "Error in <KinematicFit::operator()>: Caught exception from KinFitAlgo !!\n";
+  //  }
+  //  return kineEvt;
+  //}
 
-  VectorP fitResult_alpha = fitResult.get_alpha();
-  MatrixPxP fitResult_V_alpha = fitResult.get_V_alpha();
+  TVectorD fitResult_alpha = fitResult.get_alpha();
+  TMatrixD fitResult_V_alpha = fitResult.get_V_alpha();
 
   double fitResult_nuTauPlusPx = fitResult_alpha(3);
   double fitResult_nuTauPlusPy = fitResult_alpha(4);
@@ -283,28 +256,28 @@ KinematicFit::operator()(const KinematicEvent& kineEvt)
     //     for the syntax of retrieving a small covariance matrix from a larger one, 
     //     see Section "Accessing and setting methods" of the ROOT documentation https://root.cern.ch/doc/v608/SMatrixDoc.html
     kineEvt_kinFit.pv_ = reco::Candidate::Point(fitResult_alpha(0), fitResult_alpha(1), fitResult_alpha(2));
-    kineEvt_kinFit.pvCov_ = fitResult_V_alpha.Sub<Matrix3x3>(0,0);
+    kineEvt_kinFit.pvCov_ = convert_to_SMatrix<3,3>(fitResult_V_alpha.GetSub(0,2,0,2));
     kineEvt_kinFit.recoilP4_ = reco::Candidate::LorentzVector(fitResult_alpha(13), fitResult_alpha(14), fitResult_alpha(15), fitResult_alpha(16));
-    kineEvt_kinFit.recoilCov_ = fitResult_V_alpha.Sub<Matrix4x4>(13,13);
+    kineEvt_kinFit.recoilCov_ = convert_to_SMatrix<4,4>(fitResult_V_alpha.GetSub(13,16,13,16));
     kineEvt_kinFit.nuTauPlusP4_ = build_nuP4(fitResult_nuTauPlusPx, fitResult_nuTauPlusPy, fitResult_nuTauPlusPz);
     kineEvt_kinFit.nuTauPlusP4_isValid_ = true;
-    kineEvt_kinFit.nuTauPlusCov_ = build_nuCov(fitResult_V_alpha.Sub<Matrix2x2>(3,3), fitResult_nuTauPlus_dPzdPx, fitResult_nuTauPlus_dPzdPy);
+    kineEvt_kinFit.nuTauPlusCov_ = kinFit::build_nuCov(convert_to_SMatrix<2,2>(fitResult_V_alpha.GetSub(3,4,3,4)), fitResult_nuTauPlus_dPzdPx, fitResult_nuTauPlus_dPzdPy);
     kineEvt_kinFit.tauPlusP4_ = startPos_visTauPlusP4 + kineEvt_kinFit.nuTauPlusP4_;
     kineEvt_kinFit.tauPlusP4_isValid_ = true;
     reco::Candidate::Point fitResult_svTauPlus = reco::Candidate::Point(fitResult_alpha(5), fitResult_alpha(6), fitResult_alpha(7));
     kineEvt_kinFit.svTauPlus_ = rotateVector(fitResult_svTauPlus, kineEvt.tauPlus_rotMatrix_rnk2xyz()) 
       + reco::Candidate::Vector(startPos_pv.x(), startPos_pv.y(), startPos_pv.z());
-    kineEvt_kinFit.svTauPlusCov_ = rotateCovMatrix(fitResult_V_alpha.Sub<Matrix3x3>(5,5), kineEvt.tauPlus_rotMatrix_rnk2xyz());        
+    kineEvt_kinFit.svTauPlusCov_ = rotateCovMatrix(convert_to_SMatrix<3,3>(fitResult_V_alpha.GetSub(5,7,5,7)), kineEvt.tauPlus_rotMatrix_rnk2xyz());        
     kineEvt_kinFit.nuTauMinusP4_ = build_nuP4(fitResult_nuTauMinusPx, fitResult_nuTauMinusPy, fitResult_nuTauMinusPz);
     kineEvt_kinFit.nuTauMinusP4_isValid_ = true;       
-    kineEvt_kinFit.nuTauMinusCov_ = build_nuCov(fitResult_V_alpha.Sub<Matrix2x2>(8,8), fitResult_nuTauMinus_dPzdPx, fitResult_nuTauMinus_dPzdPy);
+    kineEvt_kinFit.nuTauMinusCov_ = kinFit::build_nuCov(convert_to_SMatrix<2,2>(fitResult_V_alpha.GetSub(8,9,8,9)), fitResult_nuTauMinus_dPzdPx, fitResult_nuTauMinus_dPzdPy);
     kineEvt_kinFit.tauMinusP4_ = startPos_visTauMinusP4 + kineEvt_kinFit.nuTauMinusP4_;
     kineEvt_kinFit.tauMinusP4_isValid_ = true;
     reco::Candidate::Point fitResult_svTauMinus = reco::Candidate::Point(fitResult_alpha(10), fitResult_alpha(11), fitResult_alpha(12));
     kineEvt_kinFit.svTauMinus_ = rotateVector(fitResult_svTauMinus, kineEvt.tauMinus_rotMatrix_rnk2xyz())
       + reco::Candidate::Vector(startPos_pv.x(), startPos_pv.y(), startPos_pv.z());
-    kineEvt_kinFit.svTauMinusCov_ = rotateCovMatrix(fitResult_V_alpha.Sub<Matrix3x3>(10,10), kineEvt.tauMinus_rotMatrix_rnk2xyz());
-    kineEvt_kinFit.kinFitCov_ = fitResult_V_alpha;
+    kineEvt_kinFit.svTauMinusCov_ = rotateCovMatrix(convert_to_SMatrix<3,3>(fitResult_V_alpha.GetSub(10,12,10,12)), kineEvt.tauMinus_rotMatrix_rnk2xyz());
+    kineEvt_kinFit.kinFitCov_ = convert_to_SMatrix<Np,Np>(fitResult_V_alpha);
     kineEvt_kinFit.kinFitStatus_ = fitResult.get_status();
     kineEvt_kinFit.kinFitChi2_ = fitResult.get_chi2();
     kineEvt_kinFit.kinFit_isValid_ = true;

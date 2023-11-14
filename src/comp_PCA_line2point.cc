@@ -1,8 +1,8 @@
 #include "TauAnalysis/Entanglement/interface/comp_PCA_line2point.h"
 
-#include "TauAnalysis/Entanglement/interface/cmsException.h"   // cmsException
-#include "TauAnalysis/Entanglement/interface/printCovMatrix.h" // printCovMatrix()
-#include "TauAnalysis/Entanglement/interface/printPoint.h"     // printPoint()
+#include "TauAnalysis/Entanglement/interface/cmsException.h" // cmsException
+#include "TauAnalysis/Entanglement/interface/printMatrix.h"  // printMatrix()
+#include "TauAnalysis/Entanglement/interface/printPoint.h"   // printPoint()
 
 namespace
 {
@@ -47,7 +47,7 @@ comp_PCA_line2point(const reco::Candidate::Point& P1, const reco::Candidate::Vec
     {
       if ( verbosity >= 0 )
       {
-        printCovMatrix("cov", *cov);
+        printMatrix("cov", *cov, true);
       }
       throw cmsException("comp_PCA_line2point", __LINE__) 
         << "Failed to invert matrix cov !!\n";

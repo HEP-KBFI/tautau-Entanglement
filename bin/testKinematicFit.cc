@@ -1,14 +1,13 @@
 
-#include "DataFormats/Math/interface/Matrix.h"                             // math::Matrix
-#include "DataFormats/Math/interface/Vector.h"                             // math::Vector
 #include "FWCore/ParameterSet/interface/ParameterSet.h"                    // edm::ParameterSet
 
 #include "TauAnalysis/Entanglement/interface/cmsException.h"               // cmsException
 #include "TauAnalysis/Entanglement/interface/fillWithOverFlow.h"           // fillWithOverFlow2D()
-#include "TauAnalysis/Entanglement/interface/KinFitAlgo.h"                 // KinFitAlgo<>, KinFitSummary<>
-#include "TauAnalysis/Entanglement/interface/KinFitConstraintBase.h"       // KinFitConstraintBase<>
-#include "TauAnalysis/Entanglement/interface/KinFitConstraintTesterBase.h" // KinFitConstraintTesterBase<>
-#include "TauAnalysis/Entanglement/interface/printCovMatrix.h"             // printCovMatrix()
+#include "TauAnalysis/Entanglement/interface/KinFitAlgo.h"                 // KinFitAlgo, KinFitSummary
+#include "TauAnalysis/Entanglement/interface/KinFitConstraintBase.h"       // KinFitConstraintBase
+#include "TauAnalysis/Entanglement/interface/KinFitConstraintTesterBase.h" // KinFitConstraintTesterBase
+#include "TauAnalysis/Entanglement/interface/printMatrix.h"                // printMatrix()
+#include "TauAnalysis/Entanglement/interface/printVector.h"                // printVector()
 #include "TauAnalysis/Entanglement/interface/showGraph.h"                  // showGraph()
 #include "TauAnalysis/Entanglement/interface/square.h"                     // square()
 
@@ -21,8 +20,10 @@
 #include <TH1.h>                                                           // TH1D
 #include <TH2.h>                                                           // TH2D
 #include <TMath.h>                                                         // TMath::Pi()
+#include <TMatrixD.h>                                                      // TMatrixD
 #include <TRandom3.h>                                                      // TRandom3
 #include <TString.h>                                                       // TString
+#include <TVectorD.h>                                                      // TVectorD
 
 #include <cmath>                                                           // std::isnan(), std::sqrt()
 #include <sstream>                                                         // std::ostringstream
@@ -32,23 +33,14 @@
 
 typedef std::pair<double, double> point2d;
 
-typedef typename math::Matrix<1,1>::type Matrix1x1;
-typedef typename math::Matrix<1,2>::type Matrix1x2;
-typedef typename math::Matrix<2,1>::type Matrix2x1;
-typedef typename math::Matrix<2,2>::type Matrix2x2;
-typedef typename math::Vector<1>::type Vector1;
-typedef typename math::Vector<2>::type Vector2;
-
 template <unsigned int rank>
-class PolynomialConstraint : public KinFitConstraintBase<2,1>
+class PolynomialConstraint : public KinFitConstraintBase
 {
-  typedef typename math::Matrix<rank + 1,rank + 1>::type MatrixRxR;
-  typedef typename math::Vector<rank + 1>::type VectorR;
-
  public:
   PolynomialConstraint(const std::vector<point2d>& points, int verbosity = -1)
-    : KinFitConstraintBase<2,1>(verbosity)
+    : KinFitConstraintBase(2, 1, 0, verbosity)
     , points_(points)
+    , coeff_(rank + 1)
   {
     if ( verbosity_ >= 1 )
     {
@@ -64,8 +56,8 @@ class PolynomialConstraint : public KinFitConstraintBase<2,1>
       throw cmsException("PolynomialConstraint", __LINE__) 
         << "Given number of points = " << points.size() << " does not match rank + 1 = " << rank + 1 << " !!\n";
     
-    MatrixRxR M;
-    VectorR y;
+    TMatrixD M(rank + 1, rank + 1);
+    TVectorD y(rank + 1);
     for ( unsigned int idxRow = 0; idxRow < (rank + 1); ++idxRow )
     {
       const point2d& point = points.at(idxRow);
@@ -78,26 +70,24 @@ class PolynomialConstraint : public KinFitConstraintBase<2,1>
 
     if ( verbosity_ >= 1 )
     {
-      std::cout << "M:\n";
-      std::cout << M << "\n";
+      printMatrix("M", M);
     }
 
-    int Minv_errorFlag = 0;
-    MatrixRxR Minv = M.Inverse(Minv_errorFlag);
-    if ( Minv_errorFlag != 0 )
+    if ( M.Determinant() == 0. )
+    {
       throw cmsException("PolynomialConstraint", __LINE__) 
         << "Failed to invert matrix M !!\n";
+    }
+    TMatrixD Minv(TMatrixD::kInverted, M);
     if ( verbosity_ >= 1 )
     {
-      std::cout << "Minv:\n";
-      std::cout << Minv << "\n";
+      printMatrix("Minv", Minv);
     }
 
     coeff_ = Minv*y;
     if ( verbosity_ >= 1 )
     {
-      std::cout << "coeff:\n";
-      std::cout << coeff_ << "\n";
+      printVector("coeff", coeff_);
     }
   }
   ~PolynomialConstraint()
@@ -115,15 +105,16 @@ class PolynomialConstraint : public KinFitConstraintBase<2,1>
   }
 
   void
-  set_alphaA(const typename KinFitConstraintBase<2,1>::VectorP& alphaA)
+  set_alphaA(const TVectorD& alphaA)
   {
+    assert(alphaA.GetNrows() == 2);
     double x = alphaA(0);
     double y = alphaA(1);
     
-    D_(0,0) = get_derrivative(x);
-    D_(0,1) = -1.;
-    d_(0) = get_polynomial(x) - y;
-    d_metric_(0,0) = 1.;
+    D_eq_(0,0) = get_derrivative(x);
+    D_eq_(0,1) = -1.;
+    d_eq_(0) = get_polynomial(x) - y;
+    d_eq_metric_(0,0) = 1.;
   }
 
  private:
@@ -153,51 +144,52 @@ class PolynomialConstraint : public KinFitConstraintBase<2,1>
     return retVal;
   }
 
-  using KinFitConstraintBase<2,1>::D_;
-  using KinFitConstraintBase<2,1>::d_;
-  using KinFitConstraintBase<2,1>::d_metric_;
-  using KinFitConstraintBase<2,1>::verbosity_;
-
   unsigned int rank_;
 
   std::vector<point2d> points_;
 
-  VectorR coeff_;
+  TVectorD coeff_;
 };
 
-class PolynomialConstraintTester : public KinFitConstraintTesterBase<2,1>
+class PolynomialConstraintTester : public KinFitConstraintTesterBase
 {
  public:
-  PolynomialConstraintTester(const Vector2& alpha0, int verbosity = -1)
-    : KinFitConstraintTesterBase<2,1>(alpha0, verbosity)
+  PolynomialConstraintTester(const TVectorD& alpha0, int verbosity = -1)
+    : KinFitConstraintTesterBase(alpha0, verbosity)
+  {}
+
+  void
+  operator()(KinFitConstraintBase& constraint, const std::string& outputFileName)
   {
+    const unsigned int Np = constraint.get_Np();
+    const unsigned int Nc_eq = constraint.get_Nc_eq();
+
+    rndMean_.ResizeTo(Np); 
     rndMean_ = alpha0_;
     
-    for ( unsigned int idxParameter = 0; idxParameter < 2; ++idxParameter )
+    rndWidth_.ResizeTo(Np);
+    for ( unsigned int idxParameter = 0; idxParameter < Np; ++idxParameter )
     {
       rndWidth_(idxParameter) = 2.;
     }
 
-    for ( unsigned int idxConstraint = 0; idxConstraint < 1; ++idxConstraint )
+    plotRange_.ResizeTo(Nc_eq,Np);
+    for ( unsigned int idxConstraint = 0; idxConstraint < Nc_eq; ++idxConstraint )
     {
-      for ( unsigned int idxParameter = 0; idxParameter < 2; ++idxParameter )
+      for ( unsigned int idxParameter = 0; idxParameter < Np; ++idxParameter )
       {
         plotRange_(idxConstraint, idxParameter) = 5.;
       }
     }
+
+    KinFitConstraintTesterBase::operator()(constraint, outputFileName);
   }
- 
- private:
-  using KinFitConstraintTesterBase<2,1>::alpha0_;
-  using KinFitConstraintTesterBase<2,1>::rndMean_;
-  using KinFitConstraintTesterBase<2,1>::rndWidth_;
-  using KinFitConstraintTesterBase<2,1>::plotRange_;
 };
 
-Vector2 
+TVectorD
 get_startPos(const point2d& point)
 {
-  Vector2 startPos;
+  TVectorD startPos(2);
   startPos(0) = point.first;
   startPos(1) = point.second;
   return startPos;
@@ -205,8 +197,8 @@ get_startPos(const point2d& point)
 
 template <unsigned int rank>
 void 
-showFit(const Vector2& alpha0, const Matrix2x2& V_alpha0, const PolynomialConstraint<rank>& constraint, 
-        const std::vector<KinFitSummary<2>>& fitHistory,
+showFit(const TVectorD& alpha0, const TMatrixD& V_alpha0, const PolynomialConstraint<rank>& constraint, 
+        const std::vector<KinFitSummary>& fitHistory,
         const std::string& outputFileName)
 {
   TCanvas* canvas = new TCanvas("canvas", "canvas", 900, 800);
@@ -217,16 +209,15 @@ showFit(const Vector2& alpha0, const Matrix2x2& V_alpha0, const PolynomialConstr
   canvas->SetBottomMargin(0.07);
   canvas->SetRightMargin(0.14);
 
-  int Vinv_alpha0_errorFlag = 0;
-  Matrix2x2 Vinv_alpha0 = V_alpha0.Inverse(Vinv_alpha0_errorFlag);
-  if ( Vinv_alpha0_errorFlag != 0 )
+  if ( V_alpha0.Determinant() == 0. )
+  {
     throw cmsException("showFit", __LINE__) 
       << "Failed to invert matrix V_alpha0 !!\n";
-  std::cout << "Vinv_alpha0:\n";
-  std::cout << Vinv_alpha0 << "\n";
+  }
+  TMatrixD Vinv_alpha0(TMatrixD::kInverted, V_alpha0);
+  printMatrix("Vinv_alpha0", Vinv_alpha0);
 
-  double V_alpha0_det = -1.;
-  V_alpha0.Det2(V_alpha0_det);
+  double V_alpha0_det = V_alpha0.Determinant();
   std::cout << "det(V_alpha0) = " << V_alpha0_det << "\n";
 
   const double xMin = -10.;
@@ -258,7 +249,7 @@ showFit(const Vector2& alpha0, const Matrix2x2& V_alpha0, const PolynomialConstr
   TGraph* fit_graph = new TGraph(numPoints);
   for ( int idxPoint = 0; idxPoint < numPoints; ++idxPoint )
   {
-    const KinFitSummary<2>::VectorP& alpha = fitHistory.at(idxPoint).get_alpha();
+    const TVectorD& alpha = fitHistory.at(idxPoint).get_alpha();
     fit_graph->SetPoint(idxPoint, alpha(0), alpha(1));
   }
   fit_graph->SetMarkerStyle(8);
@@ -283,13 +274,13 @@ showFit(const Vector2& alpha0, const Matrix2x2& V_alpha0, const PolynomialConstr
 }
 
 void
-showChi2(const std::vector<KinFitSummary<2>>& fitHistory,
+showChi2(const std::vector<KinFitSummary>& fitHistory,
          const std::string& outputFileName)
 {
   // CV: delete startPos (iteration = -1), 
   //     as it does not have a valid chi^2
-  std::vector<KinFitSummary<2>> fitHistory_posIterations;
-  for ( const KinFitSummary<2>& it : fitHistory )
+  std::vector<KinFitSummary> fitHistory_posIterations;
+  for ( const KinFitSummary& it : fitHistory )
   {
     if ( it.get_iteration() >= 0 )
     {
@@ -317,8 +308,8 @@ showChi2(const std::vector<KinFitSummary<2>>& fitHistory,
 }
 
 void
-showDistance(const Vector2& mean, 
-             const std::vector<KinFitSummary<2>>& fitHistory,
+showDistance(const TVectorD& mean, 
+             const std::vector<KinFitSummary>& fitHistory,
              const std::string& outputFileName)
 {
   int numPoints = fitHistory.size();
@@ -327,7 +318,7 @@ showDistance(const Vector2& mean,
   double yMax = 1.;
   for ( int idxPoint = 0; idxPoint < numPoints; ++idxPoint )
   {
-    const KinFitSummary<2>::VectorP& alpha = fitHistory.at(idxPoint).get_alpha();
+    const TVectorD& alpha = fitHistory.at(idxPoint).get_alpha();
     double distance = std::sqrt(square(alpha(0) - mean(0)) + square(alpha(1) - mean(1)));
     graph->SetPoint(idxPoint, fitHistory.at(idxPoint).get_iteration(), distance);
     if ( distance > yMax )
@@ -343,8 +334,8 @@ showDistance(const Vector2& mean,
 
 template <unsigned int rank>
 void 
-showResults(const Vector2& mean, const Matrix2x2& cov, const PolynomialConstraint<rank>& constraint, 
-            const std::vector<KinFitSummary<2>>& fitHistory,
+showResults(const TVectorD& mean, const TMatrixD& cov, const PolynomialConstraint<rank>& constraint, 
+            const std::vector<KinFitSummary>& fitHistory,
             const std::string& outputFileName)
 {
   showFit<rank>(mean, cov, constraint, fitHistory, outputFileName);
@@ -365,23 +356,23 @@ int main(int argc, char* argv[])
   TBenchmark clock;
   clock.Start("testKinematicFit");  
 
-  Vector2 alpha0;
+  TVectorD alpha0(2);
   alpha0(0) = 0.;
   alpha0(1) = 0.;
 
-  Matrix2x2 V_alpha0_uncorr;
+  TMatrixD V_alpha0_uncorr(2,2);
   V_alpha0_uncorr(0,0) = 1.;
   V_alpha0_uncorr(0,1) = 0.;
   V_alpha0_uncorr(1,0) = V_alpha0_uncorr(0,1);
   V_alpha0_uncorr(1,1) = 4.;
 
-  Matrix2x2 V_alpha0_corr_wide;
+  TMatrixD V_alpha0_corr_wide(2,2);
   V_alpha0_corr_wide(0,0) = 1.;
   V_alpha0_corr_wide(0,1) = 1.6;
   V_alpha0_corr_wide(1,0) = V_alpha0_corr_wide(0,1);
   V_alpha0_corr_wide(1,1) = 4.;
 
-  Matrix2x2 V_alpha0_corr_narrow;
+  TMatrixD V_alpha0_corr_narrow(2,2);
   V_alpha0_corr_narrow(0,0) = 1./16;
   V_alpha0_corr_narrow(0,1) = 0.4;
   V_alpha0_corr_narrow(1,0) = V_alpha0_corr_narrow(0,1);
@@ -405,60 +396,60 @@ int main(int argc, char* argv[])
   
   edm::ParameterSet cfg_kinFit;
   cfg_kinFit.addParameter<int>("verbosity", -1);
-  KinFitAlgo<2,1> kinFit(cfg_kinFit);
+  KinFitAlgo kinFit(cfg_kinFit);
 
-  Vector2 startPos_pol1 = get_startPos(points_pol1.at(0));
+  TVectorD startPos_pol1 = get_startPos(points_pol1.at(0));
 
-  Vector2 startPos_pol3 = get_startPos(points_pol3.at(0));
+  TVectorD startPos_pol3 = get_startPos(points_pol3.at(0));
 
   std::cout << "Fitting covariance matrix:\n";
-  std::cout << V_alpha0_uncorr << "\n";
+  V_alpha0_uncorr.Print();
   std::cout << "with constraint = '" << (std::string)constraint_pol1 << "'...\n";  
-  std::vector<KinFitSummary<2>> fitHistory_uncorr_pol1;
+  std::vector<KinFitSummary> fitHistory_uncorr_pol1;
   kinFit(alpha0, V_alpha0_uncorr, constraint_pol1, startPos_pol1, &fitHistory_uncorr_pol1);
   std::string outputFileName_uncorr_pol1 = "testKinematicFit_uncorr_pol1.png";
   showResults(alpha0, V_alpha0_uncorr, constraint_pol1, fitHistory_uncorr_pol1, outputFileName_uncorr_pol1);
   std::cout << " Done.\n";
 
   std::cout << "Fitting covariance matrix:\n";
-  std::cout << V_alpha0_corr_wide << "\n";
+  V_alpha0_corr_wide.Print();
   std::cout << "with constraint = '" << (std::string)constraint_pol1 << "'...\n";
-  std::vector<KinFitSummary<2>> fitHistory_corr_wide_pol1;
+  std::vector<KinFitSummary> fitHistory_corr_wide_pol1;
   kinFit(alpha0, V_alpha0_corr_wide, constraint_pol1, startPos_pol1, &fitHistory_corr_wide_pol1);
   std::string outputFileName_corr_wide_pol1 = "testKinematicFit_corr_wide_pol1.png";
   showResults(alpha0, V_alpha0_corr_wide, constraint_pol1, fitHistory_corr_wide_pol1, outputFileName_corr_wide_pol1);
   std::cout << " Done.\n";
 
   std::cout << "Fitting covariance matrix:\n";
-  std::cout << V_alpha0_corr_narrow << "\n";
+  V_alpha0_corr_narrow.Print();
   std::cout << "with constraint = '" << (std::string)constraint_pol1 << "'...\n";
-  std::vector<KinFitSummary<2>> fitHistory_corr_narrow_pol1;
+  std::vector<KinFitSummary> fitHistory_corr_narrow_pol1;
   kinFit(alpha0, V_alpha0_corr_narrow, constraint_pol1, startPos_pol1, &fitHistory_corr_narrow_pol1);
   std::string outputFileName_corr_narrow_pol1 = "testKinematicFit_corr_narrow_pol1.png";
   showResults(alpha0, V_alpha0_corr_narrow, constraint_pol1, fitHistory_corr_narrow_pol1, outputFileName_corr_narrow_pol1);
 
   std::cout << "Fitting covariance matrix:\n";
-  std::cout << V_alpha0_uncorr << "\n";
+  V_alpha0_uncorr.Print();
   std::cout << "with constraint = '" << (std::string)constraint_pol3 << "'...\n";  
-  std::vector<KinFitSummary<2>> fitHistory_uncorr_pol3;
+  std::vector<KinFitSummary> fitHistory_uncorr_pol3;
   kinFit(alpha0, V_alpha0_uncorr, constraint_pol3, startPos_pol3, &fitHistory_uncorr_pol3);
   std::string outputFileName_uncorr_pol3 = "testKinematicFit_uncorr_pol3.png";
   showResults(alpha0, V_alpha0_uncorr, constraint_pol3, fitHistory_uncorr_pol3, outputFileName_uncorr_pol3);
   std::cout << " Done.\n";
 
   std::cout << "Fitting covariance matrix:\n";
-  std::cout << V_alpha0_corr_wide << "\n";
+  V_alpha0_corr_wide.Print();
   std::cout << "with constraint = '" << (std::string)constraint_pol3<< "'...\n";
-  std::vector<KinFitSummary<2>> fitHistory_corr_wide_pol3;
+  std::vector<KinFitSummary> fitHistory_corr_wide_pol3;
   kinFit(alpha0, V_alpha0_corr_wide, constraint_pol3, startPos_pol3, &fitHistory_corr_wide_pol3);
   std::string outputFileName_corr_wide_pol3 = "testKinematicFit_corr_wide_pol3.png";
   showResults(alpha0, V_alpha0_corr_wide, constraint_pol3, fitHistory_corr_wide_pol3, outputFileName_corr_wide_pol3);
   std::cout << " Done.\n";
 
   std::cout << "Fitting covariance matrix:\n";
-  std::cout << V_alpha0_corr_narrow << "\n";
+  V_alpha0_corr_narrow.Print();
   std::cout << "with constraint = '" << (std::string)constraint_pol3 << "'...\n";
-  std::vector<KinFitSummary<2>> fitHistory_corr_narrow_pol3;
+  std::vector<KinFitSummary> fitHistory_corr_narrow_pol3;
   kinFit(alpha0, V_alpha0_corr_narrow, constraint_pol3, startPos_pol3, &fitHistory_corr_narrow_pol3);
   std::string outputFileName_corr_narrow_pol3 = "testKinematicFit_corr_narrow_pol3.png";
   showResults(alpha0, V_alpha0_corr_narrow, constraint_pol3, fitHistory_corr_narrow_pol3, outputFileName_corr_narrow_pol3);

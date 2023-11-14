@@ -11,6 +11,7 @@
 #include "TauAnalysis/Entanglement/interface/comp_BandC.h"                        // comp_C()
 #include "TauAnalysis/Entanglement/interface/comp_EigenVectors_and_EigenValues.h" // comp_EigenVectors_and_EigenValues()
 #include "TauAnalysis/Entanglement/interface/comp_Rchsh.h"                        // comp_Rchsh()
+#include "TauAnalysis/Entanglement/interface/convert_to_TMatrixD.h"               // convert_to_TMatrixD()
 #include "TauAnalysis/Entanglement/interface/Matrix_and_Vector.h"                 // math::Matrix3x3
 #include "TauAnalysis/Entanglement/interface/printEigenVectors_and_EigenValues.h" // printEigenVectors_and_EigenValues()
 #include "TauAnalysis/Entanglement/interface/BranchAddressInitializer.h"          // BranchAddressInitializer
@@ -245,7 +246,7 @@ int main(int argc, char* argv[])
   std::cout << C_sum << "\n";
 
   math::Matrix3x3 CT_sum = ROOT::Math::Transpose(C_sum);
-  std::vector<std::pair<TVectorD, double>> EigenVectors_and_EigenValues = comp_EigenVectors_and_EigenValues(CT_sum*C_sum);
+  std::vector<std::pair<TVectorD, double>> EigenVectors_and_EigenValues = comp_EigenVectors_and_EigenValues(convert_to_TMatrixD(CT_sum*C_sum));
   printEigenVectors_and_EigenValues(EigenVectors_and_EigenValues);
 
   double Rchsh = comp_Rchsh(C_sum);

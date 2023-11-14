@@ -1,64 +1,60 @@
 #ifndef TauAnalysis_Entanglement_KinFitConstraintBase_h
 #define TauAnalysis_Entanglement_KinFitConstraintBase_h
 
-#include "DataFormats/Math/interface/Matrix.h" // math::Matrix
-#include "DataFormats/Math/interface/Vector.h" // math::Vector
+#include <TMatrixD.h> // TMatrixD
+#include <TVectorD.h> // TVectorD
 
-// CV: The template parameters P and C represent 
-//     the number of parameters and the number of constraints, respectively.
-//     It is neccessary to make the number of parameters and constraints template parameters,
-//     because the ROOT::Math::SVector and ROOT::Math::SMatrix classes
-//     on which the kinematic fitting code is based require these template parameters.
-
-template <unsigned int P, unsigned int C>
 class KinFitConstraintBase
 {
  public:
-  typedef typename math::Matrix<P,P>::type MatrixPxP;
-  typedef typename math::Matrix<P,C>::type MatrixPxC;
-  typedef typename math::Matrix<C,P>::type MatrixCxP;
-  typedef typename math::Matrix<C,C>::type MatrixCxC;
-  typedef typename math::Vector<P>::type VectorP;
-  typedef typename math::Vector<C>::type VectorC;
+  KinFitConstraintBase(unsigned int Np, unsigned int Nc_eq, unsigned int Nc_ineq = 0, int verbosity = -1);
+  virtual ~KinFitConstraintBase();
 
-  KinFitConstraintBase(int verbosity = -1)
-    : errorFlag_(false)
-    , verbosity_(verbosity)
-  {}
-  virtual ~KinFitConstraintBase()
-  {}
+  unsigned int
+  get_Np() const;
+
+  unsigned int
+  get_Nc_eq() const;
+
+  unsigned int
+  get_Nc_ineq() const;
 
   virtual void
-  set_alphaA(const KinFitConstraintBase::VectorP& alphaA) = 0;
+  set_alphaA(const TVectorD& alphaA) = 0;
 
-  const MatrixCxP&
-  get_D() const
-  {
-    return D_;
-  }
+  const TMatrixD&
+  get_D_eq() const;
 
-  const VectorC&
-  get_d() const
-  {
-    return d_;
-  }
+  const TVectorD&
+  get_d_eq() const;
 
-  const MatrixCxC&
-  get_d_metric() const
-  {
-    return d_metric_;
-  }
+  const TMatrixD&
+  get_d_eq_metric() const;
+
+  const TMatrixD&
+  get_D_ineq() const;
+
+  const TVectorD&
+  get_d_ineq() const;
+
+  const TMatrixD&
+  get_d_ineq_metric() const;
 
   bool
-  get_errorFlag() const
-  {
-    return errorFlag_;
-  }
+  get_errorFlag() const;
   
  protected:
-  MatrixCxP D_;
-  VectorC d_;
-  MatrixCxC d_metric_;
+  unsigned int Np_;
+  unsigned int Nc_eq_;
+  unsigned int Nc_ineq_;
+
+  TMatrixD D_eq_;
+  TVectorD d_eq_;
+  TMatrixD d_eq_metric_;
+
+  TMatrixD D_ineq_;
+  TVectorD d_ineq_;
+  TMatrixD d_ineq_metric_;
 
   bool errorFlag_;
   

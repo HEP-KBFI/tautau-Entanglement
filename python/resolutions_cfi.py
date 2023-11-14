@@ -9,12 +9,11 @@ resolutions_LHC = cms.PSet(
     pvResolution_xy         = cms.double(0.0015), # [cm]
     pvResolution_z          = cms.double(0.0030), # [cm]
     
-    trackResolution_pt      = cms.double(2.e-5),  # resolution on 1/pT in units of GeV^-1
+    trackResolution_pt      = cms.string("2.e-5*pow(pT, 2)"),                                                     # resolution on pT in units of GeV
     trackResolution_theta   = cms.double(3.e-4),  # [rad]
     trackResolution_phi     = cms.double(3.e-4),  # [rad]
 
-    ecalResolution_energy_a = cms.double(0.166),  # coefficient a in resolution function sigma_E = a*sqrt(E) + b*E, where E is in units of GeV
-    ecalResolution_energy_b = cms.double(0.011),  # coefficient b in resolution function sigma_E = a*sqrt(E) + b*E, where E is in units of GeV
+    ecalResolution_energy   = cms.string("sqrt(pow(0.166*sqrt(E), 2) + pow(0.011, 2))"),                          # resolution on energy in units of GeV
     ecalResolution_theta    = cms.double(1.7e-3), # [rad]
     ecalResolution_phi      = cms.double(1.7e-3), # [rad]
 
@@ -33,12 +32,11 @@ resolutions_SuperKEKB = cms.PSet(
     pvResolution_xy         = cms.double(0.0010), # [cm]
     pvResolution_z          = cms.double(0.0020), # [cm]
     
-    trackResolution_pt      = cms.double(2.e-5),  # resolution on 1/pT in units of GeV^-1
+    trackResolution_pt      = cms.string("sqrt(pow(1.e-3*pow(pT, 2), 2) + pow(3.e-3*pT/beta, 2))"),               # resolution on pT in units of GeV
     trackResolution_theta   = cms.double(3.e-4),  # [rad]
     trackResolution_phi     = cms.double(3.e-4),  # [rad]
 
-    ecalResolution_energy_a = cms.double(0.166),  # coefficient a in resolution function sigma_E = a*sqrt(E) + b*E, where E is in units of GeV
-    ecalResolution_energy_b = cms.double(0.011),  # coefficient b in resolution function sigma_E = a*sqrt(E) + b*E, where E is in units of GeV
+    ecalResolution_energy   = cms.string("sqrt(pow(2.e-3, 2) + pow(1.6e-2*pow(E, 0.75), 2) + pow(1.2e-2*E, 2))"), # resolution on energy in units of GeV
     ecalResolution_theta    = cms.double(1.7e-3), # [rad]
     ecalResolution_phi      = cms.double(1.7e-3), # [rad]
 

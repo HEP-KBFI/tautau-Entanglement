@@ -9,11 +9,11 @@
  *
  */
 
-#include "DataFormats/Candidate/interface/Candidate.h"            // reco::Candidate::LorentzVector, reco::Candidate::Point
+#include "DataFormats/Candidate/interface/Candidate.h"                           // reco::Candidate::LorentzVector, reco::Candidate::Point
 
-#include "TauAnalysis/Entanglement/interface/KinematicParticle.h" // KinematicParticle
-#include "TauAnalysis/Entanglement/interface/KinFitParameters.h"  // math::MatrixPxP
-#include "TauAnalysis/Entanglement/interface/Matrix_and_Vector.h" // math::Matrix3x3, math::Matrix4x4
+#include "TauAnalysis/Entanglement/interface/KinematicParticle.h"                // KinematicParticle
+#include "TauAnalysis/Entanglement/interface/KinFitParameters_and_Constraints.h" // kinFit::numParameters
+#include "TauAnalysis/Entanglement/interface/Matrix_and_Vector.h"                // math::Matrix3x3, math::Matrix4x4
 
 class KinematicEvent;
 
@@ -22,6 +22,11 @@ namespace kinFit
   template <unsigned int numParameters, unsigned int numConstraints>
   void
   fit(const KinematicEvent&, double, double, bool, int, KinematicEvent&, int&, double&, int&, int, bool&, int);
+}
+
+namespace math
+{
+  typedef Matrix<kinFit::numParameters,kinFit::numParameters>::type MatrixPxP;
 }
 
 class KinematicEvent

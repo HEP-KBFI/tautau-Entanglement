@@ -3,9 +3,12 @@
 #include "FWCore/Utilities/interface/Exception.h"                                 // cms::Exception
 
 #include "TauAnalysis/Entanglement/interface/comp_EigenVectors_and_EigenValues.h" // comp_EigenVectors_and_EigenValues()
+#include "TauAnalysis/Entanglement/interface/convert_to_TMatrixD.h"               // convert_to_TMatrixD()
 #include "TauAnalysis/Entanglement/interface/printEigenVectors_and_EigenValues.h" // printEigenVectors_and_EigenValues()
 
 #include "Math/Functions.h"                                                       // ROOT::Math::Transpose() 
+
+
 
 double
 comp_Rchsh(const math::Matrix3x3& C, int verbosity)
@@ -29,7 +32,7 @@ comp_Rchsh(const math::Matrix3x3& C, int verbosity)
   std::vector<std::pair<TVectorD, double>> EigenVectors_and_EigenValues;
   try
   { 
-    EigenVectors_and_EigenValues = comp_EigenVectors_and_EigenValues(CT_times_C, verbosity);
+    EigenVectors_and_EigenValues = comp_EigenVectors_and_EigenValues(convert_to_TMatrixD(CT_times_C), verbosity);
   }
   catch ( const cms::Exception& )
   {

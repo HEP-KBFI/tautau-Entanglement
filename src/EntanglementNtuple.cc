@@ -1,5 +1,7 @@
 #include "TauAnalysis/Entanglement/interface/EntanglementNtuple.h"
 
+#include "TauAnalysis/Entanglement/interface/comp_mT.h" // comp_mT()
+
 EntanglementNtuple::EntanglementNtuple(TTree* ntuple)
   : ntuple_(ntuple)
   , run_(0)
@@ -23,11 +25,13 @@ EntanglementNtuple::EntanglementNtuple(TTree* ntuple)
   createBranchI(ntuple_, "gen", "tauPlus_nNeutralKaons", &tauPlus_nNeutralKaons_gen_);
   createBranchI(ntuple_, "gen", "tauPlus_nPhotons", &tauPlus_nPhotons_gen_); 
   createBranchF(ntuple_, "gen", "tauPlus_sumPhotonEn", &tauPlus_sumPhotonEn_gen_);
+  createBranchF(ntuple_, "gen", "tauPlus_mT", &tauPlus_mT_gen_);
   createBranchI(ntuple_, "gen", "tauMinus_nChargedKaons", &tauMinus_nChargedKaons_gen_); 
   createBranchI(ntuple_, "gen", "tauMinus_nNeutralKaons", &tauMinus_nNeutralKaons_gen_);
   createBranchI(ntuple_, "gen", "tauMinus_nPhotons", &tauMinus_nPhotons_gen_); 
   createBranchF(ntuple_, "gen", "tauMinus_sumPhotonEn", &tauMinus_sumPhotonEn_gen_);
- 
+  createBranchF(ntuple_, "gen", "tauMinus_mT", &tauMinus_mT_gen_);
+
   branches_KinematicEvent_gen_smeared_.initBranches(ntuple);
 
   branches_KinematicEvent_startPos_.initBranches(ntuple);
@@ -71,10 +75,20 @@ EntanglementNtuple::fillBranches(const edm::Event& evt,
   tauPlus_nNeutralKaons_gen_  = tauPlus_nNeutralKaons;
   tauPlus_nPhotons_gen_       = tauPlus_nPhotons;
   tauPlus_sumPhotonEn_gen_    = tauPlus_sumPhotonEn;
+  const reco::Candidate::LorentzVector& visTauPlusP4_gen = kineEvt_gen->visTauPlusP4();
+  const reco::Candidate::LorentzVector& nuTauPlusP4_gen = kineEvt_gen->nuTauPlusP4();
+  tauPlus_mT_gen_             = comp_mT(
+    visTauPlusP4_gen.mass(), visTauPlusP4_gen.px(), visTauPlusP4_gen.py(), 
+    0., nuTauPlusP4_gen.px(), nuTauPlusP4_gen.py());
   tauMinus_nChargedKaons_gen_ = tauMinus_nChargedKaons;
   tauMinus_nNeutralKaons_gen_ = tauMinus_nNeutralKaons;
   tauMinus_nPhotons_gen_      = tauMinus_nPhotons;
   tauMinus_sumPhotonEn_gen_   = tauMinus_sumPhotonEn;
+  const reco::Candidate::LorentzVector& visTauMinusP4_gen = kineEvt_gen->visTauMinusP4();
+  const reco::Candidate::LorentzVector& nuTauMinusP4_gen = kineEvt_gen->nuTauMinusP4();
+  tauMinus_mT_gen_            = comp_mT(
+    visTauMinusP4_gen.mass(), visTauMinusP4_gen.px(), visTauMinusP4_gen.py(), 
+    0., nuTauMinusP4_gen.px(), nuTauMinusP4_gen.py());
 
   if ( kineEvt_gen_smeared )
   {

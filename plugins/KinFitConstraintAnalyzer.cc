@@ -1,15 +1,18 @@
 #include "TauAnalysis/Entanglement/plugins/KinFitConstraintAnalyzer.h"
 
-#include "DataFormats/Common/interface/Handle.h"                       // edm::Handle<>
+#include "DataFormats/Common/interface/Handle.h"                                 // edm::Handle<>
 
-#include "TauAnalysis/Entanglement/interface/cmsException.h"           // cmsException
-#include "TauAnalysis/Entanglement/interface/constants.h"              // kLHC, kSuperKEKB
-#include "TauAnalysis/Entanglement/interface/KinFitConstraint.h"       // KinFitConstraint
-#include "TauAnalysis/Entanglement/interface/KinFitConstraintTester.h" // KinFitConstraintTester
+#include "TauAnalysis/Entanglement/interface/cmsException.h"                     // cmsException
+#include "TauAnalysis/Entanglement/interface/comp_nuPz.h"                        // comp_nuPz()
+#include "TauAnalysis/Entanglement/interface/constants.h"                        // kLHC, kSuperKEKB
+#include "TauAnalysis/Entanglement/interface/KinFitConstraint.h"                 // KinFitConstraint
+#include "TauAnalysis/Entanglement/interface/KinFitConstraintTester.h"           // KinFitConstraintTester
+#include "TauAnalysis/Entanglement/interface/KinFitParameters_and_Constraints.h" // kinFit::numParameters
 
-#include <TString.h>                                                   // Form()
+#include <TString.h>                                                             // Form()
+#include <TVectorD.h>                                                            // TVectorD
 
-#include <iostream>                                                    // std::cout
+#include <iostream>                                                              // std::cout
 
 using namespace math;
 
@@ -120,7 +123,7 @@ void KinFitConstraintAnalyzer::analyze(const edm::Event& evt, const edm::EventSe
         continue;
       }
 
-      VectorP alpha0;
+      TVectorD alpha0(kinFit::numParameters);
       alpha0( 0) = pv_gen.x();
       alpha0( 1) = pv_gen.y();
       alpha0( 2) = pv_gen.z();
@@ -141,26 +144,13 @@ void KinFitConstraintAnalyzer::analyze(const edm::Event& evt, const edm::EventSe
       if ( verbosity_ >= 2 )
       {
         std::cout << "alpha0:\n";
-        std::cout << alpha0 << "\n";
+        alpha0.Print();
       }
 
-      if ( collider_ == kLHC ) 
-      {
-        const int C = numConstraints_LHC;
-        KinFitConstraint<P,C> constraint(collider_, kineEvt_gen, signTauPlus, signTauMinus, verbosity_);
-        KinFitConstraintTester<P,C> constraintTester(alpha0, verbosity_);
-        std::string outputFileName = Form("testConstraint_r%uls%uev%llu.png", evt.id().run(), evt.id().luminosityBlock(), evt.id().event());
-        constraintTester(constraint, outputFileName);
-      }
-      else if ( collider_ == kSuperKEKB )
-      {
-        const int C = numConstraints_SuperKEKB;
-        KinFitConstraint<P,C> constraint(collider_, kineEvt_gen, signTauPlus, signTauMinus, verbosity_);
-        KinFitConstraintTester<P,C> constraintTester(alpha0, verbosity_);
-        std::string outputFileName = Form("testConstraint_r%uls%uev%llu.png", evt.id().run(), evt.id().luminosityBlock(), evt.id().event());
-        constraintTester(constraint, outputFileName);
-      }
-      else assert(0);
+      KinFitConstraint constraint(collider_, kineEvt_gen, signTauPlus, signTauMinus, verbosity_);
+      KinFitConstraintTester constraintTester(alpha0, verbosity_);
+      std::string outputFileName = Form("testConstraint_r%uls%uev%llu.png", evt.id().run(), evt.id().luminosityBlock(), evt.id().event());
+      constraintTester(constraint, outputFileName);
     }
   }
 }
