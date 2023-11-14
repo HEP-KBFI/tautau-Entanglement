@@ -114,8 +114,8 @@ KinFitAlgo::operator()(const TVectorD& alpha0, const TMatrixD& V_alpha0, KinFitC
   const unsigned int Nc_eq = constraint.get_Nc_eq();
 
   KinFitSummary bestfit;
-  double min_chi2 = -1.;
-  int status = -1;
+  int bestfit_status = -1;
+  double bestfit_chi2 = -1.;
   const int max_iterations = 25;
   bool hasConverged = false;
   int iteration = 0;
@@ -157,12 +157,12 @@ KinFitAlgo::operator()(const TVectorD& alpha0, const TMatrixD& V_alpha0, KinFitC
 
     // CV: different cases to handle inequality constraints,
     //     cf. https://machinelearningmastery.com/lagrange-multiplier-approach-with-inequality-constraints/
-    double bestcase_chi2 = -1.;
     int bestcase_Nc_ineq = -1;
+    double bestcase_residuals_eq_mag = -1.;
+    double bestcase_dalpha_mag = -1.;
+    double bestcase_chi2 = -1.;
     TVectorD bestcase_alpha(Np);
     TMatrixD bestcase_V_alpha(Np,Np);
-    double bestcase_d_eq_mag = -1.;
-    double bestcase_dalpha_mag = -1.;
     bool isFirst = true;
     unsigned int numCases = (1 << constraint.get_Nc_ineq());
     for ( unsigned int idxCase = 0; idxCase < numCases; ++idxCase )
@@ -201,22 +201,22 @@ KinFitAlgo::operator()(const TVectorD& alpha0, const TMatrixD& V_alpha0, KinFitC
 
       TMatrixD DT(TMatrixD::kTransposed, D);
 
-      TMatrixD Vinv_D = D*V_alpha0*DT;
-      if ( Vinv_D.Determinant() == 0. )
+      TMatrixD V_D = D*V_alpha0*DT;
+      if ( V_D.Determinant() == 0. )
       {
         if ( verbosity_ >= 0 )
         {
-          printMatrix("Vinv_D", Vinv_D);
+          printMatrix("V_D", V_D);
         }
         //throw cmsException("KinFitAlgo::operator()", __LINE__) 
-        //  << "Failed to invert matrix Vinv_D !!\n";
-        std::cerr << "WARNING: Failed to invert matrix Vinv_D !!\n";
+        //  << "Failed to invert matrix V_D !!\n";
+        std::cerr << "WARNING: Failed to invert matrix V_D !!\n";
         continue;
       }
-      TMatrixD V_D(TMatrixD::kInverted, Vinv_D);
+      TMatrixD Vinv_D(TMatrixD::kInverted, V_D);
 
       TVectorD dalpha0 = alpha0 - alphaA;
-      TVectorD lambda = V_D*(D*dalpha0 + d);
+      TVectorD lambda = Vinv_D*(D*dalpha0 + d);
       if ( verbosity_ >= 2 )
       {
         // CV: Compute "distance from satisfaction" according to formula
@@ -227,23 +227,44 @@ KinFitAlgo::operator()(const TVectorD& alpha0, const TMatrixD& V_alpha0, KinFitC
         TVectorD DfS(Nc);
         for ( unsigned int idx = 0; idx < Nc; ++idx )
         {
-          DfS(idx) = (D_times_dalpha0(idx) + d(idx))/std::sqrt(Vinv_D(idx,idx));
+          DfS(idx) = (D_times_dalpha0(idx) + d(idx))/std::sqrt(V_D(idx,idx));
         }
         printVector("DfS", DfS);
       }
 
-      //const double sfStepSize = +1.;
-      double sfStepSize = std::min(1., 2.*iteration/max_iterations);
-      TVectorD alpha = alpha0 - sfStepSize*V_alpha0*DT*lambda;
+      // CV: take direction for changing parameter vector alpha from system of linear equations,
+      //     but optimize length of change vector separately by scanning stepsize between 0 and 2 times 
+      //     the stepsize obtained from the system of linear equations.
+      //     Take as optimal stepsize the stepsize which best satisfies all constraint equations, regardless of chi^2.
+      double best_sfStepSize = -1.;
+      double best_residuals_eq_mag = -1.;
+      for ( double sfStepSize = 0.; sfStepSize <= 2.5; sfStepSize += 0.1 )
+      {
+        TVectorD alpha = alpha0 - sfStepSize*V_alpha0*DT*lambda;
+        constraint.set_alphaA(alpha);
+        const TVectorD residuals_eq = constraint.get_d_eq();
+        double residuals_eq_mag = std::sqrt(residuals_eq*(constraint.get_d_eq_metric()*residuals_eq));
+        if ( verbosity_ >= 1 )
+        {
+          std::cout << "sfStepSize = " << sfStepSize << ": |residuals| = " << residuals_eq_mag << "\n";
+        }
+        if ( best_sfStepSize < 0 || residuals_eq_mag < best_residuals_eq_mag )
+        {
+          best_sfStepSize = sfStepSize;
+          best_residuals_eq_mag = residuals_eq_mag;
+        }
+      }
+//std::cout << "iteration #" << iteration << ": best_sfStepSize = " << best_sfStepSize << ", best_residuals_eq_mag = " << best_residuals_eq_mag << "\n";
+      TVectorD alpha = alpha0 - best_sfStepSize*V_alpha0*DT*lambda;
 
-      TMatrixD V_alpha = V_alpha0 - V_alpha0*DT*V_D*D*V_alpha0;
+      TMatrixD V_alpha = V_alpha0 - V_alpha0*DT*Vinv_D*D*V_alpha0;
       if ( verbosity_ >= 2 )
       {
         printMatrix("V_alpha", V_alpha);
       }
 
       TVectorD dalpha = alpha - alphaA;
-      double dalpha_mag = std::sqrt(dalpha*dalpha);
+      double dalpha_mag = std::sqrt(dalpha*(Vinv_alpha0*dalpha));
       if ( verbosity_ >= 1 )
       {
         printVector("dalpha", dalpha);
@@ -256,52 +277,45 @@ KinFitAlgo::operator()(const TVectorD& alpha0, const TMatrixD& V_alpha0, KinFitC
         TVectorD pulls(Np);
         for ( unsigned int idx = 0; idx < Np; ++idx )
         {
-          pulls(idx) = alpha_minus_alpha0(idx)/std::sqrt(V_alpha0(idx,idx));
+          pulls(idx) = alpha_minus_alpha0(idx)/std::sqrt(V_alpha0(idx,idx) - V_alpha(idx,idx));
         }
         printVector("pulls", pulls);
       }
 
-      double chi2 = alpha_minus_alpha0*(Vinv_alpha0*alpha_minus_alpha0) + lambda*(D*dalpha + d);
+      double chi2 = alpha_minus_alpha0*(Vinv_alpha0*alpha_minus_alpha0) + 2.*lambda*(D*dalpha + d);
       chi2 /= Np;
       if ( verbosity_ >= 1 )
       {
         std::cout << "chi^2/DoF = " << chi2 << "\n";
       }
 
-      TVectorD residuals = D*dalpha + d;
-      double residuals_sum = 0.;
-      for ( unsigned int idx = 0; idx < Nc_eq; ++idx )
-      {
-        residuals_sum += std::fabs(residuals(idx));
-      }
-      if ( verbosity_ >= 2 )
-      {
-        printVector("residuals of constraint equations", residuals);
-        std::cout << "sum_i |residual[i]| = " << residuals_sum << "\n";
-      }
-
       bool alpha_isNaN = isNaN(alpha);
-      constraint.set_alphaA(alpha);
-      const TVectorD dA_eq = constraint.get_d_eq();
-      double dA_eq_mag = std::sqrt(dA_eq*(constraint.get_d_eq_metric()*dA_eq));
       if ( verbosity_ >= 1 )
       {
         std::cout << "isNaN(alpha) = " << alpha_isNaN << "\n";
-        printVector("d_eq (@alpha)", dA_eq);
-        std::cout << "|d_eq (@alpha)| = " << dA_eq_mag << "\n";
       }
+
+      constraint.set_alphaA(alpha);
+      TVectorD residuals_eq = constraint.get_d_eq();
+      double residuals_eq_mag = std::sqrt(residuals_eq*(constraint.get_d_eq_metric()*residuals_eq));
+      if ( verbosity_ >= 1 )
+      {
+        printVector("residuals of constraint equations", residuals_eq);
+        std::cout << "|residuals| = " << residuals_eq_mag << "\n";
+      }
+
       bool skip = false;
       if ( constraint.get_Nc_ineq() > 0 )
       {
-        const TVectorD& dA_ineq = constraint.get_d_ineq();
+        const TVectorD& residuals_ineq = constraint.get_d_ineq();
         for ( unsigned int idxRow = 0; idxRow < rowIndices.size(); ++idxRow )
         {
-          if ( !(dA_ineq(rowIndices[idxRow]) <= 0.) )
+          if ( !(residuals_ineq(rowIndices[idxRow]) <= 0.) )
           {
             if ( verbosity_ >= 1 )
             {
               std::cout << "--> skipping this solution, because inequality constraint #" << rowIndices[idxRow] << " is violated !!\n";
-              std::cout << "   (H = " << dA_ineq(rowIndices[idxRow]) << ") !!\n";
+              std::cout << "   (H = " << residuals_ineq(rowIndices[idxRow]) << ") !!\n";
             }
             skip = true;
           }
@@ -316,55 +330,70 @@ KinFitAlgo::operator()(const TVectorD& alpha0, const TMatrixD& V_alpha0, KinFitC
       {
         skip = false;
       }
-      if ( !alpha_isNaN && !skip && ((int)Nc_ineq < bestcase_Nc_ineq || ((int)Nc_ineq == bestcase_Nc_ineq && chi2 < bestcase_chi2) || isFirst) )
+      if ( !alpha_isNaN && !skip && ((int)Nc_ineq < bestcase_Nc_ineq || ((int)Nc_ineq == bestcase_Nc_ineq && residuals_eq_mag < bestcase_residuals_eq_mag) || isFirst) )
       {
-std::cout << "iteration #" << iteration << ": setting bestcase...\n";
-std::cout << "chi2 = " << chi2 << ", Nc_ineq = " << Nc_ineq << ", dA_eq_mag = " << dA_eq_mag << ", dalpha_mag = " << dalpha_mag << "\n";
-        bestcase_chi2 = chi2;
+//std::cout << "iteration #" << iteration << ": setting bestcase...\n";
+//std::cout << "Nc_ineq = " << Nc_ineq << ", residuals_eq_mag = " << residuals_eq_mag << ", dalpha_mag = " << dalpha_mag << ", chi2 = " << chi2 << "\n";
         bestcase_Nc_ineq = Nc_ineq;
+        bestcase_residuals_eq_mag = residuals_eq_mag;
+        bestcase_dalpha_mag = dalpha_mag;
+        bestcase_chi2 = chi2;
         bestcase_alpha = alpha;
         bestcase_V_alpha = V_alpha;
-        bestcase_d_eq_mag = dA_eq_mag;
-        bestcase_dalpha_mag = dalpha_mag;
         isFirst = false;
       }
     }
-std::cout << "iteration #" << iteration << ": bestcase_d_eq_mag = " << bestcase_d_eq_mag << "\n";
-    if ( bestcase_d_eq_mag >= 0. && bestcase_d_eq_mag < 1.e-2 )
+//std::cout << "iteration #" << iteration << ":\n";
+//std::cout << "bestcase_Nc_ineq = " << bestcase_Nc_ineq << ", bestcase_residuals_eq_mag = " << bestcase_residuals_eq_mag << ", bestcase_dalpha_mag = " << bestcase_dalpha_mag << ", bestcase_chi2 = " << bestcase_chi2 << "\n";
+//printVector("bestcase_alpha", bestcase_alpha);
+
+    int bestcase_status = -1;
+    if ( bestcase_residuals_eq_mag >= 0. && bestcase_residuals_eq_mag < 1. )
     {
-      if ( status == -1 || bestcase_chi2 < min_chi2 )
+      bestcase_status = 0;
+    }
+    if ( bestcase_status == 0 && bestcase_dalpha_mag > 0. && bestcase_dalpha_mag < 1. )
+    {
+      bestcase_status = 1;
+    }
+    if ( bestcase_status == 1 && bestcase_residuals_eq_mag < 1.e-1 && bestcase_dalpha_mag < 1.e-1 )
+    {
+      bestcase_status = 2;
+    }
+//std::cout << "iteration #" << iteration << ": bestcase_status = " << bestcase_status << "\n";
+
+    if ( bestcase_status > bestfit_status || (bestcase_status == bestfit_status && bestcase_chi2 < bestfit_chi2) )
+    {
+//if ( bestfit_status == -1 )
+//{
+//  std::cout << "iteration #" << iteration << ": setting bestfit...\n";
+//}
+//else
+//{
+//  std::cout << "iteration #" << iteration << ": updating bestfit...\n";
+//}
+      bestfit = KinFitSummary(iteration, bestcase_alpha, bestcase_V_alpha, bestcase_chi2, bestcase_status);
+      bestfit_status = bestcase_status;
+      bestfit_chi2 = bestcase_chi2;
+      if ( bestfit_status == 2 )
       {
-std::cout << "iteration #" << iteration << ": setting bestfit...\n";
-std::cout << "bestcase_chi2 = " << bestcase_chi2 << "\n";
-        min_chi2 = bestcase_chi2;
-        status = 0;
-        bestfit = KinFitSummary(iteration, bestcase_alpha, bestcase_V_alpha, bestcase_chi2, status);
-      }
-      if ( status == 0 && bestcase_dalpha_mag >= 0. && bestcase_dalpha_mag < 1.e-3 )
-      {
-std::cout << "iteration #" << iteration << ": updating bestfit...\n";
-std::cout << "bestcase_chi2 = " << bestcase_chi2 << "\n";
-        status = 1;
-        bestfit = KinFitSummary(iteration, bestcase_alpha, bestcase_V_alpha, bestcase_chi2, status);
         hasConverged = true;
       }
     }
 
     if ( fitHistory )
     {
-      fitHistory->push_back(KinFitSummary(iteration, bestcase_alpha, bestcase_V_alpha, bestcase_chi2, status));
+      fitHistory->push_back(KinFitSummary(iteration, bestcase_alpha, bestcase_V_alpha, bestcase_chi2, bestcase_status));
     }
 
     alphaA = bestcase_alpha;
+//std::cout << "iteration #" << iteration << ":\n";
+//printVector("alphaA", alphaA);
 
     ++iteration;
   }
 
-  if ( bestfit.get_status() == 0 && bestfit.get_chi2() < 1.e+2 )
-  {
-    hasConverged = true;
-  }
-  if ( !hasConverged && verbosity_ >= 0 )
+  if ( !(bestfit.get_status() >= 0) && verbosity_ >= 0 )
   {
     std::cerr << "WARNING: KinematicFit failed to converge !!\n";
   }

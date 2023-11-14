@@ -215,18 +215,43 @@ KinematicFit::operator()(const KinematicEvent& kineEvt)
   cfg_kinFit.addParameter<int>("verbosity", verbosity_);
   KinFitAlgo kinFit(cfg_kinFit);
   KinFitSummary fitResult;
-  //try
-  //{ 
+  try
+  { 
     fitResult = kinFit(alpha0, V_alpha0, constraint, alphaA);
-  //}
-  //catch ( const cms::Exception& )
-  //{
-  //  if ( verbosity_ >= 0 )
-  //  {
-  //    std::cerr << "Error in <KinematicFit::operator()>: Caught exception from KinFitAlgo !!\n";
-  //  }
-  //  return kineEvt;
-  //}
+  }
+  catch ( const cms::Exception& )
+  {
+    if ( verbosity_ >= 0 )
+    {
+      std::cerr << "Error in <KinematicFit::operator()>: Caught exception from KinFitAlgo !!\n";
+    }
+    return kineEvt;
+  }
+
+  // CV: check that kinematic fit returned a valid fitResult object.
+  //     This check is absolutely neccessary, as attempt to access to parameter vector alpha
+  //     and covariance matrix V_alpha will result in exception:
+  //
+  //       ----- Begin Fatal Exception 14-Nov-2023 19:03:44 EET-----------------------
+  //       An exception of category 'FatalRootError' occurred while
+  //          [0] Processing  Event run: 1 lumi: 1 event: 87 stream: 0
+  //          [1] Running path 'p'
+  //          [2] Calling method for module EntanglementNtupleProducer/'ntupleProducer'
+  //          Additional Info:
+  //             [a] Fatal Root Error: @SUB=TVectorT<double>::operator()
+  //       Request index(3) outside vector range of 0 - 0
+  //       
+  //       ----- End Fatal Exception ------------------------------------------------- 
+  //     
+  //     causing cmsRun job to abort !!
+  if ( fitResult.get_status() == -1 )
+  {
+    if ( verbosity_ >= 0 )
+    {
+      std::cerr << "WARNING: KinematicFit failed to converge !!\n";
+    }
+    return kineEvt;
+  }
 
   TVectorD fitResult_alpha = fitResult.get_alpha();
   TMatrixD fitResult_V_alpha = fitResult.get_V_alpha();

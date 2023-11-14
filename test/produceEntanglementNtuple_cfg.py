@@ -22,8 +22,8 @@ process.maxEvents = cms.untracked.PSet(
 )
 
 process.source = cms.Source("PoolSource",
-  fileNames = cms.untracked.vstring({{ inputFileNames }}),
-  eventsToProcess = cms.untracked.VEventRange(),
+    fileNames = cms.untracked.vstring({{ inputFileNames }}),
+    eventsToProcess = cms.untracked.VEventRange(),
 )
 
 {% if collider == 'LHC' %}

@@ -8,7 +8,7 @@ import os
 import re
 
 # Example usage:
-# ./test/analyzeNtuples.py -v 2023Oct31_p5InvertedSign_wSmearing -s dy_lo_pythia8_ext -M scan -j cluster
+# ./test/analyzeNtuples.py -v 2023Nov14_p5InvertedSign_wSmearing -s dy_lo_pythia8_ext -M inclusive scan -j cluster
 
 from TauAnalysis.Entanglement.tools.jobTools import getInputFileNames, build_Makefile, query_yes_no, \
   build_cfg, mkdir, read_contents, save_cmd, positive_int_type, build_sbatchSubmission
