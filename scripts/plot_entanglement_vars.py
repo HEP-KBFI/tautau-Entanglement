@@ -16,10 +16,12 @@
 
 from TauAnalysis.Entanglement.tools.aux import ENTANGLEMENT_VARS, CENTRAL_CHOICES, AXIS_CHOICES, SPIN_ANALYZERS, DECAY_MODES, INIT_METHODS, EXTENSIONS
 from TauAnalysis.Entanglement.tools.plot_settings import CMS
+from TauAnalysis.Entanglement.fragments.tools import COM_ENERGY_BELLE2
 
 import argparse
 import json
 import matplotlib.pyplot as plt
+import numpy as np
 import re
 import os
 
@@ -28,6 +30,39 @@ CMS["font.size"] = 20
 for k, v in CMS.items():
   if k in mpl.rcParams:
     mpl.rcParams[k] = v
+
+def integrate(func, min_theta = 0, max_theta = np.pi, n_theta = 1000):
+  V_theta = max_theta - min_theta
+  assert(V_theta > 0)
+  assert(n_theta > 1)
+  d_theta = V_theta / (n_theta - 1)
+  total = np.sum([ func(min_theta + d_theta * i) * np.sin(min_theta + d_theta * i) for i in range(n_theta) ])
+  return total * V_theta / n_theta
+
+MTAU = 1.777
+GAMMA = COM_ENERGY_BELLE2 / MTAU / 2
+BETA = (1 - GAMMA**-2)**0.5
+
+def C_denom(theta):
+  return GAMMA**2 + 1 + BETA**2 * GAMMA**2 * np.cos(theta)**2
+
+def Cnn_num(theta):
+  return -BETA**2 * GAMMA**2 * np.sin(theta)**2
+
+def Crr_num(theta):
+  return (GAMMA**2 + 1) * np.sin(theta)**2
+
+def Ckk_num(theta):
+  return BETA**2 * GAMMA**2 + (GAMMA**2 + 1) * np.cos(theta)**2
+
+def C_comp(C_num, min_theta = 0, max_theta = np.pi, n_theta = 1000):
+  num = integrate(C_num, min_theta, max_theta, n_theta)
+  denom = integrate(C_denom, min_theta, max_theta, n_theta)
+  return num / denom
+
+def Cxx(Cxx_num, absCosThetas, n_theta = 1000, epsilon = 1e-3):
+  theta_shifts = [ np.arccos(absCosTheta) if absCosTheta > epsilon else np.pi / 2 - epsilon for absCosTheta in absCosThetas ]
+  return [ C_comp(Cxx_num, theta_shift, np.pi - theta_shift, n_theta) for theta_shift in theta_shifts ]
 
 fn_rgx = re.compile(
   r"analyzeEntanglementNtuple_(?P<sample_name>\w+)_(?P<mode>\w+)Mode_(?P<axis>\w+)Axis_(?P<dm>\w+)DecayMode_" + \
@@ -42,9 +77,9 @@ POL_VECS = {
 SPIN_DENSITY_COMPONENTS = [ f'{pol_vec}_{coord}' for pol_vec in POL_VECS for coord in COORDS ] + \
                           [ f'C_{coord1}{coord2}' for coord1 in COORDS for coord2 in COORDS ]
 SPIN_DENSITY_THRESHOLDS = {
-  'C_nn' : -0.41989,
-  'C_rr' :  0.52670,
-  'C_kk' :  0.89319,
+  'C_nn' : lambda x: Cxx(Cnn_num, x),
+  'C_rr' : lambda x: Cxx(Crr_num, x),
+  'C_kk' : lambda x: Cxx(Ckk_num, x),
   # (the rest are zero at the SM)
 }
 
@@ -178,7 +213,7 @@ def plot(data, plot_var, is_significance, central = DEFAULT_CENTRAL, title = '',
     if is_significance:
       plt.plot(xcoords, ycoords, marker = marker, markersize = 12 if marker == '*' else markersize, lw = linewidth, label = label)
     else:
-      if any(yval < threshold for yval in ycoords):
+      if not callable(threshold) and any(yval < threshold for yval in ycoords):
         plot_threshold = True
       yerr = [ pair[1][plot_var]['error'] for pair in plot_data ]
       p = plt.scatter(xcoords, ycoords, marker = marker, s = markersize * 5, label = label)
@@ -189,7 +224,12 @@ def plot(data, plot_var, is_significance, central = DEFAULT_CENTRAL, title = '',
   # if max_point[1] > 0:
   #   plt.plot(max_point[0], max_point[1], 'o', ms = 30, mec = 'lime', mfc = 'none', mew = 2)
   if plot_threshold:
-    plt.axhline(y = threshold, ls = '--', color = 'black', lw = 2)
+    threshold_args = { 'ls' : '--', 'color' : 'black', 'lw' : 2 }
+    if callable(threshold):
+      absCosThetas = list(np.linspace(0, 1, 100))
+      plt.plot(absCosThetas, threshold(absCosThetas), **threshold_args)
+    else:
+      plt.axhline(y = threshold, **threshold_args)
   plt.grid(True)
   plt.xlim(0, 1)
   plt.xlabel(r'Upper limit on $\left|\cos(\theta^*)\right|$')
