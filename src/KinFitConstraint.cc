@@ -35,6 +35,8 @@ KinFitConstraint::KinFitConstraint(int collider, const KinematicEvent& kineEvt, 
 
   d_ineq_metric_(0,0) = 1.;                                     // H_mT(tau+)
   d_ineq_metric_(1,1) = 1.;                                     // H_mT(tau-)
+  //d_ineq_metric_(2,2) = 1.e+3;                                  // H_flightlength_k(tau+)
+  //d_ineq_metric_(3,3) = 1.e+3;                                  // H_flightlength_k(tau-)
 }
 
 KinFitConstraint::~KinFitConstraint()
@@ -126,6 +128,15 @@ KinFitConstraint::set_alphaA(const TVectorD& alphaA)
   set_mTConstraint("tau-", 1, 8,
     visTauMinusP4_,
     nuTauMinusP4_);
+  
+  // CV: add inequality constraints to ensure that flightlength of tau+ and tau- is positive,
+  //     i.e. difference between production and decay vertex of the tau points in direction of tau momentum vector
+  //set_flightlength_kConstraint("tau+", 2, 3,
+  //  tauPlusD3_rnk_,
+  //  kineEvt_.tauPlus_k(), kineEvt_.tauPlus_rotMatrix_rnk2xyz());
+  //set_flightlength_kConstraint("tau-", 3, 8, 
+  //  tauMinusD3_rnk_,
+  //  kineEvt_.tauMinus_k(), kineEvt_.tauMinus_rotMatrix_rnk2xyz());
 
   errorFlag_ = nuTauPlus_errorFlag || nuTauMinus_errorFlag;    
   if ( verbosity_ >= 2 )
@@ -308,11 +319,11 @@ KinFitConstraint::set_parlConstraint(const std::string& label, unsigned int idxO
   D_eq_(idxOffsetC+1,idxOffsetP)   = (-tauPx*tauPz + tauPt2*nu_dPzdPx)/(tauPt*tauP2);               // dH_Ptheta/dnuPx
   D_eq_(idxOffsetC+1,idxOffsetP+1) = (-tauPy*tauPz + tauPt2*nu_dPzdPy)/(tauPt*tauP2);               // dH_Ptheta/dnuPy
   D_eq_(idxOffsetC+1,idxOffsetP+2) = (-r.z()*flightlengthDt2 + (r.x()*flightlengthX 
-    + r.y()*flightlengthY)*flightlengthZ)/(flightlengthDt*flightlengthD2);                       // dH_Ptheta/dsvR
+    + r.y()*flightlengthY)*flightlengthZ)/(flightlengthDt*flightlengthD2);                          // dH_Ptheta/dsvR
   D_eq_(idxOffsetC+1,idxOffsetP+3) = (-n.z()*flightlengthDt2 + (n.x()*flightlengthX 
-    + n.y()*flightlengthY)*flightlengthZ)/(flightlengthDt*flightlengthD2);                       // dH_Ptheta/dsvN
+    + n.y()*flightlengthY)*flightlengthZ)/(flightlengthDt*flightlengthD2);                          // dH_Ptheta/dsvN
   D_eq_(idxOffsetC+1,idxOffsetP+4) = (-k.z()*flightlengthDt2 + (k.x()*flightlengthX 
-    + k.y()*flightlengthY)*flightlengthZ)/(flightlengthDt*flightlengthD2);                       // dH_Ptheta/dsvK
+    + k.y()*flightlengthY)*flightlengthZ)/(flightlengthDt*flightlengthD2);                          // dH_Ptheta/dsvK
   d_eq_(idxOffsetC+1) = flightlength.theta() - tauP4.theta();
   if ( verbosity_ >= 3 )
   {
@@ -634,8 +645,8 @@ KinFitConstraint::set_mTConstraint(const std::string& label, unsigned int idxOff
   // CV: add transverse mass (mT) constraint for tau+ and tau-
   //     The purpose of this constraint is to ensure that computation of neutrino Pz yields a physical solution
   //     Note that this constraint is an inequiality constraint: mT(visP4,nuP4) <= mTau
-  D_ineq_(idxOffsetC  ,idxOffsetP)   =  -(1./mT)*(visPx - (visEt/nuEt)*nuPx);                         // dH_mT/dnuPx
-  D_ineq_(idxOffsetC  ,idxOffsetP+1) =  -(1./mT)*(visPy - (visEt/nuEt)*nuPy);                         // dH_mT/dnuPy
+  D_ineq_(idxOffsetC  ,idxOffsetP)   =  -(1./mT)*(visPx - (visEt/nuEt)*nuPx);                       // dH_mT/dnuPx
+  D_ineq_(idxOffsetC  ,idxOffsetP+1) =  -(1./mT)*(visPy - (visEt/nuEt)*nuPy);                       // dH_mT/dnuPy
   d_ineq_(idxOffsetC  ) = mT - mTau;
   if ( verbosity_ >= 3 )
   {
@@ -647,6 +658,76 @@ KinFitConstraint::set_mTConstraint(const std::string& label, unsigned int idxOff
       Dnum(idxPar) = get_Dnum_H_mT(idxPar, idxOffsetC, idxOffsetP, visP4, nuP4);
     }
     std::cout << "H_mT:\n";
+    printVector("analytic derrivative", Dana);
+    printVector("numeric derrivative", Dnum);
+  }
+}
+
+double
+KinFitConstraint::get_Dnum_H_flightlength_k(unsigned int idxPar, unsigned int idxOffsetC, unsigned int idxOffsetP,
+                                            const reco::Candidate::Vector& tauD3_rnk,
+                                            const reco::Candidate::Vector& k,
+                                            const math::Matrix3x3& rotMatrix_rnk2xyz)
+{
+  double epsilon = 1.e-2;
+  double H_nom = d_ineq_(idxOffsetC);
+  double H_up = H_nom;
+  double tauD3_r = tauD3_rnk.x();
+  double tauD3_n = tauD3_rnk.y();
+  double tauD3_k = tauD3_rnk.z();
+  if ( idxPar == (idxOffsetP+4) ) tauD3_k += epsilon;
+  reco::Candidate::Vector tauD3_xyz = rotateVector(reco::Candidate::Vector(tauD3_r, tauD3_n, tauD3_k), rotMatrix_rnk2xyz);
+  auto sv = tauD3_xyz + pv0_;
+  double pvX = pv_.x();
+  if ( idxPar == 0 ) pvX += epsilon;
+  double pvY = pv_.y();
+  if ( idxPar == 1 ) pvY += epsilon;
+  double pvZ = pv_.z();
+  if ( idxPar == 2 ) pvZ += epsilon;
+  auto flightlength = sv - reco::Candidate::Point(pvX, pvY, pvZ);
+  double flightlength_k = flightlength.x()*k.x() + flightlength.y()*k.y() + flightlength.z()*k.z();
+  // CV: set flightlength to at least 10 micrometer
+  //     in direction of visible decay products
+  H_up = -flightlength_k + 1.e-3;
+  return (H_up - H_nom)/epsilon;
+}
+
+void
+KinFitConstraint::set_flightlength_kConstraint(const std::string& label, unsigned int idxOffsetC, unsigned int idxOffsetP,
+                                               const reco::Candidate::Vector& tauD3_rnk,
+                                               const reco::Candidate::Vector& k,
+                                               const math::Matrix3x3& rotMatrix_rnk2xyz)
+{
+  if ( verbosity_ >= 3 )
+  {
+    std::cout << "<set_flightlength_kConstraint (" << label << ")>:\n";
+  }
+
+  reco::Candidate::Vector tauD3_xyz = rotateVector(tauD3_rnk, rotMatrix_rnk2xyz);
+  auto sv = tauD3_xyz + pv0_;
+  auto flightlength = sv - pv_;
+  double flightlength_k = flightlength.x()*k.x() + flightlength.y()*k.y() + flightlength.z()*k.z();
+
+  // CV: add transverse mass (mT) constraint for tau+ and tau-
+  //     The purpose of this constraint is to ensure that computation of neutrino Pz yields a physical solution
+  //     Note that this constraint is an inequiality constraint: mT(visP4,nuP4) <= mTau
+  D_ineq_(idxOffsetC  ,0)            =   k.x();                                                     // dH_flightlength_k/dpvX
+  D_ineq_(idxOffsetC  ,1)            =   k.y();                                                     // dH_flightlength_k/dpvY
+  D_ineq_(idxOffsetC  ,2)            =   k.z();                                                     // dH_flightlength_k/dpvZ
+  D_ineq_(idxOffsetC  ,idxOffsetP+4) =  -1.;                                                        // dH_flightlength_k/dsvK
+  // CV: set flightlength to at least 10 micrometer
+  //     in direction of visible decay products
+  d_ineq_(idxOffsetC  ) = -flightlength_k + 1.e-3;
+  if ( verbosity_ >= 3 )
+  {
+    TVectorD Dana(Np_);
+    TVectorD Dnum(Np_);
+    for ( unsigned int idxPar = 0; idxPar < Np_; ++idxPar )
+    {
+      Dana(idxPar) = D_ineq_(idxOffsetC,idxPar);
+      Dnum(idxPar) = get_Dnum_H_flightlength_k(idxPar, idxOffsetC, idxOffsetP, tauD3_rnk, k, rotMatrix_rnk2xyz);
+    }
+    std::cout << "H_flightlength_k:\n";
     printVector("analytic derrivative", Dana);
     printVector("numeric derrivative", Dnum);
   }

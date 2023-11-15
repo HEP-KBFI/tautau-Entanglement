@@ -86,6 +86,18 @@ class KinFitConstraint : public KinFitConstraintBase
                    const reco::Candidate::LorentzVector& visP4,
                    const reco::Candidate::LorentzVector& nuP4);
 
+  double
+  get_Dnum_H_flightlength_k(unsigned int idxPar, unsigned int idxOffsetC, unsigned int idxOffsetP,
+                            const reco::Candidate::Vector& tauD3_rnk,
+                            const reco::Candidate::Vector& k,
+                            const math::Matrix3x3& rotMatrix_rnk2xyz);
+
+  void
+  set_flightlength_kConstraint(const std::string& label, unsigned int idxOffsetC, unsigned int idxOffsetP,
+                               const reco::Candidate::Vector& tauD3_rnk,
+                               const reco::Candidate::Vector& k,
+                               const math::Matrix3x3& rotMatrix_rnk2xyz);
+
   int collider_;
 
   const KinematicEvent& kineEvt_;
