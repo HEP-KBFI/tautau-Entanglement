@@ -13,7 +13,8 @@ namespace
 
 void
 findDecayProducts(const reco::GenParticle* mother, 
-                  std::vector<const reco::GenParticle*>& daughters)
+                  std::vector<const reco::GenParticle*>& daughters,
+                  bool treatNeutralPionsAsStable)
 {
   size_t numDaughters = mother->numberOfDaughters();
   for ( size_t idxDaughter = 0; idxDaughter < numDaughters; ++idxDaughter )
@@ -21,7 +22,7 @@ findDecayProducts(const reco::GenParticle* mother,
     const reco::GenParticle* daughter = dynamic_cast<const reco::GenParticle*>(mother->daughter(idxDaughter));
     assert(daughter);
     // CV: treat neutral pions as stable particles
-    if ( daughter->status() == 1 || daughter->pdgId() == 111 )
+    if ( daughter->status() == 1 || (daughter->pdgId() == 111 && treatNeutralPionsAsStable) )
     {
       daughters.push_back(daughter);
     }

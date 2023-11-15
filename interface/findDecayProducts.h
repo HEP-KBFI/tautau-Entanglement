@@ -10,6 +10,7 @@
 
 void
 findDecayProducts(const reco::GenParticle* mother, 
-                  std::vector<const reco::GenParticle*>& daughters);
+                  std::vector<const reco::GenParticle*>& daughters,
+                  bool treatNeutralPionsAsStable = true);
 
 #endif // TauAnalysis_Entanglement_findDecayProducts_h
