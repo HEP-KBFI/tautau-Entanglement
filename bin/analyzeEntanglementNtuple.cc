@@ -86,6 +86,21 @@ contains(const vstring & list,
   return std::find(list.begin(), list.cend(), element) != list.end();
 }
 
+bool
+isSelected_decayMode(int tau_decayMode, const vint& selected_decayModes)
+{
+  bool retVal = false;
+  for ( int selected_decayMode : selected_decayModes )
+  {
+    if ( tau_decayMode == selected_decayMode )
+    {
+      retVal = true;
+      break;
+    }
+  }
+  return retVal;
+}
+
 int main(int argc, char* argv[])
 {
 //--- throw an exception in case ROOT encounters an error
@@ -131,6 +146,10 @@ int main(int argc, char* argv[])
   std::cout << " minVisTauZ = " << minVisTauZ << "\n";
   float minTauTIP = cfg_analyze.getParameter<double>("minTauTIP");
   std::cout << " minTauTIP = " << minTauTIP << "\n";
+  vint tauPlus_decayModes = cfg_analyze.getParameter<vint>("tauPlus_decayModes");
+  std::cout << " tauPlus_decayModes = " << format_vint(tauPlus_decayModes) << "\n";
+  vint tauMinus_decayModes = cfg_analyze.getParameter<vint>("tauMinus_decayModes");
+  std::cout << " tauMinus_decayModes = " << format_vint(tauMinus_decayModes) << "\n";
   int maxNumChargedKaons = cfg_analyze.getParameter<int>("maxNumChargedKaons");
   std::cout << " maxNumChargedKaons = " << maxNumChargedKaons << "\n";
   int maxNumNeutralKaons = cfg_analyze.getParameter<int>("maxNumNeutralKaons");
@@ -143,6 +162,8 @@ int main(int argc, char* argv[])
   std::cout << " maxChi2 = " << maxChi2 << "\n";
   vint statusSelection = cfg_analyze.getParameter<vint>("statusSelection");
   std::cout << " statusSelection = " << format_vint(statusSelection) << "\n";
+  bool applyAcceptanceCuts = cfg_analyze.getParameter<bool>("applyAcceptanceCuts");
+  std::cout << " applyAcceptanceCuts = " << applyAcceptanceCuts << "\n";
   std::string branchName_evtWeight = cfg_analyze.getParameter<std::string>("branchName_evtWeight");
   std::cout << " branchName_evtWeight = " << branchName_evtWeight << "\n";
   
@@ -216,6 +237,8 @@ int main(int argc, char* argv[])
     bai.setBranchAddress(visPlus_eta, Form("%s_visPlus_eta", mode.c_str()));
     Float_t tauPlus_tip;
     bai.setBranchAddress(tauPlus_tip, Form("%s_tauPlus_tip", mode.c_str()));
+    Int_t tauPlus_decayMode;
+    bai.setBranchAddress(tauPlus_decayMode, "gen_tauPlus_decayMode");
     Int_t tauPlus_nChargedKaons, tauPlus_nNeutralKaons, tauPlus_nPhotons;
     Float_t tauPlus_sumPhotonEn;
     bai.setBranchAddress(tauPlus_nChargedKaons, "gen_tauPlus_nChargedKaons");
@@ -232,6 +255,8 @@ int main(int argc, char* argv[])
     bai.setBranchAddress(visMinus_eta, Form("%s_visMinus_eta", mode.c_str()));
     Float_t tauMinus_tip;
     bai.setBranchAddress(tauMinus_tip, Form("%s_tauMinus_tip", mode.c_str()));
+    Int_t tauMinus_decayMode;
+    bai.setBranchAddress(tauMinus_decayMode, "gen_tauMinus_decayMode");
     Int_t tauMinus_nChargedKaons, tauMinus_nNeutralKaons, tauMinus_nPhotons;
     Float_t tauMinus_sumPhotonEn;
     bai.setBranchAddress(tauMinus_nChargedKaons, "gen_tauMinus_nChargedKaons");
@@ -255,6 +280,9 @@ int main(int argc, char* argv[])
       bai.setBranchAddress(evtWeight, branchName_evtWeight);
     }
 
+    Bool_t passesAcceptanceCuts = true;
+    bai.setBranchAddress(passesAcceptanceCuts, "passesAcceptanceCuts");
+
     inputTree->SetBranchStatus("*", 0);
     for(const std::string & boundBranchName: bai.getBoundBranchNames())
     {
@@ -275,12 +303,14 @@ int main(int argc, char* argv[])
 
       if ( !(zPlus > minVisTauZ) ) continue;
       if ( !(tauPlus_tip > minTauTIP) ) continue;
+      if ( tauPlus_decayModes.size() > 0  && !isSelected_decayMode(tauPlus_decayMode, tauPlus_decayModes)   ) continue;
       if ( maxNumChargedKaons       != -1  && tauPlus_nChargedKaons  > maxNumChargedKaons            ) continue;
       if ( maxNumNeutralKaons       != -1  && tauPlus_nNeutralKaons  > maxNumNeutralKaons            ) continue;
       if ( maxNumPhotons            != -1  && tauPlus_nPhotons       > maxNumPhotons                 ) continue;
       if ( maxSumPhotonEn           >=  0. && tauPlus_sumPhotonEn    > maxSumPhotonEn                ) continue;
       if ( !(zMinus > minVisTauZ) ) continue;
       if ( !(tauMinus_tip > minTauTIP) ) continue;
+      if ( tauMinus_decayModes.size() > 0 && !isSelected_decayMode(tauMinus_decayMode, tauMinus_decayModes) ) continue;
       if ( maxNumChargedKaons       != -1  && tauMinus_nChargedKaons > maxNumChargedKaons            ) continue;
       if ( maxNumNeutralKaons       != -1  && tauMinus_nNeutralKaons > maxNumNeutralKaons            ) continue;
       if ( maxNumPhotons            != -1  && tauMinus_nPhotons      > maxNumPhotons                 ) continue;
@@ -291,6 +321,7 @@ int main(int argc, char* argv[])
         if ( statusSelection.size() >   0  && !passesStatusSelection(kinFit_status, statusSelection) ) continue;
       }
       if ( absCosTheta_cut > 0. && std::fabs(cosThetaStar) > absCosTheta_cut )                         continue;
+      if ( applyAcceptanceCuts && !passesAcceptanceCuts )                                              continue;
 
       spin::Data entry(hPlus_n, hPlus_r, hPlus_k, hMinus_n, hMinus_r, hMinus_k, evtWeight);
 
