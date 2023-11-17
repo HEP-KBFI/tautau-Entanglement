@@ -9,7 +9,9 @@ import re
 
 # Example usage:
 # ./test/analyzeNtuples.py -v 2023Nov16_a1PolVectorSignFix_wSmearing -s dy_lo_pythia8_ext -M inclusive scan -j cluster
-# ./test/analyzeNtuples.py -v 2023Nov16_a1PolVectorSignFix_wSmearing_wAcceptanceCuts -V 2023Nov16_a1PolVectorSignFix_wSmearing -s dy_lo_pythia8_ext -M inclusive scan -j cluster
+# ./test/analyzeNtuples.py -v 2023Nov16_a1PolVectorSignFix_wSmearing -s dy_lo_pythia8_ext -S by_differentialXsec1d by_differentialXsec2d by_asymmetry -M inclusive scan -j cluster
+# ./test/analyzeNtuples.py -v 2023Nov16_a1PolVectorSignFix_wSmearing_wAcceptanceCuts -V 2023Nov16_a1PolVectorSignFix_wSmearing -s dy_lo_pythia8_ext -S by_differentialXsec1d by_differentialXsec2d by_asymmetry -M inclusive scan --apply-acceptance-cuts -j cluster
+# ./test/analyzeNtuples.py -v 2023Nov16_a1PolVectorSignFix_wSmearing_wCorrectStartPosSignCut -V 2023Nov16_a1PolVectorSignFix_wSmearing -s dy_lo_pythia8_ext -S by_summation -m kinFit -M inclusive -j cluster
 
 from TauAnalysis.Entanglement.tools.jobTools import getInputFileNames, build_Makefile, query_yes_no, \
   build_cfg, mkdir, read_contents, save_cmd, positive_int_type, build_sbatchSubmission
@@ -30,6 +32,7 @@ parser = argparse.ArgumentParser(formatter_class = argparse.ArgumentDefaultsHelp
 parser.add_argument('-v', '--version', type = str, required = True, help = f'Version, e.g. {datetime.datetime.now().strftime("%Y%b%d")}')
 parser.add_argument('-V', '--ntuple-version', type = str, default = '', help = 'Version of input Ntuples (not needed if the same as --version)')
 parser.add_argument('-c', '--collider', type = str, choices = collider_choices, default = 'SuperKEKB', help = 'Collider')
+parser.add_argument('-C', '--apply-acceptance-cuts', dest = "apply_acceptance_cuts", action = "store_true", default = False, help = 'Apply acceptance cuts')
 parser.add_argument('-a', '--axes', nargs = '*', type = str, choices = collider_choices, default = [ 'beam' ], help = 'Axes')
 parser.add_argument('-S', '--spin-analyzers', nargs = '*', type = str, choices = spinAnalyzer_choices, default = spinAnalyzer_choices, help = 'Spin analyzers')
 parser.add_argument('-d', '--decay-modes', nargs = '*', type = str, choices = decayMode_choices_all, default = decayMode_choices, help = 'Tau decay modes')
@@ -66,6 +69,7 @@ run_makefile = args.job_type == 'local'
 verbosity = args.verbosity
 analysis = args.analysis
 binned_measurements = args.binned_measurements
+apply_acceptanceCuts = args.apply_acceptance_cuts
 
 if 0 < max_events < bootstrap_size:
   parser.error("Max events cannot be smaller than bootstrap size if both are specified!")
@@ -200,22 +204,23 @@ for sampleName, sample in samples.items():
                   configDir, re.sub(r'.root$', '.json', outputFileName_analysis)
                 )
                 args_analysis = {
-                  'inputFileNames'      : inputFileNames,
-                  'par_gen'             : par_gen,
-                  'mode'                : mode,
-                  'collider'            : collider,
-                  'decayMode'           : decayMode,
-                  'apply_evtWeight'     : sample['apply_evtWeight'],
-                  'spinAnalyzer'        : spinAnalyzer,
-                  'maxSumPhotonEn'      : maxSumPhotonEn,
-                  'bootstrapSize'       : bootstrap_size,
-                  'numBootstrapSamples' : bootstrap_count,
-                  'outputFileName'      : outputFileName_analysis,
-                  'verbosity'           : verbosity,
-                  'jsonOutputFileName'  : jsonOutputFileName_analysis,
-                  'max_events'          : max_events,
-                  'absCosTheta_cut'     : absCosTheta_cut,
-                  'binned_measurements' : binned_measurements,
+                  'inputFileNames'       : inputFileNames,
+                  'par_gen'              : par_gen,
+                  'mode'                 : mode,
+                  'collider'             : collider,
+                  'decayMode'            : decayMode,
+                  'apply_evtWeight'      : sample['apply_evtWeight'],
+                  'spinAnalyzer'         : spinAnalyzer,
+                  'maxSumPhotonEn'       : maxSumPhotonEn,
+                  'bootstrapSize'        : bootstrap_size,
+                  'numBootstrapSamples'  : bootstrap_count,
+                  'outputFileName'       : outputFileName_analysis,
+                  'verbosity'            : verbosity,
+                  'jsonOutputFileName'   : jsonOutputFileName_analysis,
+                  'max_events'           : max_events,
+                  'absCosTheta_cut'      : absCosTheta_cut,
+                  'binned_measurements'  : binned_measurements,
+                  'apply_acceptanceCuts' : apply_acceptanceCuts
                 }
                 build_cfg(analyzeNtuple_template, cfgFileName_analysis_modified, args_analysis)
 
