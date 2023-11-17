@@ -158,7 +158,9 @@ SpinAlgo_by_asymmetry::operator()(const spin::Dataset& dataset)
   Bp(1) = bp*Bp_r.get_A();
   Bp(2) = bp*Bp_k.get_A();
 
-  const double bm = -2.;
+  //const double bm = -2.;
+  // CV: updated sign of bm to match new sign convention for tau polarimeter vector
+  const double bm = +2.;
   math::Vector3 Bm;
   Bm(0) = bm*Bm_n.get_A();
   Bm(1) = bm*Bm_r.get_A();
@@ -167,7 +169,9 @@ SpinAlgo_by_asymmetry::operator()(const spin::Dataset& dataset)
   // CV: factor -4 taken from Eq. (25) in the paper arXiv:2205.00542
   //    (the spin analyzing power alpha is +1 for tau+ and -1 for tau-,
   //     cf. text following Eq. (24) in the same paper)
-  const double c = -4.;
+  //const double c = -4.;
+  // CV: updated sign of c to match new sign convention for tau polarimeter vector
+  const double c = +4.;
   math::Matrix3x3 C;
   C(0,0) = c*C_nn.get_A();
   C(0,1) = c*C_rn.get_A();

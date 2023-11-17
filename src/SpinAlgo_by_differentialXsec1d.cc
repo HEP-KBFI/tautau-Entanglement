@@ -87,7 +87,9 @@ namespace
     RooRealVar C_ij("C_ij", "C_ij", 0., -1., +1.);
 
     // CV: added protection against small psi values when computing log(1/|psi|)
-    RooGenericPdf pdf("pdf", "pdf", "0.5*(1. - C_ij*psi)*log(1./max(1.e-6, abs(psi)))", RooArgSet(C_ij, psi));
+    //RooGenericPdf pdf("pdf", "pdf", "0.5*(1. - C_ij*psi)*log(1./max(1.e-6, abs(psi)))", RooArgSet(C_ij, psi));
+    // CV: updated sign of term proportional to C_ij to match new sign convention for tau polarimeter vector
+    RooGenericPdf pdf("pdf", "pdf", "0.5*(1. + C_ij*psi)*log(1./max(1.e-6, abs(psi)))", RooArgSet(C_ij, psi));
     pdf.fitTo(data, RooFit::PrintLevel(-1));
     if ( verbosity >= 2 )
     {
