@@ -32,7 +32,7 @@ process.makeControlPlots = cms.PSet(
     maxSumPhotonEn = cms.double({{ maxSumPhotonEn }}),
 
     maxChi2 = cms.double(1.e+2),
-    statusSelection = cms.vint32(0,1),
+    statusSelection = cms.vint32(0,1,2),
 
     branchName_evtWeight = cms.string('evtWeight'),
     apply_evtWeight = cms.bool({{ apply_evtWeight }}),

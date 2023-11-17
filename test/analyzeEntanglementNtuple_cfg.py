@@ -23,10 +23,12 @@ process.analyzeEntanglementNtuple = cms.PSet(
     mode = cms.string('{{ mode }}'),
     collider = cms.string('{{ collider }}'),
 
-    minVisTauPt = cms.double(-1.), # or, e.g., 2.5
-    maxAbsVisTauEta = cms.double(1.e+3), # or, e.g., 2.3
+    minVisTauPt = cms.double(-1.),       # KE: or, e.g., 2.5
+    maxAbsVisTauEta = cms.double(1.e+3), # KE: or, e.g., 2.3
     minVisTauZ = cms.double(-1.),
-    minTauTIP = cms.double(-1.), # or, e.g., 0.0030
+    minTauTIP = cms.double(-1.),         # KE: or, e.g., 0.0030
+    tauPlus_decayModes = cms.vint32(),   # CV: empty means no decay mode selection applied (other than via treeName)
+    tauMinus_decayModes = cms.vint32(),  # CV: empty means no decay mode selection applied (other than via treeName)
     maxNumChargedKaons = cms.int32(0),
     maxNumNeutralKaons = cms.int32(0),
     maxNumPhotons = cms.int32(-1),
@@ -34,6 +36,8 @@ process.analyzeEntanglementNtuple = cms.PSet(
 
     maxChi2 = cms.double(1.e+2),
     statusSelection = cms.vint32(0,1,2),
+
+    applyAcceptanceCuts = cms.bool(True),
 
     branchName_evtWeight = cms.string('evtWeight'),
     apply_evtWeight = cms.bool({{ apply_evtWeight }}),
