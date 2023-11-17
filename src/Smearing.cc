@@ -3,6 +3,7 @@
 #include "DataFormats/Candidate/interface/Candidate.h"                    // Candidate::LorentzVector, Candidate::Point, Candidate::Vector
 
 #include "TauAnalysis/Entanglement/interface/cmsException.h"              // cmsException
+#include "TauAnalysis/Entanglement/interface/comp_visP4.h"                // comp_visP4()
 #include "TauAnalysis/Entanglement/interface/constants.h"                 // kLHC, kSuperKEKB, mChargedPion
 #include "TauAnalysis/Entanglement/interface/fixMass.h"                   // fixTauMass()
 #include "TauAnalysis/Entanglement/interface/get_leadTrack.h"             // get_leadTrack()
@@ -10,8 +11,6 @@
 #include "TauAnalysis/Entanglement/interface/KinematicParticle.h"         // KinematicParticle
 #include "TauAnalysis/Entanglement/interface/rotateVector.h"              // rotateVector()
 #include "TauAnalysis/Entanglement/interface/square.h"                    // square()
-
-#include <TMath.h>                                                        // TMath::Pi()
 
 #include <cmath>                                                          // std::sqrt()
 #include <iostream>                                                       // std::cout
@@ -152,6 +151,7 @@ Smearing::operator()(const KinematicEvent& kineEvt)
     daughter_smeared.vertex_ = kineEvt_smeared.svTauPlus_;
     kineEvt_smeared.daughtersTauPlus_.push_back(daughter_smeared);
   }
+  kineEvt_smeared.visTauPlusP4_ = comp_visP4(kineEvt_smeared.daughtersTauPlus_);
   kineEvt_smeared.tipPCATauPlus_ = smear_tipPCA(daughtersTauPlus, kineEvt.tipPCATauPlus());
 
   if ( kineEvt.tauMinusP4_isValid() )
@@ -184,6 +184,7 @@ Smearing::operator()(const KinematicEvent& kineEvt)
     daughter_smeared.vertex_ = kineEvt_smeared.svTauPlus_;
     kineEvt_smeared.daughtersTauMinus_.push_back(daughter_smeared);
   }
+  kineEvt_smeared.visTauMinusP4_ = comp_visP4(kineEvt_smeared.daughtersTauMinus_);
   kineEvt_smeared.tipPCATauMinus_ = smear_tipPCA(daughtersTauMinus, kineEvt.tipPCATauMinus());
 
   kineEvt_smeared.hPlus_ = reco::Candidate::Vector(0.,0.,0.);
@@ -276,14 +277,14 @@ Smearing::smear_daughter_p4(const KinematicParticle& daughter)
   if ( std::fabs(daughter.charge()) > 0.5 )
   {
     sigma_pt         = get_trackResolution_pt(daughter.p4(), *resolutions_);
-    sigma_theta      = TMath::Pi()*resolutions_->trackResolution_theta();
-    sigma_phi        = TMath::Pi()*resolutions_->trackResolution_phi();
+    sigma_theta      = resolutions_->trackResolution_theta();
+    sigma_phi        = resolutions_->trackResolution_phi();
   }
   else if ( daughter.pdgId() == 111 )
   {
     sigma_pt         = get_ecalResolution_pt(daughter.p4(), *resolutions_);
-    sigma_theta      = TMath::Pi()*resolutions_->ecalResolution_theta();
-    sigma_phi        = TMath::Pi()*resolutions_->ecalResolution_phi();
+    sigma_theta      = get_ecalResolution_theta(daughter.p4(), *resolutions_);
+    sigma_phi        = get_ecalResolution_phi(daughter.p4(), *resolutions_);
   }
   const reco::Candidate::LorentzVector& daughterP4 = daughter.p4();
   double smeared_daughterPt    = rnd_.Gaus(daughterP4.pt(), sigma_pt);
