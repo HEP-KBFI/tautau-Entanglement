@@ -22,6 +22,7 @@ ntupleProducer = cms.EDAnalyzer("EntanglementNtupleProducer",
         applyLifetimeConstraint = cms.bool(False),
         skip = cms.bool(False)
     ),
+    acceptanceCuts = cms.PSet(),
     srcEvtWeights = cms.VInputTag('genWeight'),
     verbosity = cms.untracked.int32(-1),
     #verbosity = cms.untracked.int32(3),
