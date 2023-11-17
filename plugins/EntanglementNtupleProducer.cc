@@ -30,6 +30,7 @@ EntanglementNtupleProducer::EntanglementNtupleProducer(const edm::ParameterSet& 
   , genKineEvtBuilder_wSmearing_(nullptr)
   , startPosTIPCompatibility_(cfg)
   , kinematicFit_(nullptr)
+  , acceptanceCuts_(nullptr)
   , ntuple_pi_pi_(nullptr)
   , ntupleFiller_pi_pi_(nullptr)
   , ntuple_pi_rho_(nullptr)
@@ -99,6 +100,8 @@ EntanglementNtupleProducer::EntanglementNtupleProducer(const edm::ParameterSet& 
   cfg_kinematicFit.addUntrackedParameter<bool>("cartesian", cartesian_);
   kinematicFit_ = new KinematicFit(cfg_kinematicFit);
 
+  acceptanceCuts_ = new AcceptanceCuts(cfg.getParameter<edm::ParameterSet>("acceptanceCuts"));
+
   srcWeights_ = cfg.getParameter<vInputTag>("srcEvtWeights");
   for ( const edm::InputTag& srcWeight : srcWeights_ )
   {
@@ -117,6 +120,8 @@ EntanglementNtupleProducer::~EntanglementNtupleProducer()
   }
 
   delete kinematicFit_;
+
+  delete acceptanceCuts_;
 
   // CV: don't delete TTree objects, as these are handled by TFileService
 
@@ -324,6 +329,8 @@ void EntanglementNtupleProducer::analyze(const edm::Event& evt, const edm::Event
     return;
   }
 
+  bool passesAcceptanceCuts = (*acceptanceCuts_)(*tauPlus, *tauMinus);
+
   std::vector<const reco::GenParticle*> tauPlus_daughters;
   findDecayProducts(tauPlus, tauPlus_daughters);
   std::vector<const reco::GenParticle*> tauPlus_ch = get_chargedHadrons(tauPlus_daughters);
@@ -385,6 +392,7 @@ void EntanglementNtupleProducer::analyze(const edm::Event& evt, const edm::Event
       tauPlus_nChargedKaons, tauPlus_nNeutralKaons, tauPlus_nPhotons, tauPlus_sumPhotonEn,
       tauMinus_nChargedKaons, tauMinus_nNeutralKaons, tauMinus_nPhotons, tauMinus_sumPhotonEn,
       &kineEvt_gen_smeared, &kineEvt_startPos_bestfit, &kineEvt_kinFit_bestfit,
+      passesAcceptanceCuts,
       evtWeight);
     ntupleFiller_had_had_->fillBranches(
       evt,
@@ -392,6 +400,7 @@ void EntanglementNtupleProducer::analyze(const edm::Event& evt, const edm::Event
       tauPlus_nChargedKaons, tauPlus_nNeutralKaons, tauPlus_nPhotons, tauPlus_sumPhotonEn,
       tauMinus_nChargedKaons, tauMinus_nNeutralKaons, tauMinus_nPhotons, tauMinus_sumPhotonEn,
       &kineEvt_gen_smeared, &kineEvt_startPos_bestfit, &kineEvt_kinFit_bestfit,
+      passesAcceptanceCuts,
       evtWeight);
   }
 }
