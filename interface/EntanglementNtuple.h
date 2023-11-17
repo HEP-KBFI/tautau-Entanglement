@@ -66,6 +66,7 @@ class EntanglementNtuple
                const KinematicEvent* kineEvt_gen_smeared, 
                const KinematicEvent* kineEvt_startPos,
                const KinematicEvent* kineEvt_kinFit,
+               bool passesAcceptanceCuts,
                double evtWeight);
 
  private:
@@ -444,6 +445,9 @@ class EntanglementNtuple
   Int_t   kinFit_status_;            // status of kinematic fit: +1 = converged, -1 = failed
   Float_t kinFit_cov_[kinFit::numParameters][kinFit::numParameters]; // covariance matrix V_alpha of kinematic fit
   Float_t kinFit_chi2_;              // chi^2 of kinematic fit (computed according to Eq. (4) in https://www.phys.ufl.edu/~avery/fitting/kinematic.pdf)
+
+  Bool_t  passesAcceptanceCuts_;     // flag indicating whether or not all charged hadrons and all photons 
+                                     // produced in the decays of tau+ and tau- pass pT/energy and eta/theta cuts
 
   Float_t evtWeight_;                // event weight of Monte Carlo generator
 };

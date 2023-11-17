@@ -12,6 +12,7 @@ EntanglementNtuple::EntanglementNtuple(TTree* ntuple)
   , branches_KinematicEvent_gen_smeared_("gen_smeared")
   , branches_KinematicEvent_startPos_("startPos")
   , branches_KinematicEvent_kinFit_("kinFit")
+  , passesAcceptanceCuts_(1)
   , evtWeight_(1.)
 {
   ntuple_->Branch("run", &run_, "run/i");
@@ -49,6 +50,8 @@ EntanglementNtuple::EntanglementNtuple(TTree* ntuple)
     }
   }
 
+  ntuple_->Branch("passesAcceptanceCuts", &passesAcceptanceCuts_, "passesAcceptanceCuts/O");
+
   ntuple_->Branch("evtWeight", &evtWeight_, "evtWeight/F");
 }
 
@@ -63,6 +66,7 @@ EntanglementNtuple::fillBranches(const edm::Event& evt,
                                  const KinematicEvent* kineEvt_gen_smeared,
                                  const KinematicEvent* kineEvt_startPos,
                                  const KinematicEvent* kineEvt_kinFit,
+                                 bool passesAcceptanceCuts,
                                  double evtWeight)
 {
   run_ = evt.id().run();
@@ -130,6 +134,8 @@ EntanglementNtuple::fillBranches(const edm::Event& evt,
       }
     } 
   }
+
+  passesAcceptanceCuts_ = passesAcceptanceCuts;
 
   evtWeight_ = evtWeight;
 
