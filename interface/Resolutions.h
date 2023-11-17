@@ -43,10 +43,10 @@ class Resolutions
   const TFormula* 
   ecalResolution_energy() const;
 
-  double
+  const TFormula*
   ecalResolution_theta() const;
 
-  double
+  const TFormula*
   ecalResolution_phi() const;
   
   double
@@ -72,8 +72,8 @@ class Resolutions
   double trackResolution_phi_;      // [rad]
 
   TFormula* ecalResolution_energy_; // resolution on energy in units of GeV
-  double ecalResolution_theta_;     // [rad]
-  double ecalResolution_phi_;       // [rad]
+  TFormula* ecalResolution_theta_;  // [rad]
+  TFormula* ecalResolution_phi_;    // [rad]
 
   double svResolution_parl_;        // [cm]
   double svResolution_perp_;        // [cm]
@@ -86,5 +86,11 @@ get_trackResolution_pt(const reco::Candidate::LorentzVector& p4, const Resolutio
 
 double
 get_ecalResolution_pt(const reco::Candidate::LorentzVector& p4, const Resolutions& resolutions);
+
+double
+get_ecalResolution_theta(const reco::Candidate::LorentzVector& p4, const Resolutions& resolutions);
+
+double
+get_ecalResolution_phi(const reco::Candidate::LorentzVector& p4, const Resolutions& resolutions);
 
 #endif // TauAnalysis_Entanglement_Resolutions_h

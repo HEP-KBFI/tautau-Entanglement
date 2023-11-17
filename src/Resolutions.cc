@@ -17,8 +17,8 @@ Resolutions::Resolutions(const edm::ParameterSet& cfg)
   , trackResolution_theta_(cfg.getParameter<double>("trackResolution_theta"))
   , trackResolution_phi_(cfg.getParameter<double>("trackResolution_phi"))
   , ecalResolution_energy_(nullptr)
-  , ecalResolution_theta_(cfg.getParameter<double>("ecalResolution_theta"))
-  , ecalResolution_phi_(cfg.getParameter<double>("ecalResolution_phi"))
+  , ecalResolution_theta_(nullptr)
+  , ecalResolution_phi_(nullptr)
   , svResolution_parl_(cfg.getParameter<double>("svResolution_parl"))
   , svResolution_perp_(cfg.getParameter<double>("svResolution_perp"))
   , tipResolution_perp_(cfg.getParameter<double>("tipResolution_perp"))
@@ -31,12 +31,22 @@ Resolutions::Resolutions(const edm::ParameterSet& cfg)
   TString ecalResolution_energy = cfg.getParameter<std::string>("ecalResolution_energy").c_str();
   ecalResolution_energy = ecalResolution_energy.ReplaceAll("E", "x");
   ecalResolution_energy_ = new TFormula("ecalResolution_energy", ecalResolution_energy.Data());
+
+  TString ecalResolution_theta = cfg.getParameter<std::string>("ecalResolution_theta").c_str();
+  ecalResolution_theta = ecalResolution_theta.ReplaceAll("E", "x");
+  ecalResolution_theta_ = new TFormula("ecalResolution_theta", ecalResolution_theta.Data());
+
+  TString ecalResolution_phi = cfg.getParameter<std::string>("ecalResolution_phi").c_str();
+  ecalResolution_phi = ecalResolution_phi.ReplaceAll("E", "x");
+  ecalResolution_phi_ = new TFormula("ecalResolution_phi", ecalResolution_phi.Data());
 }
 
 Resolutions::~Resolutions()
 {
   delete trackResolution_pt_;
   delete ecalResolution_energy_;
+  delete ecalResolution_theta_;
+  delete ecalResolution_phi_;
 }
 
 double
@@ -99,13 +109,13 @@ Resolutions::ecalResolution_energy() const
   return ecalResolution_energy_;
 }
 
-double
+const TFormula*
 Resolutions::ecalResolution_theta() const
 {
   return ecalResolution_theta_;
 }
 
-double
+const TFormula*
 Resolutions::ecalResolution_phi() const
 {
   return ecalResolution_phi_;
@@ -137,8 +147,8 @@ get_trackResolution_pt(const reco::Candidate::LorentzVector& p4, const Resolutio
   double pT = p4.pt();
   double gamma = p4.energy()/p4.mass();
   double beta = std::sqrt((square(gamma) - 1)/square(gamma));
-  double resolution_pT = formula->Eval(pT, beta);
-  return resolution_pT;
+  double resolution = formula->Eval(pT, beta);
+  return resolution;
 }
 
 double
@@ -150,4 +160,24 @@ get_ecalResolution_pt(const reco::Candidate::LorentzVector& p4, const Resolution
   double resolution_E = formula->Eval(E);
   double resolution_pT = (p4.pt()/p4.energy())*resolution_E;
   return resolution_pT;
+}
+
+double
+get_ecalResolution_theta(const reco::Candidate::LorentzVector& p4, const Resolutions& resolutions)
+{
+  const TFormula* formula = resolutions.ecalResolution_theta();
+  assert(formula);
+  double E = p4.energy();
+  double resolution = formula->Eval(E);
+  return resolution;
+}
+
+double
+get_ecalResolution_phi(const reco::Candidate::LorentzVector& p4, const Resolutions& resolutions)
+{
+  const TFormula* formula = resolutions.ecalResolution_phi();
+  assert(formula);
+  double E = p4.energy();
+  double resolution = formula->Eval(E);
+  return resolution;
 }
