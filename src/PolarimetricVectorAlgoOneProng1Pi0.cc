@@ -110,9 +110,15 @@ namespace
 
     reco::Candidate::LorentzVector q = q1 - q2;
     double omega = 2.*(q.Dot(N))*(q.Dot(P)) - q.mass2()*(N.Dot(P));
+    // CV: sign of terms proportional to gammaVA differs for tau+ and tau-,
+    //     cf. text following Eq. (3.16) in Comput.Phys.Commun. 64 (1991) 275
+    double sign = 0.;
+    if      ( ch->charge() > 0. ) sign = -1.;
+    else if ( ch->charge() < 0. ) sign = +1.;
+    else assert(0);
     // CV: term 2.*|f2|^2 appears in expression for h as well as in expression for omega
     //     and drops out
-    reco::Candidate::Vector h = -(gamma_va*mTau/omega)*(2.*(q.Dot(N))*q.Vect() - q.mass2()*N.Vect());
+    reco::Candidate::Vector h = -(sign*gamma_va*mTau/omega)*(2.*(q.Dot(N))*q.Vect() - q.mass2()*N.Vect());
     if ( verbosity >= 4 )
     { 
       printVector("h", h, cartesian);

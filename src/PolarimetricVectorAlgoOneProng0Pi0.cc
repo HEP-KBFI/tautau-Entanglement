@@ -64,7 +64,13 @@ namespace
     }
     const double f1 = 0.1284;
     double omega = (square(mTau) - chP4.mass2())*square(mTau);
-    reco::Candidate::Vector h = -(2.*gamma_va*square(f1)*cube(mTau)/omega)*Q.Vect();
+    // CV: sign of terms proportional to gammaVA differs for tau+ and tau-,
+    //     cf. text following Eq. (3.16) in Comput.Phys.Commun. 64 (1991) 275
+    double sign = 0.;
+    if      ( ch->charge() > 0. ) sign = -1.;
+    else if ( ch->charge() < 0. ) sign = +1.;
+    else assert(0);
+    reco::Candidate::Vector h = -(2.*sign*gamma_va*square(f1)*cube(mTau)/omega)*Q.Vect();
     if ( verbosity >= 4 )
     { 
       printVector("h", h, cartesian);
