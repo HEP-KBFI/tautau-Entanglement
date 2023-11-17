@@ -162,8 +162,13 @@ int main(int argc, char* argv[])
   std::cout << " maxChi2 = " << maxChi2 << "\n";
   vint statusSelection = cfg_analyze.getParameter<vint>("statusSelection");
   std::cout << " statusSelection = " << format_vint(statusSelection) << "\n";
-  bool applyAcceptanceCuts = cfg_analyze.getParameter<bool>("applyAcceptanceCuts");
-  std::cout << " applyAcceptanceCuts = " << applyAcceptanceCuts << "\n";
+  bool apply_acceptanceCuts = cfg_analyze.getParameter<bool>("apply_acceptanceCuts");
+  std::cout << " apply_acceptanceCuts = " << apply_acceptanceCuts << "\n";
+  bool apply_startPos_isCorrectSignCut = cfg_analyze.getParameter<bool>("apply_startPos_isCorrectSignCut");
+  if ( apply_startPos_isCorrectSignCut )
+  {
+    std::cerr << "WARNING: apply_startPos_isCorrectSignCut enabled in Configuration file - this setting is to be used for debugging purposes only !!\n";
+  }
   std::string branchName_evtWeight = cfg_analyze.getParameter<std::string>("branchName_evtWeight");
   std::cout << " branchName_evtWeight = " << branchName_evtWeight << "\n";
   
@@ -264,6 +269,9 @@ int main(int argc, char* argv[])
     bai.setBranchAddress(tauMinus_nPhotons, "gen_tauMinus_nPhotons");
     bai.setBranchAddress(tauMinus_sumPhotonEn, "gen_tauMinus_sumPhotonEn");
 
+    Int_t startPos_isCorrectSign;
+    bai.setBranchAddress(startPos_isCorrectSign, "startPos_isCorrectSign");
+
     Float_t kinFit_chi2;
     bai.setBranchAddress(kinFit_chi2, "kinFit_chi2");
     Int_t kinFit_status;
@@ -321,7 +329,8 @@ int main(int argc, char* argv[])
         if ( statusSelection.size() >   0  && !passesStatusSelection(kinFit_status, statusSelection) ) continue;
       }
       if ( absCosTheta_cut > 0. && std::fabs(cosThetaStar) > absCosTheta_cut )                         continue;
-      if ( applyAcceptanceCuts && !passesAcceptanceCuts )                                              continue;
+      if ( apply_acceptanceCuts && !passesAcceptanceCuts )                                             continue;
+      if ( apply_startPos_isCorrectSignCut && startPos_isCorrectSign != +1 )                           continue;
 
       spin::Data entry(hPlus_n, hPlus_r, hPlus_k, hMinus_n, hMinus_r, hMinus_k, evtWeight);
 
