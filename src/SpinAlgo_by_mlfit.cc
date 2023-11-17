@@ -123,10 +123,10 @@ namespace
     //     because helicity frame defined with respect to tau- (and not tau+) direction in EntanglementNtupleProducer.cc code.
     double p = 1. 
       + (Bp_n*entry.get_hPlus_n() + Bp_r*entry.get_hPlus_r()  + Bp_k*entry.get_hPlus_k())
-      - (Bm_n*entry.get_hMinus_n() + Bm_r*entry.get_hMinus_r() + Bm_k*entry.get_hMinus_k())
-      - (C_nn*entry.get_hPlus_n()*entry.get_hMinus_n() + C_rn*entry.get_hPlus_r()*entry.get_hMinus_n() + C_kn*entry.get_hPlus_k()*entry.get_hMinus_n())
-      - (C_nr*entry.get_hPlus_n()*entry.get_hMinus_r() + C_rr*entry.get_hPlus_r()*entry.get_hMinus_r() + C_kr*entry.get_hPlus_k()*entry.get_hMinus_r())
-      - (C_nk*entry.get_hPlus_n()*entry.get_hMinus_k() + C_rk*entry.get_hPlus_r()*entry.get_hMinus_k() + C_kk*entry.get_hPlus_k()*entry.get_hMinus_k());
+      + (Bm_n*entry.get_hMinus_n() + Bm_r*entry.get_hMinus_r() + Bm_k*entry.get_hMinus_k())
+      + (C_nn*entry.get_hPlus_n()*entry.get_hMinus_n() + C_rn*entry.get_hPlus_r()*entry.get_hMinus_n() + C_kn*entry.get_hPlus_k()*entry.get_hMinus_n())
+      + (C_nr*entry.get_hPlus_n()*entry.get_hMinus_r() + C_rr*entry.get_hPlus_r()*entry.get_hMinus_r() + C_kr*entry.get_hPlus_k()*entry.get_hMinus_r())
+      + (C_nk*entry.get_hPlus_n()*entry.get_hMinus_k() + C_rk*entry.get_hPlus_r()*entry.get_hMinus_k() + C_kk*entry.get_hPlus_k()*entry.get_hMinus_k());
     const double epsilon = 1.e-12;
     if ( p < epsilon ) p = epsilon;
 
