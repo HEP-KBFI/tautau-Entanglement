@@ -28,7 +28,7 @@ math::Vector3
 comp_Bm(double hMinus_n, double hMinus_r, double hMinus_k)
 {
   // CV: not sure if for tau- the constant factor b should be +3 or -3 ?!
-  double b = -3.;
+  double b = +3.;
   return comp_B(hMinus_n, hMinus_r, hMinus_k, b);
 }
 
@@ -40,7 +40,7 @@ comp_C(double hPlus_n, double hPlus_r, double hPlus_k,
   //     in the paper arXiv:2211.10513.
   //     The ordering of rows vs columns for tau+ and tau- has been agreed with Luca on 06/09/2023.
   math::Matrix3x3 C;
-  double c = -9.;
+  double c = +9.;
   C(0,0) = c*hPlus_n*hMinus_n;
   C(0,1) = c*hPlus_r*hMinus_n;
   C(0,2) = c*hPlus_k*hMinus_n;
