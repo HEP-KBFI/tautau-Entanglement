@@ -32,8 +32,6 @@
 #include "TauAnalysis/Entanglement/interface/rotateCovMatrix.h"                   // rotateCovMatrix()
 #include "TauAnalysis/Entanglement/interface/square.h"                            // square()
 
-#include <TMath.h>                                                                // TMath::Pi()
-
 #include <iostream>                                                               // std::cout
 #include <cmath>                                                                  // std::fabs(), std::sqrt()
 
@@ -194,14 +192,14 @@ namespace
       if ( std::fabs(decayProduct->charge()) > 0.5 )
       {
         sigma_pt          = get_trackResolution_pt(decayProduct->p4(), resolutions);
-        sigma_theta       = TMath::Pi()*resolutions.trackResolution_theta();
-        sigma_phi         = TMath::Pi()*resolutions.trackResolution_phi();
+        sigma_theta       = resolutions.trackResolution_theta();
+        sigma_phi         = resolutions.trackResolution_phi();
       }
       else if ( decayProduct->pdgId() == 111 )
       {
         sigma_pt          = get_ecalResolution_pt(decayProduct->p4(), resolutions);
-        sigma_theta       = TMath::Pi()*resolutions.ecalResolution_theta();
-        sigma_phi         = TMath::Pi()*resolutions.ecalResolution_phi();
+        sigma_theta       = get_ecalResolution_theta(decayProduct->p4(), resolutions);
+        sigma_phi         = get_ecalResolution_phi(decayProduct->p4(), resolutions);
       }
       double sigma2_pt    = square(sigma_pt);
       double sigma2_theta = square(sigma_theta);
