@@ -232,7 +232,7 @@ def plot(data, plot_var, is_significance, central = DEFAULT_CENTRAL, title = '',
       plt.axhline(y = threshold, **threshold_args)
   plt.grid(True)
   plt.xlim(0, 1)
-  plt.xlabel(r'Upper limit on $\left|\cos(\theta^*)\right|$')
+  plt.xlabel(r'Upper limit on $\left|\cos(\vartheta)\right|$')
   ylabel = ''
   if plot_var in ENTANGLEMENT_VARS:
     ylabel = f"${ENTANGLEMENT_VARS[plot_var]['symbol']}$"
