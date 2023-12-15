@@ -17,7 +17,7 @@
 #include "TauAnalysis/Entanglement/interface/constants.h"             // kLHC, kSuperKEKB
 #include "TauAnalysis/Entanglement/interface/findDecayProducts.h"     // findDecayProducts()
 #include "TauAnalysis/Entanglement/interface/findLastTau.h"           // findLastTau()
-#include "TauAnalysis/Entanglement/interface/get_decayMode.h"         // get_decayMode()
+#include "TauAnalysis/Entanglement/interface/get_decayMode.h"         // get_decayMode(), isHadTauDecay()
 #include "TauAnalysis/Entanglement/interface/get_particles_of_type.h" // get_chargedKaons(), get_neutralKaons(), get_photons()
 
 #include <TString.h>                                                  // Form()
@@ -105,7 +105,7 @@ EntanglementNtupleProducer::EntanglementNtupleProducer(const edm::ParameterSet& 
   cfg_svFit.addParameter<edm::ParameterSet>("resolutions", cfg_resolutions);
   cfg_svFit.addParameter<std::string>("collider", collider);
   cfg_svFit.addUntrackedParameter<int>("verbosity", verbosity_);
-  cfg_kinematicFit.addUntrackedParameter<bool>("cartesian", cartesian_);
+  cfg_svFit.addUntrackedParameter<bool>("cartesian", cartesian_);
   svFit_ = new ClassicSVfitInterface(cfg_svFit);
 
   acceptanceCuts_ = new AcceptanceCuts(cfg.getParameter<edm::ParameterSet>("acceptanceCuts"));
@@ -312,7 +312,15 @@ void EntanglementNtupleProducer::analyze(const edm::Event& evt, const edm::Event
     printKinematicEvent("kineEvt_kinFit", kineEvt_kinFit_bestfit, verbosity_, cartesian_);
   }
 
-  KinematicEvent kineEvt_svFit = (*svFit_)(kineEvt_gen_smeared);
+  KinematicEvent kineEvt_svFit;
+  if ( isHadTauDecay(kineEvt_gen_smeared.tauPlus_decayMode()) && isHadTauDecay(kineEvt_gen_smeared.tauMinus_decayMode()) )
+  {
+    kineEvt_svFit = (*svFit_)(kineEvt_gen_smeared);
+    if ( verbosity_ >= 1 )
+    {
+      printKinematicEvent("kineEvt_svFit", kineEvt_svFit, verbosity_, cartesian_);
+    }
+  }
 
   const reco::GenParticle* tauPlus  = nullptr;
   const reco::GenParticle* tauMinus = nullptr;
