@@ -4,6 +4,7 @@
 <use name="FWCore/ParameterSet"/>
 <use name="FWCore/Utilities"/>
 <use name="PhysicsTools/FWLite"/>
+<use name="TauAnalysis/ClassicSVfit"/>
 <use name="TauAnalysis/PolarimetricVectorTau2a1"/>
 <use name="roofit"/>
 <use name="root"/>
