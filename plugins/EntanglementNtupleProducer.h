@@ -14,6 +14,7 @@
 #include "DataFormats/HepMCCandidate/interface/GenParticleFwd.h"         // reco::GenParticleCollection
 
 #include "TauAnalysis/Entanglement/interface/AcceptanceCuts.h"           // AcceptanceCuts
+#include "TauAnalysis/Entanglement/interface/ClassicSVfitInterface.h"    // ClassicSVfitInterface
 #include "TauAnalysis/Entanglement/interface/EntanglementNtuple.h"       // EntanglementNtuple
 #include "TauAnalysis/Entanglement/interface/GenKinematicEventBuilder.h" // GenKinematicEventBuilder
 #include "TauAnalysis/Entanglement/interface/KinematicFit.h"             // KinematicFit
@@ -50,6 +51,8 @@ class EntanglementNtupleProducer : public edm::one::EDAnalyzer<>
   int startPosFinder_resolveSignAmbiguity_;
 
   KinematicFit* kinematicFit_;
+
+  ClassicSVfitInterface* svFit_;
 
   AcceptanceCuts* acceptanceCuts_;
 

@@ -30,6 +30,7 @@ EntanglementNtupleProducer::EntanglementNtupleProducer(const edm::ParameterSet& 
   , genKineEvtBuilder_wSmearing_(nullptr)
   , startPosTIPCompatibility_(cfg)
   , kinematicFit_(nullptr)
+  , svFit_(nullptr)
   , acceptanceCuts_(nullptr)
   , ntuple_pi_pi_(nullptr)
   , ntupleFiller_pi_pi_(nullptr)
@@ -100,6 +101,13 @@ EntanglementNtupleProducer::EntanglementNtupleProducer(const edm::ParameterSet& 
   cfg_kinematicFit.addUntrackedParameter<bool>("cartesian", cartesian_);
   kinematicFit_ = new KinematicFit(cfg_kinematicFit);
 
+  edm::ParameterSet cfg_svFit = cfg.getParameter<edm::ParameterSet>("svFit");
+  cfg_svFit.addParameter<edm::ParameterSet>("resolutions", cfg_resolutions);
+  cfg_svFit.addParameter<std::string>("collider", collider);
+  cfg_svFit.addUntrackedParameter<int>("verbosity", verbosity_);
+  cfg_kinematicFit.addUntrackedParameter<bool>("cartesian", cartesian_);
+  svFit_ = new ClassicSVfitInterface(cfg_svFit);
+
   acceptanceCuts_ = new AcceptanceCuts(cfg.getParameter<edm::ParameterSet>("acceptanceCuts"));
 
   srcWeights_ = cfg.getParameter<vInputTag>("srcEvtWeights");
@@ -120,6 +128,8 @@ EntanglementNtupleProducer::~EntanglementNtupleProducer()
   }
 
   delete kinematicFit_;
+
+  delete svFit_;
 
   delete acceptanceCuts_;
 
@@ -302,6 +312,8 @@ void EntanglementNtupleProducer::analyze(const edm::Event& evt, const edm::Event
     printKinematicEvent("kineEvt_kinFit", kineEvt_kinFit_bestfit, verbosity_, cartesian_);
   }
 
+  KinematicEvent kineEvt_svFit = (*svFit_)(kineEvt_gen_smeared);
+
   const reco::GenParticle* tauPlus  = nullptr;
   const reco::GenParticle* tauMinus = nullptr;
   double tauPlus_enLoss = 0.;
@@ -391,7 +403,7 @@ void EntanglementNtupleProducer::analyze(const edm::Event& evt, const edm::Event
       &kineEvt_gen,
       tauPlus_nChargedKaons, tauPlus_nNeutralKaons, tauPlus_nPhotons, tauPlus_sumPhotonEn,
       tauMinus_nChargedKaons, tauMinus_nNeutralKaons, tauMinus_nPhotons, tauMinus_sumPhotonEn,
-      &kineEvt_gen_smeared, &kineEvt_startPos_bestfit, &kineEvt_kinFit_bestfit,
+      &kineEvt_gen_smeared, &kineEvt_startPos_bestfit, &kineEvt_kinFit_bestfit, &kineEvt_svFit,
       passesAcceptanceCuts,
       evtWeight);
     ntupleFiller_had_had_->fillBranches(
@@ -399,7 +411,7 @@ void EntanglementNtupleProducer::analyze(const edm::Event& evt, const edm::Event
       &kineEvt_gen,
       tauPlus_nChargedKaons, tauPlus_nNeutralKaons, tauPlus_nPhotons, tauPlus_sumPhotonEn,
       tauMinus_nChargedKaons, tauMinus_nNeutralKaons, tauMinus_nPhotons, tauMinus_sumPhotonEn,
-      &kineEvt_gen_smeared, &kineEvt_startPos_bestfit, &kineEvt_kinFit_bestfit,
+      &kineEvt_gen_smeared, &kineEvt_startPos_bestfit, &kineEvt_kinFit_bestfit, &kineEvt_svFit,
       passesAcceptanceCuts,
       evtWeight);
   }

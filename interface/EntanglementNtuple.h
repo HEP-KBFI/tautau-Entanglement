@@ -66,6 +66,7 @@ class EntanglementNtuple
                const KinematicEvent* kineEvt_gen_smeared, 
                const KinematicEvent* kineEvt_startPos,
                const KinematicEvent* kineEvt_kinFit,
+               const KinematicEvent* kineEvt_svFit,
                bool passesAcceptanceCuts,
                double evtWeight);
 
@@ -445,6 +446,9 @@ class EntanglementNtuple
   Int_t   kinFit_status_;            // status of kinematic fit: +1 = converged, -1 = failed
   Float_t kinFit_cov_[kinFit::numParameters][kinFit::numParameters]; // covariance matrix V_alpha of kinematic fit
   Float_t kinFit_chi2_;              // chi^2 of kinematic fit (computed according to Eq. (4) in https://www.phys.ufl.edu/~avery/fitting/kinematic.pdf)
+
+  branchType_KinematicEvent branches_KinematicEvent_svFit_;
+  Int_t   svFit_status_;             // status returned by ClassicSVfit algorithm: +1 = valid solution, -1 = no valid solution
 
   Bool_t  passesAcceptanceCuts_;     // flag indicating whether or not all charged hadrons and all photons 
                                      // produced in the decays of tau+ and tau- pass pT/energy and eta/theta cuts

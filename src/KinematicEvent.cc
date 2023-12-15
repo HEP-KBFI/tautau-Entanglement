@@ -26,6 +26,7 @@ KinematicEvent::KinematicEvent()
   , kinFitStatus_(-1)
   , kinFitChi2_(-1.)
   , kinFit_isValid_(false)
+  , svFit_isValid_(false)
 {}
 
 KinematicEvent::~KinematicEvent()
@@ -347,6 +348,12 @@ bool
 KinematicEvent::kinFit_isValid() const
 {
   return kinFit_isValid_;
+}
+
+bool
+KinematicEvent::svFit_isValid() const
+{
+  return svFit_isValid_;
 }
 
 void
