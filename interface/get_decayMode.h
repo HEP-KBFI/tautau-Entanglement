@@ -19,4 +19,7 @@ is1Prong(int decayMode);
 bool
 is3Prong(int decayMode);
 
+bool
+isHadTauDecay(int decayMode);
+
 #endif // TauAnalysis_Entanglement_get_decayMode_h
