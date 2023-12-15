@@ -13,6 +13,8 @@ cmsrel CMSSW_12_4_8
 cd CMSSW_12_4_8/src/
 cmsenv
 git clone https://github.com/TTauSpin/PolarimetricVectorTau2a1 $CMSSW_BASE/src/TauAnalysis/PolarimetricVectorTau2a1
+git clone https://github.com/SVfit/ClassicSVfit TauAnalysis/ClassicSVfit -b spin_2023Dec14
+git clone https://github.com/SVfit/SVfitTF TauAnalysis/SVfitTF
 git clone https://github.com/HEP-KBFI/tautau-Entanglement $CMSSW_BASE/src/TauAnalysis/Entanglement
 cd $CMSSW_BASE/src/TauAnalysis/Entanglement
 git remote set-url origin git+ssh://git@github.com/HEP-KBFI/tautau-Entanglement
