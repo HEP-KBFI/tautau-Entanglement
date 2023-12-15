@@ -93,6 +93,7 @@ process.ntupleProducer.smearing.rndSeed = cms.uint64({{ rndSeed }})
 process.ntupleProducer.startPosFinder.applyHiggsMassConstraint = cms.bool(startPosFinder_applyHiggsMassConstraint)
 process.ntupleProducer.startPosFinder.skip = cms.bool(False)
 process.ntupleProducer.kinematicFit.skip = cms.bool(False)
+process.ntupleProducer.svFit.skip = cms.bool(False)
 process.ntupleProducer.acceptanceCuts = acceptanceCuts
 process.ntupleProducer.verbosity = cms.untracked.int32({{ verbosity }})
 process.analysisSequence += process.ntupleProducer
