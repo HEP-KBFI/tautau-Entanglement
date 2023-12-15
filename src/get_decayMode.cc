@@ -39,3 +39,10 @@ is3Prong(int decayMode)
   if ( decayMode == reco::PFTau::kThreeProng0PiZero ) return true;
   else                                                return false;
 }
+
+bool
+isHadTauDecay(int decayMode)
+{
+  if ( is1Prong(decayMode) || is3Prong(decayMode) ) return true;
+  else                                              return false;
+}
