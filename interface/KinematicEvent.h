@@ -197,6 +197,10 @@ class KinematicEvent
   bool
   kinFit_isValid() const;
 
+  bool
+  svFit_isValid() const;
+
+  friend class ClassicSVfitInterface;
   friend class EntanglementNtupleProducer;
   friend class GenKinematicEventBuilder;
   friend class KinematicFit;
@@ -266,6 +270,8 @@ class KinematicEvent
   double kinFitChi2_;
   math::MatrixPxP kinFitCov_;
   bool kinFit_isValid_;
+
+  bool svFit_isValid_;
 };
 
 void
