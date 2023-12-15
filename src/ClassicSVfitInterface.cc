@@ -16,6 +16,7 @@
 #include "TauAnalysis/Entanglement/interface/cmsException.h"              // cmsException
 #include "TauAnalysis/Entanglement/interface/constants.h"                 // kLHC, kSuperKEKB
 #include "TauAnalysis/Entanglement/interface/convert_to_TMatrixD.h"       // convert_to_TMatrixD()
+#include "TauAnalysis/Entanglement/interface/get_decayMode.h"             // is3Prong()
 
 #include <iostream>                                                       // std::cout
 #include <string>                                                         // std::string
@@ -94,7 +95,7 @@ ClassicSVfitInterface::operator()(const KinematicEvent& kineEvt)
   KinematicEvent kineEvt_svFit = kineEvt;
 
   reco::Candidate::Point tauPlusDecayVertex;
-  if ( kineEvt.tauPlus_decayMode() == reco::PFTau::kThreeProng0PiZero || kineEvt.tauPlus_decayMode() == reco::PFTau::kThreeProng1PiZero )
+  if ( is3Prong(kineEvt.tauPlus_decayMode()) )
   {
     assert(kineEvt.svTauPlus_isValid());
     tauPlusDecayVertex = kineEvt.svTauPlus();
@@ -111,7 +112,7 @@ ClassicSVfitInterface::operator()(const KinematicEvent& kineEvt)
     measuredTauPlusDecayProducts);
 
   reco::Candidate::Point tauMinusDecayVertex;
-  if ( kineEvt.tauMinus_decayMode() == reco::PFTau::kThreeProng0PiZero || kineEvt.tauMinus_decayMode() == reco::PFTau::kThreeProng1PiZero )
+  if ( is3Prong(kineEvt.tauMinus_decayMode()) )
   {
     assert(kineEvt.svTauMinus_isValid());
     tauMinusDecayVertex = kineEvt.svTauMinus();
@@ -123,7 +124,7 @@ ClassicSVfitInterface::operator()(const KinematicEvent& kineEvt)
   std::vector<MeasuredHadTauDecayProduct> measuredTauMinusDecayProducts = buildMeasuredHadTauDecayProduct(
     kineEvt.daughtersTauMinus());
   MeasuredTauLepton measuredTauMinus = buildMeasuredTauLepton(
-    +1, kineEvt.visTauMinusP4(), kineEvt.tauMinus_decayMode(),
+    -1, kineEvt.visTauMinusP4(), kineEvt.tauMinus_decayMode(),
     tauMinusDecayVertex, kineEvt.svTauMinusCov(),
     measuredTauMinusDecayProducts);
 
