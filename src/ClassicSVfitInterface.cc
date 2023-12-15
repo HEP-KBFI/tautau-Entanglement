@@ -24,7 +24,9 @@
 using namespace classic_svFit;
 
 ClassicSVfitInterface::ClassicSVfitInterface(const edm::ParameterSet& cfg)
-  : skip_(cfg.getParameter<bool>("skip"))
+  : svFitAlgo_(nullptr)
+  , histogramAdapter_(nullptr)
+  , skip_(cfg.getParameter<bool>("skip"))
   , verbosity_(cfg.getUntrackedParameter<int>("verbosity"))
   , cartesian_(cfg.getUntrackedParameter<bool>("cartesian"))
 {
@@ -33,10 +35,24 @@ ClassicSVfitInterface::ClassicSVfitInterface(const edm::ParameterSet& cfg)
   else if ( collider == "SuperKEKB" ) collider_ = kSuperKEKB;
   else throw cmsException("KinematicFit", __LINE__)
     << "Invalid Configuration parameter 'collider' = " << collider << " !!\n";
+
+  svFitAlgo_ = new ClassicSVfit();
+  svFitAlgo_->enableTauFlightLength();
+  //svFitAlgo_->disableTauFlightLength();
+  //svFitAlgo_->enableLogM(6.);
+  svFitAlgo_->disableLogM();
+  //svFitAlgo_->setMaxObjFunctionCalls(100000); // CV: default is 100000 evaluations of integrand per event
+//svFitAlgo_->setMaxObjFunctionCalls(1000);
+  histogramAdapter_ = new HistogramAdapterDiTauSpin();
+  svFitAlgo_->setHistogramAdapter(histogramAdapter_);
+//svFitAlgo_->setVerbosity(2);
 }
 
 ClassicSVfitInterface::~ClassicSVfitInterface()
-{}
+{
+  delete svFitAlgo_;
+  delete histogramAdapter_;
+}
 
 namespace
 {
@@ -146,21 +162,14 @@ ClassicSVfitInterface::operator()(const KinematicEvent& kineEvt)
     measuredMEt = MeasuredMEt(MEt.px(), MEt.py(), MEt.pz(), MEt.energy(), covMEt);
   } else assert(0);
 
-  MeasuredEvent measuredEvent(measuredTauLeptons, { measuredMEt });
+  MeasuredEvent measuredEvent(measuredTauLeptons, { measuredMEt }, kineEvt.pv(), convert_to_TMatrixD(kineEvt.pvCov()));
 
-  int verbosity = 1;
-  ClassicSVfit svFitAlgo(verbosity);
-  //svFitAlgo.enableLogM(6.);
-  svFitAlgo.disableLogM();
-  //svFitAlgo.setMaxObjFunctionCalls(100000); // CV: default is 100000 evaluations of integrand per event
-  HistogramAdapterDiTauSpin histogramAdapter;
-  svFitAlgo.setHistogramAdapter(&histogramAdapter);
-  svFitAlgo.integrate(measuredEvent);
-  bool isValidSolution = svFitAlgo.isValidSolution();
+  svFitAlgo_->integrate(measuredEvent);
+  bool isValidSolution = svFitAlgo_->isValidSolution();
 
   if ( isValidSolution  )
   {
-    const HistogramAdapterDiTauSpin* fittedDiTau = dynamic_cast<const HistogramAdapterDiTauSpin*>(svFitAlgo.getHistogramAdapter());
+    const HistogramAdapterDiTauSpin* fittedDiTau = dynamic_cast<const HistogramAdapterDiTauSpin*>(svFitAlgo_->getHistogramAdapter());
     assert(fittedDiTau);
     const HistogramAdapterTau* fittedTau1 = fittedDiTau->tau1();
     const HistogramAdapterTau* fittedTau2 = fittedDiTau->tau2();

@@ -1,11 +1,14 @@
 #ifndef TauAnalysis_Entanglement_ClassicSVfitInterface_h
 #define TauAnalysis_Entanglement_ClassicSVfitInterface_h
 
-#include "FWCore/ParameterSet/interface/ParameterSet.h"            // edm::ParameterSet
-#include "DataFormats/Candidate/interface/Candidate.h"             // reco::Candidate::LorentzVector
+#include "FWCore/ParameterSet/interface/ParameterSet.h"                   // edm::ParameterSet
+#include "DataFormats/Candidate/interface/Candidate.h"                    // reco::Candidate::LorentzVector
 
-#include "TauAnalysis/Entanglement/interface/KinematicEvent.h"     // KinematicEvent
-#include "TauAnalysis/Entanglement/interface/PolarimetricVector.h" // PolarimetricVector
+#include "TauAnalysis/ClassicSVfit/interface/ClassicSVfit.h"              // ClassicSVfit
+#include "TauAnalysis/ClassicSVfit/interface/HistogramAdapterDiTauSpin.h" // HistogramAdapterDiTauSpin
+
+#include "TauAnalysis/Entanglement/interface/KinematicEvent.h"            // KinematicEvent
+#include "TauAnalysis/Entanglement/interface/PolarimetricVector.h"        // PolarimetricVector
 
 class ClassicSVfitInterface
 {
@@ -18,6 +21,9 @@ class ClassicSVfitInterface
 
  private:
   int collider_;
+
+  ClassicSVfit* svFitAlgo_;
+  classic_svFit::HistogramAdapterDiTauSpin* histogramAdapter_;
 
   bool skip_;
 
