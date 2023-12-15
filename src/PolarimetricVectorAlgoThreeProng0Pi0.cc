@@ -30,12 +30,6 @@ namespace
     return particle1->p4().pt() > particle2->p4().pt();
   }
 
-  TLorentzVector
-  convert_to_TLorentzVector(const reco::Candidate::LorentzVector& p4)
-  {
-    return TLorentzVector(p4.px(), p4.py(), p4.pz(), p4.energy());
-  }
-
   reco::Candidate::Vector
   getPolarimetricVec_ThreeProng0PiZero(const PolarimetricVectorTau2a1& a1pol,
                                        const reco::Candidate::LorentzVector& tauP4,
@@ -112,12 +106,6 @@ namespace
       printLorentzVector("chSS2P4", chSS2P4_trf, cartesian);
       printLorentzVector("chSS2P4", chSS2P4_trf, false);
     }
-
-    std::vector<TLorentzVector> TauAndProd;
-    TauAndProd.push_back(convert_to_TLorentzVector(tauP4_trf));
-    TauAndProd.push_back(convert_to_TLorentzVector(chOSP4_trf));
-    TauAndProd.push_back(convert_to_TLorentzVector(chSS1P4_trf));
-    TauAndProd.push_back(convert_to_TLorentzVector(chSS2P4_trf));
 
     reco::Candidate::Vector h = a1pol(chSS1P4_trf, chSS2P4_trf, chOSP4_trf, charge_sum, PolarimetricVectorTau2a1::k3ChargedPi);
     if ( verbosity >= 4 )
