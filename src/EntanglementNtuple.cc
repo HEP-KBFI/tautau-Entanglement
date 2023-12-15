@@ -140,14 +140,17 @@ EntanglementNtuple::fillBranches(const edm::Event& evt,
     } 
   }
 
-  if ( kineEvt_svFit && kineEvt_svFit->svFit_isValid() )
+  if ( kineEvt_svFit )
   {
     branches_KinematicEvent_svFit_.fillBranches(*kineEvt_svFit);
-    svFit_status_ = +1;
-  }
-  else
-  {
-    svFit_status_ = -1;
+    if ( kineEvt_svFit->svFit_isValid() )
+    {
+      svFit_status_ = +1;
+    }
+    else
+    {
+      svFit_status_ = -1;
+    }
   }
 
   passesAcceptanceCuts_ = passesAcceptanceCuts;
