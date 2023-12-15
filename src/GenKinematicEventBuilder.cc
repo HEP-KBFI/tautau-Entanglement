@@ -140,7 +140,7 @@ namespace
   }
 
   math::Matrix3x3
-  getCov_hf(double dk, double dr, double dn,
+  getCov_hf(double dr, double dn, double dk,
             const reco::Candidate::Vector& r, const reco::Candidate::Vector& n, const reco::Candidate::Vector& k)
   {
     math::Matrix3x3 cov_rnk;
@@ -259,7 +259,7 @@ namespace
         dr = resolutions.tipResolution_perp();
         dn = resolutions.tipResolution_perp();
       }
-      math::Matrix3x3 cov3x3 = getCov_hf(dk, dr, dn, r, n, k);
+      math::Matrix3x3 cov3x3 = getCov_hf(dr, dn, dk, r, n, k);
       cov7x7.Place_at(cov3x3, 4, 4);
       kineDaughter.set_params7(params7, cov7x7);
 
@@ -287,7 +287,7 @@ namespace
     double dk = 2.5e+2;
     double dr = 2.e0;
     double dn = dr;
-    math::Matrix3x3 nuCov = getCov_hf(dk, dr, dn, r, n, k);
+    math::Matrix3x3 nuCov = getCov_hf(dr, dn, dk, r, n, k);
     return nuCov;
   }
 }
