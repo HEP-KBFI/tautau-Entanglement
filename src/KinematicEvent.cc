@@ -491,4 +491,12 @@ printKinematicEvent(const std::string& label,
   {
     std::cout << "kinFit: N/A\n";
   }
+  if ( kineEvt.svFit_isValid() )
+  {
+    std::cout << "svFit: valid\n";
+  }
+  else
+  {
+    std::cout << "svFit: N/A\n";
+  }
 }
