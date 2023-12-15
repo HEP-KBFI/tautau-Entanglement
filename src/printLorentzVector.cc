@@ -12,6 +12,6 @@ printLorentzVector(const std::string& label,
   }
   else
   {
-    std::cout << " p = " << p4.P() << ", pT = " << p4.pt() << ", theta = " << p4.theta() << ", phi = " << p4.phi() << ", mass = " << p4.mass() << "\n";
+    std::cout << " p = " << p4.P() << ", pT = " << p4.pt() << ", eta = " << p4.eta() << " (theta = " << p4.theta() << "), phi = " << p4.phi() << ", mass = " << p4.mass() << "\n";
   }
 }
