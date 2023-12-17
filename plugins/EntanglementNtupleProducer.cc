@@ -94,7 +94,6 @@ EntanglementNtupleProducer::EntanglementNtupleProducer(const edm::ParameterSet& 
     << "Invalid Configuration parameter 'resolveSignAmbiguity' = " << resolveSignAmbiguity << " !!\n";
 
   edm::ParameterSet cfg_kinematicFit = cfg.getParameter<edm::ParameterSet>("kinematicFit");
-  cfg_kinematicFit.addParameter<edm::ParameterSet>("resolutions", cfg_resolutions);
   cfg_kinematicFit.addParameter<std::string>("hAxis", hAxis);
   cfg_kinematicFit.addParameter<std::string>("collider", collider);
   cfg_kinematicFit.addUntrackedParameter<int>("verbosity", verbosity_);
@@ -313,12 +312,16 @@ void EntanglementNtupleProducer::analyze(const edm::Event& evt, const edm::Event
   }
 
   KinematicEvent kineEvt_svFit;
-  if ( isHadTauDecay(kineEvt_gen_smeared.tauPlus_decayMode()) && isHadTauDecay(kineEvt_gen_smeared.tauMinus_decayMode()) )
+  if ( kineEvts_startPos.size() >= 1 )
   {
-    kineEvt_svFit = (*svFit_)(kineEvt_gen_smeared);
-    if ( verbosity_ >= 1 )
+    const KinematicEvent kineEvt_startPos = kineEvts_startPos[0];
+    if ( isHadTauDecay(kineEvt_startPos.tauPlus_decayMode()) && isHadTauDecay(kineEvt_startPos.tauMinus_decayMode()) )
     {
-      printKinematicEvent("kineEvt_svFit", kineEvt_svFit, verbosity_, cartesian_);
+      kineEvt_svFit = (*svFit_)(kineEvt_startPos);
+      if ( verbosity_ >= 1 )
+      {
+        printKinematicEvent("kineEvt_svFit", kineEvt_svFit, verbosity_, cartesian_);
+      }
     }
   }
 
