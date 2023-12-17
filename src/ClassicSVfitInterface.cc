@@ -46,10 +46,10 @@ ClassicSVfitInterface::ClassicSVfitInterface(const edm::ParameterSet& cfg)
   //svFitAlgo_->enableLogM(6.);
   svFitAlgo_->disableLogM();
   //svFitAlgo_->setMaxObjFunctionCalls(100000); // CV: default is 100000 evaluations of integrand per event
-svFitAlgo_->setMaxObjFunctionCalls(1000);
+//svFitAlgo_->setMaxObjFunctionCalls(1000);
   histogramAdapter_ = new HistogramAdapterDiTauSpin();
   svFitAlgo_->setHistogramAdapter(histogramAdapter_);
-svFitAlgo_->setVerbosity(2);
+//svFitAlgo_->setVerbosity(2);
 }
 
 ClassicSVfitInterface::~ClassicSVfitInterface()
