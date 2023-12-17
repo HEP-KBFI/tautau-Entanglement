@@ -9,6 +9,7 @@
 
 #include "TauAnalysis/Entanglement/interface/KinematicEvent.h"            // KinematicEvent
 #include "TauAnalysis/Entanglement/interface/PolarimetricVector.h"        // PolarimetricVector
+#include "TauAnalysis/Entanglement/interface/Resolutions.h"               // Resolutions
 
 class ClassicSVfitInterface
 {
@@ -20,6 +21,7 @@ class ClassicSVfitInterface
   operator()(const KinematicEvent& evt);
 
  private:
+  Resolutions* resolutions_;
   int collider_;
 
   ClassicSVfit* svFitAlgo_;

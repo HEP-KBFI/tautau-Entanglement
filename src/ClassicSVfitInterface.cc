@@ -24,12 +24,16 @@
 using namespace classic_svFit;
 
 ClassicSVfitInterface::ClassicSVfitInterface(const edm::ParameterSet& cfg)
-  : svFitAlgo_(nullptr)
+  : resolutions_(nullptr)
+  , svFitAlgo_(nullptr)
   , histogramAdapter_(nullptr)
   , skip_(cfg.getParameter<bool>("skip"))
   , verbosity_(cfg.getUntrackedParameter<int>("verbosity"))
   , cartesian_(cfg.getUntrackedParameter<bool>("cartesian"))
 {
+  edm::ParameterSet cfg_resolutions = cfg.getParameter<edm::ParameterSet>("resolutions");
+  resolutions_ = new Resolutions(cfg_resolutions);
+
   std::string collider = cfg.getParameter<std::string>("collider");
   if      ( collider == "LHC"       ) collider_ = kLHC;
   else if ( collider == "SuperKEKB" ) collider_ = kSuperKEKB;
@@ -42,14 +46,15 @@ ClassicSVfitInterface::ClassicSVfitInterface(const edm::ParameterSet& cfg)
   //svFitAlgo_->enableLogM(6.);
   svFitAlgo_->disableLogM();
   //svFitAlgo_->setMaxObjFunctionCalls(100000); // CV: default is 100000 evaluations of integrand per event
-//svFitAlgo_->setMaxObjFunctionCalls(1000);
+svFitAlgo_->setMaxObjFunctionCalls(1000);
   histogramAdapter_ = new HistogramAdapterDiTauSpin();
   svFitAlgo_->setHistogramAdapter(histogramAdapter_);
-//svFitAlgo_->setVerbosity(2);
+svFitAlgo_->setVerbosity(2);
 }
 
 ClassicSVfitInterface::~ClassicSVfitInterface()
 {
+  delete resolutions_;
   delete svFitAlgo_;
   delete histogramAdapter_;
 }
@@ -76,14 +81,27 @@ namespace
 
   MeasuredTauLepton
   buildMeasuredTauLepton(int charge, const reco::Candidate::LorentzVector& visTauP4, int decayMode,
-                         const reco::Candidate::Point& decayVertex, const math::Matrix3x3& decayVertexCov,
+                         const reco::Candidate::Point& decayVertex, const math::Matrix3x3& decayVertexCov, 
+                         const Resolutions& resolutions,
                          const std::vector<MeasuredHadTauDecayProduct>& measuredHadTauDecayProducts)
   {
-    MeasuredTauLepton measuredTauLepton(
-      MeasuredTauLepton::kTauToHadDecay, 
-      charge, visTauP4.pt(), visTauP4.eta(), visTauP4.phi(), visTauP4.mass(),
-      decayVertex, convert_to_TMatrixD(decayVertexCov),
-      decayMode, &measuredHadTauDecayProducts);
+    MeasuredTauLepton measuredTauLepton;
+    if ( is3Prong(decayMode) )
+    {
+      measuredTauLepton = MeasuredTauLepton(
+        MeasuredTauLepton::kTauToHadDecay, 
+        charge, visTauP4.pt(), visTauP4.eta(), visTauP4.phi(), visTauP4.mass(),
+        decayVertex, convert_to_TMatrixD(decayVertexCov),
+        decayMode, &measuredHadTauDecayProducts);
+    }
+    else
+    {
+      measuredTauLepton = MeasuredTauLepton(
+        MeasuredTauLepton::kTauToHadDecay, 
+        charge, visTauP4.pt(), visTauP4.eta(), visTauP4.phi(), visTauP4.mass(),
+        decayVertex, 1.e+3, resolutions.tipResolution_perp(),
+        decayMode, &measuredHadTauDecayProducts);
+    }
     return measuredTauLepton;
   }
 
@@ -125,6 +143,7 @@ ClassicSVfitInterface::operator()(const KinematicEvent& kineEvt)
   MeasuredTauLepton measuredTauPlus = buildMeasuredTauLepton(
     +1, kineEvt.visTauPlusP4(), kineEvt.tauPlus_decayMode(),
     tauPlusDecayVertex, kineEvt.svTauPlusCov(),
+    *resolutions_,
     measuredTauPlusDecayProducts);
 
   reco::Candidate::Point tauMinusDecayVertex;
@@ -142,6 +161,7 @@ ClassicSVfitInterface::operator()(const KinematicEvent& kineEvt)
   MeasuredTauLepton measuredTauMinus = buildMeasuredTauLepton(
     -1, kineEvt.visTauMinusP4(), kineEvt.tauMinus_decayMode(),
     tauMinusDecayVertex, kineEvt.svTauMinusCov(),
+    *resolutions_,
     measuredTauMinusDecayProducts);
 
   std::vector<MeasuredTauLepton> measuredTauLeptons;
@@ -164,6 +184,7 @@ ClassicSVfitInterface::operator()(const KinematicEvent& kineEvt)
 
   MeasuredEvent measuredEvent(measuredTauLeptons, { measuredMEt }, kineEvt.pv(), convert_to_TMatrixD(kineEvt.pvCov()));
 
+  svFitAlgo_->setStartPosition(kineEvt.tauPlusP4(), kineEvt.tauMinusP4());
   svFitAlgo_->integrate(measuredEvent);
   bool isValidSolution = svFitAlgo_->isValidSolution();
 
