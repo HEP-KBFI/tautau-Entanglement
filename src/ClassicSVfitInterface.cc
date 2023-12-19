@@ -67,6 +67,7 @@ namespace
     std::vector<MeasuredHadTauDecayProduct> measuredHadTauDecayProducts;
     for ( const KinematicParticle& decayProduct : decayProducts )
     {
+      if ( std::abs(decayProduct.pdgId()) == 11 || std::abs(decayProduct.pdgId()) == 13 ) continue;
       if ( decayProduct.charge() != 0 || decayProduct.pdgId() == 111 )
       {
         const reco::Candidate::LorentzVector& decayProductP4 = decayProduct.p4();
