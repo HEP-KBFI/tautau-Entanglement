@@ -36,6 +36,7 @@ process.analyzeEntanglementNtuple = cms.PSet(
 
     maxChi2 = cms.double(1.e+2),
     statusSelection = cms.vint32(0,1,2),
+    apply_statusSelection = cms.bool(True),
 
     apply_acceptanceCuts = cms.bool({{ apply_acceptanceCuts }}),
 
