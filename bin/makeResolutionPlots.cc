@@ -104,6 +104,8 @@ int main(int argc, char* argv[])
   std::cout << " maxChi2 = " << maxChi2 << "\n";
   vint statusSelection = cfg_resPlots.getParameter<vint>("statusSelection");
   std::cout << " statusSelection = " << format_vint(statusSelection) << "\n";
+  bool apply_statusSelection = cfg_resPlots.getParameter<bool>("apply_statusSelection");
+  std::cout << " apply_statusSelection = " << apply_statusSelection << std::endl;
   std::string branchName_evtWeight = cfg_resPlots.getParameter<std::string>("branchName_evtWeight");
   std::cout << " branchName_evtWeight = " << branchName_evtWeight << "\n";
 
@@ -369,6 +371,9 @@ int main(int argc, char* argv[])
     Int_t kinFit_status;
     bai.setBranchAddress(kinFit_status, "kinFit_status");
 
+    Int_t svFit_status;
+    bai.setBranchAddress(svFit_status, "svFit_status");
+
     Float_t evtWeight = 1.;
     if ( branchName_evtWeight != "" && apply_evtWeight )
     {
@@ -405,8 +410,15 @@ int main(int argc, char* argv[])
       if ( maxNumNeutralKaons     != -1  && gen_tauMinus_nNeutralKaons > maxNumNeutralKaons        ) continue;
       if ( maxNumPhotons          != -1  && gen_tauMinus_nPhotons      > maxNumPhotons             ) continue;
       if ( maxSumPhotonEn         >=  0. && gen_tauMinus_sumPhotonEn   > maxSumPhotonEn            ) continue;
-      if ( maxChi2                != -1  && kinFit_chi2                > maxChi2                   ) continue;
-      if ( statusSelection.size() >   0  && !passesStatusSelection(kinFit_status, statusSelection) ) continue;
+      if ( apply_statusSelection && (mode == "startPos" || mode == "kinFit") )
+      {
+        if ( maxChi2                != -1  && kinFit_chi2            > maxChi2                       ) continue;
+        if ( statusSelection.size() >   0  && !passesStatusSelection(kinFit_status, statusSelection) ) continue;
+      }
+      if ( apply_statusSelection && mode == "svFit" )
+      {
+        if ( statusSelection.size() >   0  && !passesStatusSelection(svFit_status,  statusSelection) ) continue;
+      }
 
       reco::Candidate::LorentzVector gen_tauPlus_p4  = build_p4(gen_tauPlus_pt,  gen_tauPlus_eta,  gen_tauPlus_phi,  gen_tauPlus_mass);
       reco::Candidate::Point         gen_svPlus      = build_point(gen_svPlus_x, gen_svPlus_y, gen_svPlus_z);

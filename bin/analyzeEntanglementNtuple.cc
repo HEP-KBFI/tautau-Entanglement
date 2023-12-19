@@ -162,6 +162,8 @@ int main(int argc, char* argv[])
   std::cout << " maxChi2 = " << maxChi2 << "\n";
   vint statusSelection = cfg_analyze.getParameter<vint>("statusSelection");
   std::cout << " statusSelection = " << format_vint(statusSelection) << "\n";
+  bool apply_statusSelection = cfg_analyze.getParameter<bool>("apply_statusSelection");
+  std::cout << " apply_statusSelection = " << apply_statusSelection << std::endl;
   bool apply_acceptanceCuts = cfg_analyze.getParameter<bool>("apply_acceptanceCuts");
   std::cout << " apply_acceptanceCuts = " << apply_acceptanceCuts << "\n";
   bool apply_startPos_isCorrectSignCut = cfg_analyze.getParameter<bool>("apply_startPos_isCorrectSignCut");
@@ -277,6 +279,9 @@ int main(int argc, char* argv[])
     Int_t kinFit_status;
     bai.setBranchAddress(kinFit_status, "kinFit_status");
 
+    Int_t svFit_status;
+    bai.setBranchAddress(svFit_status, "svFit_status");
+
     Float_t zPlus, zMinus, cosThetaStar;
     bai.setBranchAddress(zPlus, Form("%s_zPlus", mode.c_str()));
     bai.setBranchAddress(zMinus, Form("%s_zMinus", mode.c_str()));
@@ -323,10 +328,14 @@ int main(int argc, char* argv[])
       if ( maxNumNeutralKaons       != -1  && tauMinus_nNeutralKaons > maxNumNeutralKaons            ) continue;
       if ( maxNumPhotons            != -1  && tauMinus_nPhotons      > maxNumPhotons                 ) continue;
       if ( maxSumPhotonEn           >=  0. && tauMinus_sumPhotonEn   > maxSumPhotonEn                ) continue;
-      if ( mode == "startPos" || mode == "kinFit" )
+      if ( apply_statusSelection && (mode == "startPos" || mode == "kinFit") )
       {
         if ( maxChi2                != -1  && kinFit_chi2            > maxChi2                       ) continue;
         if ( statusSelection.size() >   0  && !passesStatusSelection(kinFit_status, statusSelection) ) continue;
+      }
+      if ( apply_statusSelection && mode == "svFit" )
+      {
+        if ( statusSelection.size() >   0  && !passesStatusSelection(svFit_status,  statusSelection) ) continue;
       }
       if ( absCosTheta_cut > 0. && std::fabs(cosThetaStar) > absCosTheta_cut )                         continue;
       if ( apply_acceptanceCuts && !passesAcceptanceCuts )                                             continue;
