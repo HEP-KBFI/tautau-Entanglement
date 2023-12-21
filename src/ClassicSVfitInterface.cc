@@ -56,7 +56,8 @@ ClassicSVfitInterface::~ClassicSVfitInterface()
 {
   delete resolutions_;
   delete svFitAlgo_;
-  delete histogramAdapter_;
+  // CV: histogramAdapter deleted in destructor of ClassicSVfit class !!
+  //delete histogramAdapter_;
 }
 
 namespace
